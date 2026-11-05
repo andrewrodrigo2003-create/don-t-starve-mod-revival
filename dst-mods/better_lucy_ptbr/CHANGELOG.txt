@@ -1,0 +1,59 @@
+Better Lucy v0.5.1 - Voice Config + Icon Fix
+
+FIXED
+- Normal voice mode now leaves Lucy's vanilla audio untouched.
+- Quiet and Very Quiet now replay Lucy's chatter through the correct
+  local-only emitter: inst.localsounds.SoundEmitter.
+- Muted suppresses Lucy's chatter without the initial audio blip.
+- Fixed the Steam/DST mod icon declarations.
+- Renamed icon assets to safe filenames:
+  better_lucy.png / better_lucy.tex / better_lucy.xml
+- Removed the local TextureConverter config file from the public mod package.
+
+KEPT
+- 455 custom dialogue lines.
+- Wife / Yandere / Spicy personality content.
+- Damage multiplier.
+- Chopping power / Instant Chop.
+- Configurable dialogue display time.
+
+Better Lucy v0.5.0 - Devoted Wife Dialogue Expansion
+
+NEW
+- Added a large new batch of approved wife/yandere/spicy dialogue.
+- Added cute text-face reactions such as v///v, >.<, -.- style beats.
+- Added more direct husband/wife banter, clingy affection, jealous axe jokes,
+  assertive teasing, and suggestive tool/chopping double-entendres.
+- Added stronger other-owner and post-transformation reactions.
+- No real names or identifying private-chat details are included.
+
+KEPT
+- Audio interception fix from v0.4.0.
+- Configurable Quiet / Very Quiet / Muted voice.
+- Dialogue duration.
+- Combat damage and Instant Chop options.
+- Existing Classic, Wife, Yandere, Spicy, and Everything profiles.
+
+Better Lucy v0.4.0 - Lore + Clean Audio
+
+AUDIO
+- Rebuilt Quiet / Very Quiet / Muted handling to prevent the initial sound blip.
+- Better Lucy now intercepts Lucy's own "ontalk" event before her vanilla
+  full-volume sound listener can fire.
+- Quiet / Very Quiet play the normal Lucy loop directly at reduced volume.
+- Muted never starts the Lucy loop at all, so there should be no chirp/cut.
+
+PERSONALITY
+- Added more loyal wife, possessive/yandere, and cheeky double-entendre lines.
+- Added "good girl / improper thoughts" contrast while keeping dialogue
+  suggestive rather than explicit.
+
+LORE
+- Added BETTER_LUCY_LORE.txt with an optional fan backstory designed to fit
+  around the intentionally unexplained parts of Lucy's canon.
+
+KEPT
+- Damage options.
+- Instant chopping option.
+- Dialogue duration.
+- 300+ custom lines and personality profiles.
