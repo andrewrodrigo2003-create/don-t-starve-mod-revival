@@ -1,0 +1,42 @@
+BETTER LUCY - VERSÃO PT-BR (0.6.0-ptbr)
+=======================================
+
+O QUE MUDOU
+-----------
+1. Tudo traduzido para português do Brasil (mais de 450 falas da Lucy e
+   todas as opções do menu do mod).
+
+2. O Woodie agora responde a Lucy de vez em quando.
+   - Opção no menu: "Woodie responde a Lucy" (Desligado / Raramente /
+     Às vezes / Frequentemente).
+   - Ele espera pelo menos 40 segundos entre uma resposta e outra, para não
+     virar falação.
+   - Ele não responde quando está virado bicho, fantasma ou morto, nem se
+     estiver longe da Lucy.
+   - Todo mundo por perto vê a resposta do Woodie.
+
+3. Falas picantes um pouco mais safadinhas (duplo sentido, sem nada
+   explícito). Elas só aparecem com a personalidade "Picante" ou "Tudo".
+
+CORREÇÕES DE ERROS
+------------------
+- Falas sumindo ou trocadas: o jogo só consegue mandar o número de até 63
+  falas por situação. O mod original tinha 151 falas para "equipada", então
+  mais da metade das vezes a Lucy falava a frase errada ou ficava calada.
+  Agora as listas grandes são divididas por baixo dos panos e todas as
+  falas aparecem certinho.
+- Tempo da fala na tela: antes só funcionava para quem hospedava o mundo.
+  Agora vale para todos os jogadores.
+- Lista vazia: se você apagar todas as falas de uma situação, o jogo não
+  trava mais.
+
+EDITAR AS FALAS
+---------------
+- Falas da Lucy: scripts/better_lucy_lines.lua
+- Respostas do Woodie: scripts/better_lucy_woodie_replies.lua
+Pode adicionar quantas quiser. Cada fala fica entre aspas e termina com
+vírgula.
+
+COMPATIBILIDADE
+---------------
+Funciona junto com o Uncompromising Mode (ele não mexe na Lucy).
