@@ -1,5 +1,5 @@
 -- Minimal DST-like environment to exercise Better Lucy modmain
-package.path = "/tmp/work/better_lucy_ptbr/scripts/?.lua;/tmp/game/scripts/?.lua;" .. package.path
+package.path = "/dev-server/dst-mods/better_lucy_ptbr/scripts/?.lua;/tmp/game/scripts/?.lua;" .. package.path
 function Class(ctor) local c = {}; c.__index = c; setmetatable(c, {__call=function(_, ...) local o=setmetatable({},c); ctor(o, ...); return o end}); return c end
 local src = io.open("/tmp/game/scripts/strings.lua"):read("*a")
 STRINGS = {}
@@ -13,7 +13,7 @@ FRAMES = 1/30
 local CONFIG = { WOODIE_REPLY = tonumber(arg[1]) or 1, PERSONALITY = arg[2] or "all", DIALOGUE_MODE = arg[3] or "mixed" }
 local env = setmetatable({ GLOBAL = _G, require = require, GetModConfigData = function(k) return CONFIG[k] end,
   AddPrefabPostInit = function() end }, { __index = _G })
-local f = assert(loadfile("/tmp/work/better_lucy_ptbr/modmain.lua")); setfenv(f, env); f()
+local f = assert(loadfile("/dev-server/dst-mods/better_lucy_ptbr/modmain.lua")); setfenv(f, env); f()
 local STRING_LISTS = {}
 for k, v in pairs(STRINGS.LUCY) do table.insert(STRING_LISTS, v) end
 local IDS = {} for i, v in ipairs(STRING_LISTS) do IDS[v] = i end
