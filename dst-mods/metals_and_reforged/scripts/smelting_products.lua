@@ -94,7 +94,7 @@ local foods =
 		test = function(cooker, names, tags) return tags.metal end,
 		priority = -2,
 		cooktime = 5,
-	},	
+	},
 	
 	nitre =
 	{	
@@ -172,8 +172,6 @@ local PRODUCT_COSTS =
 	copper_ore        = { tags = { copper = 1 },                     max_batch = 1 },
 	iron_ore          = { tags = { iron = 1 },                       max_batch = 1 },
 	goldnugget        = { tags = { gold = 1 },                        max_batch = 1 },
-	-- A receita aceita qualquer carga com metal > 0; uma unidade de po de
-	-- cobre/ferro fornece 0.5, entao esse e o menor custo valido por operacao.
 	junk_dust         = { tags = { metal = 0.5 },                    max_batch = 1 },
 	-- A receita original tambem aceita fragmentos de gema quando o total de gem < 1.
 	-- Nesse caminho alternativo, o lote consome toda a carga elegivel; sem isso,
