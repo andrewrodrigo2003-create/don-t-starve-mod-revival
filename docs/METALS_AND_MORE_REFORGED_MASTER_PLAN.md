@@ -19,7 +19,18 @@
 - A instalação de teste do usuário é o mundo **“mundo de testes de mod”**. Não presumir acesso ao computador local.
 - O nome provisório “Metals and More Reforged” não deve ser alterado sem autorização.
 
-## 1. Restauração e identidade metalúrgica
+## 1. Proveniência, autoria e direitos de uso
+
+- [x] Criar arte vetorial original para o banner e ícone quadrado, sem reutilizar a arte legada; fontes SVG e exports PNG documentados no PR #7.
+- [ ] Converter o ícone quadrado para KTEX e substituir o `modicon.tex` legado somente após validação.
+- [ ] Fazer inventário arquivo a arquivo de código, arte, sons, animações, textos e assets herdados.
+- [ ] Separar claramente o que veio do rework de NevilleDST, o que veio do mod original de Benzoquinone e o que foi escrito do zero nesta atualização.
+- [ ] Confirmar licença/autorizações aplicáveis antes de redistribuir publicamente qualquer código ou asset herdado; se não houver permissão documentada, substituir por implementação independente e assets originais.
+- [ ] Preservar créditos corretos no `modinfo.lua`, Workshop e documentação até que a origem/licença de cada parte esteja resolvida.
+- [ ] Não afirmar que a troca da capa torna o código herdado original ou impede reclamações.
+
+**Cadeia identificada:** o rework 2.9.3 de NevilleDST declara que deriva de *Metals and More!* de Benzoquinone. As duas páginas de Workshop atualmente exibem aviso de remoção pela Steam; isso não prova que houve reclamação de direitos autorais. Ver `docs/ASSET_PROVENANCE_AND_COVER_ART.md`.
+## 2. Restauração e identidade metalúrgica
 
 - [x] Preservar a estrutura existente de minérios, poeiras, fragmentos, lingotes, ligas e materiais especiais no código atual.
 - [ ] Comparar todas as receitas, ingredientes, tags, custos, prioridades, tempos, outputs e fontes de materiais com a versão original 2.9.3.
