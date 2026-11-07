@@ -18,16 +18,12 @@ New `metal_storage_chest` prefab, 25-slot widget, smelter-ingredient filter, rec
   - the item filter delegates to the exported `smelting.IsSmelterIngredient(item.prefab)` predicate;
   - the prefab uses the master-simulation guard before adding server components;
   - the container calls `DropEverything()` before the structure is removed.
-- LuaTeX parsed `metal_storage_chest.lua` successfully.
-- A stubbed LuaTeX behavior harness executed the prefab factory and checked:
-  - expected prefab name;
-  - expected container widget setup;
-  - three hammer work units;
-  - ordinary hit closes the container without spilling contents;
-  - hammer destruction returns the container contents and removes the structure.
+- The current source was inspected statically. Registration, filter, server-only components, widget setup, hit behavior and destruction path were checked by reading the code.
+- No executable Lua parser or stubbed behavior harness was successfully run in this session. Those checks remain pending; do not treat static inspection as runtime verification.
 
 ## Not tested
 
+- Lua syntax/parser execution and a stubbed behavior harness.
 - Full `modmain.lua` or `modinfo.lua` loading inside DST.
 - Real asset resolution or visual/UI alignment in the game.
 - Actual item acceptance for every smelting ingredient in a running game.
