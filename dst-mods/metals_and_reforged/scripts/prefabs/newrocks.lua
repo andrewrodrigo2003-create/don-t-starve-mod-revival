@@ -69,213 +69,213 @@ end
 
 if MAMConfig.on("mam_extra_drops") and MAMConfig.int("mam_drops_mode", 1) == 2 then
     if MAMConfig.on("mam_drop_boulders") then
-    set_rewrite_table( 'rock2',
-    {
-        {'rocks',       1.00},
-        {'rocks',       1.00},
-        {'rocks',       0.75},
-        {'goldnugget', 	0.50},
-    	{'gold_dust', 	0.75},
-    	{'gold_dust', 	1.00},
-    	{'goldnugget', 	0.90},
-        {'flint',       0.75},
-    })
+        set_rewrite_table( 'rock2',
+        {
+            {'rocks',       1.00},
+            {'rocks',       1.00},
+            {'rocks',       0.75},
+            {'goldnugget', 	0.50},
+        	{'gold_dust', 	0.75},
+        	{'gold_dust', 	1.00},
+        	{'goldnugget', 	0.90},
+            {'flint',       0.75},
+        })
 
-    set_rewrite_table( 'rock_moon',
-    {
-        {'rocks',           1.00},
-    	{'rocks',           0.75},
-        {'moonrocknugget',  1.00},
-        {'moonrocknugget',  1.00},
-        {'moonrocknugget',  0.60},
-        {'moonrocknugget',  0.30},
-    	{'iron_ore',		0.50},
-    	{'iron_ore',		0.50},
-    })
+        set_rewrite_table( 'rock_moon',
+        {
+            {'rocks',           1.00},
+        	{'rocks',           0.75},
+            {'moonrocknugget',  1.00},
+            {'moonrocknugget',  1.00},
+            {'moonrocknugget',  0.60},
+            {'moonrocknugget',  0.30},
+        	{'iron_ore',		0.50},
+        	{'iron_ore',		0.50},
+        })
 
-    set_rewrite_table( 'rock_moon_shell',
-    {
-        {'rocks',           1.00},
-        {'rocks',           0.75},
-        {'moonrocknugget',  1.00},
-        {'moonrocknugget',  1.00},
-        {'moonrocknugget',  1.00},
-        {'moonrocknugget',  0.30},
-    	{'iron_dust',		0.75},
-    	{'iron_ore',		0.50},
-    })
+        set_rewrite_table( 'rock_moon_shell',
+        {
+            {'rocks',           1.00},
+            {'rocks',           0.75},
+            {'moonrocknugget',  1.00},
+            {'moonrocknugget',  1.00},
+            {'moonrocknugget',  1.00},
+            {'moonrocknugget',  0.30},
+        	{'iron_dust',		0.75},
+        	{'iron_ore',		0.50},
+        })
     end
 
     if MAMConfig.on("mam_drop_stalagmites") then
-    set_rewrite_table( 'full_rock',
-    {
-        {'rocks',       	1.00},
-        {'rocks',       	1.00},
-        {'rocks',       	1.00},
-        {'flint',       	1.00},
-        {'fossil_piece',	0.10},
-        {'gold_dust', 		0.75},
-    	{'goldnugget', 		0.25},
-    	{'copper_ore',    	0.50},
-    	{'copper_ore',    	0.50},
-    	{'copper_dust',    	1.00},
-    	{'copper_dust',    	0.50},
-    	{'copper_ore',    	0.50},
-    	{'copper_dust',    	1.00},
-        {'bluegem_shard',	0.25},
-        {'redgem_shard',    0.25},
-    })
+        set_rewrite_table( 'full_rock',
+        {
+            {'rocks',       	1.00},
+            {'rocks',       	1.00},
+            {'rocks',       	1.00},
+            {'flint',       	1.00},
+            {'fossil_piece',	0.10},
+            {'gold_dust', 		0.75},
+        	{'goldnugget', 		0.25},
+        	{'copper_ore',    	0.50},
+        	{'copper_ore',    	0.50},
+        	{'copper_dust',    	1.00},
+        	{'copper_dust',    	0.50},
+        	{'copper_ore',    	0.50},
+        	{'copper_dust',    	1.00},
+            {'bluegem_shard',	0.25},
+            {'redgem_shard',    0.25},
+        })
 
-    set_rewrite_table( 'med_rock',
-    {
-        {'rocks',       1.00},
-        {'rocks',       1.00},
-        {'copper_dust', 1.00},
-    	{'copper_dust', 0.75},
-        {'gold_dust',  	0.50},
-        {'fossil_piece',0.10},
-        {'flint',       0.60},
-    	{'copper_ore',  0.75},
-    	{'copper_ore',  0.50},
-    	{'copper_ore', 	0.35},
-    })
+        set_rewrite_table( 'med_rock',
+        {
+            {'rocks',       1.00},
+            {'rocks',       1.00},
+            {'copper_dust', 1.00},
+        	{'copper_dust', 0.75},
+            {'gold_dust',  	0.50},
+            {'fossil_piece',0.10},
+            {'flint',       0.60},
+        	{'copper_ore',  0.75},
+        	{'copper_ore',  0.50},
+        	{'copper_ore', 	0.35},
+        })
 
-    set_rewrite_table( 'low_rock',
-    {
-        {'rocks',       1.00},
-        {'copper_dust', 1.00},
-        {'gold_dust',  	0.25},
-        {'fossil_piece',0.10},
-        {'flint',       0.30},
-    	{'copper_dust', 0.75},
-    	{'copper_ore', 	0.25},
-    	{'copper_ore', 	0.25},
-    })
+        set_rewrite_table( 'low_rock',
+        {
+            {'rocks',       1.00},
+            {'copper_dust', 1.00},
+            {'gold_dust',  	0.25},
+            {'fossil_piece',0.10},
+            {'flint',       0.30},
+        	{'copper_dust', 0.75},
+        	{'copper_ore', 	0.25},
+        	{'copper_ore', 	0.25},
+        })
 
-    set_rewrite_table('stalagmite_tall_full_rock',
-    {
-        {'rocks',       	1.00},
-        {'rocks',       	1.00},
-        {'gold_dust',  		1.00},
-        {'flint',       	1.00},
-        {'fossil_piece',	0.10},
-        {'gold_dust',  		0.35},
-        {'copper_dust', 	1.00},
-        {'redgem_shard',    0.05},
-        {'log',         	0.05},
-    	{'goldnugget', 		0.25},
-    	{'copper_dust',  	1.00},
-    	{'copper_ore',    	0.50},
-    	{'copper_ore', 		0.25},
-    	{'copper_ore', 		0.25},
-    })
+        set_rewrite_table('stalagmite_tall_full_rock',
+        {
+            {'rocks',       	1.00},
+            {'rocks',       	1.00},
+            {'gold_dust',  		1.00},
+            {'flint',       	1.00},
+            {'fossil_piece',	0.10},
+            {'gold_dust',  		0.35},
+            {'copper_dust', 	1.00},
+            {'redgem_shard',    0.05},
+            {'log',         	0.05},
+        	{'goldnugget', 		0.25},
+        	{'copper_dust',  	1.00},
+        	{'copper_ore',    	0.50},
+        	{'copper_ore', 		0.25},
+        	{'copper_ore', 		0.25},
+        })
 
-    set_rewrite_table('stalagmite_tall_med_rock',
-    {
-        {'rocks',       1.00},
-        {'rocks',       1.00},
-        {'flint',       1.00},
-        {'fossil_piece',0.10},
-        {'goldnugget',  0.15},
-        {'copper_ore',  0.60},
-    	{'copper_ore', 	0.25},
-    	{'gold_dust',  	1.00},
-    	{'copper_dust', 1.00},
-    	{'copper_dust', 0.50},
-    	{'copper_dust', 0.50},
-    	{'copper_ore',  0.50},
-    })
+        set_rewrite_table('stalagmite_tall_med_rock',
+        {
+            {'rocks',       1.00},
+            {'rocks',       1.00},
+            {'flint',       1.00},
+            {'fossil_piece',0.10},
+            {'goldnugget',  0.15},
+            {'copper_ore',  0.60},
+        	{'copper_ore', 	0.25},
+        	{'gold_dust',  	1.00},
+        	{'copper_dust', 1.00},
+        	{'copper_dust', 0.50},
+        	{'copper_dust', 0.50},
+        	{'copper_ore',  0.50},
+        })
 
-    set_rewrite_table('stalagmite_tall_low_rock',
-    {
-        {'rocks',       1.00},
-        {'flint',       1.00},
-        {'fossil_piece',0.10},
-        {'gold_dust', 	1.00},
-        {'flint',       0.30},
-        {'copper_dust', 0.80},
-    	{'copper_dust', 0.50},
-    	{'gold_ore', 	0.05},
-    	{'copper_ore',  0.50},
-    	{'copper_ore', 	0.25},
-    })
+        set_rewrite_table('stalagmite_tall_low_rock',
+        {
+            {'rocks',       1.00},
+            {'flint',       1.00},
+            {'fossil_piece',0.10},
+            {'gold_dust', 	1.00},
+            {'flint',       0.30},
+            {'copper_dust', 0.80},
+        	{'copper_dust', 0.50},
+        	{'gold_ore', 	0.05},
+        	{'copper_ore',  0.50},
+        	{'copper_ore', 	0.25},
+        })
     end
 
     if MAMConfig.on("mam_drop_chess") then
-    set_rewrite_table("chess_junk",
-    {
-        {'trinket_6',      1.00},
-        {'trinket_6',      0.55},
-        {'trinket_1',      0.25},
-        {'gears',          0.25},
-        {'redgem_shard',   0.50},
-        {"greengem_shard", 0.25},
-        {"bluegem_shard",  0.50},
-        {"thulecite",      0.01},
-    	{'copper_dust',    0.50},
-    })
+        set_rewrite_table("chess_junk",
+        {
+            {'trinket_6',      1.00},
+            {'trinket_6',      0.55},
+            {'trinket_1',      0.25},
+            {'gears',          0.25},
+            {'redgem_shard',   0.50},
+            {"greengem_shard", 0.25},
+            {"bluegem_shard",  0.50},
+            {"thulecite",      0.01},
+        	{'copper_dust',    0.50},
+        })
 
-    set_rewrite_table('knight',
-    {
-        {'gears',  		1.00},
-        {'gears',  		1.00},
-        {'copper_ore',  0.50},
-        {'copper_ore', 	1.00},
-    })
+        set_rewrite_table('knight',
+        {
+            {'gears',  		1.00},
+            {'gears',  		1.00},
+            {'copper_ore',  0.50},
+            {'copper_ore', 	1.00},
+        })
 
-    set_rewrite_table('knight_nightmare',
-    {
-        {'gears',             	1.00},
-        {'nightmarefuel',     	0.60},
-        {'thulecite_pieces',  	0.50},
-        {'copper_ore', 			0.50},
-        {'copper_ore', 			0.50},
-        {'copper_ore', 			1.00},
-    })
+        set_rewrite_table('knight_nightmare',
+        {
+            {'gears',             	1.00},
+            {'nightmarefuel',     	0.60},
+            {'thulecite_pieces',  	0.50},
+            {'copper_ore', 			0.50},
+            {'copper_ore', 			0.50},
+            {'copper_ore', 			1.00},
+        })
 
-    set_rewrite_table('rook',
-    {
-        {'gears',  			1.00},
-        {'gears',  			1.00},
-        {'copper_ingot',  	0.75},
-        {'copper_ingot',  	0.75},
-        {'iron_ingot', 		1.00},
-    })
+        set_rewrite_table('rook',
+        {
+            {'gears',  			1.00},
+            {'gears',  			1.00},
+            {'copper_ingot',  	0.75},
+            {'copper_ingot',  	0.75},
+            {'iron_ingot', 		1.00},
+        })
 
-    set_rewrite_table('rook_nightmare',
-    {
-        {'gears',             	1.00},
-        {'nightmarefuel',     	0.60},
-        {'thulecite_pieces',  	0.50},
-        {'copper_ingot',  		0.75},
-        {'copper_ingot',  		0.75},
-        {'iron_ingot', 			1.00},
-    })
+        set_rewrite_table('rook_nightmare',
+        {
+            {'gears',             	1.00},
+            {'nightmarefuel',     	0.60},
+            {'thulecite_pieces',  	0.50},
+            {'copper_ingot',  		0.75},
+            {'copper_ingot',  		0.75},
+            {'iron_ingot', 			1.00},
+        })
 
-    set_rewrite_table('bishop',
-    {
-        {'gears',  			1.00},
-        {'gears',  			1.00},
-        {'bluegem_shard',	1.00},
-        {'redgem_shard',    1.00},
-        {'bluegem_shard',	0.50},
-        {'redgem_shard',    0.50},
-        {'copper_ingot',  	0.75},
-        {'iron_ingot', 		1.00},
-    })
+        set_rewrite_table('bishop',
+        {
+            {'gears',  			1.00},
+            {'gears',  			1.00},
+            {'bluegem_shard',	1.00},
+            {'redgem_shard',    1.00},
+            {'bluegem_shard',	0.50},
+            {'redgem_shard',    0.50},
+            {'copper_ingot',  	0.75},
+            {'iron_ingot', 		1.00},
+        })
 
-    set_rewrite_table('bishop_nightmare',
-    {
-        {'gears',             	1.00},
-        {'nightmarefuel',     	0.60},
-        {'thulecite_pieces',  	0.50},
-        {'copper_ingot',  		0.50},
-        {'iron_ingot', 			1.00},
-        {'purplegem_shard',		1.00},
-        {'purplegem_shard',   	0.75},
-        {'purplegem_shard',		0.50},
-        {'purplegem_shard',    	0.25},
-    })
+        set_rewrite_table('bishop_nightmare',
+        {
+            {'gears',             	1.00},
+            {'nightmarefuel',     	0.60},
+            {'thulecite_pieces',  	0.50},
+            {'copper_ingot',  		0.50},
+            {'iron_ingot', 			1.00},
+            {'purplegem_shard',		1.00},
+            {'purplegem_shard',   	0.75},
+            {'purplegem_shard',		0.50},
+            {'purplegem_shard',    	0.25},
+        })
     end
 
     -- Hounds: Auto cede ao UM; Always soma nossos fragmentos ao loot do UM.
@@ -287,29 +287,29 @@ if MAMConfig.on("mam_extra_drops") and MAMConfig.int("mam_drops_mode", 1) == 2 t
         end
 
         local function apply_hound_rewrite()
-        set_rewrite_table('hound_fire',
-        {
-            {'monstermeat', 	1.00},
-            {'houndstooth', 	1.00},
-            {'houndfire',   	1.00},
-            {'houndfire',   	1.00},
-            {'houndfire',   	1.00},
-            {'redgem_shard',	1.00},
-        	{'redgem_shard',	0.75},
-        	{'redgem_shard',	0.50},
-        	{'redgem_shard',	0.25},
-        })
+            set_rewrite_table('hound_fire',
+            {
+                {'monstermeat', 	1.00},
+                {'houndstooth', 	1.00},
+                {'houndfire',   	1.00},
+                {'houndfire',   	1.00},
+                {'houndfire',   	1.00},
+                {'redgem_shard',	1.00},
+            	{'redgem_shard',	0.75},
+            	{'redgem_shard',	0.50},
+            	{'redgem_shard',	0.25},
+            })
 
-        set_rewrite_table('hound_cold',
-        {
-            {'monstermeat', 	1.00},
-            {'houndstooth',		1.00},
-            {'houndstooth', 	1.00},
-            {'bluegem_shard',	1.00},
-        	{'bluegem_shard',	0.75},
-        	{'bluegem_shard',	0.50},
-        	{'bluegem_shard',	0.25},
-        })
+            set_rewrite_table('hound_cold',
+            {
+                {'monstermeat', 	1.00},
+                {'houndstooth',		1.00},
+                {'houndstooth', 	1.00},
+                {'bluegem_shard',	1.00},
+            	{'bluegem_shard',	0.75},
+            	{'bluegem_shard',	0.50},
+            	{'bluegem_shard',	0.25},
+            })
         end
 
         if TheWorld ~= nil and TheWorld.DoTaskInTime ~= nil then
