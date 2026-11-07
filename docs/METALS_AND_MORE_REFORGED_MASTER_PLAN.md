@@ -125,6 +125,7 @@
 ## 10. Testes e qualidade
 
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
+- [x] Auditoria isolada de estados de save/load da forja: 6 cenários aprovados; sem execução do componente completo/DST.
 - [x] Há relatório estático/harness para o primeiro baú metalúrgico (PR #5).
 - [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
 - [x] Harness isolado da decisão Auto/Always/UM passou 9 cenários; parsing dos arquivos completos e teste real no jogo continuam pendentes.
