@@ -61,9 +61,16 @@ SetSharedLootTable( 'ironrock',
 -- A indentacao do bloco foi mantida como no v2.9.3 para o diff contra
 -- .reference/metals-and-more-v2.9.3-original continuar legivel.
 local MAMConfig = require("mam/config")
-if MAMConfig.on("mam_extra_drops") and MAMConfig.int("mam_drops_mode", 1) == 2 then
+local MAMConfig = require("mam/config")
+local MAMLootGuard = require("mam/loot_guard")
 
-SetSharedLootTable( 'rock2',
+local function set_rewrite_table(name, entries)
+    SetSharedLootTable(name, MAMLootGuard.PrepareEntries(entries))
+end
+
+if MAMConfig.on("mam_extra_drops") and MAMConfig.int("mam_drops_mode", 1) == 2 then
+    if MAMConfig.on("mam_drop_boulders") then
+set_rewrite_table( 'rock2',
 {
     {'rocks',       1.00},
     {'rocks',       1.00},
@@ -75,7 +82,7 @@ SetSharedLootTable( 'rock2',
     {'flint',       0.75},
 })
 
-SetSharedLootTable( 'rock_moon',
+set_rewrite_table( 'rock_moon',
 {
     {'rocks',           1.00},
 	{'rocks',           0.75},
@@ -87,7 +94,7 @@ SetSharedLootTable( 'rock_moon',
 	{'iron_ore',		0.50},
 })
 
-SetSharedLootTable( 'rock_moon_shell',
+set_rewrite_table( 'rock_moon_shell',
 {
     {'rocks',           1.00},
     {'rocks',           0.75},
@@ -98,8 +105,10 @@ SetSharedLootTable( 'rock_moon_shell',
 	{'iron_dust',		0.75},
 	{'iron_ore',		0.50},
 })
+    end
 
-SetSharedLootTable( 'full_rock',
+    if MAMConfig.on("mam_drop_stalagmites") then
+set_rewrite_table( 'full_rock',
 {
     {'rocks',       	1.00},
     {'rocks',       	1.00},
@@ -118,7 +127,7 @@ SetSharedLootTable( 'full_rock',
     {'redgem_shard',    0.25},
 })
 
-SetSharedLootTable( 'med_rock',
+set_rewrite_table( 'med_rock',
 {
     {'rocks',       1.00},
     {'rocks',       1.00},
@@ -132,7 +141,7 @@ SetSharedLootTable( 'med_rock',
 	{'copper_ore', 	0.35},
 })
 
-SetSharedLootTable( 'low_rock',
+set_rewrite_table( 'low_rock',
 {
     {'rocks',       1.00},
     {'copper_dust', 1.00},
@@ -144,7 +153,7 @@ SetSharedLootTable( 'low_rock',
 	{'copper_ore', 	0.25},
 })
 
-SetSharedLootTable('stalagmite_tall_full_rock',
+set_rewrite_table('stalagmite_tall_full_rock',
 {
     {'rocks',       	1.00},
     {'rocks',       	1.00},
@@ -162,7 +171,7 @@ SetSharedLootTable('stalagmite_tall_full_rock',
 	{'copper_ore', 		0.25},
 })
 
-SetSharedLootTable('stalagmite_tall_med_rock',
+set_rewrite_table('stalagmite_tall_med_rock',
 {
     {'rocks',       1.00},
     {'rocks',       1.00},
@@ -178,7 +187,7 @@ SetSharedLootTable('stalagmite_tall_med_rock',
 	{'copper_ore',  0.50},
 })
 
-SetSharedLootTable('stalagmite_tall_low_rock',
+set_rewrite_table('stalagmite_tall_low_rock',
 {
     {'rocks',       1.00},
     {'flint',       1.00},
@@ -191,8 +200,10 @@ SetSharedLootTable('stalagmite_tall_low_rock',
 	{'copper_ore',  0.50},
 	{'copper_ore', 	0.25},
 })
+    end
 
-SetSharedLootTable("chess_junk",
+    if MAMConfig.on("mam_drop_chess") then
+set_rewrite_table("chess_junk",
 {
     {'trinket_6',      1.00},
     {'trinket_6',      0.55},
@@ -205,7 +216,7 @@ SetSharedLootTable("chess_junk",
 	{'copper_dust',    0.50},
 })
 
-SetSharedLootTable('knight',
+set_rewrite_table('knight',
 {
     {'gears',  		1.00},
     {'gears',  		1.00},
@@ -213,7 +224,7 @@ SetSharedLootTable('knight',
     {'copper_ore', 	1.00},
 })
 
-SetSharedLootTable('knight_nightmare',
+set_rewrite_table('knight_nightmare',
 {
     {'gears',             	1.00},
     {'nightmarefuel',     	0.60},
@@ -223,7 +234,7 @@ SetSharedLootTable('knight_nightmare',
     {'copper_ore', 			1.00},
 })
 
-SetSharedLootTable('rook',
+set_rewrite_table('rook',
 {
     {'gears',  			1.00},
     {'gears',  			1.00},
@@ -232,7 +243,7 @@ SetSharedLootTable('rook',
     {'iron_ingot', 		1.00},
 })
 
-SetSharedLootTable('rook_nightmare',
+set_rewrite_table('rook_nightmare',
 {
     {'gears',             	1.00},
     {'nightmarefuel',     	0.60},
@@ -242,7 +253,7 @@ SetSharedLootTable('rook_nightmare',
     {'iron_ingot', 			1.00},
 })
 
-SetSharedLootTable('bishop',
+set_rewrite_table('bishop',
 {
     {'gears',  			1.00},
     {'gears',  			1.00},
@@ -254,7 +265,7 @@ SetSharedLootTable('bishop',
     {'iron_ingot', 		1.00},
 })
 
-SetSharedLootTable('bishop_nightmare',
+set_rewrite_table('bishop_nightmare',
 {
     {'gears',             	1.00},
     {'nightmarefuel',     	0.60},
@@ -266,8 +277,18 @@ SetSharedLootTable('bishop_nightmare',
     {'purplegem_shard',		0.50},
     {'purplegem_shard',    	0.25},
 })
+    end
 
-SetSharedLootTable('hound_fire',
+    -- Hounds: Auto cede ao UM; Always soma nossos fragmentos ao loot do UM.
+    -- Sem UM, Rewrite restaura as tabelas originais, apos os outros modmain.
+    AddSimPostInit(function()
+        local hounds_mode = MAMConfig.int("mam_drop_hounds", 1)
+        if hounds_mode <= 0 or MAMLootGuard.HasUncompromising() then
+            return
+        end
+
+        local function apply_hound_rewrite()
+set_rewrite_table('hound_fire',
 {
     {'monstermeat', 	1.00},
     {'houndstooth', 	1.00},
@@ -280,7 +301,7 @@ SetSharedLootTable('hound_fire',
 	{'redgem_shard',	0.25},
 })
 
-SetSharedLootTable('hound_cold',
+set_rewrite_table('hound_cold',
 {
     {'monstermeat', 	1.00},
     {'houndstooth',		1.00},
@@ -290,7 +311,15 @@ SetSharedLootTable('hound_cold',
 	{'bluegem_shard',	0.50},
 	{'bluegem_shard',	0.25},
 })
+        end
 
+        if TheWorld ~= nil and TheWorld.DoTaskInTime ~= nil then
+            TheWorld:DoTaskInTime(0, apply_hound_rewrite)
+        else
+            apply_hound_rewrite()
+        end
+    end)
+end
 end
 
 local function OnWork(inst, worker, workleft)
