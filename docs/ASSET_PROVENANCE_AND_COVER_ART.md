@@ -23,7 +23,9 @@ The new square texture needs a matching atlas entry in `modicon.xml` (full-image
 
 ## Authorship and provenance
 
-The art replacement does not change the provenance of the inherited mod code. The current legacy `modinfo.lua` credits NevilleDST. Preserve appropriate credit for inherited code and assets unless a documented license or permission authorizes a different treatment. Do not imply that a new cover makes inherited code wholly original or guarantees immunity from a copyright claim.
+The art replacement does not change the provenance of the inherited mod code. The legacy `modinfo.lua` credits NevilleDST. The reworked Workshop page itself identifies the project as a rework of the earlier **Metals and More!** by Benzoquinone (Workshop item 1861463010), while the reworked page is item 2792388184 by NevilleDST. Preserve this upstream chain in project documentation and public credits unless a documented license or permission authorizes a different treatment. Do not imply that a new cover makes inherited code wholly original or guarantees immunity from a copyright claim.
+
+Both Workshop pages currently display Steam's notice that the items were removed for violating Community & Content Guidelines. That notice does **not** establish that either author filed a copyright complaint, and we should not guess why Steam removed them. It does mean the repository should not treat either mod as freely reusable without checking the original permissions.
 
 Klei's [modding guidance](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together) says that work from others must be used with credited permission and that absent explicit permission is treated as no permission. Before publicly redistributing inherited code/assets, confirm the original mod's license or obtain permission if needed.
 
