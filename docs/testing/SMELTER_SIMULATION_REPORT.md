@@ -17,7 +17,18 @@ No files belonging to other mods were changed.
 
 ## Tests executed
 
-A Lua behavioral model was run with the locally available LuaTeX interpreter (`texlua --luaonly`). It mirrors the relevant batch-count, consumption-planning, and hammer-drop logic. It is a model of the source logic, not the DST engine and not a direct execution of the mod modules.
+### Direct Lua execution of the actual recipe module
+
+The branch version of `smelting_products.lua` was copied without logic changes into a local test environment and loaded with LuaTeX (`texlua --luaonly`). The module loaded successfully and 8 assertions passed, covering:
+- `junk_dust` accepts a 0.5 metal input and now declares a matching 0.5 cost with a one-output cap.
+- Nitre still accepts the gem-fragment fallback and carries the fallback-consumption flag.
+- Moonglass ingot still accepts the original moon + moonglass threshold and declares both consumed costs.
+
+This directly executes the recipe module, but does not load the complete mod or provide DST engine APIs.
+
+### Behavioral model tests
+
+A separate Lua behavioral model was run with the locally available LuaTeX interpreter. It mirrors the relevant batch-count, consumption-planning, and hammer-drop logic. It is a model of source logic, not the DST engine and not direct execution of the complete mod modules.
 
 | Scenario | Result |
 |---|---|
@@ -25,6 +36,7 @@ A Lua behavioral model was run with the locally available LuaTeX interpreter (`t
 | Bronze: 6 copper + 2 iron ore | PASS — 2 ingots, all required inputs consumed |
 | Moonglass: 6 glass + 2 moonrock nuggets | PASS — 2 ingots, 4 glass + 2 moonrock consumed, 2 glass left |
 | Nitre gem-fragment fallback | PASS — gem fragments consumed; unrelated twigs preserved |
+| Junk dust: one copper/iron dust with 0.5 metal | PASS in direct recipe assertions — recipe accepts input and declared cost matches 0.5 |
 | Adamantium named prerequisite | PASS — steel input and iron ingot prerequisite both consumed for 2 outputs |
 | Hammer ready furnace: stackable output batches 1, 20, 21, 40, 45 | PASS — entire batch dropped, split into stacks of at most 20 |
 | Hammer ready furnace: non-stackable batch of 3 | PASS in the behavioral model — 3 individual drops |
@@ -41,17 +53,17 @@ Inputs are consumed at `StartSmelting()`. The current hit/interruption path call
 
 ## Not tested
 
-- Direct Lua syntax/runtime loading of the complete mod files against DST globals.
+- Direct Lua syntax/runtime loading of all complete mod files against DST globals.
 - Actual Don't Starve Together simulation, animation, prefab spawning, inventory insertion, container APIs, or world save/reload.
 - Multiplayer replication and client/server timing.
 - Uncompromising Mode Beta compatibility.
 - Destruction/interruption behavior in a live world.
 
-No GitHub Actions workflow run was found for the tested commit. A local LuaTeX interpreter was available, but a DST-compatible Lua runtime and game engine were not.
+No GitHub Actions workflow run was found for the tested commit. LuaTeX was available, but a DST-compatible Lua runtime and game engine were not.
 
 ## Next in-game test checklist
 
-1. Smelt copper, iron, bronze, gold, moonglass, gems, nitre, and adamantium with exact and excess inputs.
+1. Smelt copper, iron, bronze, gold, moonglass, gems, nitre, junk dust, and adamantium with exact and excess inputs.
 2. Check that leftovers are returned when enabled and destroyed only when the original-behavior option is selected.
 3. Save/reload during an active smelt and while ready to harvest.
 4. Hit and hammer the furnace during an active smelt; record whether consumed inputs should be lost or refunded.
