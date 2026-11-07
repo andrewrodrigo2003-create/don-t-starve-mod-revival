@@ -75,7 +75,8 @@
 
 ## 6. Armazenamento metalúrgico
 
-- [ ] Criar um contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
+- [~] Primeiro contêiner dedicado implementado em código na branch `feature/metal-storage-chest`, PR #5: 25 slots e filtro baseado em `smelting.IsSmelterIngredient`; revisão, merge e testes in-game pendentes.
+- [ ] Criar/validar o contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
 - [ ] Definir filtros explícitos por prefab/tag; não aceitar itens arbitrários nem bloquear materiais legítimos.
 - [ ] Preservar inventário ao martelar, fechar, desconectar, salvar e carregar.
 - [ ] Garantir que itens não sejam perdidos se a estrutura for destruída ou se um slot não puder aceitar o item.
@@ -87,13 +88,14 @@
 - [ ] Integrar consulta com fabricação somente se for possível reservar/consumir itens atomicamente no servidor; sem retirada fantasma.
 - [ ] Adicionar opções para contêiner, consulta e integração com estações, todas desligáveis e com defaults seguros.
 
-**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. Os defaults `mam_metalschest`, `mam_storage_query` e `mam_station_storage` aparecem em `mam/config.lua`, mas não foi encontrada implementação que os consuma. Portanto, armazenamento metalúrgico e consulta centralizada ainda não estão implementados; não marcar como concluídos.
+**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. Os defaults `mam_storage_query` e `mam_station_storage` aparecem em `mam/config.lua`, mas ainda não são consumidos por código; não expor essas opções como se funcionassem.
 
 ## 7. Configurações
 
 - [x] Existe módulo central `mam/config.lua` e opções para lote, limite, tempo, sobras, previsão, overrides de receitas e drops.
 - [ ] Auditar todas as chaves para garantir que cada opção exposta esteja conectada ao comportamento.
 - [ ] Remover ou não expor opções sem implementação; nunca deixar controles placebo.
+- [~] Opção `mam_metalschest` adicionada ao `modinfo.lua` no PR #5 (default on); teste no jogo pendente.
 - [ ] Adicionar configurações de armazenamento/consulta somente quando os recursos estiverem implementados.
 - [ ] Garantir que defaults preservem a experiência original quando a opção estiver desligada.
 - [ ] Validar tipos, limites, valores ausentes, sincronização servidor-cliente e mensagens de configuração.
@@ -153,3 +155,21 @@
 - PR #1 — correções de consumo de nitre/moonglass/junk dust e drops completos do lote ao martelar a forja; integrado em `main` em 2026-11-07.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
+
+## Referências técnicas pesquisadas para armazenamento
+
+As referências abaixo são usadas para orientar arquitetura e testes, não para copiar código ou assets:
+
+- **DST Storage Viewer** — agrega quantidades de itens de contêineres marcados por minisigns e sincroniza os dados do servidor para a interface do cliente via mod RPC. Referência: https://github.com/Syrnnik/DST-Storage-Mod
+- **Container Finder** — faz a busca real no servidor, envia posições de contêineres aos clientes (não GUIDs de outra simulação), usa IDs de requisição para descartar respostas antigas e permite configurar raio e categorias de contêiner. Referência: https://github.com/dbilici/dst-container-finder
+- **DST Container API** — documentação da configuração de widgets e `itemtestfn`, usada para conferir a forma de registrar filtros de contêiner. Referência: https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/containers
+- **DST Container component** — documentação de slots, inserção/retirada, abertura/fechamento e estado do componente. Referência: https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/container
+
+### Decisões arquiteturais derivadas da pesquisa
+
+1. O servidor deve ser a fonte de verdade para inventário, quantidade, localização e qualquer retirada.
+2. O cliente deve receber apenas dados de apresentação; nunca confiar em uma contagem enviada pelo cliente para consumir materiais.
+3. Não usar GUIDs do servidor como identificadores de entidades no cliente. Para destaque visual, enviar posições e resolver localmente; para operações, validar novamente a entidade no servidor.
+4. Usar IDs de requisição para ignorar respostas atrasadas e evitar que uma busca antiga substitua uma busca mais recente.
+5. Limitar a busca por raio e por tipos de contêiner suportados. A retirada futura precisa revalidar distância, acessibilidade, propriedade/permissão, quantidade disponível e espaço de destino no instante da operação.
+6. Fazer primeiro consulta somente leitura; implementar retirada e integração com fabricação apenas depois de desenhar uma transação atômica no servidor que não possa duplicar nem perder itens.
