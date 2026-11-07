@@ -92,7 +92,7 @@ assert(captured.prefabs[1] == "collapse_small", "collapse prefab missing")
 assert(placer ~= nil and captured.placer[1] == "metal_storage_chest_placer", "placer missing")
 
 -- Server-side construction and normal-hit behavior.
-local inst, tags = build_instance(true)
+local inst, tags, spawned = build_instance(true)
 assert(tags.structure and tags.chest and tags.mam_metal_storage, "structure/chest/custom tags missing")
 assert(inst.components.container.widget == "metal_storage_chest", "container widget not registered")
 assert(inst.components.workable.action == ACTIONS.HAMMER and inst.components.workable.work == 3, "hammer setup incorrect")
