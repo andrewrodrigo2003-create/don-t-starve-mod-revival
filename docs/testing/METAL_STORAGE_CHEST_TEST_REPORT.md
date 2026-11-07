@@ -16,7 +16,6 @@ New `metal_storage_chest` prefab, 25-slot widget, smelter-ingredient filter, rec
   - the setting exists in `modinfo.lua` and its default exists in `mam/config.lua`;
   - the container widget is registered as `metal_storage_chest`;
   - the prefab has both the generic `chest` tag and the mod-specific `mam_metal_storage` tag for container-discovery integrations;
-  - the prefab has both the generic `chest` tag and the mod-specific `mam_metal_storage` tag for compatibility with container discovery integrations;
   - the item filter delegates to the exported `smelting.IsSmelterIngredient(item.prefab)` predicate;
   - the prefab uses the master-simulation guard before adding server components;
   - the container calls `DropEverything()` before the structure is removed.
