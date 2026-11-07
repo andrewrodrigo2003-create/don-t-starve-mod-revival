@@ -182,7 +182,9 @@ local PRODUCT_COSTS =
 	iron_ingot        = { tags = { iron = 3 } },
 	gold_ingot        = { tags = { gold = 3, metal = 3 } },
 	bronze_ingot      = { tags = { iron = 1, copper = 3 } },
-	moonglass_ingot   = { tags = { moonglass = 2 } },
+	-- A receita tambem exige a presenca de moon; consome 1 unidade desse requisito
+	-- por barra para nao reutilizar o mesmo moonrocknugget em fundicoes sucessivas.
+	moonglass_ingot   = { tags = { moonglass = 2, moon = 1 } },
 	adamantium_ingot  = { tags = { steel = 3 }, names = { iron_ingot = 1 }, max_batch = 5 },
 
 	redgem            = { tags = { red = 4 } },
