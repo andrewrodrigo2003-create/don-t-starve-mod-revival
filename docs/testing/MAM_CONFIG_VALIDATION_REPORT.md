@@ -14,7 +14,7 @@
 
 ## Verificações executadas
 
-- `texlua --luaonly tests/mam_config_test.lua`: **PASS — 103 verificações**.
+- A partir de `dst-mods/metals_and_reforged/`: `texlua --luaonly tests/mam_config_test.lua` — **PASS, 103 verificações**.
 - O harness carrega diretamente o módulo `mam/config.lua`; não é uma cópia do algoritmo de validação.
 - Foram testados todos os valores publicados para cada chave, strings inválidas, números fora da lista, falha do getter, overrides válidos/inválidos, `set`, `on`, `int` e ausência das duas chaves ainda não implementadas.
 - O teste usa apenas LuaTeX local e não carrega APIs do DST.
