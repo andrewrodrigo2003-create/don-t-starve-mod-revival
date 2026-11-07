@@ -64,12 +64,16 @@
 - [ ] O livro é informativo: não substitui a forja, bancada ou estação necessária.
 - [ ] Não conceder desbloqueios, receitas gratuitas ou fabricação remota por consultar o livro.
 - [ ] Exibir alternativas e requisitos sem prometer resultado determinístico quando a mistura for ambígua.
+- [x] Auditar o craftbook atual: ele é um prototyper portátil e não pode ser reutilizado como livro informativo.
+- [x] Pesquisar APIs vanilla `book`/`simplebook`: callbacks de leitura não fornecem catálogo multi-página; a referência precisará de UI própria e somente leitura.
+- [~] Documentar arquitetura do livro e pontos em aberto das bancadas em `docs/design/METALLURGY_REFERENCE_BOOK_AND_STATIONS.md`; implementação e validação pendentes.
 - [ ] Garantir textos/localização e interface legíveis em PT-BR e inglês, seguindo a estrutura existente.
 
 ## 5. Bancadas, fabricação e progressão
 
 - [x] Existe prefab `warworkbench` e uma estação/tab de fabricação de metal no código.
 - [x] Existe migração de receitas para o craftbook com proteção para preservar ingredientes de outros mods.
+- [~] Inventário inicial encontrou `warworkbench` (prototyper ALCHEMY_ONE), `craftbook` (CRAFTSBOOK_ONE) e aba “The Forge Event”; receitas de armas ainda precisam de matriz de estação/tech e comparação com v2.9.3 antes de mover.
 - [ ] Auditar a lista completa de receitas que devem sair da máquina de ciências e ir para a bancada correta.
 - [ ] Manter a bancada de armas e criar/terminar a bancada de guerra para equipamentos metálicos, sem duplicar receitas.
 - [ ] Garantir que a progressão de tecnologia, materiais e estações continue coerente.
