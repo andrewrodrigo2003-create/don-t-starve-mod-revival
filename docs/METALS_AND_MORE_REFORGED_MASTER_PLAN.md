@@ -82,7 +82,8 @@
 
 ## 6. Armazenamento metalúrgico
 
-- [~] Primeiro contêiner dedicado implementado em código na branch `feature/metal-storage-chest`, PR #5: 25 slots e filtro baseado em `smelting.IsSmelterIngredient`; revisão, merge e testes in-game pendentes.
+- [~] Primeiro contêiner dedicado implementado em código na branch `feature/metal-storage-chest`, PR #5: 25 slots, filtro baseado em `smelting.IsSmelterIngredient`, tags `chest` + `mam_metal_storage`; draft não integrado e testes in-game pendentes.
+- [x] Harness isolado do prefab passou com LuaTeX: registro, assets, placer, tags, widget, callbacks, hit sem derramar, martelo devolvendo conteúdo e separação servidor/cliente. Não valida o motor DST nem a aceitação real de itens.
 - [ ] Criar/validar o contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
 - [ ] Definir filtros explícitos por prefab/tag; não aceitar itens arbitrários nem bloquear materiais legítimos.
 - [ ] Preservar inventário ao martelar, fechar, desconectar, salvar e carregar.
@@ -130,7 +131,7 @@
 
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
 - [x] Auditoria isolada de estados de save/load da forja: 6 cenários aprovados; sem execução do componente completo/DST.
-- [x] Há relatório estático/harness para o primeiro baú metalúrgico (PR #5).
+- [x] Há relatório estático e harness de prefab para o primeiro baú metalúrgico (PR #5); o harness passa em ambiente com stubs, mas ainda não testa o motor DST.
 - [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
 - [x] Harness isolado da decisão Auto/Always/UM passou 9 cenários; parsing dos arquivos completos e teste real no jogo continuam pendentes.
 - [ ] Executar análise sintática de todos os Lua com Lua 5.1/ambiente compatível.
@@ -147,6 +148,7 @@
 
 - [ ] Manter este plano mestre atualizado a cada etapa.
 - [ ] Manter changelog com mudanças funcionais, correções, opções e compatibilidade.
+- [x] Criar arte vetorial original para o banner e ícone do Metals and More Reforged; não reutiliza a arte legada. A conversão do ícone para KTEX ainda está pendente.
 - [ ] Entregar relatório final com o que foi restaurado, corrigido, adicionado e testado.
 - [ ] Listar limitações conhecidas e testes que ainda dependem do computador/jogo do usuário.
 - [ ] Não declarar a atualização pronta enquanto funcionalidades essenciais e testes críticos estiverem pendentes.
@@ -164,7 +166,8 @@
 ## Histórico de mudanças já integradas
 
 - PR #1 — correções de consumo de nitre/moonglass/junk dust e drops completos do lote ao martelar a forja; integrado em `main` em 2026-11-07.
-- PR #5 — primeiro baú metalúrgico com filtro da lista real de ingredientes da forja; aberto, draft, não integrado.
+- PR #5 — primeiro baú metalúrgico com filtro da lista real de ingredientes da forja e harness isolado aprovado; aberto, draft, não integrado.
+- PR #7 — fontes SVG originais para banner e ícone quadrado, exports PNG e documentação da cadeia de autoria; conversão KTEX e substituição do ícone no jogo pendentes.
 - PR #6 — correção das opções por fonte e fontes especiais no modo Rewrite; aberto, draft, não integrado.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
