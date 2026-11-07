@@ -219,9 +219,13 @@ function Smelter:ResetSmelter()
     if container ~= nil then
         container.canbeopened = true
 
-        -- Sem sobras nao ha nada a devolver; com sobras, elas voltam ao jogador.
+        -- A opcao controla tambem uma fundicao interrompida:
+        -- ligada, devolve os materiais que ainda estavam na forja;
+        -- desligada, preserva o comportamento original e destroi as sobras.
         if MAMConfig.on("mam_leftovers") then
             container:DropEverything()
+        else
+            container:DestroyContents()
         end
     end
 
