@@ -326,6 +326,30 @@ local function plan_consumption(recipe, n, items)
         end
     end
 
+    -- Algumas receitas originais aceitam caminhos alternativos no teste.
+    -- Se o caminho escolhido nao satisfaz o custo padrao, nao podemos deixar
+    -- a carga intacta: isso permitiria repetir a producao sem consumir itens.
+    local unmet = false
+    for _, need in pairs(need_names) do
+        if need > 1e-6 then
+            unmet = true
+            break
+        end
+    end
+    if not unmet then
+        for _, need in pairs(need_tags) do
+            if need > 1e-6 then
+                unmet = true
+                break
+            end
+        end
+    end
+    if recipe.consume_all_if_unmatched and unmet then
+        for i, item in ipairs(items) do
+            taken[i] = item.count
+        end
+    end
+
     local consumed = {}
     local leftovers = {}
     for i, item in ipairs(items) do
