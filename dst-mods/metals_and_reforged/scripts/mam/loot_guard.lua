@@ -79,20 +79,37 @@ local function prepare(entries)
     return out
 end
 
+-- Compartilhado com newrocks.lua para que o modo Rewrite respeite a mesma
+-- opcao de normalizacao do modo aditivo.
+M.PrepareEntries = prepare
+
 local function state(source)
     if not MAMConfig.on("mam_extra_drops") then
         return false, "master-off"
     end
-    if MAMConfig.int("mam_drops_mode", 1) ~= 1 then
-        -- Modo rewrite: a table inteira ja' foi escrita em newrocks.lua.
-        -- Aplicar os dois caminhos juntos duplicaria o minerio.
-        return false, "rewrite-mode"
-    end
 
+    local mode = MAMConfig.int("mam_drops_mode", 1)
     local value = MAMConfig.int("mam_drop_" .. source.key, 1)
     if value <= 0 then
         return false, "source-off"
     end
+    if mode == 0 then
+        return false, "disabled"
+    end
+
+    if mode == 2 then
+        -- A maioria das fontes usa SetSharedLootTable no modo Rewrite.
+        -- Algumas fontes historicas eram AddChanceLoot por entidade (arvore
+        -- de marmore/tubarao), e continuam precisando desse caminho.
+        -- Hounds: no modo Rewrite, Auto sem UM usa a tabela original; com UM,
+        -- Auto cede e Always soma nossos fragmentos sem apagar as gemas do UM.
+        local rewrite_additive = source.apply_in_rewrite
+            or (source.skip_if_um and value == 2 and M.HasUncompromising())
+        if not rewrite_additive then
+            return false, "rewrite-mode"
+        end
+    end
+
     if source.skip_if_um and value == 1 and M.HasUncompromising() then
         return false, "um-present"
     end
@@ -146,6 +163,7 @@ function M.Declare(prefabs, key, entries, opts)
         key = key,
         entries = prepare(entries),
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
+        apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
     }
 
     local record = M.declared[key]
