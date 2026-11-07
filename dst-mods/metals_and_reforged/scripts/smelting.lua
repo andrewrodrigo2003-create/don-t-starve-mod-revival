@@ -345,8 +345,14 @@ local function plan_consumption(recipe, n, items)
         end
     end
     if recipe.consume_all_if_unmatched and unmet then
+        -- O fallback de nitre existe por causa dos fragmentos de gema.
+        -- Consome somente os itens que fornecem a tag gem; outros itens que
+        -- eventualmente estejam no container permanecem intactos.
         for i, item in ipairs(items) do
-            taken[i] = item.count
+            local data = smelteringredients[item.prefab]
+            if data ~= nil and (data.tags.gem or 0) > 0 then
+                taken[i] = item.count
+            end
         end
     end
 
