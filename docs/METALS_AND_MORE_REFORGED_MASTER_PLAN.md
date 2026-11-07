@@ -35,6 +35,8 @@
 - [x] Há implementação de drops extras para rochas da superfície/lua, formações de cavernas, criaturas das ruínas, hounds, árvores/arbustos de mármore e tubarão.
 - [x] Existe configuração geral e configuração por fonte; o modo aditivo é o padrão para preservar drops de outros mods.
 - [~] PR #6 corrige o modo Rewrite para respeitar as opções individuais, restaurar as fontes de árvore de mármore/tubarão e preservar Auto/Always dos hounds com UM; revisão e testes in-game pendentes.
+- [x] Comparação estática confirmou que as 18 tabelas originais mantêm todos os nomes e pares item/chance.
+- [x] Harness LuaTeX isolado da lógica de decisão passou 9 cenários; não executa o módulo completo nem o DST.
 - [x] Existe opção para normalizar rolls repetidos, desligada por padrão para preservar as probabilidades originais.
 - [ ] Auditar todas as probabilidades e quantidades contra o v2.9.3, incluindo rolagens repetidas e fases de crescimento.
 - [ ] Confirmar que cada fonte é coerente com o material e com o risco da criatura/bioma.
@@ -125,6 +127,7 @@
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
 - [x] Há relatório estático/harness para o primeiro baú metalúrgico (PR #5).
 - [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
+- [x] Harness isolado da decisão Auto/Always/UM passou 9 cenários; parsing dos arquivos completos e teste real no jogo continuam pendentes.
 - [ ] Executar análise sintática de todos os Lua com Lua 5.1/ambiente compatível.
 - [ ] Testar carregamento dos módulos e referências a globals/APIs do DST com stubs e/ou scripts do jogo.
 - [ ] Testar todas as receitas, estações, itens, estruturas, criaturas e materiais.
