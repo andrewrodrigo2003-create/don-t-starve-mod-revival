@@ -2,7 +2,7 @@
 
 **Data:** 2026-11-07  
 **Branch:** `fix/metallurgy-config-validation`  
-**Escopo:** somente `scripts/mam/config.lua` e seu harness isolado.
+**Escopo de código:** `scripts/mam/config.lua` e o harness isolado em `dst-mods/metals_and_reforged/tests/`. Este relatório registra a verificação.
 
 ## Alterações
 
