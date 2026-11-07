@@ -173,7 +173,10 @@ local PRODUCT_COSTS =
 	iron_ore          = { tags = { iron = 1 },                       max_batch = 1 },
 	goldnugget        = { tags = { gold = 1 },                        max_batch = 1 },
 	junk_dust         = { tags = { metal = 1 },                      max_batch = 1 },
-	nitre             = { tags = { mineral = 1 } },
+	-- A receita original tambem aceita fragmentos de gema quando o total de gem < 1.
+	-- Nesse caminho alternativo, o lote consome toda a carga elegivel; sem isso,
+	-- nenhum custo mineral era debitado e a forja podia gerar nitre repetidamente.
+	nitre             = { tags = { mineral = 1 }, consume_all_if_unmatched = true },
 
 	copper_ingot      = { tags = { copper = 3 } },
 	iron_ingot        = { tags = { iron = 3 } },
@@ -199,6 +202,7 @@ for k,v in pairs(foods) do
 	local cost = PRODUCT_COSTS[k]
 	if cost ~= nil then
 		v.cost = { tags = cost.tags, names = cost.names }
+		v.consume_all_if_unmatched = cost.consume_all_if_unmatched == true
 		v.max_batch = cost.max_batch
 	end
 end
