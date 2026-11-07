@@ -326,6 +326,36 @@ local function plan_consumption(recipe, n, items)
         end
     end
 
+    -- Algumas receitas originais aceitam caminhos alternativos no teste.
+    -- Se o caminho escolhido nao satisfaz o custo padrao, nao podemos deixar
+    -- a carga intacta: isso permitiria repetir a producao sem consumir itens.
+    local unmet = false
+    for _, need in pairs(need_names) do
+        if need > 1e-6 then
+            unmet = true
+            break
+        end
+    end
+    if not unmet then
+        for _, need in pairs(need_tags) do
+            if need > 1e-6 then
+                unmet = true
+                break
+            end
+        end
+    end
+    if recipe.consume_all_if_unmatched and unmet then
+        -- O fallback de nitre existe por causa dos fragmentos de gema.
+        -- Consome somente os itens que fornecem a tag gem; outros itens que
+        -- eventualmente estejam no container permanecem intactos.
+        for i, item in ipairs(items) do
+            local data = smelteringredients[item.prefab]
+            if data ~= nil and (data.tags.gem or 0) > 0 then
+                taken[i] = item.count
+            end
+        end
+    end
+
     local consumed = {}
     local leftovers = {}
     for i, item in ipairs(items) do

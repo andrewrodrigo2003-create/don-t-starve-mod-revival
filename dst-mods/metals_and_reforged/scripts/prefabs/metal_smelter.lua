@@ -17,16 +17,27 @@ local function onhammered(inst, worker)
     inst.components.lootdropper:DropLoot()
 
 	if inst.components.smelter.canharvest and inst.components.smelter.product then
-        -- Entrega o lote inteiro, nao uma unidade sola.
+        -- Entrega o lote inteiro, dividindo em pilhas quando necessario.
         local product = inst.components.smelter.product
-        local batch = inst.components.smelter.batch or 1
-        local loot = SpawnPrefab(product)
-        if loot ~= nil then
+        local remaining = inst.components.smelter.batch or 1
+        while remaining > 0 do
+            local loot = SpawnPrefab(product)
+            if loot == nil then
+                print("[Metals and More] Nao foi possivel gerar produto ao destruir a forja: " .. tostring(product))
+                break
+            end
+
+            local amount = 1
             if loot.components.stackable ~= nil then
                 local maxsize = loot.components.stackable.maxsize or 20
-                loot.components.stackable:SetStackSize(math.min(batch, maxsize))
+                amount = math.min(remaining, maxsize)
+                if amount > 1 then
+                    loot.components.stackable:SetStackSize(amount)
+                end
             end
+
             inst.components.lootdropper:FlingItem(loot)
+            remaining = remaining - amount
         end
 	end
 

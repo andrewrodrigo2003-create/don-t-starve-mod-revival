@@ -172,14 +172,19 @@ local PRODUCT_COSTS =
 	copper_ore        = { tags = { copper = 1 },                     max_batch = 1 },
 	iron_ore          = { tags = { iron = 1 },                       max_batch = 1 },
 	goldnugget        = { tags = { gold = 1 },                        max_batch = 1 },
-	junk_dust         = { tags = { metal = 1 },                      max_batch = 1 },
-	nitre             = { tags = { mineral = 1 } },
+	junk_dust         = { tags = { metal = 0.5 },                    max_batch = 1 },
+	-- A receita original tambem aceita fragmentos de gema quando o total de gem < 1.
+	-- Nesse caminho alternativo, o lote consome toda a carga elegivel; sem isso,
+	-- nenhum custo mineral era debitado e a forja podia gerar nitre repetidamente.
+	nitre             = { tags = { mineral = 1 }, consume_all_if_unmatched = true },
 
 	copper_ingot      = { tags = { copper = 3 } },
 	iron_ingot        = { tags = { iron = 3 } },
 	gold_ingot        = { tags = { gold = 3, metal = 3 } },
 	bronze_ingot      = { tags = { iron = 1, copper = 3 } },
-	moonglass_ingot   = { tags = { moonglass = 2 } },
+	-- A receita tambem exige a presenca de moon; consome 1 unidade desse requisito
+	-- por barra para nao reutilizar o mesmo moonrocknugget em fundicoes sucessivas.
+	moonglass_ingot   = { tags = { moonglass = 2, moon = 1 } },
 	adamantium_ingot  = { tags = { steel = 3 }, names = { iron_ingot = 1 }, max_batch = 5 },
 
 	redgem            = { tags = { red = 4 } },
@@ -199,6 +204,7 @@ for k,v in pairs(foods) do
 	local cost = PRODUCT_COSTS[k]
 	if cost ~= nil then
 		v.cost = { tags = cost.tags, names = cost.names }
+		v.consume_all_if_unmatched = cost.consume_all_if_unmatched == true
 		v.max_batch = cost.max_batch
 	end
 end
