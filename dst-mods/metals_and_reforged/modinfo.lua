@@ -850,4 +850,15 @@ configuration_options = {
         },
         default = 1,
 	},
+	{
+        name = "mam_metalschest",
+        label = "Metal storage chest",
+        hover = "Adds a 25-slot chest that accepts only materials registered as ingredients in the metal smelter. The filter follows the smelting ingredient table; it does not pull items from nearby containers.",
+        options =
+        {
+            {description = "Off", data = 0},
+            {description = "On", data = 1},
+        },
+        default = 1,
+	},
 }
