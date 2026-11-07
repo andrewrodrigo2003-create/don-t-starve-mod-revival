@@ -107,17 +107,18 @@
 - [ ] Integrar consulta com fabricação somente se for possível reservar/consumir itens atomicamente no servidor; sem retirada fantasma.
 - [ ] Adicionar opções para contêiner, consulta e integração com estações, todas desligáveis e com defaults seguros.
 
-**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. Os defaults `mam_storage_query` e `mam_station_storage` aparecem em `mam/config.lua`, mas ainda não são consumidos por código; não expor essas opções como se funcionassem.
+**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. As chaves internas `mam_storage_query` e `mam_station_storage` foram removidas em PR #8 até que a consulta/integração exista; não expor essas opções como se funcionassem.
 
 ## 8. Configurações
 
 - [x] Existe módulo central `mam/config.lua` e opções para lote, limite, tempo, sobras, previsão, overrides de receitas e drops.
-- [ ] Auditar todas as chaves para garantir que cada opção exposta esteja conectada ao comportamento.
+- [ ] Auditar todos os consumidores de cada opção exposta; a validação de valores do módulo central foi concluída em PR #8, mas a auditoria de uso funcional ainda está em aberto.
 - [ ] Remover ou não expor opções sem implementação; nunca deixar controles placebo.
 - [~] Opção `mam_metalschest` adicionada ao `modinfo.lua` no PR #5 (default on); teste no jogo pendente.
 - [ ] Adicionar configurações de armazenamento/consulta somente quando os recursos estiverem implementados.
 - [ ] Garantir que defaults preservem a experiência original quando a opção estiver desligada.
-- [ ] Validar tipos, limites, valores ausentes, sincronização servidor-cliente e mensagens de configuração.
+- [x] Validar no módulo central os tipos, enums permitidos, limites e fallback para valores ausentes/inválidos; harness direto com 103 verificações em PR #8.
+- [~] Validar transmissão real das configurações entre servidor e cliente e mensagens de configuração; overrides foram testados isoladamente, mas host/cliente real continua pendente.
 - [ ] Agrupar opções por tema, com explicações claras e consistentes em PT-BR/inglês.
 
 ## 9. Compatibilidade com Uncompromising Mode Beta
@@ -180,6 +181,7 @@
 - PR #5 — primeiro baú metalúrgico com filtro da lista real de ingredientes da forja e harness isolado aprovado; aberto, draft, não integrado.
 - PR #7 — fontes SVG originais para banner e ícone quadrado, exports PNG e documentação da cadeia de autoria; conversão KTEX e substituição do ícone no jogo pendentes.
 - PR #6 — correção das opções por fonte e fontes especiais no modo Rewrite; aberto, draft, não integrado.
+- PR #8 — validação dos enums de configuração no getter, overrides sincronizados e setter; remoção das chaves internas ainda não implementadas; harness LuaTeX direto com 103 verificações. Draft, não integrado.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
 
