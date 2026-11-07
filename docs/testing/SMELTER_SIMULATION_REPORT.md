@@ -19,10 +19,11 @@ No files belonging to other mods were changed.
 
 ### Direct Lua execution of the actual recipe module
 
-The branch version of `smelting_products.lua` was copied without logic changes into a local test environment and loaded with LuaTeX (`texlua --luaonly`). The module loaded successfully and 8 assertions passed, covering:
-- `junk_dust` accepts a 0.5 metal input and now declares a matching 0.5 cost with a one-output cap.
-- Nitre still accepts the gem-fragment fallback and carries the fallback-consumption flag.
-- Moonglass ingot still accepts the original moon + moonglass threshold and declares both consumed costs.
+The branch version of `smelting_products.lua` was copied without logic changes into a local test environment and loaded with LuaTeX (`texlua --luaonly`). The module loaded successfully. A recipe matrix executed the actual recipe test functions and checked minimum-input cost declarations for all 18 recipes:
+- Each recipe's original `test` predicate accepted its minimum valid tag/name input.
+- Each recipe's declared cost matched the minimum threshold for all required tags and named ingredients.
+- Nitre's gem-fragment fallback flag was present.
+- The `junk_dust` regression case confirmed that 0.5 metal is accepted and 0.5 is consumed per operation, with the original one-output cap.
 
 This directly executes the recipe module, but does not load the complete mod or provide DST engine APIs.
 
@@ -36,7 +37,7 @@ A separate Lua behavioral model was run with the locally available LuaTeX interp
 | Bronze: 6 copper + 2 iron ore | PASS — 2 ingots, all required inputs consumed |
 | Moonglass: 6 glass + 2 moonrock nuggets | PASS — 2 ingots, 4 glass + 2 moonrock consumed, 2 glass left |
 | Nitre gem-fragment fallback | PASS — gem fragments consumed; unrelated twigs preserved |
-| Junk dust: one copper/iron dust with 0.5 metal | PASS in direct recipe assertions — recipe accepts input and declared cost matches 0.5 |
+| Junk dust: one copper/iron dust with 0.5 metal | PASS — direct recipe execution confirms accepted input and matching cost |
 | Adamantium named prerequisite | PASS — steel input and iron ingot prerequisite both consumed for 2 outputs |
 | Hammer ready furnace: stackable output batches 1, 20, 21, 40, 45 | PASS — entire batch dropped, split into stacks of at most 20 |
 | Hammer ready furnace: non-stackable batch of 3 | PASS in the behavioral model — 3 individual drops |
