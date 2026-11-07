@@ -1,0 +1,6 @@
+<Atlas>
+	<Texture filename="theforge_tab.tex" />
+	<Elements>
+		<Element name="theforge_tab.tex" u1="0.00390625" u2="0.66796875" v1="0.33203125" v2="0.99609375" />
+	</Elements>
+</Atlas>
