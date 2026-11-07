@@ -29,9 +29,10 @@ Pull request: pending creation
 - Static checks confirmed marble-tree and shark declarations explicitly opt into Rewrite-mode additive handling.
 - Compared all 18 vanilla table definitions in `newrocks.lua` before and after the change: all 18 names and every `{ prefab, chance }` entry match exactly; no probability or entry was changed.
 - Reviewed the hound decision paths against Auto/Always and UM-present/absent cases.
+- Ran a LuaTeX harness containing an isolated copy of the drop-state decision logic: 9 cases passed (additive/rewrite, Auto/Always, UM present/absent, source disabled, and master switch off). This is a decision-logic harness, not execution of the full `loot_guard.lua` module or DST.
 
 ## Not tested
 
-- Lua parsing of the complete mod file in the DST Lua environment.
+- Lua parsing of the complete changed source files in the DST Lua environment; the decision harness does not parse or load the full mod modules.
 - Live loot generation, worldgen, save/load, multiplayer, or actual Uncompromising Mode Beta integration.
 - The user's installed UM Beta version. These remain required in-game checks.
