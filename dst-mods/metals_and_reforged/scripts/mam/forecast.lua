@@ -83,7 +83,8 @@ local function parse_net_plan(inst)
     if inst.mam_plan == nil then
         return nil
     end
-    local raw = inst.mam_plan()
+    -- net_string e uma netvar: o valor e lido por :value(), nao como funcao.
+    local raw = inst.mam_plan:value()
     if type(raw) ~= "string" or raw == "" then
         return nil
     end
