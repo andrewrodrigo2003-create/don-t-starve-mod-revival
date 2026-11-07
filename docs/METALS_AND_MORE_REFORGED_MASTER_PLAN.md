@@ -41,7 +41,7 @@
 
 **Já corrigido na fundição:** fallback de nitre com fragmentos de gemas, consumo do requisito lunar de moonglass, custo mínimo de junk dust e entrega do lote completo ao martelar uma forja pronta. PR #1 foi integrado à main.
 
-## 2. Mineração e fontes de materiais
+## 3. Mineração e fontes de materiais
 
 - [x] Há implementação de drops extras para rochas da superfície/lua, formações de cavernas, criaturas das ruínas, hounds, árvores/arbustos de mármore e tubarão.
 - [x] Existe configuração geral e configuração por fonte; o modo aditivo é o padrão para preservar drops de outros mods.
@@ -56,7 +56,7 @@
 - [ ] Confirmar o comportamento do modo Rewrite, deixando claro que ele restaura a substituição de loot tables do original.
 - [ ] Testar cada fonte com as opções geral e individuais desligadas/ligadas.
 
-## 3. Forja em lotes e previsão
+## 4. Forja em lotes e previsão
 
 - [x] Existe cálculo de lote, limite por operação, crescimento de tempo, previsão de produto/quantidade e comunicação do plano do servidor via netvar.
 - [x] A previsão lê a netvar por `:value()`, não como função.
@@ -69,7 +69,7 @@
 - [ ] Verificar previsão idêntica ao resultado autoritativo do servidor em multiplayer.
 - [ ] Corrigir e validar a configuração de sobras em todas as rotas de interrupção e colheita.
 
-## 4. Livro metalúrgico
+## 5. Livro metalúrgico
 
 - [ ] Criar/terminar um livro de consulta de metalurgia com receitas, materiais, requisitos, outputs, tempos e etapas.
 - [ ] O livro é informativo: não substitui a forja, bancada ou estação necessária.
@@ -80,7 +80,7 @@
 - [~] Documentar arquitetura do livro e pontos em aberto das bancadas em `docs/design/METALLURGY_REFERENCE_BOOK_AND_STATIONS.md`; implementação e validação pendentes.
 - [ ] Garantir textos/localização e interface legíveis em PT-BR e inglês, seguindo a estrutura existente.
 
-## 5. Bancadas, fabricação e progressão
+## 6. Bancadas, fabricação e progressão
 
 - [x] Existe prefab `warworkbench` e uma estação/tab de fabricação de metal no código.
 - [x] Existe migração de receitas para o craftbook com proteção para preservar ingredientes de outros mods.
@@ -91,7 +91,7 @@
 - [ ] Confirmar custos e requisitos originais das receitas e o comportamento com receitas removidas/alteradas por outros mods.
 - [ ] Testar construção, colocação, funcionamento, animações, destruição e drops das estações.
 
-## 6. Armazenamento metalúrgico
+## 7. Armazenamento metalúrgico
 
 - [~] Primeiro contêiner dedicado implementado em código na branch `feature/metal-storage-chest`, PR #5: 25 slots, filtro baseado em `smelting.IsSmelterIngredient`, tags `chest` + `mam_metal_storage`; draft não integrado e testes in-game pendentes.
 - [x] Harness isolado do prefab passou com LuaTeX: registro, assets, placer, tags, widget, callbacks, hit sem derramar, martelo devolvendo conteúdo e separação servidor/cliente. Não valida o motor DST nem a aceitação real de itens.
@@ -109,7 +109,7 @@
 
 **Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. Os defaults `mam_storage_query` e `mam_station_storage` aparecem em `mam/config.lua`, mas ainda não são consumidos por código; não expor essas opções como se funcionassem.
 
-## 7. Configurações
+## 8. Configurações
 
 - [x] Existe módulo central `mam/config.lua` e opções para lote, limite, tempo, sobras, previsão, overrides de receitas e drops.
 - [ ] Auditar todas as chaves para garantir que cada opção exposta esteja conectada ao comportamento.
@@ -120,7 +120,7 @@
 - [ ] Validar tipos, limites, valores ausentes, sincronização servidor-cliente e mensagens de configuração.
 - [ ] Agrupar opções por tema, com explicações claras e consistentes em PT-BR/inglês.
 
-## 8. Compatibilidade com Uncompromising Mode Beta
+## 9. Compatibilidade com Uncompromising Mode Beta
 
 - [x] Existe proteção de receitas que evita substituir balanceamento de outros mods no modo seguro.
 - [x] Drops adicionais têm modo aditivo como padrão; hounds têm opção Auto para ceder ao UM.
@@ -131,14 +131,14 @@
 - [ ] Investigar separadamente a falha de colisão relatada com Woodie; não atribuir causa ao Metals and More sem reprodução.
 - [ ] Registrar incompatibilidades confirmadas e soluções implementadas do lado do Metals and More.
 
-## 9. Pesquisa e referências
+## 10. Pesquisa e referências
 
 - [ ] Pesquisar mods de DST e outros jogos com boas soluções de mineração, metalurgia, fabricação, forjas, armazenamento, transporte e interfaces.
 - [ ] Registrar fonte, versão, mecânica observada e o que pode ser adaptado.
 - [ ] Usar referências como inspiração técnica, sem copiar código/assets protegidos nem alterar a identidade do Metals and More.
 - [ ] Comparar soluções com o pedido original e o equilíbrio de Don't Starve Together antes de implementar.
 
-## 10. Testes e qualidade
+## 11. Testes e qualidade
 
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
 - [x] Auditoria isolada de estados de save/load da forja: 6 cenários aprovados; sem execução do componente completo/DST.
@@ -155,7 +155,7 @@
 - [ ] Separar resultados de testes unitários, harness, estáticos e testes reais dentro do jogo.
 - [ ] Registrar logs, reprodução, correção, regressão e limitações em relatórios versionados.
 
-## 11. Entrega e documentação
+## 12. Entrega e documentação
 
 - [ ] Manter este plano mestre atualizado a cada etapa.
 - [ ] Manter changelog com mudanças funcionais, correções, opções e compatibilidade.
