@@ -1,3 +1,5 @@
+-- Disponibiliza _G para os arquivos carregados via modimport (o ambiente do mod so tem GLOBAL).
+env._G = GLOBAL
 STRINGS = GLOBAL.STRINGS
 RECIPETABS = GLOBAL.RECIPETABS
 Recipe = GLOBAL.Recipe
