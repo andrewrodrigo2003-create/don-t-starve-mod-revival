@@ -88,6 +88,7 @@ PrefabFiles = {
 	"tfwp_hats",
 	"marble_chest",
 	"cold_safe",
+	"metal_storage_chest",
 	"marbleseed",
 	"scepter",
 	"sharkscale",
@@ -218,6 +219,15 @@ AddRecipe2("marble_chest", {Ingredient("marble", 5), Ingredient("gold_ingot", 2,
 
 AddRecipe2("cold_safe", {Ingredient("gears", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("bluegem", 1)}, TECH.ALCHEMY_ONE, {placer = "cold_safe_placer", min_spacing=0.5, image="icebox_victorian.tex"}, {"CRAFTING_STATION", "COOKING"})
 
+-- Armazenamento dedicado aos ingredientes aceitos pela metalurgia.
+if MAMConfig.on("mam_metalschest") then
+    AddRecipe2("metal_storage_chest", {
+        Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"),
+        Ingredient("cutstone", 2),
+        Ingredient("gears", 1),
+    }, TECH.ALCHEMY_ONE, { placer = "metal_storage_chest_placer", min_spacing = 0.5, image = "icebox_victorian.tex" }, { "CRAFTING_STATION", "CONTAINERS" })
+end
+
 AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
 
 AddRecipe2("tfwp_luxury_nox_helm_hat", {Ingredient("footballhat", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("walrus_tusk", 1)}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages.xml", image="lavaarena_crowndamagerhat.tex"}, {"CRAFTING_STATION"})
@@ -281,6 +291,8 @@ STRINGS.CHARACTERS.GENERIC.DESCRIBE.MARBLE_CHEST = "It's quite roomy in there."
 
 STRINGS.RECIPE_DESC.COLD_SAFE = "Safe and secure sustenance."
 STRINGS.NAMES.COLD_SAFE = "Cold Storage"
+STRINGS.NAMES.METAL_STORAGE_CHEST = "Metal Storage Chest"
+STRINGS.RECIPE_DESC.METAL_STORAGE_CHEST = "A reinforced chest for ores, dusts, ingots and smelting materials."
 STRINGS.CHARACTERS.GENERIC.DESCRIBE.COLD_SAFE = "Nothing as safe as a safe."
 
 STRINGS.NAMES.CRAFTBOOK = "Craftbook"
@@ -344,6 +356,7 @@ STRINGS.NAMES.BLACKSMITH_EDGEOLD = "Blacksmith's Edge"
 STRINGS.CHARACTERS.GENERIC.DESCRIBE.BLACKSMITH_EDGEOLD = "Now that's a work of art!"
 
 local containers = require "containers"
+local MAMSmelting = require "smelting"
 
 local params = {}
 
@@ -385,6 +398,13 @@ end
 
 params.marble_chest = makeChest()
 params.cold_safe = makeChest()
+params.metal_storage_chest = makeChest()
+
+-- O filtro usa a mesma tabela de ingredientes da forja: novos materiais
+-- aceitos pela metalurgia entram automaticamente, sem aceitar itens alheios.
+function params.metal_storage_chest.itemtestfn(container, item, slot)
+    return item ~= nil and MAMSmelting.IsSmelterIngredient(item.prefab)
+end
 
 function params.cold_safe.itemtestfn(container, item, slot)
     if item:HasTag("icebox_valid") then
