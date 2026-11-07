@@ -8,7 +8,8 @@
 -- Nada aqui muda o comportamento de containers que nao definem textfn: e um
 -- campo novo, opcional, lido so quando existe.
 
-local GLOBAL = _G.GLOBAL or _G
+-- Arquivo carregado via modimport: o ambiente do mod expoe GLOBAL, mas nao _G.
+local GLOBAL = GLOBAL
 local require = GLOBAL.require
 
 local MAMLog = require("mam/log")
