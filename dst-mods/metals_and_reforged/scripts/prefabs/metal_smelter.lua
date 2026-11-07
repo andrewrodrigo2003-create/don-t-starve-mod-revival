@@ -12,7 +12,6 @@ local prefabs =
     "collapse_small",
 }
 
-local net_string = GLOBAL.net_string
 
 local function onhammered(inst, worker)
     inst.components.lootdropper:DropLoot()
