@@ -15,7 +15,8 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [ ] Validar forja, save/load, interrupções, multiplayer e previsão servidor/cliente
   - [ ] Concluir livro metalúrgico de consulta
   - [ ] Auditar progressão, bancada de armas e bancada de guerra
-  - [ ] Criar armazenamento metalúrgico próprio, filtros e integração segura com containers externos
+  - [~] Baú metalúrgico de 25 espaços com filtro de ingredientes da forja (PR #5 aberto; testes pendentes)
+  - [ ] Consulta de depósitos próximos, retirada segura e integração com containers externos
   - [ ] Consulta opcional de depósitos próximos, com distância/permissões/autoridade do servidor
   - [ ] Completar configurações sem opções placebo
   - [ ] Compatibilidade real com Uncompromising Mode Beta e conjunto de mods do mundo de teste
