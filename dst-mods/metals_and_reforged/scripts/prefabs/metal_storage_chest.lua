@@ -61,6 +61,7 @@ local function fn()
     inst.MiniMapEntity:SetIcon("icebox_victorian.tex")
 
     inst:AddTag("structure")
+    inst:AddTag("chest")
     inst:AddTag("mam_metal_storage")
 
     inst.AnimState:SetBank("quagmire_safe")
