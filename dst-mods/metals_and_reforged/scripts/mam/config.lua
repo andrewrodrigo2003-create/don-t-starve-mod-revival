@@ -36,10 +36,32 @@ local DEFAULTS = {
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
     mam_drop_shark       = 1,  -- sharkscale
 
-    -- Armazenamento (Etapas 3/4)
+    -- Armazenamento (Etapa 3)
     mam_metalschest      = 1,
-    mam_storage_query    = 1,
-    mam_station_storage  = 1,
+}
+
+-- Apenas valores que existem nas configuration_options do modinfo.lua.
+-- A validacao tambem protege os overrides sincronizados pelo servidor: valores
+-- ausentes, antigos ou malformados voltam ao default seguro, sem alterar os
+-- defaults ou o balanceamento de uma configuracao valida.
+local ALLOWED = {
+    mam_batch             = { [0] = true, [1] = true },
+    mam_batch_time        = { [0] = true, [25] = true, [50] = true, [75] = true },
+    mam_forecast          = { [0] = true, [1] = true, [2] = true },
+    mam_leftovers         = { [0] = true, [1] = true },
+    mam_batch_cap         = { [4] = true, [10] = true, [20] = true },
+    mam_recipe_overrides  = { [0] = true, [1] = true, [2] = true },
+    mam_extra_drops       = { [0] = true, [1] = true },
+    mam_drops_mode        = { [1] = true, [2] = true },
+    mam_drops_normalise   = { [0] = true, [1] = true },
+    mam_drop_boulders     = { [0] = true, [1] = true },
+    mam_drop_stalagmites  = { [0] = true, [1] = true },
+    mam_drop_chess        = { [0] = true, [1] = true },
+    mam_drop_hounds       = { [0] = true, [1] = true, [2] = true },
+    mam_drop_marbletree   = { [0] = true, [1] = true },
+    mam_drop_marbleshrub  = { [0] = true, [1] = true },
+    mam_drop_shark        = { [0] = true, [1] = true },
+    mam_metalschest       = { [0] = true, [1] = true },
 }
 
 local values = {}
@@ -53,6 +75,11 @@ local function read(key, getter)
     return v
 end
 
+local function is_allowed(key, value)
+    local allowed = ALLOWED[key]
+    return allowed ~= nil and allowed[value] == true
+end
+
 --- Chamado pelo modmain logo no inicio. `getter` e GetModConfigData.
 --- `overrides` permite que o servidor publique seus valores para o cliente.
 function MAMConfig.Init(getter, overrides)
@@ -62,15 +89,12 @@ function MAMConfig.Init(getter, overrides)
 
     for key, default in pairs(DEFAULTS) do
         local v = read(key, getter)
-        if v == nil then
-            v = default
-        end
-        values[key] = v
+        values[key] = is_allowed(key, v) and v or default
     end
 
     if type(overrides) == "table" then
         for key, v in pairs(overrides) do
-            if DEFAULTS[key] ~= nil and v ~= nil then
+            if DEFAULTS[key] ~= nil and is_allowed(key, v) then
                 values[key] = v
             end
         end
@@ -91,7 +115,7 @@ function MAMConfig.get(key, fallback)
 end
 
 function MAMConfig.set(key, value)
-    if DEFAULTS[key] ~= nil and value ~= nil then
+    if DEFAULTS[key] ~= nil and is_allowed(key, value) then
         values[key] = value
     end
 end
