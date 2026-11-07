@@ -34,6 +34,7 @@
 
 - [x] Há implementação de drops extras para rochas da superfície/lua, formações de cavernas, criaturas das ruínas, hounds, árvores/arbustos de mármore e tubarão.
 - [x] Existe configuração geral e configuração por fonte; o modo aditivo é o padrão para preservar drops de outros mods.
+- [~] PR #6 corrige o modo Rewrite para respeitar as opções individuais, restaurar as fontes de árvore de mármore/tubarão e preservar Auto/Always dos hounds com UM; revisão e testes in-game pendentes.
 - [x] Existe opção para normalizar rolls repetidos, desligada por padrão para preservar as probabilidades originais.
 - [ ] Auditar todas as probabilidades e quantidades contra o v2.9.3, incluindo rolagens repetidas e fases de crescimento.
 - [ ] Confirmar que cada fonte é coerente com o material e com o risco da criatura/bioma.
@@ -122,6 +123,8 @@
 ## 10. Testes e qualidade
 
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
+- [x] Há relatório estático/harness para o primeiro baú metalúrgico (PR #5).
+- [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
 - [ ] Executar análise sintática de todos os Lua com Lua 5.1/ambiente compatível.
 - [ ] Testar carregamento dos módulos e referências a globals/APIs do DST com stubs e/ou scripts do jogo.
 - [ ] Testar todas as receitas, estações, itens, estruturas, criaturas e materiais.
@@ -153,6 +156,8 @@
 ## Histórico de mudanças já integradas
 
 - PR #1 — correções de consumo de nitre/moonglass/junk dust e drops completos do lote ao martelar a forja; integrado em `main` em 2026-11-07.
+- PR #5 — primeiro baú metalúrgico com filtro da lista real de ingredientes da forja; aberto, draft, não integrado.
+- PR #6 — correção das opções por fonte e fontes especiais no modo Rewrite; aberto, draft, não integrado.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
 
