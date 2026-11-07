@@ -2,18 +2,19 @@
 
 ## Original cover artwork draft
 
-- Source: `dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_cover.svg`
+- Workshop/banner source: `dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_cover.svg`
+- Square icon source: `dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.svg`
 - Created specifically for Metals and More Reforged.
 - The composition is an original vector illustration: forge, anvil, hammer, ore and refined ingots.
 - It does not reuse the previous `modicon.tex` image or trace the original creator's cover.
 - No Don't Starve character artwork, logos, textures, or extracted game assets are included in this SVG.
-- A 1200×675 PNG export is supplied separately as the workshop/banner image; the SVG remains the editable source.
+- Separate PNG exports are supplied for use/review: a 1200×675 workshop banner and a 512×512 square icon. The SVG files remain the editable sources.
 
 ## Important technical status
 
-This SVG is a source artwork for a workshop/banner cover. It is **not yet the in-game mod icon**. The current `modinfo.lua` points to `modicon.xml` and `modicon.tex`; DST expects Klei texture assets for that path. Do not point `icon` at this SVG or rename it to `.tex`.
+The banner and square-icon SVGs are original source artwork. The 512×512 PNG is a square-icon preview/export, but it is **not yet the in-game mod icon**. The current `modinfo.lua` points to `modicon.xml` and `modicon.tex`; DST expects Klei texture assets for that path. Do not point `icon` at this SVG or rename it to `.tex`.
 
-For the in-game icon, create a separate square icon composition (for example, 512×512 PNG), then convert it to KTEX. The open-source [ktools project](https://github.com/nsimplex/ktools) documents its `ktech` utility for bidirectional PNG/KTEX conversion. Example after installing a verified build:
+For the in-game icon, convert the square 512×512 PNG export to KTEX. The open-source [ktools project](https://github.com/nsimplex/ktools) documents its `ktech` utility for bidirectional PNG/KTEX conversion. Example after installing a verified build:
 
 ```powershell
 ktech .\modicon.png .\modicon.tex
