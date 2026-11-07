@@ -5,15 +5,21 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
 - [x] Better Lucy — tradução PT-BR, Woodie responde, falas mais picantes, correções (entregue: dst-mods/better_lucy_ptbr)
 - [x] Don't Starve: Dehydrated — usuário informou que recebeu atualização oficial e está ativo; NÃO mexer
 - [ ] Metals and More – Reworked & Fixed (dst-mods/metals_and_reforged) — EM ANDAMENTO
-  - [x] Crash "GLOBAL is not declared" em scripts/mam (corrigido, v2)
-  - [x] Crash na previsão da forja (modded_ui_forecast.lua) (corrigido, v3)
-  - [x] Proteção no início do mod contra esse tipo de erro
-  - [ ] Aguardando teste do usuário dentro do jogo (v3)
-  - [ ] Restauração das mecânicas originais de metalurgia
-  - [ ] Forja em lotes + previsão de resultado
-  - [ ] Livro de receitas metalúrgicas
-  - [ ] Bancada de guerra (tirar equipamentos de metal da máquina de ciências)
-  - [ ] Drops extras de minérios (pedras e criaturas, com opção de desligar)
-  - [ ] Contêiner próprio de armazenamento metalúrgico + consulta centralizada
-  - [ ] Compatibilidade com Uncompromising Mode Beta (sem alterar o UM)
-  - [ ] Configurações do mod mais completas
+  - Nome provisório da atualização: **Metals and More Reforged**
+  - Plano mestre completo: [docs/METALS_AND_MORE_REFORGED_MASTER_PLAN.md](docs/METALS_AND_MORE_REFORGED_MASTER_PLAN.md)
+  - [x] Correções de inicialização/netvars e proteção de receitas contra sobrescrita de outros mods
+  - [x] Forja em lotes, previsão e controles básicos de lote/tempo/sobras (implementação; validação in-game pendente)
+  - [x] Livro/craftbook e bancada de guerra existem no código (auditoria e validação pendentes)
+  - [x] Drops adicionais configuráveis em modo aditivo (auditoria por fonte e validação pendentes)
+  - [ ] Restauração e auditoria integral de todas as mecânicas metalúrgicas originais
+  - [ ] Validar forja, save/load, interrupções, multiplayer e previsão servidor/cliente
+  - [ ] Concluir livro metalúrgico de consulta
+  - [ ] Auditar progressão, bancada de armas e bancada de guerra
+  - [ ] Criar armazenamento metalúrgico próprio, filtros e integração segura com containers externos
+  - [ ] Consulta opcional de depósitos próximos, com distância/permissões/autoridade do servidor
+  - [ ] Completar configurações sem opções placebo
+  - [ ] Compatibilidade real com Uncompromising Mode Beta e conjunto de mods do mundo de teste
+  - [ ] Pesquisa de referências e documentação de mudanças
+  - [ ] Testes completos e relatório final com limitações
+
+Não alterar Hydrated/Dehydrated, Better Lucy, Uncompromising Mode ou quaisquer outros mods.
