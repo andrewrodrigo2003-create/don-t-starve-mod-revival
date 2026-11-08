@@ -39,4 +39,4 @@ A passing harness therefore verifies the Lua module's planning/forecast logic un
 
 ## Expected result
 
-The harness contains 81 assertions across the cases above. GitHub Actions ran it with Lua 5.1: **75 passed; 0 failed** (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444527458). The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails.
+The harness contains 81 assertions across the cases above. GitHub Actions ran it with Lua 5.1: **81 passed; 0 failed** (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445153656). The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails.
