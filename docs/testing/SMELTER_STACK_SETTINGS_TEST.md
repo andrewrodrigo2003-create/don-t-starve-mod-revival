@@ -34,4 +34,6 @@ These are isolated Lua tests, not a DST engine test. They do not validate the re
 
 GitHub Actions parsed the changed integration files and ran the 16-assertion harness successfully: **16 passed; 0 failed**. Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444807701
 
+The combined integration snapshot also passed this 16-assertion harness while including the deferred client-widget guard and the actual component-to-helper config handshake: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445185933
+
 This does not replace live client/server netvar timing or in-game multiplayer validation.
