@@ -202,3 +202,14 @@ As referências abaixo são usadas para orientar arquitetura e testes, não para
 4. Usar IDs de requisição para ignorar respostas atrasadas e evitar que uma busca antiga substitua uma busca mais recente.
 5. Limitar a busca por raio e por tipos de contêiner suportados. A retirada futura precisa revalidar distância, acessibilidade, propriedade/permissão, quantidade disponível e espaço de destino no instante da operação.
 6. Fazer primeiro consulta somente leitura; implementar retirada e integração com fabricação apenas depois de desenhar uma transação atômica no servidor que não possa duplicar nem perder itens.
+
+
+## Registro de execução — 2026-11-07 (revalidação do repositório)
+
+- `main` confirmado no commit `bcd4466d8c6968cb60266f4c688966067e88c995`; PR #1 consta como integrado pelo commit de merge.
+- PRs #2, #3, #4, #5, #6, #7 e #8 foram reconsultados e permanecem abertos. Nenhum foi mesclado nesta execução. Não foi encontrado PR #9 aberto na consulta atual.
+- Branches observadas: `main`, `docs/ai-team-instructions`, `docs/complete-metals-more-roadmap`, `docs/smelter-report-post-merge`, `feature/metal-storage-chest`, `fix/metallurgy-config-validation`, `fix/nitre-gem-fallback-consumption`, `fix/rewrite-drops-source-options`, `fix/smelter-interruption-leftovers` e `art/original-mod-cover`.
+- Busca de issues abertas não retornou issues. O status combinado de `main` não reportou checks; a consulta de workflow runs para esse commit também retornou lista vazia. Isso significa “nenhum check reportado”, não aprovação de CI.
+- A inspeção do histórico recente confirmou commits de auditoria da matriz de receitas, consumo mínimo de junk dust, fallback de nitre e preservação de itens não relacionados. O relatório existente documenta 18 receitas; o harness reportado executou diretamente `smelting_products.lua`, mas os cenários de consumo/lote permanecem em modelo comportamental separado.
+- A inspeção estática de `smelting.lua` confirmou que `CalculateSmelterPlan` e `ForecastSmelterPlan` usam o mesmo inventário de ingredientes e os custos declarados em `smelting_products.lua`. Ainda falta um harness versionado que carregue o módulo real de cálculo de lote/consumo com stubs mínimos; não marcar essa validação como concluída.
+- Nenhuma alteração de gameplay, balanceamento, API do DST ou outro mod foi feita nesta execução. A auditoria do algoritmo real de consumo/lote continua sendo a próxima tarefa técnica; os testes in-game, multiplayer, save/load real e UM Beta continuam pendentes.
