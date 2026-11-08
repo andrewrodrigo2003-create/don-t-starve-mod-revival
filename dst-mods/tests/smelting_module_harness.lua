@@ -275,6 +275,20 @@ assert_consumption("opal gem", opal, {
     greengem_shard = 1,
 }, {})
 
+-- Nitre's ordinary mineral route scales with the mineral cost, unlike
+-- its one-output gem-fragment fallback.
+local mineral_nitre = plan_for({ make_item("rocks", 3, 1) })
+equal("mineral nitre product", mineral_nitre.product, "nitre")
+equal("mineral nitre batch count", mineral_nitre.count, 3)
+assert_consumption("mineral nitre", mineral_nitre, { rocks = 3 }, {})
+
+-- Gem recipes with a complete second set of fragments should batch normally.
+local redgem_batch = plan_for({ make_item("redgem_shard", 8, 1) })
+equal("red gem multi-batch product", redgem_batch.product, "redgem")
+equal("red gem multi-batch count", redgem_batch.count, 2)
+assert_consumption("red gem multi-batch", redgem_batch,
+    { redgem_shard = 8 }, {})
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
