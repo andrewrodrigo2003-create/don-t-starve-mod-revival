@@ -41,3 +41,59 @@ check("broken netvar getter uses local fallback",
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then os.exit(1) end
+
+-- Exercise the actual widget setup wrapper, not only the pure policy helper.
+local function widget_accepts_stacks(local_batch, net_raw)
+    local containers = {
+        MAXITEMSLOTS = 0,
+        widgetsetup = function() end,
+    }
+    local config = { on = function() return local_batch end }
+    local smelting = { IsSmelterIngredient = function() return true end }
+    local forecast = {
+        button_text = function() return "Smelt" end,
+        can_start = function() return true end,
+    }
+
+    GLOBAL = {
+        RPC = {},
+        TUNING = {},
+        Vector3 = function(x, y, z) return { x = x, y = y, z = z } end,
+        ACTIONS = { SMELT = { code = 1, mod_name = nil } },
+        BufferedAction = function() return { Do = function() end } end,
+        SendRPCToServer = function() end,
+        require = function(name)
+            local modules = {
+                smelting = smelting,
+                containers = containers,
+                ["mam/config"] = config,
+                ["mam/forecast"] = forecast,
+                ["mam/container_settings"] = settings,
+            }
+            return modules[name]
+        end,
+    }
+
+    dofile("dst-mods/metals_and_reforged/initialise/modded_cookers.lua")
+
+    local inst = {
+        prefab = "smelter",
+        mam_plan = net_raw ~= nil and {
+            value = function() return net_raw end,
+        } or nil,
+    }
+    local container = {
+        inst = inst,
+        SetNumSlots = function(self, count) self.numslots = count end,
+    }
+    containers.widgetsetup(container, "smelter", nil)
+    return container.acceptsstacks, container.numslots
+end
+
+check("widget uses server batch-on despite local off",
+    widget_accepts_stacks(false, "c|1|10|25 p||1|idle"), true)
+check("widget uses server batch-off despite local on",
+    widget_accepts_stacks(true, "c|0|10|25 p||1|idle"), false)
+local fallback_on, slots_on = widget_accepts_stacks(true, nil)
+check("widget falls back to local option before netvar", fallback_on, true)
+check("widget keeps four furnace slots", slots_on, 4)
