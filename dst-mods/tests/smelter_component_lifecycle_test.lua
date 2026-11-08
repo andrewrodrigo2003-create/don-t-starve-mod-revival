@@ -56,6 +56,7 @@ end
 FRAMES = 1 / 30
 
 local Smelter = dofile(ROOT .. "components/smelter.lua")
+local MAMContainerSettings = dofile(ROOT .. "mam/container_settings.lua")
 local passed, failed = 0, 0
 
 local function check(name, condition)
@@ -120,7 +121,9 @@ local function make_instance(container)
         deferred = {},
         tags = {},
         mam_plan = {
-            set = function(self, value) self.value = value end,
+            _value = nil,
+            set = function(self, value) self._value = value end,
+            value = function(self) return self._value end,
         },
     }
     function inst:DoPeriodicTask()
@@ -163,7 +166,9 @@ check("partial stack keeps exact remainder", first.components.stackable.stacksiz
 check("fully consumed stack leaves its slot", container.slots[2] == nil and second.removed)
 check("start closes and locks the container", container.closed and container.canbeopened == false)
 check("start stores product and batch", smelter.product == "copper_ingot" and smelter.batch == 2)
-check("start publishes the authoritative plan", inst.mam_plan.value ~= nil and inst.mam_plan.value:find("p|copper_ingot|2|smelting", 1, true) ~= nil)
+check("start publishes the authoritative plan", inst.mam_plan._value ~= nil and inst.mam_plan._value:find("p|copper_ingot|2|smelting", 1, true) ~= nil)
+check("published server batch config enables stack acceptance",
+    MAMContainerSettings.accepts_stacks(inst, false) == true)
 check("start invokes plan callback", plan_callback)
 
 -- A rejected plan must not consume anything or lock the container.
