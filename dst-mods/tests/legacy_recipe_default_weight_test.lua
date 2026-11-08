@@ -21,7 +21,7 @@ local recipe_name = "mam_test_external_default_weight"
 smelting.recipes.metal_smelter[recipe_name] = {
     name = recipe_name,
     priority = 1000,
-    -- Deliberately omit weight: the public recipe registration path defaults it to 1.
+    -- Simulate a registered external recipe; omit weight to exercise the legacy default.
     test = function() return true end,
     cooktime = 7,
 }
