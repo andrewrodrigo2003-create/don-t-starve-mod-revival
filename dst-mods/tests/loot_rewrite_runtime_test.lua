@@ -165,12 +165,16 @@ local rewrite_names = {
 }
 
 local function load_rewrite_tables(overrides, has_um)
-    for key, value in pairs(overrides or {}) do
-        config_values[key] = value
-    end
     config_values.mam_extra_drops = 1
     config_values.mam_drops_mode = 2
     config_values.mam_drops_normalise = 0
+    config_values.mam_drop_boulders = 1
+    config_values.mam_drop_stalagmites = 1
+    config_values.mam_drop_chess = 1
+    config_values.mam_drop_hounds = 1
+    for key, value in pairs(overrides or {}) do
+        config_values[key] = value
+    end
     GLOBAL.UMCommonFns = has_um and {} or nil
     shared_tables = {}
     simpost_callbacks = {}
