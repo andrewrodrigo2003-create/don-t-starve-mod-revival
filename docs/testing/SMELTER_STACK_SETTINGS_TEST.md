@@ -28,3 +28,10 @@ In this environment, the policy helper passed 8 isolated LuaTeX checks. A separa
 ## Boundary
 
 These are isolated Lua tests, not a DST engine test. They do not validate the real container component/replica or netvar delivery timing. The prefab explicitly calls client `WidgetSetup("smelter")` on a zero-delay task; that path should be verified in a live multiplayer session with host and client options intentionally different.
+
+
+## Lua 5.1 regression run
+
+GitHub Actions parsed the changed integration files and ran the 16-assertion harness successfully: **16 passed; 0 failed**. Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444807701
+
+This does not replace live client/server netvar timing or in-game multiplayer validation.
