@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">Metals and More Reforged — original mod icon</title>
+<desc id="desc">A forged metal emblem with a glowing furnace, anvil, hammer, and mineral crystals.</desc>
+<defs>
+ <radialGradient id="bg"><stop stop-color="#3b3541"/><stop offset="1" stop-color="#101722"/></radialGradient>
+ <radialGradient id="fire"><stop stop-color="#fff0a0"/><stop offset=".42" stop-color="#ff9d42"/><stop offset="1" stop-color="#a72f25"/></radialGradient>
+ <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#e5e9ee"/><stop offset=".5" stop-color="#788494"/><stop offset="1" stop-color="#303846"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff1a6"/><stop offset=".5" stop-color="#d69a3e"/><stop offset="1" stop-color="#754727"/></linearGradient>
+ <linearGradient id="copper" x2="0" y2="1"><stop stop-color="#ffc18a"/><stop offset=".5" stop-color="#b9663e"/><stop offset="1" stop-color="#613936"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="15"/></filter>
+</defs>
+<circle cx="256" cy="256" r="248" fill="url(#bg)" stroke="#c39351" stroke-width="10"/>
+<circle cx="256" cy="256" r="224" fill="none" stroke="#6f5a47" stroke-width="3" stroke-dasharray="5 11"/>
+<circle cx="256" cy="245" r="142" fill="#ef7135" opacity=".16" filter="url(#glow)"/>
+<!-- furnace -->
+<path d="M166 240 190 176h132l25 64v154H166Z" fill="#394250" stroke="#111722" stroke-width="12"/>
+<path d="M190 211h132M178 249h156" stroke="#85909c" stroke-width="7"/>
+<path d="M198 285q0-62 58-62t58 62v82H198Z" fill="#111722" stroke="#111722" stroke-width="9"/>
+<path d="M220 362q-18-47 15-78 5 24 22 33 2-44 31-66 0 40 24 60 19 23 2 51Z" fill="#e85c2c"/>
+<path d="M239 361q-7-29 17-50 3 20 17 26 6-26 23-38 0 36 18 62Z" fill="url(#fire)"/>
+<!-- anvil -->
+<path d="M83 361h164l-20 29h-42l-12 46h-49l-9-46h-22l-20-29Z" fill="url(#steel)" stroke="#0b1018" stroke-width="10"/>
+<path d="M72 345h188l-17 22H90Z" fill="#bfc8d2" stroke="#0b1018" stroke-width="8"/>
+<!-- hammer -->
+<g transform="translate(138 245) rotate(-35)">
+ <rect x="-7" y="12" width="15" height="112" rx="6" fill="#8e5a39" stroke="#16151b" stroke-width="7"/>
+ <path d="M-43 -11h83l13 18-13 20h-83l-13-20Z" fill="url(#steel)" stroke="#101722" stroke-width="8"/>
+</g>
+<!-- ore crystals -->
+<g stroke="#111722" stroke-width="7" stroke-linejoin="round">
+ <path d="m336 381 28-76 34 13 12 63-38 26Z" fill="#8b8fa8"/>
+ <path d="m374 393 35-96 32 12 16 69-43 29Z" fill="#a65d4c"/>
+ <path d="m418 393 30-76 29 12 10 59-38 24Z" fill="#a7793d"/>
+</g>
+<path d="m350 373 16-54 14 8-8 51Z" fill="#cbd5ed" stroke="none"/>
+<path d="m390 377 17-61 13 8-8 54Z" fill="#e5a18b" stroke="none"/>
+<path d="m430 379 14-48 13 7-6 44Z" fill="#f0d27b" stroke="none"/>
+<!-- top badge -->
+<path d="M175 71h162l-14 47H189Z" fill="#121a25" stroke="#c39351" stroke-width="5"/>
+<text x="256" y="105" text-anchor="middle" fill="#f0dfbd" font-family="Georgia,serif" font-size="29" font-weight="bold" letter-spacing="3">MMR</text>
+<!-- rivets -->
+<g fill="#d3a15b"><circle cx="256" cy="27" r="5"/><circle cx="256" cy="485" r="5"/><circle cx="27" cy="256" r="5"/><circle cx="485" cy="256" r="5"/></g>
+</svg>
