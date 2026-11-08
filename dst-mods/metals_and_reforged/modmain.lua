@@ -401,10 +401,10 @@ params.marble_chest = makeChest()
 params.cold_safe = makeChest()
 params.metal_storage_chest = makeChest()
 
--- O filtro usa a mesma tabela de ingredientes da forja: novos materiais
--- aceitos pela metalurgia entram automaticamente, sem aceitar itens alheios.
+-- O filtro usa a lista real de ingredientes e a tabela de produtos da forja.
+-- Assim aceita minérios, poeiras, fragmentos, lingotes e ligas registradas.
 params.metal_storage_chest.itemtestfn =
-    MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient)
+    MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient, MAMSmelting.recipes.metal_smelter)
 
 function params.cold_safe.itemtestfn(container, item, slot)
     if item:HasTag("icebox_valid") then
