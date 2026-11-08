@@ -479,18 +479,32 @@ local function ForecastSmelterPlan(smelter, items, opts)
         return plan
     end
 
-    local recipe = (smelterrecipes[smelter] or {})[plan.possibilities[1]]
-    if recipe == nil then
+    plan.ambiguous = #plan.possibilities > 1
+    plan.outcomes = {}
+
+    -- Empates de prioridade podem apontar para receitas com custos diferentes.
+    -- Calcular cada resultado separadamente evita mostrar a quantidade/tempo
+    -- da primeira receita como se tambem valesse para todas as alternativas.
+    for _, candidate in ipairs(candidates) do
+        local count = batch_count_for(candidate, ingdata, opts)
+        table.insert(plan.outcomes, {
+            product = candidate.name,
+            count = count,
+            smelttime = smelt_time(candidate, count, opts),
+        })
+    end
+
+    local primary = plan.outcomes[1]
+    if primary == nil then
         plan.state = "ambiguous"
         return plan
     end
 
     plan.state = "ready"
-    plan.product = recipe.name
-    plan.count = batch_count_for(recipe, ingdata, opts)
-    plan.smelttime = smelt_time(recipe, plan.count, opts)
-    plan.ambiguous = #plan.possibilities > 1
-    plan.max_batch = batch_cap(recipe)
+    plan.product = primary.product
+    plan.count = primary.count
+    plan.smelttime = primary.smelttime
+    plan.max_batch = batch_cap((smelterrecipes[smelter] or {})[primary.product])
     return plan
 end
 
