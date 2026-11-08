@@ -61,4 +61,6 @@ The 22-assertion harness has since passed in GitHub Actions with Lua 5.1. Its si
 
 GitHub Actions executed the direct-component lifecycle harness and parsed the changed component successfully: **22 passed; 0 failed**. Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444802432
 
+The combined integration snapshot added the real component-to-client-settings handshake and passed **24/24** component assertions, including both server batch-on and batch-off propagation: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445185933
+
 This remains an isolated component harness; it does not replace DST engine, save/reload, multiplayer, or in-game validation.
