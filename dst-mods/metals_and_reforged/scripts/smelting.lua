@@ -200,7 +200,7 @@ local function batch_cap(recipe)
 end
 
 --- Quantas unidades o lote atual produz para o recipe.
---- Sem custo declarado, produz 1 (comportamento original).
+--- Sem custo declarado, produz 1 e consome toda a carga (fallback legado).
 --- `opts` permite que a UI use os valores do SERVIDOR (publicados pela net var
 --- do plano) em vez das proprias opcoes locais, que podem divergir em MP.
 local function batch_count_for(recipe, ingdata, opts)
