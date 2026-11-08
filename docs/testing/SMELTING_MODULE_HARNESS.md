@@ -33,10 +33,10 @@ lua dst-mods/tests/smelting_module_harness.lua
 
 ## Test boundary
 
-The harness directly invokes the real recipe and planning functions. The `tuning` and `mam/config` modules are stubbed; no DST globals, prefab, container component, inventory, netvar, UI widget, save system, or multiplayer server/client is loaded.
+The harness directly invokes the real recipe and planning functions. The assertion count includes each per-prefab consumption and leftover check performed by the shared helper. The `tuning` and `mam/config` modules are stubbed; no DST globals, prefab, container component, inventory, netvar, UI widget, save system, or multiplayer server/client is loaded.
 
 A passing harness therefore verifies the Lua module's planning/forecast logic under these controlled inputs. It does **not** prove the full mod loads in DST or validate item spawning, container APIs, interruption behavior, save/reload, UI events, or multiplayer replication. Those remain separate engine/in-game checks.
 
 ## Expected result
 
-The harness contains 60 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
+The harness contains 74 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
