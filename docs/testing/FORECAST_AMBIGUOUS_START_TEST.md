@@ -19,7 +19,7 @@ texlua dst-mods/tests/forecast_ambiguous_start_test.lua
 
 ## Latest verification
 
-GitHub Actions run #19 passed on the current PR head with Lua 5.1:
+GitHub Actions run #19 passed for code commit `183a29e` (the subsequent update to this report was documentation-only) with Lua 5.1:
 - All Lua files under `dst-mods/metals_and_reforged` passed syntax parsing.
 - The forecast regression harness reported **14 passed; 0 failed**.
 
