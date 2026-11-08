@@ -11,7 +11,7 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [x] Forja em lotes, previsão e controles básicos de lote/tempo/sobras (implementação; validação in-game pendente)
   - [x] Livro/craftbook e bancada de guerra existem no código (auditoria e validação pendentes)
   - [x] Drops adicionais configuráveis em modo aditivo (auditoria por fonte e validação pendentes)
-  - [~] Correção das opções por fonte e hounds Auto/Always no modo Rewrite (PR #6 aberto; testes in-game pendentes)
+  - [x] Correção das opções por fonte e hounds Auto/Always no modo Rewrite integrada via PR #16; harness runtime Lua 5.1 aprovado. Testes in-game/UM Beta pendentes.
   - [ ] Restauração e auditoria integral de todas as mecânicas metalúrgicas originais
   - [~] Harnesses Lua 5.1 da forja, ciclo de vida, previsão e sync de pilhas aprovados; validar ainda no DST save/load, interrupções e multiplayer servidor/cliente
   - [ ] Concluir livro metalúrgico de consulta
@@ -21,8 +21,9 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [x] Planejar o baú como infraestrutura de abastecimento da automação futura da forja; o W.O.B.O.T. exige item-semente correspondente no contêiner para cada prefab que deve recolher
   - [x] Identificar W.O.B.O.T. (`storage_robot`) e W.I.N.bot (`winona_storage_robot`); arquitetura de integração registrada em `docs/design/WOBOT_METALLURGY_AUTOMATION.md`
   - [ ] Implementar detecção de robô ativo e alimentação automática da forja a partir do baú metalúrgico, com reserva/rollback de materiais e teste multiplayer
-  - [ ] Inventariar todos os itens metálicos vanilla/mod e criar matriz de receitas individuais balanceadas para a bancada do Metals and More
+  - [x] Inventário inicial de itens metálicos e receitas em `docs/design/METAL_ITEM_CRAFTING_MATRIX.md`; matriz final de custos/estações e mudanças de receitas ainda pendente
   - [ ] Completar configurações sem opções placebo
+  - [ ] Finalizar arte do PR #7: exportar PNGs, converter ícone para KTEX e validar no jogo; PR #7 continua aberto
   - [ ] Compatibilidade real com Uncompromising Mode Beta e conjunto de mods do mundo de teste
   - [ ] Pesquisa de referências e documentação de mudanças
   - [ ] Testes completos e relatório final com limitações
