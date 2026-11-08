@@ -221,7 +221,7 @@ missing_smelter:OnLoad({ issmelting = true, product = nil, smelttime = 10 })
 check("active save without product resets safely", not missing_smelter.issmelting and missing_smelter.product == nil)
 check("missing-product reset applies leftovers-off policy", missing_container.destroy_contents == true)
 
-io.write("\\n", passed, " passed; ", failed, " failed\\n")
+io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
 end
