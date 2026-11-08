@@ -169,6 +169,11 @@ check("start stores product and batch", smelter.product == "copper_ingot" and sm
 check("start publishes the authoritative plan", inst.mam_plan._value ~= nil and inst.mam_plan._value:find("p|copper_ingot|2|smelting", 1, true) ~= nil)
 check("published server batch config enables stack acceptance",
     MAMContainerSettings.accepts_stacks(inst, false) == true)
+config.mam_batch = 0
+smelter:PublishPlan()
+check("published server batch-off disables client stack acceptance",
+    MAMContainerSettings.accepts_stacks(inst, true) == false)
+config.mam_batch = 1
 check("start invokes plan callback", plan_callback)
 
 -- A rejected plan must not consume anything or lock the container.
