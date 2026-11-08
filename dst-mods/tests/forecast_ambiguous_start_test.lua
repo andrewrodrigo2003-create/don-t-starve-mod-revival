@@ -167,6 +167,27 @@ check("forecast detail shows both distinct outcome quantities",
     and detailed_text:find("2 mam_test_ambiguous_b", 1, true) ~= nil)
 config_values.mam_forecast = 1
 
+-- Legacy third-party recipes without declared cost must keep the original
+-- one-batch behavior and consume the complete input load (never free output).
+recipes.mam_test_legacy_no_cost = {
+    name = "mam_test_legacy_no_cost",
+    priority = 2000,
+    weight = 1,
+    test = function(_, names, tags)
+        return (tags.copper or 0) >= 1
+    end,
+}
+local legacy = smelting.CalculateSmelterPlan("metal_smelter", {
+    { prefab = "copper_ore", count = 5, slot = 1 },
+})
+check("legacy recipe without cost stays single-batch",
+    legacy.product == "mam_test_legacy_no_cost" and legacy.count == 1)
+check("legacy recipe without cost consumes the complete load",
+    #legacy.consumed == 1 and legacy.consumed[1].prefab == "copper_ore"
+    and legacy.consumed[1].count == 5)
+check("legacy recipe without cost leaves no reusable ingredients",
+    #legacy.leftovers == 0)
+
 -- A genuinely invalid load must still be blocked.
 local invalid_item = {
     prefab = "twigs",
