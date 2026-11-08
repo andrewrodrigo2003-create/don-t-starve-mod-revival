@@ -235,3 +235,11 @@ A revisão da API DST confirmou que o tamanho de pilhas é sincronizado ao clien
 ### Nota de auditoria — sincronização tardia do widget
 
 O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `WidgetSetup` da réplica e a chegada da string `mam_plan`. O cliente escuta `mamplandirty` e só refaz `WidgetSetup` quando o valor `mam_batch` recebido difere do atual `acceptsstacks`; mudanças apenas de fase/resultado não devem reconfigurar o widget. A validação do evento e da ordem real de replicação ainda exige uma sessão host/cliente.
+
+
+### Sincronização das branches de PR — 2026-11-07 (BRT)
+
+- PRs #2, #3, #5, #6, #7 e #8 receberam merge commits normais da `main` atual (`380cd6cbf1da6bd02fe214ab362978fd54d61378`) para eliminar a divergência de cinco commits. As alterações de cada PR foram preservadas; nenhum histórico foi reescrito e nenhum PR foi integrado.
+- PR #4 também contém a `main` atual como ancestral após sincronização da branch de documentação.
+- Revalidação posterior: PRs #2–#11 continuam abertos em draft, sem merge; as branches estão alinhadas com a `main` (0 commits atrás) e a API do GitHub reporta estado de merge limpo.
+- Não foram encontrados workflow runs nem status checks para os heads verificados. Isso continua significando ausência de CI reportado, não aprovação automática.
