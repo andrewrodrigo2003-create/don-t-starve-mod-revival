@@ -167,6 +167,10 @@ check("forecast detail shows both distinct outcome quantities",
     and detailed_text:find("2 mam_test_ambiguous_b", 1, true) ~= nil)
 config_values.mam_forecast = 1
 
+local ambiguous_text = MAMForecast.detail_text(inst)
+check("certainty-only ambiguity uses generic result wording",
+    ambiguous_text ~= nil and ambiguous_text:find("more than one result", 1, true) ~= nil)
+
 -- Legacy third-party recipes without declared cost must keep the original
 -- one-batch behavior and consume the complete input load (never free output).
 recipes.mam_test_legacy_no_cost = {
