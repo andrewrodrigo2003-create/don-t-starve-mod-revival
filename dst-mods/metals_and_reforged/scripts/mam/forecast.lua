@@ -155,7 +155,22 @@ function MAMForecast.can_start(inst)
     end
 
     local plan = MAMForecast.plan(inst)
-    return plan ~= nil and plan.state == "ready" and plan.product ~= nil
+    if plan == nil then
+        return false
+    end
+
+    if plan.state == "ready" and plan.product ~= nil then
+        return true
+    end
+
+    -- O modo 1 oculta as alternativas na previsao, mas nao deve bloquear a
+    -- forja: o servidor ainda escolhe uma das receitas pelo sorteio original.
+    -- So habilitamos a acao quando ha mais de uma candidata valida, que e o
+    -- estado "ambiguous" produzido especificamente por esse modo.
+    return plan.state == "ambiguous"
+        and plan.reason == "ambiguous"
+        and plan.possibilities ~= nil
+        and #plan.possibilities > 1
 end
 
 local function join(list, sep)
