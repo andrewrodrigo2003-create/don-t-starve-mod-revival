@@ -8,6 +8,7 @@
 ## Fixes
 
 - Permit starting only the explicit ambiguity state produced by certainty-only mode, with more than one candidate. Invalid loads and other ambiguous/error states remain blocked.
+- Use generic "result" wording for ambiguous mixtures because candidate recipes are not necessarily alloys.
 - Read stack size from `item.replica.stackable` when available, with a server-component fallback for server-side callers.
 
 ## Run
