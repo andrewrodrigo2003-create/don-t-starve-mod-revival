@@ -23,7 +23,7 @@ The committed harness contains 16 assertions:
 - 4 refresh-policy cases covering late server config arrival, matching settings, missing netvar, and missing replica container.
 - 4 widget integration cases that load the actual `initialise/modded_cookers.lua` wrapper and check both directions of client/server mismatch, pre-netvar fallback, and preservation of the four furnace slots.
 
-In this environment, the policy helper passed 8 isolated LuaTeX checks. A separate local smoke harness using a minimal copy of the widget wrapper passed 4 checks. The exact committed full-repository harness was not run against a repository checkout here.
+The policy helper earlier passed 8 isolated LuaTeX checks, and a separate local smoke harness using a minimal wrapper copy passed 4 checks. The committed full-repository harness subsequently passed all 16 assertions with Lua 5.1 in GitHub Actions (link below); live netvar timing and multiplayer remain untested.
 
 ## Boundary
 
