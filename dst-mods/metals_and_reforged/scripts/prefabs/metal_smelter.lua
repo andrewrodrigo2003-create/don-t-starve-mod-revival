@@ -250,7 +250,9 @@ local function fn()
         -- servidor. Reaplica somente se o netvar publicar outro valor de lote.
         inst:ListenForEvent("mamplandirty", onmamplandirty)
 		inst:DoTaskInTime(0, function()
-			inst.replica.container:WidgetSetup("smelter")
+			if inst:IsValid() and inst.replica ~= nil and inst.replica.container ~= nil then
+                inst.replica.container:WidgetSetup("smelter")
+            end
         end)
         return inst
     end
