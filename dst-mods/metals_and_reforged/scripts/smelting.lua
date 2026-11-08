@@ -138,7 +138,7 @@ local function CalculateSmelterRecipe(smelter, names)
 	local val = math.random()*total
 	local idx = 1
 	while idx <= #candidates do
-		val = val - candidates[idx].weight
+		val = val - (candidates[idx].weight or 1)
 		if val <= 0 then
 			return candidates[idx].name, candidates[idx].cooktime or 1
 		end
