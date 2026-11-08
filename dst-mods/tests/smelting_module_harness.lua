@@ -260,8 +260,20 @@ gem_case("yellow gem", { make_item("yellowgem_shard", 3, 1) },
     "yellowgem", "yellowgem_shard", 3)
 gem_case("orange gem", { make_item("orangegem_shard", 3, 1) },
     "orangegem", "orangegem_shard", 3)
-gem_case("opal gem", { make_item("redgem_shard", 4, 1) },
-    "opalgem", "redgem_shard", 4)
+local opal = plan_for({
+    make_item("redgem_shard", 1, 1),
+    make_item("bluegem_shard", 1, 2),
+    make_item("yellowgem_shard", 1, 3),
+    make_item("greengem_shard", 1, 4),
+})
+equal("opal gem product", opal.product, "opalgem")
+equal("opal gem output count", opal.count, 1)
+assert_consumption("opal gem", opal, {
+    redgem_shard = 1,
+    bluegem_shard = 1,
+    yellowgem_shard = 1,
+    greengem_shard = 1,
+}, {})
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
