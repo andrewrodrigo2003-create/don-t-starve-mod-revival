@@ -18,8 +18,12 @@ Run from the repository root:
 texlua dst-mods/tests/smelter_stack_settings_test.lua
 ```
 
-The test loads the actual policy helper and covers conflicting client/server values in both directions, missing/empty/malformed/truncated config, and a failing netvar getter.
+The committed harness contains 12 assertions:
+- 8 direct policy cases covering server-on/off override, local fallback, empty/malformed/truncated config, and getter failure.
+- 4 widget integration cases that load the actual `initialise/modded_cookers.lua` wrapper and check both directions of client/server mismatch, pre-netvar fallback, and preservation of the four furnace slots.
+
+In this environment, the policy helper passed 8 isolated LuaTeX checks. A separate local smoke harness using a minimal copy of the widget wrapper passed 4 checks. The exact committed full-repository harness was not run against a repository checkout here.
 
 ## Boundary
 
-This is an isolated LuaTeX module test. It does not load DST's real container component/replica, validate netvar delivery timing, or replace a host/client in-game test. The prefab explicitly calls client `WidgetSetup("smelter")` on a zero-delay task; that path should be verified in a live multiplayer session with host and client options intentionally different.
+These are isolated Lua tests, not a DST engine test. They do not validate the real container component/replica or netvar delivery timing. The prefab explicitly calls client `WidgetSetup("smelter")` on a zero-delay task; that path should be verified in a live multiplayer session with host and client options intentionally different.
