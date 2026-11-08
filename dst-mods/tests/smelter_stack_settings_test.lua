@@ -11,10 +11,10 @@ local passed, failed = 0, 0
 local function check(name, actual, expected)
     if actual == expected then
         passed = passed + 1
-        io.write("PASS  ", name, "\\n")
+        io.write("PASS  ", name, "\n")
     else
         failed = failed + 1
-        io.write("FAIL  ", name, " (expected ", tostring(expected), ", got ", tostring(actual), ")\\n")
+        io.write("FAIL  ", name, " (expected ", tostring(expected), ", got ", tostring(actual), ")\n")
     end
 end
 
@@ -39,5 +39,5 @@ check("truncated config uses local fallback",
 check("broken netvar getter uses local fallback",
     settings.accepts_stacks({ mam_plan = { value = function() error("not ready") end } }, true), true)
 
-io.write("\\n", passed, " passed; ", failed, " failed\\n")
+io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then os.exit(1) end
