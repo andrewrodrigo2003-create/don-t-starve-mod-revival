@@ -853,7 +853,7 @@ configuration_options = {
 	{
         name = "mam_metalschest",
         label = "Metal storage chest",
-        hover = "Adds a 25-slot chest that accepts only materials registered as ingredients in the metal smelter. The filter follows the smelting ingredient table; it does not pull items from nearby containers.",
+        hover = "Adds a 25-slot chest for registered metal-smelting inputs and outputs, including ores, dusts, shards, ingots and alloys. The filter follows the live smelting registries; it does not pull items from nearby containers.",
         options =
         {
             {description = "Off", data = 0},
