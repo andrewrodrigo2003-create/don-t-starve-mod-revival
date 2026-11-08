@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+<title id="title">Metals and More Reforged — original cover artwork</title>
+<desc id="desc">An original industrial fantasy illustration featuring a forge, anvil, hammer, ore and refined metal ingots.</desc>
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#171b2b"/><stop offset=".58" stop-color="#292437"/><stop offset="1" stop-color="#111722"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ffcf73" stop-opacity=".8"/><stop offset=".45" stop-color="#ef7135" stop-opacity=".28"/><stop offset="1" stop-color="#ef7135" stop-opacity="0"/></radialGradient>
+ <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#d8dce2"/><stop offset=".45" stop-color="#778293"/><stop offset="1" stop-color="#303846"/></linearGradient>
+ <linearGradient id="copper" x2="0" y2="1"><stop stop-color="#ffbd77"/><stop offset=".5" stop-color="#b9663e"/><stop offset="1" stop-color="#623c37"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0a1"/><stop offset=".55" stop-color="#d49a3c"/><stop offset="1" stop-color="#79502c"/></linearGradient>
+ <pattern id="grain" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M2 8h7M22 26h9M13 17h3" stroke="#d7c6a4" stroke-opacity=".09" stroke-width="1"/></pattern>
+ <filter id="soft"><feGaussianBlur stdDeviation="28"/></filter>
+</defs>
+<rect width="1200" height="675" fill="url(#bg)"/>
+<rect width="1200" height="675" fill="url(#grain)"/>
+<circle cx="730" cy="390" r="260" fill="url(#glow)" filter="url(#soft)"/>
+<!-- distant industrial ridgeline -->
+<path d="M0 360 115 280 190 332 290 230 390 340 485 260 575 350 690 235 790 330 910 225 1015 335 1115 260 1200 315V675H0Z" fill="#202b38" opacity=".9"/>
+<path d="M0 420 120 355 205 400 330 318 445 410 565 345 670 430 800 330 925 420 1045 340 1200 415V675H0Z" fill="#151f2c"/>
+<!-- moon -->
+<circle cx="180" cy="150" r="58" fill="#d5c4a0" opacity=".92"/>
+<circle cx="202" cy="132" r="58" fill="#171b2b"/>
+<!-- forge chimney -->
+<path d="M720 245 765 112h118l45 133v245H720Z" fill="#343b49" stroke="#0c111a" stroke-width="10"/>
+<path d="M754 145h140M740 195h180M730 245h200" stroke="#697382" stroke-width="8" opacity=".65"/>
+<path d="M760 110h128l-18-38h-91Z" fill="#6d7887" stroke="#111722" stroke-width="9"/>
+<!-- furnace body -->
+<path d="M610 365 670 290h245l70 75v220H610Z" fill="#424653" stroke="#0c111a" stroke-width="12"/>
+<path d="M665 365h270v220H665Z" fill="#262d39" stroke="#89909a" stroke-width="7"/>
+<path d="M700 430q0-88 100-88t100 88v130H700Z" fill="#101722" stroke="#111722" stroke-width="14"/>
+<path d="M730 530q-24-75 22-111 5 37 35 48-8-65 39-104 7 62 44 88 36 30 9 79Z" fill="#e85c2c"/>
+<path d="M765 532q-12-44 27-74 3 31 23 42 8-39 33-57 3 54 29 89Z" fill="#ffc45d"/>
+<!-- side rivets -->
+<g fill="#c5a36c"><circle cx="640" cy="390" r="8"/><circle cx="950" cy="390" r="8"/><circle cx="640" cy="555" r="8"/><circle cx="950" cy="555" r="8"/></g>
+<!-- anvil -->
+<path d="M350 470h250l-34 48h-65l-18 70h-84l-13-70h-45l-25-48Z" fill="url(#steel)" stroke="#0b1018" stroke-width="12"/>
+<path d="M330 452h290l-24 30H365Z" fill="#aeb7c2" stroke="#0b1018" stroke-width="10"/>
+<path d="M405 588h130l18 42H390Z" fill="#4d5665" stroke="#0b1018" stroke-width="10"/>
+<!-- hammer -->
+<g transform="translate(450 330) rotate(-27)">
+ <rect x="-9" y="5" width="20" height="180" rx="8" fill="#8e5a39" stroke="#17151a" stroke-width="8"/>
+ <path d="M-70 -18h130l18 28-18 28H-70l-18-28Z" fill="url(#steel)" stroke="#0b1018" stroke-width="11"/>
+ <path d="M-57 -8h104" stroke="#f0d7a0" stroke-width="5" opacity=".7"/>
+</g>
+<!-- ore pile -->
+<g stroke="#101722" stroke-width="8" stroke-linejoin="round">
+ <path d="m85 560 48-82 55 26 20 76-66 38Z" fill="#667d8e"/>
+ <path d="m150 585 44-94 57 19 34 83-76 40Z" fill="#b46b4b"/>
+ <path d="m220 583 53-82 54 25 15 78-73 36Z" fill="#8a8d9e"/>
+ <path d="m285 595 48-80 53 22 28 79-73 33Z" fill="#a87936"/>
+ <path d="m90 548 35-58 23 18-12 52Z" fill="#a7d9df" stroke="none"/>
+ <path d="m160 568 29-54 23 12-12 56Z" fill="#e7a18a" stroke="none"/>
+ <path d="m235 565 31-49 20 16-11 48Z" fill="#c7cce8" stroke="none"/>
+ <path d="m300 573 29-44 19 13-10 44Z" fill="#f3cf78" stroke="none"/>
+</g>
+<!-- ingots -->
+<g stroke="#101722" stroke-width="8" stroke-linejoin="round">
+ <path d="m880 570 45-44 110 0 45 44-45 35H925Z" fill="url(#gold)"/>
+ <path d="m980 620 40-38h100l35 38-35 31h-100Z" fill="url(#steel)"/>
+ <path d="m760 625 38-34h92l35 34-35 30h-92Z" fill="url(#copper)"/>
+</g>
+<!-- title plaque -->
+<path d="M70 42H1130l-25 142H95Z" fill="#101722" stroke="#b98a4c" stroke-width="5"/>
+<path d="M90 60H1110" stroke="#e4bd79" stroke-width="2" opacity=".7"/>
+<text x="600" y="110" text-anchor="middle" fill="#f1e3c4" font-family="Georgia,serif" font-size="54" font-weight="bold" letter-spacing="4">METALS AND MORE</text>
+<text x="600" y="164" text-anchor="middle" fill="#e9a84d" font-family="Georgia,serif" font-size="48" font-weight="bold" letter-spacing="8">REFORGED</text>
+<!-- subtitle -->
+<text x="600" y="235" text-anchor="middle" fill="#d6c8aa" font-family="Georgia,serif" font-size="23" letter-spacing="3">MINERAÇÃO  •  METALURGIA  •  FORJA</text>
+<!-- lower border and small mark -->
+<path d="M40 660H1160" stroke="#b98a4c" stroke-width="3"/>
+<path d="M585 646l15-18 15 18-15 18Z" fill="#d39b4b" stroke="#111722" stroke-width="4"/>
+</svg>
