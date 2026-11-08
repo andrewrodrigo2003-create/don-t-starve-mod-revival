@@ -17,6 +17,14 @@
 texlua dst-mods/tests/forecast_ambiguous_start_test.lua
 ```
 
+## Latest verification
+
+GitHub Actions run #19 passed on the current PR head with Lua 5.1:
+- All Lua files under `dst-mods/metals_and_reforged` passed syntax parsing.
+- The forecast regression harness reported **14 passed; 0 failed**.
+
+Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444697946
+
 ## Test boundary
 
 The test loads the real `smelting.lua` and `mam/forecast.lua`. It stubs only configuration, structured logging, and DST-facing container/item objects. It covers certainty-only behavior, invalid loads, a six-item copper stack represented only through the client replica, tied recipes with different per-unit costs and cook times, and safe consumption for a legacy third-party recipe without cost metadata.
