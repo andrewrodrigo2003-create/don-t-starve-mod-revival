@@ -181,7 +181,11 @@ function Smelter:ResumeSmelting()
     end
 
     self:PublishPlan()
-    self:Update(0)
+    -- Em um save feito exatamente no fim da contagem, a conclusao sera
+    -- agendada por OnLoad depois que os outros componentes restaurarem dados.
+    if self.smelttime > 0 then
+        self:Update(0)
+    end
 end
 
 function Smelter:DoneSmelting()
@@ -219,9 +223,13 @@ function Smelter:ResetSmelter()
     if container ~= nil then
         container.canbeopened = true
 
-        -- Sem sobras nao ha nada a devolver; com sobras, elas voltam ao jogador.
+        -- A opcao controla tambem uma fundicao interrompida:
+        -- ligada, devolve os materiais que ainda estavam na forja;
+        -- desligada, preserva o comportamento original e destroi as sobras.
         if MAMConfig.on("mam_leftovers") then
             container:DropEverything()
+        else
+            container:DestroyContents()
         end
     end
 
@@ -352,19 +360,15 @@ function Smelter:OnSave()
 end
 
 function Smelter:OnLoad(data)
+    local defer_expired_completion = false
+
     if data ~= nil then
         self.product = data.product or nil
         self.batch = data.batch or 1
 
-        if data.issmelting and data.smelttime ~= 0 then
-            self.smelttime = data.smelttime
-            self.issmelting = true
-            self:ResumeSmelting()
-        end
-
-        -- Restaurar o estado pronto-colher: NAO podemos chamar DoneSmelting
-        -- aqui, porque ele destrui a carga e o container ainda nao restaurou
-        -- as sobras -> perda de item do jogador ao carregar o mundo.
+        -- Estado pronto-colher tem precedencia sobre issmelting em saves
+        -- antigos/inconsistentes. Nao chamar DoneSmelting durante OnLoad:
+        -- o container pode ainda nao ter restaurado as sobras.
         if data.canharvest then
             self.canharvest = true
             self.issmelting = nil
@@ -380,11 +384,41 @@ function Smelter:OnLoad(data)
                     self.donesmeltingfn(self.inst)
                 end)
             end
+        elseif data.issmelting then
+            -- Saves antigos ou interrompidos podem nao ter smelttime; tratar
+            -- nil/valor invalido como contagem concluida, nunca subtrair nil.
+            local remaining = tonumber(data.smelttime) or 0
+            self.smelttime = math.max(0, remaining)
+
+            if self.product ~= nil then
+                self.issmelting = true
+                self:ResumeSmelting()
+
+                if self.smelttime <= 0 then
+                    defer_expired_completion = true
+                    self.inst:DoTaskInTime(0, function()
+                        if self.issmelting and not self.canharvest then
+                            if self.product ~= nil then
+                                self:DoneSmelting()
+                            else
+                                self:ResetSmelter()
+                            end
+                        end
+                    end)
+                end
+            else
+                -- Sem produto salvo nao ha resultado seguro para gerar.
+                self:ResetSmelter()
+            end
         end
     end
 
     self:PublishPlan()
-    self:Update(0)
+    -- Evita que Update(0) conclua antes da tarefa deferida e da restauracao
+    -- do container em saves cujo tempo restante era zero/ausente.
+    if not defer_expired_completion then
+        self:Update(0)
+    end
 end
 
 return Smelter
