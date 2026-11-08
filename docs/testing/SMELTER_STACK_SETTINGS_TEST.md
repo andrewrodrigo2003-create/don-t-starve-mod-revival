@@ -6,7 +6,7 @@ The smelter widget was created with `acceptsstacks = MAMConfig.on("mam_batch")`.
 
 ## Fix
 
-The widget setup now resolves `acceptsstacks` from the published `c|batch|cap|growth` prefix whenever it is available. The local option is retained only as a temporary fallback before the first valid netvar value arrives. The helper rejects malformed/truncated values and protects against a netvar getter error.
+The widget setup now resolves `acceptsstacks` from the published `c|batch|cap|growth` prefix whenever it is available. The local option is retained only as a temporary fallback before the first valid netvar value arrives. The helper rejects malformed/truncated values and protects against a netvar getter error. Because the first client widget setup can race the arrival of the netvar, the prefab also listens for `mamplandirty` and reruns widget setup only when the published batch setting differs from the current replica setting.
 
 The server's own component continues to use its local setting before its first publication; that is the authoritative configuration. Client replicas use the synchronized value on their subsequent widget setup.
 
