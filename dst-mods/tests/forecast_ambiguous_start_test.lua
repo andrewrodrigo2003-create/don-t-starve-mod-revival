@@ -55,6 +55,34 @@ local function check(name, condition)
     end
 end
 
+-- Client forecasts must read the replicated stackable size, not the
+-- server-only components table. Six copper ore should forecast two ingots.
+config_values.mam_forecast = 2
+local stack_item = {
+    prefab = "copper_ore",
+    components = {},
+    replica = {
+        stackable = {
+            IsStack = function() return true end,
+            StackSize = function() return 6 end,
+        },
+    },
+}
+function stack_item:IsValid() return true end
+local stack_container = {}
+function stack_container:GetItems() return { [1] = stack_item } end
+local stack_inst = {
+    prefab = "metal_smelter",
+    replica = { container = stack_container },
+}
+function stack_inst:IsValid() return true end
+local client_items = MAMForecast.container_items(stack_inst)
+check("client container reads replicated stack size", #client_items == 1 and client_items[1].count == 6)
+local stack_plan = MAMForecast.plan(stack_inst)
+check("client forecast calculates batch from replicated stack",
+    stack_plan.state == "ready" and stack_plan.product == "copper_ingot" and stack_plan.count == 2)
+config_values.mam_forecast = 1
+
 -- Inject two equal-priority candidates that are both valid for copper ore.
 -- This isolates the UI policy from any random recipe-weight outcome.
 local recipes = smelting.recipes.metal_smelter
