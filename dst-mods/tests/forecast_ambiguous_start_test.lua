@@ -91,6 +91,7 @@ recipes.mam_test_ambiguous_a = {
     priority = 1000,
     weight = 1,
     cost = { tags = { copper = 1 } },
+    cooktime = 10,
     test = function(_, names, tags)
         return (tags.copper or 0) >= 1
     end,
@@ -99,7 +100,8 @@ recipes.mam_test_ambiguous_b = {
     name = "mam_test_ambiguous_b",
     priority = 1000,
     weight = 1,
-    cost = { tags = { copper = 1 } },
+    cost = { tags = { copper = 3 } },
+    cooktime = 20,
     test = function(_, names, tags)
         return (tags.copper or 0) >= 1
     end,
@@ -139,6 +141,31 @@ check("ambiguous load remains startable",
 
 check("ambiguous load communicates uncertainty",
     MAMForecast.button_text(inst) == "Mixed load")
+
+-- In detailed mode, every tied recipe must report its own batch count/time.
+config_values.mam_forecast = 2
+local detailed = smelting.ForecastSmelterPlan("metal_smelter", {
+    { prefab = "copper_ore", count = 6, slot = 1 },
+})
+local outcomes = {}
+for _, outcome in ipairs(detailed.outcomes or {}) do
+    outcomes[outcome.product] = outcome
+end
+check("detailed forecast includes each tied recipe",
+    detailed.ambiguous == true and outcomes.mam_test_ambiguous_a ~= nil
+    and outcomes.mam_test_ambiguous_b ~= nil)
+check("each tied recipe gets its own batch count",
+    outcomes.mam_test_ambiguous_a ~= nil and outcomes.mam_test_ambiguous_a.count == 6
+    and outcomes.mam_test_ambiguous_b ~= nil and outcomes.mam_test_ambiguous_b.count == 2)
+check("each tied recipe gets its own smelting time",
+    outcomes.mam_test_ambiguous_a ~= nil and outcomes.mam_test_ambiguous_a.smelttime == 22.5
+    and outcomes.mam_test_ambiguous_b ~= nil and outcomes.mam_test_ambiguous_b.smelttime == 25)
+
+local detailed_text = MAMForecast.detail_text(stack_inst)
+check("forecast detail shows both distinct outcome quantities",
+    detailed_text ~= nil and detailed_text:find("6 mam_test_ambiguous_a", 1, true) ~= nil
+    and detailed_text:find("2 mam_test_ambiguous_b", 1, true) ~= nil)
+config_values.mam_forecast = 1
 
 -- A genuinely invalid load must still be blocked.
 local invalid_item = {
