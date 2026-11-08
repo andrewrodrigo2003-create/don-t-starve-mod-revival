@@ -39,9 +39,6 @@ check("truncated config uses local fallback",
 check("broken netvar getter uses local fallback",
     settings.accepts_stacks({ mam_plan = { value = function() error("not ready") end } }, true), true)
 
-io.write("\n", passed, " passed; ", failed, " failed\n")
-if failed > 0 then os.exit(1) end
-
 check("late server batch-on requests a widget refresh",
     settings.needs_widget_refresh(instance("c|1|10|25 p||1|idle"), { acceptsstacks = false }), true)
 check("matching server setting does not request a widget refresh",
@@ -106,3 +103,8 @@ check("widget uses server batch-off despite local on",
 local fallback_on, slots_on = widget_accepts_stacks(true, nil)
 check("widget falls back to local option before netvar", fallback_on, true)
 check("widget keeps four furnace slots", slots_on, 4)
+
+io.write("\n", passed, " passed; ", failed, " failed\n")
+if failed > 0 then
+    os.exit(1)
+end
