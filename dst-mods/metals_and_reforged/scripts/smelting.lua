@@ -138,7 +138,7 @@ local function CalculateSmelterRecipe(smelter, names)
 	local val = math.random()*total
 	local idx = 1
 	while idx <= #candidates do
-		val = val - candidates[idx].weight
+		val = val - (candidates[idx].weight or 1)
 		if val <= 0 then
 			return candidates[idx].name, candidates[idx].cooktime or 1
 		end
@@ -200,7 +200,7 @@ local function batch_cap(recipe)
 end
 
 --- Quantas unidades o lote atual produz para o recipe.
---- Sem custo declarado, produz 1 (comportamento original).
+--- Sem custo declarado, produz 1 e consome toda a carga (fallback legado).
 --- `opts` permite que a UI use os valores do SERVIDOR (publicados pela net var
 --- do plano) em vez das proprias opcoes locais, que podem divergir em MP.
 local function batch_count_for(recipe, ingdata, opts)
@@ -262,6 +262,24 @@ end
 --- items: { {prefab, count, slot}, ... }
 local function plan_consumption(recipe, n, items)
     local cost_tags, cost_names = recipe_cost(recipe)
+
+    -- Receitas registradas por mods externos podem nao declarar custo. O
+    -- smelter original consumia o conteudo inteiro do container ao concluir;
+    -- manter lote 1 e consumir a carga toda evita producao gratuita ou devolver
+    -- os mesmos ingredientes quando mam_leftovers estiver ligado.
+    if next(cost_tags) == nil and next(cost_names) == nil then
+        local consumed = {}
+        for _, item in ipairs(items) do
+            if item.count > 0 then
+                table.insert(consumed, {
+                    slot = item.slot,
+                    prefab = item.prefab,
+                    count = item.count,
+                })
+            end
+        end
+        return consumed, {}
+    end
 
     local need_tags = {}
     local need_names = {}
@@ -479,18 +497,32 @@ local function ForecastSmelterPlan(smelter, items, opts)
         return plan
     end
 
-    local recipe = (smelterrecipes[smelter] or {})[plan.possibilities[1]]
-    if recipe == nil then
+    plan.ambiguous = #plan.possibilities > 1
+    plan.outcomes = {}
+
+    -- Empates de prioridade podem apontar para receitas com custos diferentes.
+    -- Calcular cada resultado separadamente evita mostrar a quantidade/tempo
+    -- da primeira receita como se tambem valesse para todas as alternativas.
+    for _, candidate in ipairs(candidates) do
+        local count = batch_count_for(candidate, ingdata, opts)
+        table.insert(plan.outcomes, {
+            product = candidate.name,
+            count = count,
+            smelttime = smelt_time(candidate, count, opts),
+        })
+    end
+
+    local primary = plan.outcomes[1]
+    if primary == nil then
         plan.state = "ambiguous"
         return plan
     end
 
     plan.state = "ready"
-    plan.product = recipe.name
-    plan.count = batch_count_for(recipe, ingdata, opts)
-    plan.smelttime = smelt_time(recipe, plan.count, opts)
-    plan.ambiguous = #plan.possibilities > 1
-    plan.max_batch = batch_cap(recipe)
+    plan.product = primary.product
+    plan.count = primary.count
+    plan.smelttime = primary.smelttime
+    plan.max_batch = batch_cap((smelterrecipes[smelter] or {})[primary.product])
     return plan
 end
 

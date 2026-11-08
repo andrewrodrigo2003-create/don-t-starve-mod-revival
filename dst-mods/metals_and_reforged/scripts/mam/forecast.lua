@@ -55,7 +55,16 @@ function MAMForecast.container_items(inst)
     for slot, item in pairs(contents) do
         if type(slot) == "number" and item ~= nil and item:IsValid() then
             local count = 1
-            if item.components.stackable ~= nil and item.components.stackable:IsStack() then
+            -- Forecast runs on the client replica. Stack sizes are replicated
+            -- through replica.stackable; components.stackable is server-side.
+            local stackable = item.replica ~= nil and item.replica.stackable or nil
+            if stackable ~= nil then
+                if stackable:IsStack() then
+                    count = stackable:StackSize()
+                end
+            elseif item.components ~= nil and item.components.stackable ~= nil
+                and item.components.stackable:IsStack() then
+                -- Fallback for server-side callers and older entity setups.
                 count = item.components.stackable:StackSize()
             end
             gathered[slot] = { slot = slot, prefab = item.prefab, count = count }
@@ -155,7 +164,22 @@ function MAMForecast.can_start(inst)
     end
 
     local plan = MAMForecast.plan(inst)
-    return plan ~= nil and plan.state == "ready" and plan.product ~= nil
+    if plan == nil then
+        return false
+    end
+
+    if plan.state == "ready" and plan.product ~= nil then
+        return true
+    end
+
+    -- O modo 1 oculta as alternativas na previsao, mas nao deve bloquear a
+    -- forja: o servidor ainda escolhe uma das receitas pelo sorteio original.
+    -- So habilitamos a acao quando ha mais de uma candidata valida, que e o
+    -- estado "ambiguous" produzido especificamente por esse modo.
+    return plan.state == "ambiguous"
+        and plan.reason == "ambiguous"
+        and plan.possibilities ~= nil
+        and #plan.possibilities > 1
 end
 
 local function join(list, sep)
@@ -218,7 +242,7 @@ function MAMForecast.detail_text(inst)
     elseif plan.phase == "invalid" then
         return "This mixture has no smelting result."
     elseif plan.phase == "ambiguous" then
-        return "This mixture could yield more than one alloy. Sort the load to predict it."
+        return "This mixture could yield more than one result. Sort the load to predict it."
     end
 
     local lines = {}
@@ -226,12 +250,21 @@ function MAMForecast.detail_text(inst)
         table.insert(lines, (plan.phase == "harvest" and "Ready: " or "Smelting: ")
             .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
     else
-        table.insert(lines, "Will produce: " .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
-        if plan.ambiguous and plan.possibilities ~= nil and #plan.possibilities > 1 then
-            table.insert(lines, "Or one of: " .. join(plan.possibilities, ", "))
-        end
-        if plan.smelttime ~= nil then
-            table.insert(lines, "Time: " .. tostring(math.ceil(plan.smelttime)) .. "s")
+        if plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
+            table.insert(lines, "Possible results (the server chooses one):")
+            for _, outcome in ipairs(plan.outcomes) do
+                local line = tostring(outcome.count or 1) .. " "
+                    .. (product_name(outcome.product) or "?")
+                if outcome.smelttime ~= nil then
+                    line = line .. " — " .. tostring(math.ceil(outcome.smelttime)) .. "s"
+                end
+                table.insert(lines, line)
+            end
+        else
+            table.insert(lines, "Will produce: " .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
+            if plan.smelttime ~= nil then
+                table.insert(lines, "Time: " .. tostring(math.ceil(plan.smelttime)) .. "s")
+            end
         end
     end
     return table.concat(lines, "\n")

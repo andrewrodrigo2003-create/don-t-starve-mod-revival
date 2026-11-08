@@ -1,0 +1,55 @@
+name: Metals and More Lua checks
+
+on:
+  push:
+    branches:
+      - fix/allow-ambiguous-smelting
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'dst-mods/metals_and_reforged/**'
+      - 'dst-mods/tests/**'
+      - '.github/workflows/metals-and-more-lua-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metals-and-more:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.1
+
+      - name: Parse all Metals and More Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/metals_and_reforged -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+
+      - name: Run available Metals and More regression harnesses
+        run: |
+          set -euo pipefail
+          for test in \
+            dst-mods/tests/smelting_module_harness.lua \
+            dst-mods/tests/forecast_ambiguous_start_test.lua \
+            dst-mods/tests/legacy_recipe_default_weight_test.lua \
+            dst-mods/tests/smelter_component_lifecycle_test.lua \
+            dst-mods/tests/smelter_stack_settings_test.lua \
+            dst-mods/tests/metal_storage_chest_test.lua \
+            dst-mods/tests/mam_config_test.lua
+          do
+            if [ -f "$test" ]; then
+              echo "Running $test"
+              lua5.1 "$test"
+            fi
+          done
