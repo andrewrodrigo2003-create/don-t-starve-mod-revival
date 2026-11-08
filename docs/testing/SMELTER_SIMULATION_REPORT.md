@@ -1,8 +1,8 @@
 # Metals and More Reforged — Smelter Simulation Report
 
 Date: 2026-11-07
-Branch: `fix/nitre-gem-fallback-consumption`
-Pull request: #1 (draft; not merged)
+Branch de origem: `fix/nitre-gem-fallback-consumption`
+Pull request: #1 (merged into `main` on 2026-11-07; merge commit `bcd4466d8c6968cb60266f4c688966067e88c995`)
 
 ## Scope
 
@@ -71,4 +71,4 @@ No GitHub Actions workflow run was found for the tested commit. LuaTeX was avail
 5. Hammer a ready furnace with output batches above 20 and with a non-stackable product.
 6. Repeat in multiplayer and with Uncompromising Mode Beta enabled.
 
-The PR remains draft and unmerged pending review and in-game validation.
+The code changes described in this report are now part of `main`. The merge does not change the verification limits above: in-game, multiplayer, save/reload, and Uncompromising Mode Beta validation are still pending.
