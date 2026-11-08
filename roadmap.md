@@ -16,8 +16,11 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [~] Harnesses Lua 5.1 da forja, ciclo de vida, previsão e sync de pilhas aprovados; validar ainda no DST save/load, interrupções e multiplayer servidor/cliente
   - [ ] Concluir livro metalúrgico de consulta
   - [ ] Auditar progressão, bancada de armas e bancada de guerra
-  - [~] Baú metalúrgico de 25 espaços com filtro de ingredientes da forja (PR #5 aberto; testes pendentes)
+  - [x] Baú metalúrgico de 25 espaços integrado via PR #13; filtro aceita ingredientes e produtos registrados da metalurgia. CI completo aprovado; testes in-game/save-load/multiplayer pendentes.
   - [ ] Consulta de depósitos próximos, retirada segura e integração com containers externos, com distância/permissões/autoridade do servidor
+  - [ ] Planejar o baú como infraestrutura de abastecimento da automação futura da forja
+  - [ ] Identificar o robô/coletor vanilla citado pelo usuário e projetar integração nativa quando ativo no mundo
+  - [ ] Inventariar todos os itens metálicos vanilla/mod e criar matriz de receitas individuais balanceadas para a bancada do Metals and More
   - [ ] Completar configurações sem opções placebo
   - [ ] Compatibilidade real com Uncompromising Mode Beta e conjunto de mods do mundo de teste
   - [ ] Pesquisa de referências e documentação de mudanças
