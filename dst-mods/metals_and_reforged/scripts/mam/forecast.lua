@@ -55,7 +55,16 @@ function MAMForecast.container_items(inst)
     for slot, item in pairs(contents) do
         if type(slot) == "number" and item ~= nil and item:IsValid() then
             local count = 1
-            if item.components.stackable ~= nil and item.components.stackable:IsStack() then
+            -- Forecast runs on the client replica. Stack sizes are replicated
+            -- through replica.stackable; components.stackable is server-side.
+            local stackable = item.replica ~= nil and item.replica.stackable or nil
+            if stackable ~= nil then
+                if stackable:IsStack() then
+                    count = stackable:StackSize()
+                end
+            elseif item.components ~= nil and item.components.stackable ~= nil
+                and item.components.stackable:IsStack() then
+                -- Fallback for server-side callers and older entity setups.
                 count = item.components.stackable:StackSize()
             end
             gathered[slot] = { slot = slot, prefab = item.prefab, count = count }
