@@ -54,7 +54,7 @@ Run from the repository root:
 texlua dst-mods/tests/smelter_component_lifecycle_test.lua
 ```
 
-The new harness has been reviewed statically but has **not yet been executed** in this environment. Its simulated deferred callback does not prove the actual DST save/load callback order. In-game save/reload and multiplayer checks remain mandatory.
+The 22-assertion harness has since passed in GitHub Actions with Lua 5.1. Its simulated deferred callback still does not prove the actual DST save/load callback order; in-game save/reload and multiplayer checks remain mandatory.
 
 
 ## Lua 5.1 regression run
