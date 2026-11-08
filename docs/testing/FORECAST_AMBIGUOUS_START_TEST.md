@@ -18,6 +18,6 @@ texlua dst-mods/tests/forecast_ambiguous_start_test.lua
 
 ## Test boundary
 
-The test loads the real `smelting.lua` and `mam/forecast.lua`. It stubs only configuration, structured logging, and DST-facing container/item objects. It covers certainty-only behavior, invalid loads, a six-item copper stack represented only through the client replica, and tied recipes with different per-unit costs and cook times.
+The test loads the real `smelting.lua` and `mam/forecast.lua`. It stubs only configuration, structured logging, and DST-facing container/item objects. It covers certainty-only behavior, invalid loads, a six-item copper stack represented only through the client replica, tied recipes with different per-unit costs and cook times, and safe consumption for a legacy third-party recipe without cost metadata.
 
 It does not load the DST engine or validate actual network delivery, container UI events, or live multiplayer. Those remain in-game checks.
