@@ -34,3 +34,24 @@ The harness reproduces the relevant state-transition logic with stubs; it does n
 - Real inventory delivery and visual/animation behavior after a loaded completion.
 
 These remain required in-game checks in the user's test world, `mundo de testes de mod`.
+
+
+## Direct component lifecycle harness
+
+Added `dst-mods/tests/smelter_component_lifecycle_test.lua`, which loads the actual `scripts/components/smelter.lua` component and stubs only the smelting planner, config/log modules, and DST entity/container APIs.
+
+The harness contains 22 assertions for:
+- exact partial-stack consumption and full-stack removal when a real component `StartSmelting` call applies a supplied plan;
+- rejecting invalid plans without consuming inputs or locking the container;
+- both leftovers settings during interruption;
+- resuming positive-time saves;
+- deferring zero-time completion until after a simulated container restore callback;
+- ready-to-harvest precedence and safe reset when a saved active smelt has no product.
+
+Run from the repository root:
+
+```sh
+texlua dst-mods/tests/smelter_component_lifecycle_test.lua
+```
+
+The new harness has been reviewed statically but has **not yet been executed** in this environment. Its simulated deferred callback does not prove the actual DST save/load callback order. In-game save/reload and multiplayer checks remain mandatory.
