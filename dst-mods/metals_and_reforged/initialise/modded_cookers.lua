@@ -8,6 +8,7 @@ local smeltable = require("smelting")
 local containers = require("containers")
 local MAMConfig = require("mam/config")
 local MAMForecast = require("mam/forecast")
+local MAMContainerSettings = require("mam/container_settings")
 local BufferedAction = GLOBAL.BufferedAction
 local SendRPCToServer = GLOBAL.SendRPCToServer
 
@@ -68,6 +69,9 @@ local function CreateSmelterWidget()
 				for k, v in pairs(t) do
 					container[k] = v
 				end
+			-- The client replica must follow the server-published setting, not its local option.
+			container.acceptsstacks = MAMContainerSettings.accepts_stacks(
+				container.inst, accepts_stacks)
 			container:SetNumSlots(container.widget.slotpos ~= nil and #container.widget.slotpos or 0)
 			end
 		else
