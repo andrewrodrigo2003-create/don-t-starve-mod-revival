@@ -1,0 +1,37 @@
+name: Metallurgy configuration checks
+
+on:
+  push:
+    branches:
+      - fix/metallurgy-config-validation
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "dst-mods/metals_and_reforged/scripts/mam/config.lua"
+      - "dst-mods/metals_and_reforged/tests/mam_config_test.lua"
+      - ".github/workflows/metallurgy-config-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  config-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.1
+
+      - name: Parse changed Lua files
+        run: |
+          luac5.1 -p dst-mods/metals_and_reforged/scripts/mam/config.lua
+          luac5.1 -p dst-mods/metals_and_reforged/tests/mam_config_test.lua
+
+      - name: Run configuration harness
+        working-directory: dst-mods/metals_and_reforged
+        run: lua5.1 tests/mam_config_test.lua
