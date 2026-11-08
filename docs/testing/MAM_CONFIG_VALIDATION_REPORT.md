@@ -18,6 +18,7 @@
 - O harness carrega diretamente o módulo `mam/config.lua`; não é uma cópia do algoritmo de validação.
 - Foram testados todos os valores publicados para cada chave, strings inválidas, números fora da lista, falha do getter, overrides válidos/inválidos, `set`, `on`, `int` e ausência das duas chaves ainda não implementadas.
 - O teste usa apenas LuaTeX local e não carrega APIs do DST.
+- GitHub Actions: execução [#42450641361](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42450641361) — **success**. O job instalou Lua 5.1, analisou a sintaxe dos dois arquivos com `luac5.1 -p` e executou o harness, que retornou `PASS: 103 verificacoes de configuracao`.
 
 ## Limitações
 
