@@ -2,7 +2,9 @@
 -- Run from the repository root with: texlua --luaonly dst-mods/tests/metal_storage_chest_test.lua
 -- This stubs DST APIs; it does not replace an in-game or multiplayer test.
 
+package.path = "dst-mods/metals_and_reforged/scripts/?.lua;" .. package.path
 package.preload["prefabutil"] = function() return {} end
+package.preload["tuning"] = function() return {} end
 
 local function noop() end
 ACTIONS = { HAMMER = "HAMMER" }
@@ -120,4 +122,37 @@ assert(client_tags.chest and client_tags.mam_metal_storage, "client replica tags
 assert(client_inst.components.container == nil and client_inst.components.workable == nil,
     "server-only components were added on client")
 
-print("PASS: prefab registration, assets, placer, tags, widget, callbacks, hammer/drop behavior, client/server split")
+-- Exercise the exact filter factory used by modmain.lua with the real smelter
+-- ingredient registry, not a duplicated allowlist.
+local Smelting = require("smelting")
+local MetalStorage = require("mam/metal_storage")
+local itemtestfn = MetalStorage.MakeItemTestFn(Smelting.IsSmelterIngredient)
+local registered_ingredients = 0
+for prefab in pairs(Smelting.smelteringredients) do
+    assert(itemtestfn(nil, { prefab = prefab }, nil),
+        "registered smelter ingredient rejected by chest: " .. prefab)
+    registered_ingredients = registered_ingredients + 1
+end
+assert(registered_ingredients > 0, "smelter ingredient registry unexpectedly empty")
+
+for _, prefab in ipairs({
+    "log", "twigs", "cutgrass", "gears", "goldnugget_fake", "unknown_metal"
+}) do
+    assert(not itemtestfn(nil, { prefab = prefab }, nil),
+        "non-ingredient accepted by chest: " .. prefab)
+end
+assert(not itemtestfn(nil, nil, nil), "nil item must be rejected")
+assert(not itemtestfn(nil, {}, nil), "item without prefab must be rejected")
+assert(not itemtestfn(nil, { prefab = 123 }, nil), "non-string prefab must be rejected")
+
+-- Guard the production wiring: modmain must use the same tested factory and
+-- the actual smelting predicate, rather than an independent filter.
+local modmain = assert(io.open("dst-mods/metals_and_reforged/modmain.lua", "r"))
+local modmain_source = modmain:read("*a")
+modmain:close()
+assert(modmain_source:find(
+    'MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient)', 1, true
+), "modmain is not wired to the tested chest filter")
+
+print(("PASS: prefab lifecycle + %d registered ingredients accepted, invalid items rejected, production filter wiring verified")
+    :format(registered_ingredients))
