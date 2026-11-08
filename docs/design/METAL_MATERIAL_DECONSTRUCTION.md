@@ -2,7 +2,7 @@
 
 **Status:** especificação preliminar baseada nas receitas atuais; ainda não implementada.  
 **Data:** 2026-11-08.  
-**Escopo:** Metals and More Reforged בלבד.
+**Escopo:** Metals and More Reforged.
 
 ## 1. Objetivo confirmado pelo usuário
 
