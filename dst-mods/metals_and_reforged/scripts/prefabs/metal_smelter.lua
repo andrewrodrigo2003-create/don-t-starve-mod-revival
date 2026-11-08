@@ -12,6 +12,15 @@ local prefabs =
     "collapse_small",
 }
 
+local MAMContainerSettings = require("mam/container_settings")
+
+local function onmamplandirty(inst)
+    local container = inst.replica ~= nil and inst.replica.container or nil
+    if MAMContainerSettings.needs_widget_refresh(inst, container) then
+        container:WidgetSetup("smelter")
+    end
+end
+
 
 local function onhammered(inst, worker)
     inst.components.lootdropper:DropLoot()
@@ -237,6 +246,9 @@ local function fn()
     inst.entity:SetPristine()
 
     if not TheWorld.ismastersim then
+        -- O primeiro WidgetSetup pode ocorrer antes de mam_plan chegar do
+        -- servidor. Reaplica somente se o netvar publicar outro valor de lote.
+        inst:ListenForEvent("mamplandirty", onmamplandirty)
 		inst:DoTaskInTime(0, function()
 			inst.replica.container:WidgetSetup("smelter")
         end)
