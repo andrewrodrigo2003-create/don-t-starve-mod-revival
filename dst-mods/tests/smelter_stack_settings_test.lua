@@ -42,6 +42,15 @@ check("broken netvar getter uses local fallback",
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then os.exit(1) end
 
+check("late server batch-on requests a widget refresh",
+    settings.needs_widget_refresh(instance("c|1|10|25 p||1|idle"), { acceptsstacks = false }), true)
+check("matching server setting does not request a widget refresh",
+    settings.needs_widget_refresh(instance("c|1|10|25 p||1|idle"), { acceptsstacks = true }), false)
+check("missing netvar does not request a widget refresh",
+    settings.needs_widget_refresh({}, { acceptsstacks = false }), false)
+check("missing replica container does not request a widget refresh",
+    settings.needs_widget_refresh(instance("c|1|10|25 p||1|idle"), nil), false)
+
 -- Exercise the actual widget setup wrapper, not only the pure policy helper.
 local function widget_accepts_stacks(local_batch, net_raw)
     local containers = {
