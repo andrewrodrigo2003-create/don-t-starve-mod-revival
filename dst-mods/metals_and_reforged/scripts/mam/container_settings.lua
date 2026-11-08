@@ -25,4 +25,14 @@ function M.accepts_stacks(inst, fallback)
     return batch == "1"
 end
 
+-- A netvar can arrive after the replica's first WidgetSetup call. Refresh only
+-- when the server's published batch setting actually differs from the widget.
+function M.needs_widget_refresh(inst, container)
+    if container == nil then
+        return false
+    end
+    return M.accepts_stacks(inst, container.acceptsstacks)
+        ~= container.acceptsstacks
+end
+
 return M
