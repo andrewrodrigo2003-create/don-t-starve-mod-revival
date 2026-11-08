@@ -21,7 +21,7 @@
 
 ## 1. Proveniência, autoria e direitos de uso
 
-- [x] Criar arte vetorial original para o banner e ícone quadrado, sem reutilizar a arte legada; fontes SVG e exports PNG documentados no PR #7.
+- [~] Criar arte vetorial original para o banner e ícone quadrado, sem reutilizar a arte legada; fontes SVG existem no PR #7, mas PNG exportados e KTEX ainda não foram entregues nem integrados.
 - [ ] Converter o ícone quadrado para KTEX e substituir o `modicon.tex` legado somente após validação.
 - [ ] Fazer inventário arquivo a arquivo de código, arte, sons, animações, textos e assets herdados.
 - [ ] Separar claramente o que veio do rework de NevilleDST, o que veio do mod original de Benzoquinone e o que foi escrito do zero nesta atualização.
@@ -45,7 +45,7 @@
 
 - [x] Há implementação de drops extras para rochas da superfície/lua, formações de cavernas, criaturas das ruínas, hounds, árvores/arbustos de mármore e tubarão.
 - [x] Existe configuração geral e configuração por fonte; o modo aditivo é o padrão para preservar drops de outros mods.
-- [~] PR #6 corrige o modo Rewrite para respeitar as opções individuais, restaurar as fontes de árvore de mármore/tubarão e preservar Auto/Always dos hounds com UM; revisão e testes in-game pendentes.
+- [x] PR #16 integra a correção de Rewrite originalmente preparada no PR #6 e adiciona harness Lua 5.1 que carrega os módulos reais `loot_guard.lua`, `modded_drops.lua` e `newrocks.lua`; testes in-game/UM Beta ainda pendentes.
 - [x] Comparação estática confirmou que as 18 tabelas originais mantêm todos os nomes e pares item/chance.
 - [x] Harness LuaTeX isolado da lógica de decisão passou 9 cenários; não executa o módulo completo nem o DST.
 - [x] Existe opção para normalizar rolls repetidos, desligada por padrão para preservar as probabilidades originais.
@@ -53,7 +53,7 @@
 - [ ] Confirmar que cada fonte é coerente com o material e com o risco da criatura/bioma.
 - [ ] Verificar que recursos plantados ou renováveis não criam farms de minério não intencionais.
 - [ ] Verificar que nenhum item vanilla ou drop de outro mod é removido no modo aditivo.
-- [ ] Confirmar o comportamento do modo Rewrite, deixando claro que ele restaura a substituição de loot tables do original.
+- [x] Confirmar por harness runtime as gates de Rewrite, com a ressalva de que a substituição de loot tables é comportamento legado e ainda exige validação em mundo real.
 - [ ] Testar cada fonte com as opções geral e individuais desligadas/ligadas.
 
 ## 4. Forja em lotes e previsão
@@ -144,7 +144,7 @@
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
 - [x] Auditoria de save/load e ciclo de vida no componente real da forja: harness Lua 5.1 com 22/22 assertions aprovadas; validação no motor DST ainda pendente.
 - [x] Há relatório estático e harness de prefab para o primeiro baú metalúrgico (PR #5); o harness passa em ambiente com stubs, mas ainda não testa o motor DST.
-- [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
+- [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables, com harness runtime integrado pelo PR #16.
 - [x] Harness isolado da decisão Auto/Always/UM passou 9 cenários; parsing dos arquivos completos e teste real no jogo continuam pendentes.
 - [ ] Executar análise sintática de todos os Lua com Lua 5.1/ambiente compatível.
 - [ ] Testar carregamento dos módulos e referências a globals/APIs do DST com stubs e/ou scripts do jogo.
@@ -168,7 +168,7 @@
 ## Próxima sequência de execução
 
 1. Concluir auditoria da fundição e da previsão, incluindo ciclo de vida e save/load.
-2. Fechar auditoria de mineração/drops e registrar matriz por fonte/configuração.
+2. Validar em jogo a auditoria de mineração/drops e registrar matriz por fonte/configuração, incluindo UM Beta.
 3. Validar craftbook, bancada de guerra e progressão.
 4. Projetar e implementar o armazenamento metalúrgico em etapas pequenas, começando pelo contêiner próprio e seus filtros.
 5. Implementar consulta próxima somente depois que o armazenamento básico estiver seguro.
@@ -179,8 +179,8 @@
 
 - PR #1 — correções de consumo de nitre/moonglass/junk dust e drops completos do lote ao martelar a forja; integrado em `main` em 2026-11-07.
 - PR #5 — sua implementação foi incorporada pelo PR #13 e o GitHub marcou o PR #5 como merged por ancestralidade. A versão integrada inclui o filtro ampliado para ingredientes e produtos metalúrgicos.
-- PR #7 — fontes SVG originais para banner e ícone quadrado, exports PNG e documentação da cadeia de autoria; conversão KTEX e substituição do ícone no jogo pendentes.
-- PR #6 — correção das opções por fonte e fontes especiais no modo Rewrite; aberto, draft, não integrado.
+- PR #7 — fontes SVG originais para banner e ícone quadrado e documentação de procedência; o PR não contém PNG exportados, conversão KTEX nem substituição do ícone no jogo. Permanece aberto.
+- PR #6 — branch original preservada e PR fechado como supersedido. Sua implementação foi transportada para PR #16, com testes runtime adicionais, e integrada em `b71d06f`.
 - PR #8 — validação dos enums de configuração no getter, overrides sincronizados e setter; remoção das chaves internas ainda não implementadas; harness LuaTeX direto com 103 verificações. Integrado à main em `ad0ba90`.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
@@ -206,8 +206,8 @@ As referências abaixo são usadas para orientar arquitetura e testes, não para
 
 ## Registro de execução — 2026-11-07 (revalidação do repositório)
 
-- `main` revalidada após as integrações em `31f6494e1bdac43bcbd7e38c32502fc192cd3895`; PRs #1, #2, #3, #8, #9, #10, #11 e #13 estão integrados.
-- PR #1 foi integrado à `main`. Desde então, PRs #2, #3, #8, #9, #10, #11 e #13 também foram integrados. Permanecem em aberto os PRs #4 (este plano), #6 (drops Rewrite) e #7 (arte/identidade). O PR #5 foi incorporado pelo #13.
+- `main` revalidada após as integrações em `b71d06f7b8c7c41844314944702e49a3d61455d5`; PRs #1, #2, #3, #4, #8, #9, #10, #11, #13, #14, #15 e #16 estão integrados.
+- PR #1 foi integrado à `main`. Também estão integrados #2, #3, #4, #8, #9, #10, #11, #13, #14, #15 e #16. O PR #5 foi incorporado pelo #13; a implementação do #6 foi carregada pelo #16 e o #6 original foi fechado como supersedido. Apenas o PR #7 permanece aberto para finalizar PNG/KTEX e trocar a arte efetiva.
 - Branches observadas incluem `main`, `docs/complete-metals-more-roadmap`, `fix/smelter-interruption-leftovers`, `test/smelting-module-harness`, `fix/allow-ambiguous-smelting` e `fix/smelter-server-stack-setting`, além das branches dos outros sistemas.
 - Busca de issues abertas não retornou issues. O status combinado de `main` não reportou checks; a consulta de workflow runs para esse commit também retornou lista vazia. Isso significa “nenhum check reportado”, não aprovação de CI.
 - A auditoria da matriz continua documentando as 18 receitas. O PR #9 agora carrega diretamente `smelting.lua` e `smelting_products.lua`; seu harness expandido executou 75 assertions com Lua 5.1: 75 aprovadas, 0 falhas.
@@ -241,7 +241,7 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 
 - PRs #2, #3, #5, #6, #7 e #8 receberam merge commits normais da `main` atual (`380cd6cbf1da6bd02fe214ab362978fd54d61378`) para eliminar a divergência de cinco commits. As alterações de cada PR foram preservadas; nenhum histórico foi reescrito e nenhum PR foi integrado.
 - PR #4 também contém a `main` atual como ancestral após sincronização da branch de documentação.
-- Revalidação posterior: PRs #2, #3, #9, #10, #11 e #13 foram integrados. PR #5 foi incorporado pelo #13. PR #4 permanece em atualização documental; PRs #6 e #7 continuam abertos para revisão. Não assumir que branches antigas estão sincronizadas: comparar cada PR com a main atual antes de qualquer integração.
+- Revalidação posterior: PRs #2, #3, #4, #9, #10, #11, #13, #14, #15 e #16 foram integrados. PR #5 foi incorporado pelo #13. PR #6 foi fechado como supersedido após o código ser transportado e integrado pelo #16. PR #7 continua aberto; a arte SVG não substitui ainda o ícone KTEX. Não assumir que branches antigas estão sincronizadas: comparar cada PR com a main atual antes de qualquer integração.
 - Não foram encontrados workflow runs nem status checks para os heads verificados. Isso continua significando ausência de CI reportado, não aprovação automática.
 
 
@@ -289,3 +289,13 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - A forja só deve iniciar lotes automáticos com um `storagerobot` ativo/operacional na área configurada; identificar estado de energia/atividade por variante. Sem robô, manter a forja manual.
 - Usar a previsão e o plano de consumo existentes; retirar materiais atomicamente no servidor, devolver em falha e impedir que dois lotes reservem a mesma pilha. Não patchar prefabs vanilla nem substituir funções globais.
 - Especificação completa, regras de compatibilidade e testes obrigatórios: `docs/design/WOBOT_METALLURGY_AUTOMATION.md`.
+
+
+## 15. Execução do modo Rewrite — PR #16 integrado em 2026-11-08
+
+- O PR #16 transportou para uma branch baseada na main atual as alterações de Rewrite originalmente preparadas no PR #6, preservando a branch original e evitando integrar código a partir de uma base antiga.
+- O harness `dst-mods/tests/loot_rewrite_runtime_test.lua` carrega os módulos reais `mam/loot_guard.lua`, as declarações de `initialise/modded_drops.lua` e o arquivo real `scripts/prefabs/newrocks.lua` com stubs mínimos de registro do DST.
+- O teste cobre 18 tabelas vanilla de Rewrite, gates por fonte, normalização, exceções de árvore de mármore/tubarão, Auto/Always de hounds com UM, master switch e autoridade do servidor.
+- GitHub Actions no head `f05d7b7` passou: parsing Lua 5.1 de todos os arquivos do mod e suíte completa de regressão, incluindo o novo harness.
+- Isso é um teste runtime de Lua com stubs, não uma sessão real do DST. Worldgen, loot real, UM Beta, multiplayer e balanceamento em mundo continuam pendentes.
+- O PR #6 original foi fechado como supersedido; sua branch e commits permanecem preservados. O PR #16 está integrado em `b71d06f`.
