@@ -39,4 +39,4 @@ A passing harness therefore verifies the Lua module's planning/forecast logic un
 
 ## Expected result
 
-The harness contains 80 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
+The harness contains 75 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
