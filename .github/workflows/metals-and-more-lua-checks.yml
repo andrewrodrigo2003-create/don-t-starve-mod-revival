@@ -30,6 +30,7 @@ jobs:
 
       - name: Parse all Metals and More Lua files
         run: |
+          set -euo pipefail
           find dst-mods/metals_and_reforged -type f -name '*.lua' -print0 |
             while IFS= read -r -d '' file; do
               luac5.1 -p "$file"
@@ -37,6 +38,7 @@ jobs:
 
       - name: Run available Metals and More regression harnesses
         run: |
+          set -euo pipefail
           for test in \
             dst-mods/tests/smelting_module_harness.lua \
             dst-mods/tests/forecast_ambiguous_start_test.lua \
