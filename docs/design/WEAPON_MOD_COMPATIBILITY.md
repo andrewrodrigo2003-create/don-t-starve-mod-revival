@@ -36,7 +36,15 @@ and the newer Forge-event recipes.
 
 This change does not patch Woodie - Better Skill Tree, does not monkey-patch the
 vanilla `spellcaster` component, and does not claim to fix its `SetSpellFn`
-error. The new Lua regression contract checks that the unsafe global captures
-do not return and that false alternate-attack conditions remain false. Lua
-syntax/CI and in-game loading still need to be verified after the pull request
-is opened.
+error.
+
+The GitHub Actions run for PR #19 completed successfully (run 42):
+- Every Lua file in Metals and More Reforged passed Lua 5.1 syntax parsing.
+- All regression harnesses configured in the workflow passed, including
+  `weapon_compatibility_contract_test.lua`.
+- The installable mod ZIP is generated as a workflow artifact for this commit.
+
+No DST in-game test has been run. Compatibility with Woodie - Better Skill Tree,
+Gem Core, Glassic API, and Woodie Transformation Skins still requires a
+controlled test in the game. This patch is a defensive compatibility improvement,
+not a confirmed fix for the third-party `SetSpellFn` crash.
