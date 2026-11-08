@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - fix/allow-ambiguous-smelting
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'dst-mods/metals_and_reforged/scripts/smelting.lua'
+      - 'dst-mods/metals_and_reforged/scripts/mam/forecast.lua'
+      - 'dst-mods/tests/forecast_ambiguous_start_test.lua'
+      - '.github/workflows/metals-and-more-lua-checks.yml'
   workflow_dispatch:
 
 permissions:
