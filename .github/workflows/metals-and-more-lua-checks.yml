@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/allow-ambiguous-smelting
+      - test/integrated-smelter-validation
   pull_request:
     branches:
       - main
