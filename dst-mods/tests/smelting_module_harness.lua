@@ -275,6 +275,9 @@ assert_consumption("opal gem", opal, {
     greengem_shard = 1,
 }, {})
 
+-- Re-enable batch mode after the server-batch-off forecast checks above.
+set_config(true, 10, 25, 2)
+
 -- Nitre's ordinary mineral route scales with the mineral cost, unlike
 -- its one-output gem-fragment fallback.
 local mineral_nitre = plan_for({ make_item("rocks", 3, 1) })
