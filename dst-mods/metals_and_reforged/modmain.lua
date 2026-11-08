@@ -357,6 +357,7 @@ STRINGS.CHARACTERS.GENERIC.DESCRIBE.BLACKSMITH_EDGEOLD = "Now that's a work of a
 
 local containers = require "containers"
 local MAMSmelting = require "smelting"
+local MAMMetalStorage = require "mam/metal_storage"
 
 local params = {}
 
@@ -402,9 +403,8 @@ params.metal_storage_chest = makeChest()
 
 -- O filtro usa a mesma tabela de ingredientes da forja: novos materiais
 -- aceitos pela metalurgia entram automaticamente, sem aceitar itens alheios.
-function params.metal_storage_chest.itemtestfn(container, item, slot)
-    return item ~= nil and MAMSmelting.IsSmelterIngredient(item.prefab)
-end
+params.metal_storage_chest.itemtestfn =
+    MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient)
 
 function params.cold_safe.itemtestfn(container, item, slot)
     if item:HasTag("icebox_valid") then
