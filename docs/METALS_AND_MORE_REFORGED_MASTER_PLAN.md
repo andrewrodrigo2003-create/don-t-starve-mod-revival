@@ -243,3 +243,11 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 - PR #4 também contém a `main` atual como ancestral após sincronização da branch de documentação.
 - Revalidação posterior: PRs #2–#11 continuam abertos em draft, sem merge; as branches estão alinhadas com a `main` (0 commits atrás) e a API do GitHub reporta estado de merge limpo.
 - Não foram encontrados workflow runs nem status checks para os heads verificados. Isso continua significando ausência de CI reportado, não aprovação automática.
+
+
+### Continuação — cobertura direta do ciclo de vida da forja
+
+- PR #3 foi ampliado com `dst-mods/tests/smelter_component_lifecycle_test.lua`: harness que carrega o componente real `scripts/components/smelter.lua` e substitui apenas o planejador, configuração/log e APIs de entidade/contêiner do DST por stubs.
+- O novo harness contém 22 assertions para consumo exato de pilhas (parcial e total), recusa de plano inválido sem consumir carga, as duas políticas de sobras ao interromper, retomada de save com tempo positivo, conclusão expirada adiada, precedência do estado pronto para colher e reset de save sem produto.
+- O teste é novo e foi revisado estaticamente, mas ainda não foi executado com LuaTeX. A execução do callback adiado em stub não comprova a ordem real de callbacks do sistema de save do DST.
+- PR #3 continua draft e aberto. O GitHub confirmou estado `clean` e branch sem commits atrás da `main`; nenhum merge foi feito.
