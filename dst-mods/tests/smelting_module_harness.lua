@@ -231,6 +231,38 @@ local server_off_forecast = smelting.ForecastSmelterPlan(
 equal("forecast respects server batch-off setting", server_off_forecast.count, 1)
 near("forecast batch-off uses base time", server_off_forecast.smelttime, 15)
 
+-- Cover every gem recipe with minimal valid fragment combinations.
+-- These checks exercise the real recipe predicates and the real batch planner.
+local function gem_case(label, items, product, consumed_prefab, consumed_count)
+    local plan = plan_for(items)
+    equal(label .. " product", plan.product, product)
+    equal(label .. " output count", plan.count, 1)
+    assert_consumption(label, plan, { [consumed_prefab] = consumed_count }, {})
+end
+
+gem_case("red gem", { make_item("redgem_shard", 4, 1) },
+    "redgem", "redgem_shard", 4)
+gem_case("blue gem", { make_item("bluegem_shard", 4, 1) },
+    "bluegem", "bluegem_shard", 4)
+gem_case("purple gem", {
+    make_item("redgem_shard", 2, 1),
+    make_item("bluegem_shard", 2, 2),
+}, "purplegem", "redgem_shard", 2)
+local purple_gem = plan_for({
+    make_item("redgem_shard", 2, 1),
+    make_item("bluegem_shard", 2, 2),
+})
+assert_consumption("purple gem blue fragments", purple_gem,
+    { bluegem_shard = 2 }, {})
+gem_case("green gem", { make_item("greengem_shard", 3, 1) },
+    "greengem", "greengem_shard", 3)
+gem_case("yellow gem", { make_item("yellowgem_shard", 3, 1) },
+    "yellowgem", "yellowgem_shard", 3)
+gem_case("orange gem", { make_item("orangegem_shard", 3, 1) },
+    "orangegem", "orangegem_shard", 3)
+gem_case("opal gem", { make_item("redgem_shard", 4, 1) },
+    "opalgem", "redgem_shard", 4)
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
