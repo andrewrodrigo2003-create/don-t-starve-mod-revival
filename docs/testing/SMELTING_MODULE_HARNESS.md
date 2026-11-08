@@ -24,9 +24,9 @@ lua dst-mods/tests/smelting_module_harness.lua
 - Bronze's combined copper/iron requirements.
 - Moonglass's glass/moon requirements.
 - Gold's two-tag requirement.
-- All seven gem recipes: red, blue, purple, green, yellow, orange, and opal, using minimal valid shard combinations.
+- All seven gem recipes: red, blue, purple, green, yellow, orange, and opal, using minimal valid shard combinations; red-gem multi-batch output is also covered.
 - Adamantium's named iron-ingot prerequisite and intrinsic five-unit cap.
-- Nitre's gem-fragment fallback consumes the fragments used while preserving unrelated items.
+- Nitre's ordinary mineral route batches by mineral cost; its gem-fragment fallback consumes the fragments used while preserving unrelated items.
 - Junk dust consumes its half-unit metal input and remains capped at one output.
 - Ore pass-through remains capped at one output.
 - Forecast is deterministic for a single candidate, does not mutate inputs, and honors server-published batch/cap/time settings.
@@ -39,4 +39,4 @@ A passing harness therefore verifies the Lua module's planning/forecast logic un
 
 ## Expected result
 
-The harness contains 74 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
+The harness contains 80 assertions across the cases above. The script prints one `PASS`/`FAIL` line per assertion and exits nonzero if any assertion fails. Record the exact interpreter and output in the PR review when run in the repository checkout.
