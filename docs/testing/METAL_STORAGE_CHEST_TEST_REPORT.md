@@ -21,15 +21,17 @@ New `metal_storage_chest` prefab, 25-slot widget, smelter-ingredient filter, rec
   - the container calls `DropEverything()` before the structure is removed.
 - The current source was inspected statically. Registration, filter, server-only components, widget setup, hit behavior and destruction path were checked by reading the code.
 - Added `dst-mods/tests/metal_storage_chest_test.lua`, an isolated prefab harness that loads the real prefab file with stubs for DST APIs.
-- Ran the harness with `texlua --luaonly`; it passed checks for prefab registration, assets, placer, generic/custom tags, widget binding, callbacks, ordinary-hit close-without-spill behavior, hammer destruction spilling stored contents, and server/client component separation.
-- The harness is not the DST engine. It does not verify the actual container component, network replication, item acceptance against every registered ingredient, save/load, assets, or multiplayer.
+- Extracted the production item filter into `scripts/mam/metal_storage.lua`; `modmain.lua` now wires that tested factory to the real `smelting.IsSmelterIngredient` predicate.
+- GitHub Actions ran the harness with Lua 5.1 and parsed all changed Lua files successfully: **22 registered smelter ingredients accepted; invalid, missing, and malformed items rejected; production wiring verified**. Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42450191187.
+- The harness also checks prefab registration, assets, placer, generic/custom tags, widget binding, callbacks, ordinary-hit close-without-spill behavior, hammer destruction spilling stored contents, and server/client component separation.
+- The harness is not the DST engine. It does not verify the actual container component, network replication, save/load, asset rendering, or multiplayer.
 
 ## Not tested
 
 - Full DST Lua/API loading; the isolated prefab harness passed but does not load the full mod.
 - Full `modmain.lua` or `modinfo.lua` loading inside DST.
 - Real asset resolution or visual/UI alignment in the game.
-- Actual item acceptance for every smelting ingredient in a running game.
+- Actual item acceptance in a running game (the shared predicate and every currently registered ingredient are covered by the Lua harness, but the DST container component is not loaded).
 - Save/reload, snow coverage, haunt behavior, server/client replication, multiplayer, or Uncompromising Mode Beta.
 - Crafting balance and placement in the user's world.
 
