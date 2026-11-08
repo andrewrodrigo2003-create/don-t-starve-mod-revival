@@ -47,10 +47,25 @@ jobs:
             dst-mods/tests/smelter_stack_settings_test.lua \
             dst-mods/tests/metal_storage_chest_test.lua \
             dst-mods/tests/mam_config_test.lua \
-            dst-mods/tests/loot_rewrite_runtime_test.lua
+            dst-mods/tests/loot_rewrite_runtime_test.lua \
+            dst-mods/tests/weapon_compatibility_contract_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
               lua5.1 "$test"
             fi
           done
+
+      - name: Package installable mod
+        run: |
+          set -euo pipefail
+          cd dst-mods
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.4.zip" metals_and_reforged
+
+      - name: Upload installable mod package
+        uses: actions/upload-artifact@v4
+        with:
+          name: metals-and-more-reforged-2.9.4
+          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.4.zip
+          if-no-files-found: error
+          retention-days: 14

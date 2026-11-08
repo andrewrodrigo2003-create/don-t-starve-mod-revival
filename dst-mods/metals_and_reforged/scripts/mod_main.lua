@@ -141,30 +141,30 @@ AddComponentPostInit(
                 return u[t] ~= nil and u[t][s] ~= nil
             end
         end
-        _oldGetAttackRange = self.GetAttackRange
+        local old_get_attack_range = self.GetAttackRange
         function self:GetAttackRange()
             local z = self:GetWeapon()
             if z and z.components.weapon:CanAltAttack() then
                 return z.components.weapon.altattackrange
             else
-                return _oldGetAttackRange(self)
+                return old_get_attack_range(self)
             end
         end
-        _oldGetHitRange = self.GetHitRange
+        local old_get_hit_range = self.GetHitRange
         function self:GetHitRange()
             local z = self:GetWeapon()
             if z and z.components.weapon:CanAltAttack() then
                 return self.attackrange + z.components.weapon.althitrange
             else
-                return _oldGetHitRange(self)
+                return old_get_hit_range(self)
             end
         end
-        _oldCalcDamage = self.CalcDamage
+        local old_calc_damage = self.CalcDamage
         function self:CalcDamage(A, z, B)
             if A:HasTag("alwaysblock") then
                 return 0
             end
-            local C = _oldCalcDamage(self, A, z, B)
+            local C = old_calc_damage(self, A, z, B)
             local D = z ~= nil and z.components.weapon.damage or self.defaultdamage
             if z and z.components.weapon:CanAltAttack() or not z and self.damage_override then
                 local E = 0
@@ -239,17 +239,17 @@ AddComponentPostInit(
         function self:GetBuffMults(r, G, H, z, x)
             return F(r, G, H, z, x)
         end
-        _oldDoAttack = self.DoAttack
+        local old_do_attack = self.DoAttack
         function self:DoAttack(T, z, U, x, V)
             local I, J = F(false, self.inst, T or self.target, z, x)
             local W = (V or 1) * J * I
-            _oldDoAttack(self, T, z, U, x, W)
+            old_do_attack(self, T, z, U, x, W)
         end
-        _oldGetAttacked = self.GetAttacked
+        local old_get_attacked = self.GetAttacked
         function self:GetAttacked(G, X, z, x)
             local I, J = F(true, G, self.inst, z, x)
             X = X * J * I
-            return _oldGetAttacked(self, G, X, z, x)
+            return old_get_attacked(self, G, X, z, x)
         end
         function self:DoAreaAttack(A, Y, z, Z, x, _)
             local a0 = 0
@@ -345,12 +345,12 @@ AddComponentPostInit(
         end
         function self:CanAltAttack()
             if self:HasAltAttack() and self.isaltattacking then
-                return self.altcondition ~= nil and self.altcondition(self.inst) or true
+                return self.altcondition == nil or self.altcondition(self.inst)
             end
         end
-        _oldCanRangedAttack = self.CanRangedAttack
+        local old_can_ranged_attack = self.CanRangedAttack
         function self:CanRangedAttack()
-            return self:CanAltAttack() and self.altprojectile or _oldCanRangedAttack(self)
+            return self:CanAltAttack() and self.altprojectile or old_can_ranged_attack(self)
         end
         function self:DoAltAttack(G, T, U, x, V)
             self:SetIsAltAttacking(true)
@@ -675,9 +675,9 @@ AddClassPostConstruct(
                     self.can_altattack_fn(self.inst)
             end
         end
-        _oldAttackRange = self.AttackRange
+        local old_attack_range = self.AttackRange
         function self:AttackRange()
-            return self:CanAltAttack() and self:AltAttackRange() or _oldAttackRange(self)
+            return self:CanAltAttack() and self:AltAttackRange() or old_attack_range(self)
         end
     end
 )

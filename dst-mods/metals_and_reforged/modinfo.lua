@@ -1,7 +1,7 @@
 name = "Metals and More Reforged"
 description = "Create armor and weapons at your new craftable workbench."
 author = "NevilleDST"
-version = "2.9.3"
+version = "2.9.4"
 forumthread = ""
 
 api_version = 10
