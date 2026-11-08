@@ -126,7 +126,7 @@ assert(client_inst.components.container == nil and client_inst.components.workab
 -- ingredient registry, not a duplicated allowlist.
 local Smelting = require("smelting")
 local MetalStorage = require("mam/metal_storage")
-local itemtestfn = MetalStorage.MakeItemTestFn(Smelting.IsSmelterIngredient)
+local itemtestfn = MetalStorage.MakeItemTestFn(Smelting.IsSmelterIngredient, Smelting.recipes.metal_smelter)
 local registered_ingredients = 0
 for prefab in pairs(Smelting.smelteringredients) do
     assert(itemtestfn(nil, { prefab = prefab }, nil),
@@ -134,6 +134,15 @@ for prefab in pairs(Smelting.smelteringredients) do
     registered_ingredients = registered_ingredients + 1
 end
 assert(registered_ingredients > 0, "smelter ingredient registry unexpectedly empty")
+
+-- Every registered metal output/product must also be storable.
+local registered_products = 0
+for prefab in pairs(Smelting.recipes.metal_smelter) do
+    assert(itemtestfn(nil, { prefab = prefab }, nil),
+        "registered smelter product rejected by chest: " .. prefab)
+    registered_products = registered_products + 1
+end
+assert(registered_products > 0, "smelter product registry unexpectedly empty")
 
 for _, prefab in ipairs({
     "log", "twigs", "cutgrass", "gears", "goldnugget_fake", "unknown_metal"
@@ -151,8 +160,8 @@ local modmain = assert(io.open("dst-mods/metals_and_reforged/modmain.lua", "r"))
 local modmain_source = modmain:read("*a")
 modmain:close()
 assert(modmain_source:find(
-    'MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient)', 1, true
+    'MAMMetalStorage.MakeItemTestFn(MAMSmelting.IsSmelterIngredient, MAMSmelting.recipes.metal_smelter)', 1, true
 ), "modmain is not wired to the tested chest filter")
 
-print(("PASS: prefab lifecycle + %d registered ingredients accepted, invalid items rejected, production filter wiring verified")
-    :format(registered_ingredients))
+print(("PASS: prefab lifecycle + %d registered ingredients + %d registered products accepted, invalid items rejected, production filter wiring verified")
+    :format(registered_ingredients, registered_products))
