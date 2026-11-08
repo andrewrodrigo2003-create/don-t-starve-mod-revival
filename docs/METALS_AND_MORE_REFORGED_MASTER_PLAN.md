@@ -142,7 +142,7 @@
 ## 11. Testes e qualidade
 
 - [x] Há relatório de simulação da fundição e testes de matriz de receitas/consumo documentados.
-- [x] Auditoria isolada de estados de save/load da forja: 6 cenários aprovados; sem execução do componente completo/DST.
+- [x] Auditoria de save/load e ciclo de vida no componente real da forja: harness Lua 5.1 com 22/22 assertions aprovadas; validação no motor DST ainda pendente.
 - [x] Há relatório estático e harness de prefab para o primeiro baú metalúrgico (PR #5); o harness passa em ambiente com stubs, mas ainda não testa o motor DST.
 - [x] Há auditoria de Rewrite e comparação entry-by-entry das 18 loot tables (PR #6).
 - [x] Harness isolado da decisão Auto/Always/UM passou 9 cenários; parsing dos arquivos completos e teste real no jogo continuam pendentes.
@@ -207,24 +207,24 @@ As referências abaixo são usadas para orientar arquitetura e testes, não para
 ## Registro de execução — 2026-11-07 (revalidação do repositório)
 
 - `main` confirmado no commit `bcd4466d8c6968cb60266f4c688966067e88c995`; PR #1 consta como integrado pelo commit de merge.
-- PRs #2, #3, #4, #5, #6, #7 e #8 foram reconsultados e permanecem abertos. Nenhum foi mesclado nesta execução. Não foi encontrado PR #9 aberto na consulta atual.
-- Branches observadas: `main`, `docs/ai-team-instructions`, `docs/complete-metals-more-roadmap`, `docs/smelter-report-post-merge`, `feature/metal-storage-chest`, `fix/metallurgy-config-validation`, `fix/nitre-gem-fallback-consumption`, `fix/rewrite-drops-source-options`, `fix/smelter-interruption-leftovers` e `art/original-mod-cover`.
+- PR #1 foi integrado à `main`. PRs #2–#11 estão abertos e ainda não integrados; os PRs #3, #9, #10 e #11 concentram o ciclo de vida, o módulo de receitas/lotes, a previsão e a sincronização de pilhas da forja.
+- Branches observadas incluem `main`, `docs/complete-metals-more-roadmap`, `fix/smelter-interruption-leftovers`, `test/smelting-module-harness`, `fix/allow-ambiguous-smelting` e `fix/smelter-server-stack-setting`, além das branches dos outros sistemas.
 - Busca de issues abertas não retornou issues. O status combinado de `main` não reportou checks; a consulta de workflow runs para esse commit também retornou lista vazia. Isso significa “nenhum check reportado”, não aprovação de CI.
-- A inspeção do histórico recente confirmou commits de auditoria da matriz de receitas, consumo mínimo de junk dust, fallback de nitre e preservação de itens não relacionados. O relatório existente documenta 18 receitas; o harness reportado executou diretamente `smelting_products.lua`, mas os cenários de consumo/lote permanecem em modelo comportamental separado.
-- A inspeção estática de `smelting.lua` confirmou que `CalculateSmelterPlan` e `ForecastSmelterPlan` usam o mesmo inventário de ingredientes e os custos declarados em `smelting_products.lua`. Ainda falta um harness versionado que carregue o módulo real de cálculo de lote/consumo com stubs mínimos; não marcar essa validação como concluída.
+- A auditoria da matriz continua documentando as 18 receitas. O PR #9 agora carrega diretamente `smelting.lua` e `smelting_products.lua`; seu harness expandido executou 75 assertions com Lua 5.1: 75 aprovadas, 0 falhas.
+- O módulo real `smelting.lua` já possui harness versionado com stubs mínimos. A execução validou consumo, sobras, receitas mistas, pré-requisitos, nitre, gemas, limites e previsão com configuração do servidor; isso valida a lógica isolada, não a integração no motor DST.
 - Nenhuma alteração de gameplay, balanceamento, API do DST ou outro mod foi feita nesta execução. A auditoria do algoritmo real de consumo/lote continua sendo a próxima tarefa técnica; os testes in-game, multiplayer, save/load real e UM Beta continuam pendentes.
 
 
 ## Registro de execução — 2026-11-07 (continuação: PRs #9–#11)
 
 - `main` revalidada no commit `380cd6cbf1da6bd02fe214ab362978fd54d61378`. A atualização recente da Lovable apenas registrou no `roadmap.md` a divisão combinada de trabalho; nenhuma alteração de gameplay da Lovable foi encontrada nessa atualização.
-- PR #9 — harness versionado que carrega os módulos reais `smelting.lua` e `smelting_products.lua`, com stubs limitados a `tuning` e `mam/config`. Abrange consumo, sobras, limites, receitas mistas, pré-requisitos nomeados, fallback de nitre, produtos de uma unidade e previsão com configuração do servidor. Draft aberto; o harness completo ainda não foi executado contra um checkout local.
-- PR #10 — corrige dois bugs de previsão no cliente: (1) o modo “Certain result only” não bloqueia mais cargas ambíguas válidas; (2) a previsão lê a pilha via `item.replica.stackable`, em vez do componente server-side, para calcular quantidades de lote corretas. Foram adicionadas asserções para uma pilha replicada de 6 minérios prever 2 lingotes. A compilação de sintaxe do teste original passou; o harness expandido ainda não foi executado contra checkout completo, e teste in-game/multiplayer permanece pendente.
-- PR #11 — sincroniza `acceptsstacks` da forja com `mam_batch` publicado pelo servidor em `mam_plan`, e escuta `mamplandirty` para reaplicar o widget se a configuração chegar depois do primeiro setup do cliente. O helper passou 8 verificações isoladas LuaTeX e um smoke harness local com cópia mínima do wrapper passou 4 cenários antes da adição do listener. O harness versionado agora tem 16 assertions (inclui a política de refresh e o wrapper real), mas ainda não foi executado contra o checkout completo; netvar timing e multiplayer real continuam pendentes.
-- Os três PRs (#9, #10 e #11) estão abertos em draft; nenhum foi integrado. Não há workflow runs nem status checks reportados para o commit atual do PR #11. Ausência de checks não significa CI aprovado.
+- PR #9 — harness versionado que carrega os módulos reais `smelting.lua` e `smelting_products.lua`; Lua 5.1 no GitHub Actions: 75/75 assertions aprovadas (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444527458). Draft aberto, não integrado.
+- PR #10 — corrige a previsão cliente de pilhas, permite iniciar cargas ambíguas válidas no modo de certeza e apresenta quantidade/tempo por receita empatada. Também impede produção gratuita em receitas de terceiros sem custo declarado, mantendo lote 1 e consumindo a carga inteira como no comportamento legado. GitHub Actions: 14/14 assertions e parsing Lua 5.1 do mod aprovados (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444697946). Teste no DST/multiplayer permanece pendente.
+- PR #11 — sincroniza `acceptsstacks` com `mam_batch` do servidor e atualiza o widget quando o netvar chega depois do setup inicial. GitHub Actions: parsing dos arquivos de integração e 16/16 assertions aprovadas (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444807701). Ordem real de netvar e multiplayer continuam pendentes.
+- PRs #3, #9, #10 e #11 permanecem abertos em draft; nenhum foi integrado. Os harnesses isolados passaram: PR #3 22/22, PR #9 75/75, PR #10 14/14 e PR #11 16/16. Esses resultados não substituem testes dentro do DST.
 - A inspeção de API confirma que o DST configura `acceptsstacks` tanto no componente do servidor quanto na réplica do cliente; o caminho de widget setup do cliente precisa ser validado no jogo para confirmar o instante de entrega do netvar.
 - Nenhum teste in-game, multiplayer real, save/load real ou compatibilidade com UM Beta foi executado nesta etapa. Essas validações permanecem pendentes no “mundo de testes de mod”.
-- A próxima etapa de engenharia deve continuar a auditoria do ciclo de vida da forja, com foco em consumo real, interrupção, retorno de sobras e restauração após save/load. Não marcar o motor de lote como totalmente validado apenas pela adição do harness.
+- A próxima etapa é a validação no mundo de testes do DST: fundição em lote, consumo/retorno de sobras, interrupção, martelamento, save/reload e multiplayer host/cliente. Não marcar compatibilidade integral apenas com os harnesses isolados.
 
 
 ### Nota de auditoria — previsão de pilhas no cliente
@@ -250,4 +250,4 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 - PR #3 foi ampliado com `dst-mods/tests/smelter_component_lifecycle_test.lua`: harness que carrega o componente real `scripts/components/smelter.lua` e substitui apenas o planejador, configuração/log e APIs de entidade/contêiner do DST por stubs.
 - O novo harness contém 22 assertions para consumo exato de pilhas (parcial e total), recusa de plano inválido sem consumir carga, as duas políticas de sobras ao interromper, retomada de save com tempo positivo, conclusão expirada adiada, precedência do estado pronto para colher e reset de save sem produto.
 - O teste é novo e foi revisado estaticamente, mas ainda não foi executado com LuaTeX. A execução do callback adiado em stub não comprova a ordem real de callbacks do sistema de save do DST.
-- PR #3 continua draft e aberto. O GitHub confirmou estado `clean` e branch sem commits atrás da `main`; nenhum merge foi feito.
+- PR #3 continua draft e aberto. O harness do componente real passou 22/22 assertions no GitHub Actions (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444802432); nenhum merge foi feito.
