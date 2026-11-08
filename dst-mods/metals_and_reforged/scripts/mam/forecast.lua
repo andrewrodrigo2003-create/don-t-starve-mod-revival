@@ -242,7 +242,7 @@ function MAMForecast.detail_text(inst)
     elseif plan.phase == "invalid" then
         return "This mixture has no smelting result."
     elseif plan.phase == "ambiguous" then
-        return "This mixture could yield more than one alloy. Sort the load to predict it."
+        return "This mixture could yield more than one result. Sort the load to predict it."
     end
 
     local lines = {}
