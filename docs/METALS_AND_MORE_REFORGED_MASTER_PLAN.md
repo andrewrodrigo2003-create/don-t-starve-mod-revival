@@ -299,3 +299,14 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - GitHub Actions no head `f05d7b7` passou: parsing Lua 5.1 de todos os arquivos do mod e suíte completa de regressão, incluindo o novo harness.
 - Isso é um teste runtime de Lua com stubs, não uma sessão real do DST. Worldgen, loot real, UM Beta, multiplayer e balanceamento em mundo continuam pendentes.
 - O PR #6 original foi fechado como supersedido; sua branch e commits permanecem preservados. O PR #16 está integrado em `b71d06f`.
+
+
+## 16. Desconstrução reversível de materiais metalúrgicos — 2026-11-08
+
+- Requisito confirmado pelo usuário: permitir recuperar um estágio anterior desconstruindo um material superior, como qualidade de vida para corrigir excesso de produção/erros de cálculo. O avanço para o estágio seguinte continua exclusivo da forja.
+- A auditoria de `smelting.lua`, `smelting_products.lua`, `metal_dusts.lua` e `metals.lua` identificou cadeias candidatas para cobre, ferro e ouro e receitas compostas de bronze, vidro lunar e adamantium.
+- O documento `docs/design/METAL_MATERIAL_DECONSTRUCTION.md` registra os valores de tags atuais e retornos canônicos candidatos. As quantidades são derivadas das receitas atuais, não estão implementadas.
+- Como a forja aceita entradas por tags, não é possível reconstruir o prefab exato originalmente consumido. A proposta usa componentes canônicos por produto e exige regra explícita por prefab.
+- Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação ainda precisa de confirmação do usuário antes da implementação.
+- Implementação deve ser transação atômica no servidor, falhar sem consumo quando não houver espaço para todos os retornos e impedir duplicação, retorno parcial ou bypass da progressão.
+- Estado: especificação/auditoria; nenhum código de gameplay foi alterado.
