@@ -238,7 +238,9 @@ local function fn()
 
     if not TheWorld.ismastersim then
 		inst:DoTaskInTime(0, function()
-			inst.replica.container:WidgetSetup("smelter")
+			if inst:IsValid() and inst.replica ~= nil and inst.replica.container ~= nil then
+                inst.replica.container:WidgetSetup("smelter")
+            end
         end)
         return inst
     end
