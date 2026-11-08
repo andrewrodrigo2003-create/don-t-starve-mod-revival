@@ -17,4 +17,4 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [ ] Contêiner próprio de armazenamento metalúrgico + consulta centralizada
   - [ ] Compatibilidade com Uncompromising Mode Beta (sem alterar o UM)
   - [ ] Configurações do mod mais completas
-- [ ] Trabalhar junto com o ChatGPT no Metals and More — aguardando o usuário dizer qual parte o ChatGPT está fazendo
+- [ ] Trabalhar junto com o ChatGPT no Metals and More — divisão combinada (ChatGPT: forja em lotes e previsão; Lovable: o resto)
