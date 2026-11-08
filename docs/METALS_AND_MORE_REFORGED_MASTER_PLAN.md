@@ -93,7 +93,7 @@
 
 ## 7. Armazenamento metalúrgico
 
-- [~] Primeiro contêiner dedicado implementado em código na branch `feature/metal-storage-chest`, PR #5: 25 slots, filtro baseado em `smelting.IsSmelterIngredient`, tags `chest` + `mam_metal_storage`; draft não integrado e testes in-game pendentes.
+- [x] Primeiro contêiner dedicado integrado via PR #13 (que incorporou a implementação do PR #5): 25 slots, tags `chest` + `mam_metal_storage`, destruição com martelo devolvendo conteúdo e filtro ligado ao registro real da metalurgia. O filtro aceita ingredientes e produtos registrados (minérios, poeiras, fragmentos, lingotes e ligas). CI completo aprovado; testes in-game/save-load/multiplayer ainda pendentes.
 - [x] Harness isolado do prefab passou com LuaTeX: registro, assets, placer, tags, widget, callbacks, hit sem derramar, martelo devolvendo conteúdo e separação servidor/cliente. Não valida o motor DST nem a aceitação real de itens.
 - [ ] Criar/validar o contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
 - [ ] Definir filtros explícitos por prefab/tag; não aceitar itens arbitrários nem bloquear materiais legítimos.
@@ -178,10 +178,10 @@
 ## Histórico de mudanças já integradas
 
 - PR #1 — correções de consumo de nitre/moonglass/junk dust e drops completos do lote ao martelar a forja; integrado em `main` em 2026-11-07.
-- PR #5 — primeiro baú metalúrgico com filtro da lista real de ingredientes da forja e harness isolado aprovado; aberto, draft, não integrado.
+- PR #5 — sua implementação foi incorporada pelo PR #13 e o GitHub marcou o PR #5 como merged por ancestralidade. A versão integrada inclui o filtro ampliado para ingredientes e produtos metalúrgicos.
 - PR #7 — fontes SVG originais para banner e ícone quadrado, exports PNG e documentação da cadeia de autoria; conversão KTEX e substituição do ícone no jogo pendentes.
 - PR #6 — correção das opções por fonte e fontes especiais no modo Rewrite; aberto, draft, não integrado.
-- PR #8 — validação dos enums de configuração no getter, overrides sincronizados e setter; remoção das chaves internas ainda não implementadas; harness LuaTeX direto com 103 verificações. Draft, não integrado.
+- PR #8 — validação dos enums de configuração no getter, overrides sincronizados e setter; remoção das chaves internas ainda não implementadas; harness LuaTeX direto com 103 verificações. Integrado à main em `ad0ba90`.
 - Commits anteriores — correção de `GLOBAL.net_string` e leitura de `mam_plan:value()`; teste dentro do jogo ainda pendente.
 - PRs de documentação/correção de interrupção devem ser conferidos no GitHub antes de marcar como integrados; o estado do GitHub é a fonte da verdade.
 
@@ -206,8 +206,8 @@ As referências abaixo são usadas para orientar arquitetura e testes, não para
 
 ## Registro de execução — 2026-11-07 (revalidação do repositório)
 
-- `main` confirmado no commit `bcd4466d8c6968cb60266f4c688966067e88c995`; PR #1 consta como integrado pelo commit de merge.
-- PR #1 foi integrado à `main`. PRs #2–#11 estão abertos e ainda não integrados; os PRs #3, #9, #10 e #11 concentram o ciclo de vida, o módulo de receitas/lotes, a previsão e a sincronização de pilhas da forja.
+- `main` revalidada após as integrações em `31f6494e1bdac43bcbd7e38c32502fc192cd3895`; PRs #1, #2, #3, #8, #9, #10, #11 e #13 estão integrados.
+- PR #1 foi integrado à `main`. Desde então, PRs #2, #3, #8, #9, #10, #11 e #13 também foram integrados. Permanecem em aberto os PRs #4 (este plano), #6 (drops Rewrite) e #7 (arte/identidade). O PR #5 foi incorporado pelo #13.
 - Branches observadas incluem `main`, `docs/complete-metals-more-roadmap`, `fix/smelter-interruption-leftovers`, `test/smelting-module-harness`, `fix/allow-ambiguous-smelting` e `fix/smelter-server-stack-setting`, além das branches dos outros sistemas.
 - Busca de issues abertas não retornou issues. O status combinado de `main` não reportou checks; a consulta de workflow runs para esse commit também retornou lista vazia. Isso significa “nenhum check reportado”, não aprovação de CI.
 - A auditoria da matriz continua documentando as 18 receitas. O PR #9 agora carrega diretamente `smelting.lua` e `smelting_products.lua`; seu harness expandido executou 75 assertions com Lua 5.1: 75 aprovadas, 0 falhas.
@@ -218,10 +218,10 @@ As referências abaixo são usadas para orientar arquitetura e testes, não para
 ## Registro de execução — 2026-11-07 (continuação: PRs #9–#11)
 
 - `main` revalidada no commit `380cd6cbf1da6bd02fe214ab362978fd54d61378`. A atualização recente da Lovable apenas registrou no `roadmap.md` a divisão combinada de trabalho; nenhuma alteração de gameplay da Lovable foi encontrada nessa atualização.
-- PR #9 — harness versionado que carrega os módulos reais `smelting.lua` e `smelting_products.lua`; Lua 5.1 no GitHub Actions: 81/81 assertions aprovadas no snapshot integrado (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445185933). Draft aberto, não integrado.
-- PR #10 — corrige a previsão cliente de pilhas, permite iniciar cargas ambíguas válidas no modo de certeza e apresenta quantidade/tempo por receita empatada. Também impede produção gratuita em receitas de terceiros sem custo declarado, mantendo lote 1 e consumindo a carga inteira como no comportamento legado. GitHub Actions: 14/14 assertions e parsing Lua 5.1 do mod aprovados (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444697946). Teste no DST/multiplayer permanece pendente.
-- PR #11 — sincroniza `acceptsstacks` com `mam_batch` do servidor e atualiza o widget quando o netvar chega depois do setup inicial. GitHub Actions: parsing dos arquivos de integração e 16/16 assertions aprovadas (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444807701). Ordem real de netvar e multiplayer continuam pendentes.
-- PRs #3, #9, #10 e #11 permanecem abertos em draft; nenhum foi integrado. Os harnesses isolados passaram: PR #3 22/22, PR #9 81/81, PR #10 14/14 e PR #11 16/16. Além disso, a branch temporária `test/integrated-smelter-validation` combinou os quatro conjuntos e passou 135/135 assertions, incluindo o handshake entre o componente real e o helper de pilhas (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445185933). Esses resultados não substituem testes dentro do DST.
+- PR #9 — harness versionado que carrega os módulos reais `smelting.lua` e `smelting_products.lua`; 81/81 assertions aprovadas no snapshot integrado. Integrado em `98b280e`.
+- PR #10 — corrige previsão cliente de pilhas, cargas ambíguas e receitas externas sem custo/peso declarado. CI no head final `0a73cf7`: aprovado, incluindo 14 assertions de previsão e regressão de peso. Integrado em `9c30f0b`; testes dentro do DST/multiplayer continuam pendentes.
+- PR #11 — sincroniza `acceptsstacks` com `mam_batch` do servidor e atualiza o widget quando o netvar chega depois do setup inicial. Integrado em `19fe9c6`; o teste de 16 assertions foi executado novamente pelo workflow completo do PR #13, junto aos demais harnesses. Ordem real de netvar e multiplayer continuam pendentes.
+- PRs #3, #9, #10 e #11 foram integrados, respectivamente, em `708e0ea`, `98b280e`, `9c30f0b` e `19fe9c6`. A branch temporária de validação integrada passou 135/135 assertions. Depois da integração, o workflow completo do PR #13 também passou no head exato `3ad2b9e`, executando os harnesses disponíveis da main combinada, incluindo o teste de 16 assertions da configuração do baú da forja. Esses resultados não substituem testes dentro do DST.
 - A inspeção de API confirma que o DST configura `acceptsstacks` tanto no componente do servidor quanto na réplica do cliente; o caminho de widget setup do cliente precisa ser validado no jogo para confirmar o instante de entrega do netvar.
 - Nenhum teste in-game, multiplayer real, save/load real ou compatibilidade com UM Beta foi executado nesta etapa. Essas validações permanecem pendentes no “mundo de testes de mod”.
 - A próxima etapa é a validação no mundo de testes do DST: fundição em lote, consumo/retorno de sobras, interrupção, martelamento, save/reload e multiplayer host/cliente. Não marcar compatibilidade integral apenas com os harnesses isolados.
@@ -241,7 +241,7 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 
 - PRs #2, #3, #5, #6, #7 e #8 receberam merge commits normais da `main` atual (`380cd6cbf1da6bd02fe214ab362978fd54d61378`) para eliminar a divergência de cinco commits. As alterações de cada PR foram preservadas; nenhum histórico foi reescrito e nenhum PR foi integrado.
 - PR #4 também contém a `main` atual como ancestral após sincronização da branch de documentação.
-- Revalidação posterior: PRs #2–#11 continuam abertos em draft, sem merge; as branches estão alinhadas com a `main` (0 commits atrás) e a API do GitHub reporta estado de merge limpo.
+- Revalidação posterior: PRs #2, #3, #9, #10, #11 e #13 foram integrados. PR #5 foi incorporado pelo #13. PR #4 permanece em atualização documental; PRs #6 e #7 continuam abertos para revisão. Não assumir que branches antigas estão sincronizadas: comparar cada PR com a main atual antes de qualquer integração.
 - Não foram encontrados workflow runs nem status checks para os heads verificados. Isso continua significando ausência de CI reportado, não aprovação automática.
 
 
@@ -250,4 +250,32 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 - PR #3 foi ampliado com `dst-mods/tests/smelter_component_lifecycle_test.lua`: harness que carrega o componente real `scripts/components/smelter.lua` e substitui apenas o planejador, configuração/log e APIs de entidade/contêiner do DST por stubs.
 - O novo harness contém 22 assertions para consumo exato de pilhas (parcial e total), recusa de plano inválido sem consumir carga, as duas políticas de sobras ao interromper, retomada de save com tempo positivo, conclusão expirada adiada, precedência do estado pronto para colher e reset de save sem produto.
 - O teste é novo e foi revisado estaticamente, mas ainda não foi executado com LuaTeX. A execução do callback adiado em stub não comprova a ordem real de callbacks do sistema de save do DST.
-- PR #3 continua draft e aberto. O harness do componente real passou 22/22 assertions no GitHub Actions (https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444802432); nenhum merge foi feito.
+- PR #3 foi integrado em `708e0ea`. O harness do componente real passou 22/22 assertions no GitHub Actions; a execução in-game do ciclo save/load continua pendente.
+
+## 13. Automação metalúrgica e fabricação metálica — requisito adicionado em 2026-11-08
+
+### Papel do baú metalúrgico
+- O baú de minérios/armazenamento metalúrgico é uma infraestrutura de abastecimento e organização para a automação futura da forja, não apenas um contêiner de conveniência.
+- Manter filtros para todos os ingredientes e produtos registrados pela metalurgia. A integração futura com fabricação deve consumir itens reais do servidor e reservar/retirar materiais atomicamente.
+
+### Integração com coletor/robô vanilla do DST
+- Planejar integração nativa entre a forja do Metals and More e o robô/coletor padrão citado pelo usuário, quando esse mecanismo estiver ativo no mundo.
+- Antes de codificar, identificar o prefab, componente, eventos e API vanilla exatos. Não presumir o nome nem simular um robô novo se o pedido é integração com um sistema padrão existente.
+- A integração deve ser opcional/segura quando o mecanismo vanilla não estiver presente, e funcionar sem dependência externa quando o recurso estiver desativado.
+- A forja deve continuar autoritativa no servidor; validar alcance, propriedade, permissões, capacidade, combustível/tempo, estado da máquina e disponibilidade de materiais. Prevenir duplicação, perda, consumo repetido e produção gratuita.
+
+### Receitas individuais de itens metálicos
+- Inventariar os itens metálicos vanilla e do Metals and More que existirem no jogo, incluindo minério, poeira, fragmentos, lingotes, ligas, componentes e equipamentos metálicos.
+- Para cada item elegível, avaliar receita individual na bancada do Metals and More, com custo, estação, tecnologia e progressão próprios, justos e balanceados.
+- Não duplicar receitas existentes sem motivo, não transformar a bancada em conversor universal e não substituir a forja quando o processamento metalúrgico for a etapa correta.
+- Criar uma matriz de item → receita atual → estação atual → estação pretendida → custo original → custo proposto → justificativa/balanceamento antes de alterar receitas.
+
+### Dependências e ordem
+1. Estabilizar a forja, previsão, consumo, interrupção e save/load.
+2. Validar o baú e o filtro de ingredientes/produtos no jogo.
+3. Inventariar itens metálicos e revisar bancada de armas/bancada de guerra; definir receitas individualizadas.
+4. Identificar e testar o mecanismo vanilla do coletor/robô.
+5. Projetar abastecimento e retirada atômicos entre baú, forja e coletor; implementar em etapas pequenas.
+6. Validar host/cliente, multiplayer, desconexão, save/load e compatibilidade com UM Beta.
+
+Essa adição complementa o plano original; não autoriza pular as etapas de estabilidade, balanceamento e testes.
