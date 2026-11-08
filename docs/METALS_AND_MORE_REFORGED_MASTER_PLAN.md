@@ -279,3 +279,13 @@ O PR #11 foi ampliado para cobrir uma corrida possível entre o primeiro `Widget
 6. Validar host/cliente, multiplayer, desconexão, save/load e compatibilidade com UM Beta.
 
 Essa adição complementa o plano original; não autoriza pular as etapas de estabilidade, balanceamento e testes.
+
+## 14. Integração nativa com os robôs coletores vanilla — arquitetura 2026-11-08
+
+- O alvo primário é o W.O.B.O.T. (`storage_robot`); considerar também o W.I.N.bot (`winona_storage_robot`). Ambos usam a tag `storagerobot`, mas têm sistemas de energia diferentes.
+- O comportamento vanilla foi verificado em `storage_robot.lua` e `storage_robot_common.lua`: o robô só guarda em contêineres `chest`/`pack` compatíveis que já contenham pelo menos uma unidade do mesmo prefab, tenham espaço, estejam em ponto passável e na mesma plataforma. O robô executa ações vanilla PICKUP/STORE e consome seu próprio combustível.
+- O baú metálico integrado é compatível como destino se mantiver o tipo `chest`, a tag `_container` do componente e não receber tags vanilla de exclusão. O jogador precisa semear cada prefab que deseja que o robô recolha; não criar itens-semente gratuitamente.
+- O robô não alimenta diretamente um container de cooker. Fluxo planejado: robô coleta no chão → baú metálico recebe → forja consulta/consome materiais do baú → produto retorna ao baú ou fica em saída segura quando cheio.
+- A forja só deve iniciar lotes automáticos com um `storagerobot` ativo/operacional na área configurada; identificar estado de energia/atividade por variante. Sem robô, manter a forja manual.
+- Usar a previsão e o plano de consumo existentes; retirar materiais atomicamente no servidor, devolver em falha e impedir que dois lotes reservem a mesma pilha. Não patchar prefabs vanilla nem substituir funções globais.
+- Especificação completa, regras de compatibilidade e testes obrigatórios: `docs/design/WOBOT_METALLURGY_AUTOMATION.md`.
