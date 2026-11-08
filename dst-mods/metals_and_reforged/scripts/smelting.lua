@@ -263,6 +263,24 @@ end
 local function plan_consumption(recipe, n, items)
     local cost_tags, cost_names = recipe_cost(recipe)
 
+    -- Receitas registradas por mods externos podem nao declarar custo. O
+    -- smelter original consumia o conteudo inteiro do container ao concluir;
+    -- manter lote 1 e consumir a carga toda evita producao gratuita ou devolver
+    -- os mesmos ingredientes quando mam_leftovers estiver ligado.
+    if next(cost_tags) == nil and next(cost_names) == nil then
+        local consumed = {}
+        for _, item in ipairs(items) do
+            if item.count > 0 then
+                table.insert(consumed, {
+                    slot = item.slot,
+                    prefab = item.prefab,
+                    count = item.count,
+                })
+            end
+        end
+        return consumed, {}
+    end
+
     local need_tags = {}
     local need_names = {}
     for tagname, need in pairs(cost_tags) do
