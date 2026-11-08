@@ -40,7 +40,7 @@ These remain required in-game checks in the user's test world, `mundo de testes 
 
 Added `dst-mods/tests/smelter_component_lifecycle_test.lua`, which loads the actual `scripts/components/smelter.lua` component and stubs only the smelting planner, config/log modules, and DST entity/container APIs.
 
-The combined integration harness contains 23 assertions for:
+The combined integration harness contains 24 assertions for:
 - exact partial-stack consumption and full-stack removal when a real component `StartSmelting` call applies a supplied plan;
 - rejecting invalid plans without consuming inputs or locking the container;
 - both leftovers settings during interruption;
@@ -54,7 +54,7 @@ Run from the repository root:
 texlua dst-mods/tests/smelter_component_lifecycle_test.lua
 ```
 
-The component-only 22-assertion harness passed in its PR branch. The combined integration harness adds a cross-component check that the real component's published config string is parsed by `mam/container_settings.lua`. Its simulated deferred callback still does not prove the actual DST save/load callback order; in-game save/reload and multiplayer checks remain mandatory.
+The component-only 22-assertion harness passed in its PR branch. The combined integration harness adds cross-component checks that the real component's published batch-on and batch-off config strings are parsed by `mam/container_settings.lua`. Its simulated deferred callback still does not prove the actual DST save/load callback order; in-game save/reload and multiplayer checks remain mandatory.
 
 
 ## Lua 5.1 regression run
