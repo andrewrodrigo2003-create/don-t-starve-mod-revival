@@ -31,3 +31,14 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
 - [ ] Trabalhar junto com o ChatGPT no Metals and More — divisão combinada (ChatGPT: forja em lotes e previsão; Lovable: o resto)
 
 Não alterar Hydrated/Dehydrated, Better Lucy, Uncompromising Mode ou quaisquer outros mods.
+
+
+## Nova frente de design — desconstrução reversível de metais (2026-11-08)
+- [x] Auditar os valores de ingredientes e custos atuais de cobre, ferro, ouro, bronze, vidro lunar e adamantium.
+- [x] Documentar retornos canônicos candidatos em `docs/design/METAL_MATERIAL_DECONSTRUCTION.md`.
+- [ ] Confirmar estação de desconstrução (recomendação: warworkbench; alternativa: modo separado na forja).
+- [ ] Confirmar a tabela final de retornos antes de alterar gameplay.
+- [ ] Implementar primeiro cobre/ferro/ouro com transação atômica no servidor e testes de inventário cheio/pilhas.
+- [ ] Expandir para bronze, vidro lunar e adamantium após validar materiais compostos.
+- [ ] Garantir que o avanço continue exigindo a forja e que a desconstrução não gere duplicação nem bypass de progressão.
+
