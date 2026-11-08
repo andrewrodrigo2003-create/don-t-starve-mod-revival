@@ -55,3 +55,10 @@ texlua dst-mods/tests/smelter_component_lifecycle_test.lua
 ```
 
 The new harness has been reviewed statically but has **not yet been executed** in this environment. Its simulated deferred callback does not prove the actual DST save/load callback order. In-game save/reload and multiplayer checks remain mandatory.
+
+
+## Lua 5.1 regression run
+
+GitHub Actions executed the direct-component lifecycle harness and parsed the changed component successfully: **22 passed; 0 failed**. Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444802432
+
+This remains an isolated component harness; it does not replace DST engine, save/reload, multiplayer, or in-game validation.
