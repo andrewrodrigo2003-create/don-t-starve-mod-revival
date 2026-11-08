@@ -250,12 +250,21 @@ function MAMForecast.detail_text(inst)
         table.insert(lines, (plan.phase == "harvest" and "Ready: " or "Smelting: ")
             .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
     else
-        table.insert(lines, "Will produce: " .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
-        if plan.ambiguous and plan.possibilities ~= nil and #plan.possibilities > 1 then
-            table.insert(lines, "Or one of: " .. join(plan.possibilities, ", "))
-        end
-        if plan.smelttime ~= nil then
-            table.insert(lines, "Time: " .. tostring(math.ceil(plan.smelttime)) .. "s")
+        if plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
+            table.insert(lines, "Possible results (the server chooses one):")
+            for _, outcome in ipairs(plan.outcomes) do
+                local line = tostring(outcome.count or 1) .. " "
+                    .. (product_name(outcome.product) or "?")
+                if outcome.smelttime ~= nil then
+                    line = line .. " — " .. tostring(math.ceil(outcome.smelttime)) .. "s"
+                end
+                table.insert(lines, line)
+            end
+        else
+            table.insert(lines, "Will produce: " .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
+            if plan.smelttime ~= nil then
+                table.insert(lines, "Time: " .. tostring(math.ceil(plan.smelttime)) .. "s")
+            end
         end
     end
     return table.concat(lines, "\n")
