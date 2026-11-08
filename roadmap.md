@@ -18,8 +18,9 @@ Ordem pedida: um mod por vez, finalizar antes de começar o próximo.
   - [ ] Auditar progressão, bancada de armas e bancada de guerra
   - [x] Baú metalúrgico de 25 espaços integrado via PR #13; filtro aceita ingredientes e produtos registrados da metalurgia. CI completo aprovado; testes in-game/save-load/multiplayer pendentes.
   - [ ] Consulta de depósitos próximos, retirada segura e integração com containers externos, com distância/permissões/autoridade do servidor
-  - [ ] Planejar o baú como infraestrutura de abastecimento da automação futura da forja
-  - [ ] Identificar o robô/coletor vanilla citado pelo usuário e projetar integração nativa quando ativo no mundo
+  - [x] Planejar o baú como infraestrutura de abastecimento da automação futura da forja; o W.O.B.O.T. exige item-semente correspondente no contêiner para cada prefab que deve recolher
+  - [x] Identificar W.O.B.O.T. (`storage_robot`) e W.I.N.bot (`winona_storage_robot`); arquitetura de integração registrada em `docs/design/WOBOT_METALLURGY_AUTOMATION.md`
+  - [ ] Implementar detecção de robô ativo e alimentação automática da forja a partir do baú metalúrgico, com reserva/rollback de materiais e teste multiplayer
   - [ ] Inventariar todos os itens metálicos vanilla/mod e criar matriz de receitas individuais balanceadas para a bancada do Metals and More
   - [ ] Completar configurações sem opções placebo
   - [ ] Compatibilidade real com Uncompromising Mode Beta e conjunto de mods do mundo de teste
