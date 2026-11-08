@@ -210,7 +210,7 @@ MAMLootGuard.Declare("marbletree", "marbletree", {
     { "gold_dust",  0.75 },
     { "gold_dust",  0.75 },
     { "copper_ore", 1.0 },
-})
+}, { apply_in_rewrite = true })
 
 ----------------------------------------------------------------------
 -- Tubarao -- material proprio do mod, sem conflito
@@ -220,7 +220,7 @@ MAMLootGuard.Declare("marbletree", "marbletree", {
 MAMLootGuard.Declare("shark", "shark", {
     { "sharkscale", 1.00 },
     { "sharkscale", 0.05 },
-})
+}, { apply_in_rewrite = true })
 
 ----------------------------------------------------------------------
 -- Arbusto de marmore
