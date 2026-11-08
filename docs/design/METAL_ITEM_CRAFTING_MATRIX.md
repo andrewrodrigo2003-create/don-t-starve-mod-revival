@@ -88,3 +88,21 @@ As variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` ta
 - Confirmar se o pedido inclui somente equipamentos/componentes metálicos ou também recursos brutos/lingotes. Por padrão, este inventário preserva a forja como rota de processamento dos materiais.
 - Construir matriz final de estações e níveis de tecnologia após comparar com a versão 2.9.3 e testar filtros no DST.
 - Nenhuma receita foi movida ou reequilibrada por este inventário.
+
+## 7. Desconstrução reversível — inventário técnico preliminar
+
+A decisão do usuário permite obter materiais de estágio inferior desconstruindo um material superior; a progressão para cima continua passando pela forja. Os candidatos e a fundamentação estão em `docs/design/METAL_MATERIAL_DECONSTRUCTION.md`.
+
+| Material superior | Retorno canônico candidato | Estado |
+|---|---|---|
+| `copper_ore` | 2 `copper_dust` | Proposta derivada de 1 copper = 2 × 0,5 |
+| `copper_ingot` | 3 `copper_ore` | Proposta derivada de custo 3 copper |
+| `iron_ore` | 2 `iron_dust` | Proposta derivada de 1 iron = 2 × 0,5 |
+| `iron_ingot` | 3 `iron_ore` | Proposta derivada de custo 3 iron |
+| `goldnugget` | 2 `gold_dust` | Proposta derivada de 1 gold = 2 × 0,5 |
+| `gold_ingot` | 3 `goldnugget` | Proposta derivada de 3 gold + 3 metal |
+| `bronze_ingot` | 3 `copper_ore` + 1 `iron_ore` | Liga composta; proposta derivada das tags |
+| `moonglass_ingot` | 2 `moonglass` + 1 `moonrocknugget` | Proposta derivada dos requisitos declarados |
+| `adamantium_ingot` | 3 `nightmarefuel` + 1 `iron_ingot` | Liga composta; proposta derivada das tags/requisito nomeado |
+
+**Importante:** nenhuma receita/custo foi alterado. Os retornos ainda precisam de confirmação, escolha da estação e testes. Materiais externos aceitos por tags podem ser normalizados para os componentes canônicos; não se promete reconstruir exatamente a carga original.
