@@ -22,6 +22,7 @@ texlua dst-mods/tests/forecast_ambiguous_start_test.lua
 GitHub Actions run #19 passed for code commit `183a29e` (the subsequent update to this report was documentation-only) with Lua 5.1:
 - All Lua files under `dst-mods/metals_and_reforged` passed syntax parsing.
 - The forecast regression harness reported **14 passed; 0 failed**.
+- The combined snapshot ran it alongside the recipe, component, and stack-settings harnesses; all four passed (135 assertions total): https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42445185933
 
 Run: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42444697946
 
