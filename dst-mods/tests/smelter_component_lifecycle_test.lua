@@ -202,6 +202,13 @@ check("stale prefab rejection does not run start callback", not replacement_call
 check("stale prefab rejection leaves container open", replacement_container.canbeopened == true)
 
 -- A plan that asks for more than the actual stack must not partially consume it.
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 5,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 3 } },
+}
 local short_item = make_item("copper_ore", 2)
 local short_container = make_container({ [1] = short_item })
 local short_smelter = new_smelter(short_container)
