@@ -52,11 +52,8 @@ class DstModAuditTests(unittest.TestCase):
     def test_zip_oversized_entry_is_skipped_before_read(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "oversized.zip"
-            with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as zf:
-                info = zipfile.ZipInfo("large.lua")
-                info.file_size = MODULE.MAX_FILE_BYTES + 1
-                # A forged size cannot be written as a valid entry through zipfile;
-                # use a highly-compressible entry to exercise the ratio guard instead.
+            with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                # Highly compressible data exercises the ratio guard without extraction.
                 zf.writestr("large.lua", b" " * (MODULE.MAX_ZIP_COMPRESSION_RATIO * 1024))
             report = MODULE.audit(archive)
             self.assertEqual(report["file_count"], 0)
