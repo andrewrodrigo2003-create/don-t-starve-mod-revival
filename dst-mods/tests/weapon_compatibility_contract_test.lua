@@ -176,10 +176,11 @@ assert(completed_state.onexit(completed_inst) == "done", "completed onexit shoul
 assert(completed_reti.interrupts == 0, "completed cast should not interrupt reticule")
 
 local no_reticule_state = { onexit = function() return "no-reticule" end }
+local no_reticule_equip = { components = {} }
 stategraph_wrappers.WrapCastState(no_reticule_state, 1, function()
-    return { components = {} }
+    return no_reticule_equip
 end)
-local no_reticule_inst = { sg = { statemem = { tm = 0, trgt = 1 } } }
+local no_reticule_inst = { sg = { statemem = { tm = 0, trgt = 1, equip = no_reticule_equip } } }
 assert(no_reticule_state.onexit(no_reticule_inst) == "no-reticule",
     "missing reticule component must not block original cleanup")
 
