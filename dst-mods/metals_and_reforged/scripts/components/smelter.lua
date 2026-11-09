@@ -28,8 +28,6 @@ local Smelter = Class(function(self, inst)
     self.donesmeltingfn = nil
     self.onharvest = nil
     self.onplanfn = nil
-
-    self:Update(0)
 end)
 
 ---------------------------------------------------------------------------
@@ -158,7 +156,7 @@ function Smelter:StartSmelting(doer)
     container.canbeopened = false
 
     self:PublishPlan()
-    self:Update(0)
+    self:StartUpdating()
 
     if self.onplanfn then
         self.onplanfn(self.inst, plan)
@@ -184,12 +182,13 @@ function Smelter:ResumeSmelting()
     -- Em um save feito exatamente no fim da contagem, a conclusao sera
     -- agendada por OnLoad depois que os outros componentes restaurarem dados.
     if self.smelttime > 0 then
-        self:Update(0)
+        self:StartUpdating()
     end
 end
 
 function Smelter:DoneSmelting()
     self.issmelting = nil
+    self:StopUpdating()
     self.canharvest = true
 
     if self.donesmeltingfn then
@@ -235,10 +234,7 @@ function Smelter:ResetSmelter()
 
     self.inst:RemoveTag(READY_TAG)
 
-    if self.task then
-        self.task:Cancel()
-        self.task = nil
-    end
+    self:StopUpdating()
 
     self:PublishPlan()
 end
@@ -326,6 +322,21 @@ local function OnDoUpdate(inst, self, period)
     self:Update(period)
 end
 
+-- A forja so precisa de polling enquanto existe uma contagem em andamento.
+-- Manter um task por maquina em idle/ready causa trabalho periodico inutil.
+function Smelter:StartUpdating()
+    if self.task == nil then
+        self.task = self.inst:DoPeriodicTask(0.5, OnDoUpdate, nil, self, 0.5)
+    end
+end
+
+function Smelter:StopUpdating()
+    if self.task ~= nil then
+        self.task:Cancel()
+        self.task = nil
+    end
+end
+
 function Smelter:Update(dt)
     if self.issmelting and not self.canharvest then
         self.smelttime = self.smelttime - dt
@@ -340,9 +351,6 @@ function Smelter:Update(dt)
         end
     end
 
-    if self.task == nil then
-        self.task = self.inst:DoPeriodicTask(0.5, OnDoUpdate, nil, self, 0.5)
-    end
 end
 
 ------------------------------------------------------------------------------------------------------
