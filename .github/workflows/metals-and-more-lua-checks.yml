@@ -3,11 +3,13 @@ name: Metals and More Lua checks
 on:
   push:
     branches:
-      - fix/allow-ambiguous-smelting
+      - main
   pull_request:
     branches:
       - main
     paths:
+      - 'AGENTS.md'
+      - 'docs/**'
       - 'dst-mods/metals_and_reforged/**'
       - 'dst-mods/tests/**'
       - '.github/workflows/metals-and-more-lua-checks.yml'
