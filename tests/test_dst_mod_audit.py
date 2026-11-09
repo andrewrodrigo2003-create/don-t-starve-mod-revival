@@ -4,7 +4,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "dst_mod_audit.py"
+MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "dst_mod_audit.py"
 SPEC = importlib.util.spec_from_file_location("dst_mod_audit", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
