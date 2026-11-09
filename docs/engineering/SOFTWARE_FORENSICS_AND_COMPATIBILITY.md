@@ -1,0 +1,139 @@
+# Software forensics, debugging and compatibility engineering
+
+**Status:** engineering standard, first implementation 2026-11-09  
+**Scope:** user-owned projects, open-source software, public interfaces, and third-party code the user is authorized to inspect.
+
+## Objective
+Turn unfamiliar software into testable evidence: identify inputs, lifecycle, dependencies, hooks, state transitions and failure modes; reproduce a defect; isolate the responsible interaction; implement the smallest safe fix; and prove what was and was not validated. This is not a promise of universal compatibility.
+
+## 1. Evidence hierarchy
+1. Exact source tree and binary/archive supplied by the user or legitimately installed locally.
+2. Exact game/runtime scripts and API implementation for the tested version.
+3. Official documentation, release notes and security advisories.
+4. Upstream source, issues, pull requests, tags and commit history.
+5. Maintainer discussions and established community forums.
+6. Public mirrors, archives and search indexes, marked as secondary.
+7. Inference from behavior, symbols, strings or disassembly, labeled as hypothesis until reproduced.
+
+Search snippets, AI-generated API docs and stale mirrors are discovery aids, not authoritative implementation evidence.
+
+## 2. Intake and preservation
+- Preserve originals read-only; work on copies.
+- Record origin, acquisition date, version/tag/commit, size, archive format and SHA-256.
+- Inventory archives before extraction. Reject absolute paths and path traversal; never blindly extract untrusted archives.
+- Identify file types by content as well as extension.
+- Record license, attribution and redistribution permissions.
+- Do not upload proprietary game files or third-party assets to a public repository.
+- Never execute an unknown mod or binary on the host; use an isolated disposable test environment.
+
+The helper tools/dst_mod_audit.py inventories folders/ZIPs, computes SHA-256 and reports source indicators without executing scanned code. Matches are leads, not verdicts.
+
+## 3. Static source analysis
+For Lua/DST:
+- Search definitions and call sites, not only error text.
+- Trace each receiver to its constructor and component registration.
+- Map AddPrefabPostInit, AddComponentPostInit, player/sim hooks, prefab constructors, modmain.lua, modimport, modrequire, config gates and load order.
+- Find global mutations, monkey patches, metatable changes, wrapped methods and assumptions about component existence.
+- Compare APIs with the exact game's scripts.zip; verify component creation order and server/client authority.
+- For recipe compatibility, compare recipe IDs, tech requirements, ingredients, filters, builders, unlock paths and mod enablement. Prefer explicit adapters over broad global overrides.
+- Treat SetSpellFn and projectile methods as component-specific; never assume every entity exposes them.
+
+For native/compiled code, choose tools after identifying format/platform:
+- file, hashes, strings, symbol tables and metadata for initial triage.
+- Ghidra or Rizin/Cutter for authorized static disassembly/decompilation.
+- GDB/LLDB or WinDbg for debugging owned/test binaries.
+- Frida or equivalent runtime instrumentation only in a controlled environment and where permitted.
+- Compare versions and symbols before interpreting decompiler output. Decompiled code is approximation, not original source.
+
+## 4. Debugging workflow
+1. Convert the report into expected-vs-actual behavior.
+2. Preserve the complete stack trace and environment (game build, OS, mod versions/IDs, load order, server/client role, config).
+3. Identify the first relevant frame owned by the project; distinguish throw site from root cause.
+4. Form competing hypotheses and list evidence that would falsify each.
+5. Reduce to a minimal reproduction by enabling one dependency at a time and testing load-order permutations.
+6. Instrument boundaries: arguments, receiver/component type, lifecycle phase, authority, return values and state before/after.
+7. Reproduce against a clean baseline; use controlled stubs only for narrow unit tests.
+8. Fix the smallest causal layer. Do not add silent broad fallbacks that hide invalid state.
+9. Add a regression test for the original failure and adjacent edge cases.
+10. Re-run baseline, targeted test, full suite, syntax checks and real game/multiplayer scenarios.
+11. Record evidence, uncertainty and rollback instructions.
+
+## 5. Test ladder
+| Level | Method | Evidence | Does not prove |
+|---|---|---|---|
+| 1 | Inventory, hashes, static search | Artifact identity and integration leads | Runtime behavior |
+| 2 | Lua 5.1 parser/lint | Syntax and selected static defects | DST API correctness |
+| 3 | Unit tests with narrow stubs | Local function behavior | Real game lifecycle |
+| 4 | Harness with exact extracted game scripts | API contracts and module interactions | Full world behavior |
+| 5 | Disposable in-game world | Prefab, recipe, UI and gameplay | Multiplayer correctness |
+| 6 | Dedicated server + client(s) | Authority, replication, save/load | Every mod/load order |
+| 7 | Matrix with named versions | Evidence for tested combinations | Universal compatibility |
+
+Never label a syntax or harness pass as an in-game fix.
+
+## 6. Compatibility architecture for Metals and More
+- Keep a vanilla-compatible baseline.
+- Maintain explicit, versioned adapters for known mods.
+- Detect mods using supported mod-index APIs; guard optional dependencies.
+- Translate recipes through stable identifiers and documented recipe APIs.
+- Preserve external item identity while mapping materials/tech to Metals and More progression.
+- Do not mutate every recipe globally or patch another Workshop mod's files.
+- Make adapters idempotent and order-safe; avoid duplicate registration.
+- Log adapter activation and unsupported versions without flooding logs.
+- Unknown mods remain unchanged unless a safe generic integration is proven.
+- Test with and without Metals and More, dependencies present/absent, and multiple load orders.
+- Preserve the user's requirement that spell casting must not require Metals and More weapons.
+
+## 7. Encryption, encoding and protected formats
+Identify the actual transformation:
+- Encoding (Base64, hex, URL encoding) is reversible representation, not encryption.
+- Compression (ZIP, gzip, zlib) needs the matching decompressor.
+- Encryption requires the correct algorithm, mode, key and often nonce/IV and authentication tag.
+- Hashes are one-way integrity identifiers; they are not decrypted.
+- Compiled bytecode can sometimes be disassembled, but source recovery is approximate and version-dependent.
+- Proprietary asset containers may require a documented/open-source parser or a tool permitted by the license.
+
+Allowed: decode/decompress user-owned data, inspect open formats, analyze code the user owns or may inspect, recover metadata, compare binaries and document format hypotheses.
+
+Out of scope: bypassing DRM, Steam/Klei entitlements, authentication, access controls, encryption protecting third-party content without authorization, credential extraction, or covert access to private servers/accounts. Never upload keys, secrets, private certificates or protected assets to GitHub.
+
+## 8. Public research and unusual but legitimate sources
+Search broadly, but keep a source ledger:
+- Official docs, source repositories, commit history, tags, issue/PR discussions and release artifacts.
+- Maintainer forums, modding forums, public Discord material actually public/authorized.
+- Public package registries, source indexes, public mirrors and archived snapshots where terms permit.
+- Search engine caches/snippets as discovery leads; verify against original sources.
+- Compare forks and historical revisions to find when behavior changed.
+- Search exact error strings, symbols, Workshop IDs, prefab/component names, paths and commit hashes.
+- Record URL, retrieval date, author/source, version, evidence excerpt and confidence.
+
+Do not evade logins, paywalls, private Discord permissions, rate limits, robots/access controls or API restrictions. A strange endpoint is not permission to access it.
+
+## 9. AI-assisted engineering protocol
+Each agent must state repository, branch, commit and files inspected; separate facts, hypotheses and recommendations; cite paths/lines or immutable URLs; never invent tests, access, logs or successful fixes; use a second reviewer for high-risk changes; avoid sending secrets or proprietary assets to external models; keep changes small, reversible and tested; and save durable findings to the shared knowledge base.
+
+## 10. DST-specific workflow
+The source of truth is the user's exact local DST build at Don't Starve Together/data/databundles/scripts.zip. Extract to a disposable source directory; never edit installed game files. Record game build and scripts.zip hash. Every compatibility claim must record Workshop ID/version/commit, DST build, enabled mods and load order, world/server configuration, reproduction steps, test level, logs, result and limitations.
+
+## 11. Implementation and next steps
+Implemented in this PR:
+- tools/dst_mod_audit.py: read-only folder/ZIP inventory, SHA-256 and Lua integration signal scan.
+- tests/test_dst_mod_audit.py: regression tests for folder/ZIP inventory, source signals and unsafe archive paths.
+- Dedicated CI workflow runs audit-tool tests and generates a Metals and More source report.
+
+Next:
+- optional RAR/7z listing/extraction through an installed extractor with safe path validation;
+- baseline comparison and machine-readable compatibility matrix;
+- API/recipe cross-reference against exact extracted DST scripts;
+- controlled integration harnesses for Lucy/Woodie and recipe registration;
+- optional Lua linting and test coverage reports;
+- repeatable dedicated-server/client test harness where environment permits.
+
+## References
+- Klei modding guidance: https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together
+- Klei Workshop workflow: https://support.klei.com/hc/en-us/articles/360029556512-How-do-I-download-mods-for-Don-t-Starve-Together-Steam
+- DST scripts.zip notes: https://kleiforums.com/forums/topic/136505-how-to-get-developer-tools/
+- DST vanilla script reference (secondary/generated; verify locally): https://vietnd69.github.io/dst-api-webdocs/
+- Lua 5.1 manual: https://www.lua.org/manual/5.1/
+- Ghidra: https://github.com/NationalSecurityAgency/ghidra
+- OWASP SBOM guidance: https://owasp.github.io/DevSecOpsGuideline/2-Process/2-3-Build/2-3-6-1-SBOM/
