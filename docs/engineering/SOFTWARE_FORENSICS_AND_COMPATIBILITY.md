@@ -137,3 +137,7 @@ Next:
 - Lua 5.1 manual: https://www.lua.org/manual/5.1/
 - Ghidra: https://github.com/NationalSecurityAgency/ghidra
 - OWASP SBOM guidance: https://owasp.github.io/DevSecOpsGuideline/2-Process/2-3-Build/2-3-6-1-SBOM/
+
+
+Additional DST security context:
+- Klei's January 2025 mod API discussion describes emergency changes after malicious code abused permissive mod APIs to spread through other mods and use command-and-control behavior: https://kleiforums.com/forums/topic/163519-mod-api-discussion-thread/
