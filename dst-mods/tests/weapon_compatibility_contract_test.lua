@@ -166,13 +166,22 @@ assert(no_equip_exit_called, "no-equip onexit must still call vanilla cleanup")
 
 -- Completed casts do not interrupt their reticule.
 local completed_reti = { interrupts = 0, Interrupt = function(self) self.interrupts = self.interrupts + 1 end }
+local completed_equip = { components = { reticule_spawner = completed_reti } }
 local completed_state = { onexit = function() return "done" end }
 stategraph_wrappers.WrapCastState(completed_state, 1, function()
-    return { components = { reticule_spawner = completed_reti } }
+    return completed_equip
 end)
-local completed_inst = { sg = { statemem = { tm = 1.2, trgt = 1 } } }
+local completed_inst = { sg = { statemem = { tm = 1.2, trgt = 1, equip = completed_equip } } }
 assert(completed_state.onexit(completed_inst) == "done", "completed onexit should call original")
 assert(completed_reti.interrupts == 0, "completed cast should not interrupt reticule")
+
+local no_reticule_state = { onexit = function() return "no-reticule" end }
+stategraph_wrappers.WrapCastState(no_reticule_state, 1, function()
+    return { components = {} }
+end)
+local no_reticule_inst = { sg = { statemem = { tm = 0, trgt = 1 } } }
+assert(no_reticule_state.onexit(no_reticule_inst) == "no-reticule",
+    "missing reticule component must not block original cleanup")
 
 -- Missing state/callbacks and missing sg must be safe.
 assert(stategraph_wrappers.WrapCastState(nil, 1, function() end) == false,
