@@ -683,8 +683,9 @@ AddClassPostConstruct(
 )
 local function al(l, am)
     local an = {livingstaff = "heal_staff", infernalstaff = "fireball"}
-    if an[am.prefab] then
-        l.sg.statemem.projectilesound = "dontstarve/common/lava_arena/" .. an[am.prefab]
+    local statemem = l.sg ~= nil and l.sg.statemem or nil
+    if statemem ~= nil and an[am.prefab] then
+        statemem.projectilesound = "dontstarve/common/lava_arena/" .. an[am.prefab]
     end
 end
 AddStategraphPostInit(
@@ -710,7 +711,7 @@ AddStategraphPostInit(
             local old_deststate = cast_handler.deststate
             cast_handler.deststate = function(inst, action, ...)
                 local invobject = action ~= nil and action.invobject or nil
-                if invobject ~= nil and invobject.HasTag ~= nil and invobject:HasTag("parry") then
+                if invobject ~= nil and type(invobject.HasTag) == "function" and invobject:HasTag("parry") then
                     return "parry_pre"
                 end
                 return old_deststate(inst, action, ...)
