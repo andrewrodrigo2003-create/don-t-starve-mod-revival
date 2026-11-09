@@ -1,3 +1,4 @@
+local MAMStategraphWrappers = require("mam/stategraph_wrappers")
 local a = _G.json
 local b = _G.FRAMES
 local c = _G.EQUIPSLOTS
@@ -689,40 +690,62 @@ end
 AddStategraphPostInit(
     "wilson",
     function(self)
-        local ao = self.states.attack.onenter
-        self.states.attack.onenter = function(l)
-            local am = l.components.inventory:GetEquippedItem(c.HANDS)
-            if am then
-                al(l, am)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.components ~= nil and inst.components.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
             end
-            ao(l)
         end
-        local ap = self.actionhandlers[g.CASTAOE].deststate
-        self.actionhandlers[g.CASTAOE].deststate = function(l, aq)
-            if aq.invobject:HasTag("parry") then
-                return "parry_pre"
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and invobject.HasTag ~= nil and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
             end
-            return ap(l, aq)
         end
     end
 )
 AddStategraphPostInit(
     "wilson_client",
     function(self)
-        local ao = self.states.attack.onenter
-        self.states.attack.onenter = function(l)
-            local am = l.replica.inventory:GetEquippedItem(c.HANDS)
-            if am then
-                al(l, am)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.replica ~= nil and inst.replica.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
             end
-            ao(l)
         end
-        local ap = self.actionhandlers[g.CASTAOE].deststate
-        self.actionhandlers[g.CASTAOE].deststate = function(l, aq)
-            if aq.invobject:HasTag("parry") then
-                return "parry_pre"
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and invobject.HasTag ~= nil and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
             end
-            return ap(l, aq)
         end
     end
 )
@@ -745,35 +768,17 @@ AddComponentPostInit(
         end
     end
 )
-local at = {book = 25 * b, castspell = 53 * b}
-local ab = function(...)
-end
-for au, av in pairs(at) do
+local cast_state_times = { book = 25 * b, castspell = 53 * b }
+for state_name, target_time in pairs(cast_state_times) do
     AddStategraphPostInit(
         "wilson",
         function(self)
-            local aw, ax, ay =
-                self.states[au].onenter or ab,
-                self.states[au].onexit or ab,
-                self.states[au].onupdate or ab
-            self.states[au].onenter = function(l)
-                l.sg.statemem.tm = 0
-                l.sg.statemem.trgt = av
-                l.sg.statemem.equip = l.components.inventory:GetEquippedItem(c.HANDS)
-                aw(l)
-            end
-            self.states[au].onexit = function(l)
-                if not l.sg.statemem.equip then
-                    return
-                end
-                if l.sg.statemem.tm < l.sg.statemem.trgt and l.sg.statemem.equip.components.reticule_spawner then
-                    l.sg.statemem.equip.components.reticule_spawner:Interrupt()
-                end
-                ax(l)
-            end
-            self.states[au].onupdate = function(l, az)
-                l.sg.statemem.tm = l.sg.statemem.tm + az
-                ay(l)
+            local state = self.states ~= nil and self.states[state_name] or nil
+            if state ~= nil then
+                MAMStategraphWrappers.WrapCastState(state, target_time, function(inst)
+                    local inventory = inst.components ~= nil and inst.components.inventory or nil
+                    return inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                end)
             end
         end
     )
