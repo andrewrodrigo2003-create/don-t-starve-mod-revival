@@ -60,12 +60,12 @@ jobs:
         run: |
           set -euo pipefail
           cd dst-mods
-          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.4.zip" metals_and_reforged
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" metals_and_reforged
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@v4
         with:
-          name: metals-and-more-reforged-2.9.4
-          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.4.zip
+          name: metals-and-more-reforged-2.9.5
+          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.5.zip
           if-no-files-found: error
           retention-days: 14
