@@ -19,6 +19,9 @@ from typing import Iterable
 
 TEXT_SUFFIXES = {".lua", ".txt", ".json", ".xml", ".md", ".cfg", ".ini"}
 MAX_TEXT_BYTES = 8 * 1024 * 1024
+MAX_FILE_BYTES = 64 * 1024 * 1024
+MAX_TOTAL_BYTES = 512 * 1024 * 1024
+MAX_ZIP_COMPRESSION_RATIO = 200
 
 PATTERNS = {
     "spell_api": re.compile(r"\b(?:SetSpellFn|aoespell|spellcaster)\b", re.I),
@@ -64,12 +67,30 @@ def decode_text(data: bytes) -> str | None:
     return None
 
 def source_entries(target: Path):
+    """Yield bounded file contents without following directory symlinks or extracting archives."""
+    total_bytes = 0
     if target.is_dir():
-        for path in sorted(p for p in target.rglob("*") if p.is_file()):
+        for path in sorted(target.rglob("*")):
+            if path.is_symlink():
+                yield path.relative_to(target).as_posix(), None, "symbolic link skipped"
+                continue
+            if not path.is_file():
+                continue
             try:
+                size = path.stat().st_size
+                if size > MAX_FILE_BYTES:
+                    yield path.relative_to(target).as_posix(), None, "file exceeds per-file size limit"
+                    continue
+                if total_bytes + size > MAX_TOTAL_BYTES:
+                    yield path.relative_to(target).as_posix(), None, "directory scan total size limit reached"
+                    continue
                 data = path.read_bytes()
+                if len(data) > MAX_FILE_BYTES:
+                    yield path.relative_to(target).as_posix(), None, "file grew beyond per-file size limit while reading"
+                    continue
+                total_bytes += len(data)
             except OSError as exc:
-                yield path.as_posix(), None, str(exc)
+                yield path.relative_to(target).as_posix(), None, str(exc)
                 continue
             yield path.relative_to(target).as_posix(), data, None
     elif target.is_file() and zipfile.is_zipfile(target):
@@ -78,13 +99,28 @@ def source_entries(target: Path):
                 name = info.filename
                 if info.is_dir():
                     continue
-                # Reject traversal-like names in reports; never extract archive paths.
-                if PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts:
+                archive_path = PurePosixPath(name)
+                if archive_path.is_absolute() or ".." in archive_path.parts:
                     yield name, None, "unsafe archive path skipped"
                     continue
+                if info.file_size > MAX_FILE_BYTES:
+                    yield name, None, "archive entry exceeds per-file size limit"
+                    continue
+                if total_bytes + info.file_size > MAX_TOTAL_BYTES:
+                    yield name, None, "archive scan total uncompressed size limit reached"
+                    continue
+                ratio = info.file_size / max(info.compress_size, 1)
+                if ratio > MAX_ZIP_COMPRESSION_RATIO:
+                    yield name, None, "archive entry exceeds compression-ratio limit"
+                    continue
                 try:
-                    yield name, archive.read(info), None
-                except (OSError, zipfile.BadZipFile, RuntimeError) as exc:
+                    data = archive.read(info)
+                    if len(data) != info.file_size:
+                        yield name, None, "archive entry size did not match metadata"
+                        continue
+                    total_bytes += len(data)
+                    yield name, data, None
+                except (OSError, zipfile.BadZipFile, RuntimeError, zipfile.LargeZipFile) as exc:
                     yield name, None, str(exc)
     else:
         raise ValueError("Target must be a directory or a readable ZIP archive.")
