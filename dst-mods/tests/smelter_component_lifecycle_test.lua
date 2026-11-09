@@ -118,13 +118,17 @@ local function make_instance(container)
         prefab = "metal_smelter",
         components = { container = container },
         deferred = {},
+        periodic_tasks = {},
         tags = {},
         mam_plan = {
             set = function(self, value) self.value = value end,
         },
     }
-    function inst:DoPeriodicTask()
-        return { Cancel = function(self) self.cancelled = true end }
+    function inst:DoPeriodicTask(period, fn, initial, ...)
+        local task = { period = period, fn = fn, cancelled = false, args = { ... } }
+        function task:Cancel() self.cancelled = true end
+        table.insert(self.periodic_tasks, task)
+        return task
     end
     function inst:DoTaskInTime(delay, fn)
         table.insert(self.deferred, { delay = delay, fn = fn })
@@ -146,6 +150,7 @@ local first = make_item("copper_ore", 5)
 local second = make_item("iron_ore", 2)
 local container = make_container({ [1] = first, [2] = second })
 local smelter, inst = new_smelter(container)
+check("idle constructor creates no periodic task", #inst.periodic_tasks == 0 and smelter.task == nil)
 planned = {
     state = "ready",
     product = "copper_ingot",
@@ -159,17 +164,24 @@ planned = {
 local plan_callback = false
 smelter.onplanfn = function() plan_callback = true end
 check("StartSmelting accepts a valid plan", smelter:StartSmelting())
+check("start creates exactly one periodic task",
+    #inst.periodic_tasks == 1 and smelter.task == inst.periodic_tasks[1])
+local active_task = smelter.task
 check("partial stack keeps exact remainder", first.components.stackable.stacksize == 2)
 check("fully consumed stack leaves its slot", container.slots[2] == nil and second.removed)
 check("start closes and locks the container", container.closed and container.canbeopened == false)
 check("start stores product and batch", smelter.product == "copper_ingot" and smelter.batch == 2)
 check("start publishes the authoritative plan", inst.mam_plan.value ~= nil and inst.mam_plan.value:find("p|copper_ingot|2|smelting", 1, true) ~= nil)
 check("start invokes plan callback", plan_callback)
+smelter:Update(smelter.smelttime)
+check("completed batch becomes ready to harvest", smelter.canharvest == true)
+check("completion cancels periodic task", active_task.cancelled and smelter.task == nil)
 
 -- A rejected plan must not consume anything or lock the container.
 local untouched = make_item("twigs", 1)
 local invalid_container = make_container({ [1] = untouched })
-local invalid_smelter = new_smelter(invalid_container)
+local invalid_smelter, invalid_inst = new_smelter(invalid_container)
+check("invalid idle smelter creates no periodic task", #invalid_inst.periodic_tasks == 0)
 planned = { state = "invalid", reason = "unknown" }
 check("invalid plan cannot start", invalid_smelter:StartSmelting() == false)
 check("invalid plan preserves input", invalid_container.slots[1] == untouched and not untouched.removed)
@@ -178,9 +190,12 @@ check("invalid plan leaves container open", invalid_container.canbeopened == tru
 -- Interruption follows the leftovers setting in both directions.
 config.mam_leftovers = 1
 local returned_container = make_container({ [1] = make_item("copper_ore", 2) })
-local returned_smelter = new_smelter(returned_container)
+local returned_smelter, returned_inst = new_smelter(returned_container)
 returned_smelter.issmelting = true
+returned_smelter:StartUpdating()
+local interrupted_task = returned_smelter.task
 returned_smelter:ResetSmelter()
+check("interruption cancels periodic task", interrupted_task.cancelled and returned_smelter.task == nil)
 check("interruption returns leftovers when enabled", returned_container.drop_everything == true)
 check("interruption clears active state", not returned_smelter.issmelting and returned_smelter.product == nil)
 
@@ -196,6 +211,8 @@ local active_container = make_container({})
 local active_smelter = new_smelter(active_container)
 active_smelter:OnLoad({ issmelting = true, product = "copper_ingot", batch = 3, smelttime = 12 })
 check("positive-time save resumes", active_smelter.issmelting == true and active_smelter.smelttime == 12)
+check("positive-time save starts one periodic task",
+    #active_smelter.task and active_smelter.task == active_smelter.inst.periodic_tasks[1])
 check("resumed save keeps container locked", active_container.canbeopened == false)
 
 local expired_container = make_container({})
@@ -203,6 +220,7 @@ local expired_smelter, expired_inst = new_smelter(expired_container)
 expired_smelter:OnLoad({ issmelting = true, product = "copper_ingot", batch = 2, smelttime = 0 })
 check("expired save schedules deferred completion", #expired_inst.deferred == 1 and expired_inst.deferred[1].delay == 0)
 check("expired save does not complete inline", expired_smelter.issmelting == true and not expired_smelter.canharvest)
+check("expired save does not start periodic polling", expired_smelter.task == nil)
 local restored_item = make_item("copper_ore", 1)
 expired_container.slots[1] = restored_item -- represents container OnLoad finishing first
 expired_inst.deferred[1].fn()
@@ -214,6 +232,7 @@ local ready_container = make_container({})
 local ready_smelter = new_smelter(ready_container)
 ready_smelter:OnLoad({ canharvest = true, issmelting = true, product = "copper_ingot", batch = 2, smelttime = 0 })
 check("ready state takes precedence over stale active flag", ready_smelter.canharvest == true and not ready_smelter.issmelting)
+check("ready save does not create periodic polling", ready_smelter.task == nil)
 
 local missing_container = make_container({ [1] = make_item("copper_ore", 1) })
 local missing_smelter = new_smelter(missing_container)
