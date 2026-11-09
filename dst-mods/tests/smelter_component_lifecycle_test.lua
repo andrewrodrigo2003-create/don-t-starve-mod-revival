@@ -212,7 +212,7 @@ local active_smelter = new_smelter(active_container)
 active_smelter:OnLoad({ issmelting = true, product = "copper_ingot", batch = 3, smelttime = 12 })
 check("positive-time save resumes", active_smelter.issmelting == true and active_smelter.smelttime == 12)
 check("positive-time save starts one periodic task",
-    #active_smelter.task and active_smelter.task == active_smelter.inst.periodic_tasks[1])
+    active_smelter.task ~= nil and active_smelter.task == active_smelter.inst.periodic_tasks[1])
 check("resumed save keeps container locked", active_container.canbeopened == false)
 
 local expired_container = make_container({})
