@@ -1,0 +1,40 @@
+name: DST forensic toolkit checks
+
+on:
+  push:
+    branches:
+      - main
+      - engineering/forensics-testing-toolkit-2026-11-09
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tools/dst_mod_audit.py'
+      - 'tests/test_dst_mod_audit.py'
+      - 'dst-mods/metals_and_reforged/**'
+      - '.github/workflows/dst-forensics-toolkit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-tool-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test read-only audit tool
+        run: python -m unittest discover -s tests -p 'test_dst_mod_audit.py' -v
+      - name: Generate Metals and More source inventory
+        run: python tools/dst_mod_audit.py dst-mods/metals_and_reforged --output "$RUNNER_TEMP/metals-and-more-audit.json"
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: metals-and-more-source-audit
+          path: ${{ runner.temp }}/metals-and-more-audit.json
+          if-no-files-found: error
+          retention-days: 14
