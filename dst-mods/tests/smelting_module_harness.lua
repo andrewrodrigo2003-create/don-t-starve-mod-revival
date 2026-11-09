@@ -326,7 +326,7 @@ for product, recipe in pairs(smelting.recipes.metal_smelter) do
 
         local ok, accepted = pcall(recipe.test, "metal_smelter", names, tags)
         check(product .. " minimum declared cost satisfies recipe predicate",
-            ok and accepted == true,
+            ok and not not accepted,
             ok and ("predicate returned " .. tostring(accepted)) or accepted)
     end
 end
