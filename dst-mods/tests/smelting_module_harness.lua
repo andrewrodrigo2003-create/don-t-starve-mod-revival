@@ -276,6 +276,8 @@ check("forecast does not call math.random",
     forecast_ok and forecast_without_random.product == "copper_ingot")
 
 -- Split stacks in separate slots must conserve each slot independently.
+-- Restore batch mode after the preceding forecast test disabled local config.
+set_config(true, 10, 25, 2)
 local split_copper_items = {
     make_item("copper_ore", 3, 1),
     make_item("copper_ore", 3, 2),
