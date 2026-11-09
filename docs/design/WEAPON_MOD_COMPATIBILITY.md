@@ -48,3 +48,27 @@ No DST in-game test has been run. Compatibility with Woodie - Better Skill Tree,
 Gem Core, Glassic API, and Woodie Transformation Skins still requires a
 controlled test in the game. This patch is a defensive compatibility improvement,
 not a confirmed fix for the third-party `SetSpellFn` crash.
+
+
+## Legacy Lucy projectile integration removal — 2.9.5
+
+The old global alternate-projectile bridge has been removed from
+`scripts/mod_main.lua`:
+
+- Metals and More no longer injects a `weapon:SetProjectile` override.
+- Alternate attacks no longer switch `weapon.projectile` or install a
+  `CanRangedAttack` wrapper to expose a secondary projectile.
+- The legacy third positional argument of `SetAltAttack` is retained as an
+  ignored placeholder so existing calls do not shift their damage-type,
+  damage-calculation, or condition arguments.
+- The melee alternate-attack path, alternate damage/range/type handling, and
+  normal vanilla projectile behavior are left intact.
+
+The four Forge weapon prefabs remain registered. Their native `aoespell`,
+`aoeweapon_leap`, `aoeweapon_lunge`, and parry components are preserved.
+The normal Lucy axe is not replaced or modified by this change.
+
+This removes Metals and More's old global alternate-projectile hook; it does
+not patch Woodie - Better Skill Tree or establish that the third-party
+`SetSpellFn` exception is fixed. That error remains outside this repository
+and requires a separate in-game compatibility check.
