@@ -292,6 +292,46 @@ equal("red gem multi-batch count", redgem_batch.count, 2)
 assert_consumption("red gem multi-batch", redgem_batch,
     { redgem_shard = 8 }, {})
 
+
+-- Every built-in recipe must declare a usable batch cost, and that minimum
+-- cost must satisfy the recipe's own predicate. This prevents recipe/cost
+-- drift from creating free output or consuming the wrong ingredients.
+local recipe_contracts = 0
+for product, recipe in pairs(smelting.recipes.metal_smelter) do
+    recipe_contracts = recipe_contracts + 1
+    local cost = recipe.cost
+    check(product .. " declares batch cost metadata", type(cost) == "table")
+
+    if type(cost) == "table" then
+        local tags = cost.tags or {}
+        local names = cost.names or {}
+        check(product .. " has a non-empty batch cost",
+            next(tags) ~= nil or next(names) ~= nil)
+
+        local valid_cost = true
+        for tag, amount in pairs(tags) do
+            if type(tag) ~= "string" or type(amount) ~= "number"
+                or amount <= 0 or amount ~= amount or amount == math.huge then
+                valid_cost = false
+            end
+        end
+        for prefab, amount in pairs(names) do
+            if type(prefab) ~= "string" or type(amount) ~= "number"
+                or amount <= 0 or amount % 1 ~= 0
+                or amount ~= amount or amount == math.huge then
+                valid_cost = false
+            end
+        end
+        check(product .. " batch cost values are valid", valid_cost)
+
+        local ok, accepted = pcall(recipe.test, "metal_smelter", names, tags)
+        check(product .. " minimum declared cost satisfies recipe predicate",
+            ok and not not accepted,
+            ok and ("predicate returned " .. tostring(accepted)) or accepted)
+    end
+end
+check("built-in smelting recipe registry is non-empty", recipe_contracts > 0)
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
