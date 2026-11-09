@@ -286,8 +286,6 @@ AddComponentPostInit(
         self.altdamage = nil
         self.altdamagecalc = nil
         self.altcondition = nil
-        self.altprojectile = nil
-        self._projectile = nil
         self.damagetype = nil
         self.altdamagetype = nil
         self._damagetype = nil
@@ -298,11 +296,7 @@ AddComponentPostInit(
         function self:SetStimuli(x)
             self.stimuli = x
         end
-        function self:SetProjectile(U)
-            self.projectile = U
-            self._projectile = U
-        end
-        function self:SetAltAttack(X, Y, a6, q, a7, a8)
+        function self:SetAltAttack(X, Y, _legacy_projectile, q, a7, a8)
             self.hasaltattack = true
             self.altdamage = X ~= nil and X or self.damage
             if Y ~= nil then
@@ -312,7 +306,6 @@ AddComponentPostInit(
                 self.altattackrange = 20
                 self.althitrange = 20
             end
-            self.altprojectile = a6
             self.altdamagetype = q ~= nil and q or self.damagetype
             self.altdamagecalc = a7
             self.altcondition = a8
@@ -333,10 +326,8 @@ AddComponentPostInit(
                 self.inst.replica.inventoryitem:SetIsAltAttacking(aa)
             end
             if aa then
-                self.projectile = self.altprojectile
                 self.damagetype = self.altdamagetype
             else
-                self.projectile = self._projectile
                 self.damagetype = self._damagetype
             end
         end
@@ -347,10 +338,6 @@ AddComponentPostInit(
             if self:HasAltAttack() and self.isaltattacking then
                 return self.altcondition == nil or self.altcondition(self.inst)
             end
-        end
-        local old_can_ranged_attack = self.CanRangedAttack
-        function self:CanRangedAttack()
-            return self:CanAltAttack() and self.altprojectile or old_can_ranged_attack(self)
         end
         function self:DoAltAttack(G, T, U, x, V)
             self:SetIsAltAttacking(true)
