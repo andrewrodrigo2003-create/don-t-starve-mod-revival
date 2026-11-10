@@ -236,3 +236,45 @@ The regex inventory previously masked Lua comments and skipped quoted short stri
 The masker now recognizes and masks long-bracket string bodies while preserving newline positions, before it interprets comment markers. Two regression tests cover fake hook text inside long-bracket strings and alternate equals levels. This is a false-positive reduction, not a complete Lua lexer; the optional AST analyzer remains the stronger syntax-aware path.
 
 Latest CI run containing these tests: DST Lua wrapper AST audit run #11, ID 42841816648. The unit-test step completed successfully; the full workflow is also running the MAM source scan and artifact upload. Record the final workflow conclusion and actual scan report separately.
+
+
+## 16. First AST scan of the actual MAM source and combat API contract risks — 2026-11-10
+
+### Verified scan result (prototype before API-profile expansion)
+DST Lua wrapper AST audit workflow #11, run ID `42841816648`, completed successfully:
+- 23/23 then-current unit tests passed;
+- scanned the real `dst-mods/metals_and_reforged` source tree;
+- 92 Lua files, 520,131 source bytes;
+- zero parser errors and zero skipped files;
+- 23 capture/override candidates reported;
+- artifact ID `13776167242`: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42841816648/artifacts/13776167242
+
+This run predates the subsequent additions for captured return tuples, implicit colon-method `self`, and public combat API signature profiles. Those later changes need their own CI run before they are considered verified.
+
+### High-priority static contract candidates found by manual cross-check
+The real MAM source at `scripts/mod_main.lua` has three wrapper contracts that do not match the inspected public DST combat API profile:
+
+1. **CalcDamage — possible loss of special-damage return**
+   - MAM lines 162–184 captures `old_calc_damage(...)` into one local `C` and returns only `C`.
+   - The inspected public DST combat source returns `damage, spdamage`.
+   - The wrapper therefore appears to truncate the second result. This can affect planar/special damage paths when that API version is used.
+2. **DoAttack — trailing optional arguments not represented**
+   - MAM lines 242–247 wraps `DoAttack` with only target, weapon, projectile, stimuli and instance multiplier after `self`, then calls the previous implementation with those five values (the multiplier is transformed into `W`).
+   - The public API profile includes two additional optional trailing arguments: `instrangeoverride` and `instpos`. They are not accepted or forwarded by this wrapper, so callers using range/position overrides may lose them.
+3. **GetAttacked — special damage parameter not represented**
+   - MAM lines 248–252 wraps and forwards attacker, damage, weapon and stimuli, but not the public API's trailing `spdamage` parameter.
+   - This can discard special/planar damage on incoming-hit paths.
+
+A fourth direct override is visible at MAM lines 254–267:
+- `DoAreaAttack` replaces the method without capturing/delegating to the previous implementation.
+- Its wrapper omits the public API's trailing `onlyontarget` argument.
+- It calls `self:CalcDamage(...)` as a non-final argument in a larger call expression; under Lua 5.1 expression-list rules, that call contributes only its first result there, so special damage is not forwarded to `GetAttacked`.
+- The current custom behavior may be intentional for the Forge pack, so this is a compatibility candidate, not a gameplay-balance decision.
+
+### Interpretation and action boundary
+These mismatches are supported by direct source inspection plus a public DST API reference, but the public mirror is not the user's installed `scripts.zip`. The next step is to compare the same signatures with the exact game build and characterize affected call sites. No combat code has been changed. Do not patch or rebalance these wrappers until the contract and intended behavior are reviewed; no PR has been merged.
+
+### Sources
+- Public DST combat.lua source (CalcDamage returns damage and spdamage; GetAttacked; DoAreaAttack): https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua
+- DST combat API reference (build 722832, updated 2026-04-21; DoAttack, GetAttacked, CalcDamage, DoAreaAttack signatures): https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/combat
+- Lua 5.1 manual, expression adjustment and multiple results: https://www.lua.org/manual/5.1/manual.html
