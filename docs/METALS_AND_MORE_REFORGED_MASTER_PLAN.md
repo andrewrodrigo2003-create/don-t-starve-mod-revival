@@ -339,3 +339,13 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - CI usa Lua 5.1 e harnesses com stubs; não substitui o motor DST.
 - Ainda pendentes: teste in-game, multiplayer, servidor dedicado, save/load real e compatibilidade runtime com a versão atual do Uncompromising Mode Beta.
 - PR #30 continua draft e não foi integrado à `main`; nenhuma publicação na Oficina foi feita.
+
+
+### Continuação da correção de entrega — 2026-11-10
+
+- O caminho de destruição com martelo em `scripts/prefabs/metal_smelter.lua` também foi protegido: prepara todas as pilhas antes de largar loot, derramar o container ou remover a forja.
+- Se a criação de qualquer saída falhar, as pilhas preparadas são removidas, nenhum conteúdo é derramado e a estrutura continua no mundo com 1 ponto de trabalho para permitir nova tentativa.
+- Novo harness `dst-mods/tests/smelter_destruction_harvest_test.lua`: 12/12 verificações aprovadas, incluindo falha na segunda pilha, rollback, retenção da estrutura e retry completo 20/20/5.
+- CI do commit de código `a429e001bbe0d09a65716c35dd7cb434affd83e1`: `Metals and More Lua checks` e `MAM stategraph wrapper contract` concluídos com sucesso. O pacote de teste foi gerado pelo workflow #42805713605.
+- A correção de colheita normal continua coberta por 52/52 verificações no harness do componente.
+- Nenhum teste dentro do jogo foi executado; validação de runtime, multiplayer, save/load real e UM Beta permanece pendente.
