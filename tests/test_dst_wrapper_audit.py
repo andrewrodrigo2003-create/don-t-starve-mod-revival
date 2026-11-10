@@ -148,6 +148,40 @@ end
         )
         self.assertTrue(finding["argument_evidence"]["self_forwarded_as_first_argument"])
 
+    def test_dst_doattack_wrapper_reports_missing_optional_parameters(self):
+        finding = self.finding("""
+local old_attack = combat.DoAttack
+function combat:DoAttack(target, weapon, projectile, stimuli, instancemult)
+    old_attack(self, target, weapon, projectile, stimuli, instancemult)
+end
+""")
+        contract = finding["api_contract_evidence"]
+        self.assertEqual(contract["missing_trailing_parameter_count"], 2)
+        self.assertEqual(contract["parameter_arity_risk"], "possible_trailing_argument_loss")
+
+    def test_dst_getattacked_wrapper_reports_missing_spdamage_parameter(self):
+        finding = self.finding("""
+local old_attacked = combat.GetAttacked
+function combat:GetAttacked(attacker, damage, weapon, stimuli)
+    return old_attacked(self, attacker, damage, weapon, stimuli)
+end
+""")
+        contract = finding["api_contract_evidence"]
+        self.assertEqual(contract["missing_trailing_parameter_count"], 1)
+        self.assertEqual(contract["parameter_arity_risk"], "possible_trailing_argument_loss")
+
+    def test_dst_calcdamage_contract_reports_possible_second_return_loss(self):
+        finding = self.finding("""
+local old_calc = combat.CalcDamage
+function combat:CalcDamage(target, weapon, multiplier)
+    local damage = old_calc(self, target, weapon, multiplier)
+    return damage
+end
+""")
+        contract = finding["api_contract_evidence"]
+        self.assertEqual(contract["expected_return_count"], 2)
+        self.assertEqual(contract["return_arity_risk"], "possible_multi_return_truncation")
+
     def test_unrelated_assignment_is_not_a_wrapper(self):
         result = MODULE.analyze_source(
             "modmain.lua",
