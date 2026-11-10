@@ -205,3 +205,25 @@ Sources:
 - https://py-lua-parser.readthedocs.io/en/latest/api.html
 - https://pypi.org/project/luaparser/4.2.0/
 - https://tree-sitter-grammars.github.io/tree-sitter-lua/
+
+
+## 14. DST mod load order and post-init execution — source-level confirmation (2026-11-10)
+
+A current public mirror of DST scripts (taichunmin/dont-starve-together-game-scripts, branch master) exposes a concrete order path:
+- In `mods.lua`, `ModWrangler:LoadMods` builds mod environments, sorts `self.mods` by `modinfo.priority` descending, and for equal priorities compares `tostring(modinfo.name)` using `>` (descending lexical order in this mirror). It then populates `enabledmods` in that sorted order and runs each mod's `modworldgenmain.lua` and `modmain.lua` in that sequence.
+- `ModWrangler:GetPostInitFns` iterates `enabledmods` in order and appends each mod's registered callbacks in their per-mod insertion order.
+- In `modutil.lua`, `AddComponentPostInit` and `AddPrefabPostInit` append callbacks to per-mod arrays with `table.insert`.
+- In `entityscript.lua`, component construction retrieves `GetPostInitFns("ComponentPostInit", name)` and invokes the callbacks sequentially after creating/storing the component and before registering component actions.
+- In `mainfunctions.lua`, prefab post-init callbacks run after the prefab constructor returns an instance.
+
+### Consequences for wrapper investigation
+A component post-init wrapper that captures `self.Method` and replaces it is sensitive to the callback sequence. Later callbacks may capture an earlier wrapper, producing a chain; an override that does not delegate can sever that chain. This explains why the AST scanner's delegation and return checks are useful, but actual load order must still be captured from the user's installed DST build/log.
+
+**Important caveat:** this is a public source mirror, not the user's verified installed game scripts.zip. An older public forum discussion says equal-priority order is lexicographical but does not state direction; the inspected DST mirror's comparator explicitly uses `>`. Do not assume the mirror exactly matches the installed build. The scanner's `modinfo.lua` reader currently reports declared `name` and `priority`, but does not compute an authoritative load order.
+
+Sources:
+- DST mods.lua comparator and initialization sequence: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/mods.lua
+- DST modutil callback registration: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/modutil.lua
+- DST component post-init execution: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/entityscript.lua
+- DST prefab post-init execution: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/mainfunctions.lua
+- Community explanation of callback ordering: https://kleiforums.com/forums/topic/108970-mod-load-order-priority/
