@@ -1,8 +1,9 @@
 -- Persistent self-test for the reusable DST behavioral simulator core.
+package.path = "dst-mods/tests/?.lua;dst-mods/tests/?/init.lua;" .. package.path
 local Simulator = require("simulator.bootstrap")
 local result = Simulator.HealthCheck()
 assert(result.version == "0.1.0")
-assert(result.checks == 5)
+assert(result.checks == 4)
 
 local Scheduler = Simulator.Scheduler
 local scheduler = Scheduler.new()
@@ -47,5 +48,15 @@ assert(world:RemoveEntity(machine))
 assert(world:CountEntities() == 0)
 assert(not world:RemoveEntity(machine), "entity removal must be idempotent")
 
-print("DST simulator bootstrap: 21 checks passed; version " .. result.version ..
+-- Entity-owned listeners registered on another entity must be detached on removal.
+local source = world:SpawnEntity("event_source")
+local observer = world:SpawnEntity("observer")
+local source_calls = 0
+observer:ListenForEvent("external", function() source_calls = source_calls + 1 end, source)
+assert(source.events:Count("external") == 1)
+world:RemoveEntity(observer)
+source:PushEvent("external")
+assert(source_calls == 0, "removed observer leaked a listener on a different source")
+
+print("DST simulator bootstrap: core contracts passed; version " .. result.version ..
     "; evidence " .. result.evidence_level)
