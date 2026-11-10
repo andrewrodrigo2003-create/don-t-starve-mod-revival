@@ -28,6 +28,8 @@ local Smelter = Class(function(self, inst)
     self.donesmeltingfn = nil
     self.onharvest = nil
     self.onplanfn = nil
+    -- Recibo das entradas debitadas do lote ativo; so e confirmado ao concluir.
+    self.active_receipt = nil
 
     self:Update(0)
 end)
@@ -166,22 +168,26 @@ function Smelter:StartSmelting(doer)
     self.product = plan.product
     self.batch = plan.count or 1
     self.smelttime = plan.smelttime or 1
+    self.active_receipt = {}
 
-    if self.startsmeltingfn then
-        self.startsmeltingfn(self.inst)
-    end
-
-    -- Consumo exato do lote. O que sobrar fica nos slots e volta para o
-    -- jogador no harvest, em vez de ser destruido silenciosamente.
+    -- Registra cada debito confirmado para permitir rollback se o lote ativo
+    -- for cancelado antes de concluir.
     for i = #plan.consumed, 1, -1 do
         local entry = plan.consumed[i]
         local consumed = self:ConsumeSlot(entry.slot, entry.count)
+        if consumed > 0 then
+            table.insert(self.active_receipt, { prefab = entry.prefab, count = consumed })
+        end
         if consumed ~= entry.count then
             MAMLog.Warn("consumo divergente no slot %s: esperado %d, consumido %d",
                 tostring(entry.slot), entry.count, consumed)
             self:ResetSmelter()
             return false
         end
+    end
+
+    if self.startsmeltingfn then
+        self.startsmeltingfn(self.inst)
     end
 
     container:Close()
@@ -219,6 +225,8 @@ function Smelter:ResumeSmelting()
 end
 
 function Smelter:DoneSmelting()
+    -- O custo foi confirmado: nao ha reembolso apos concluir a fundicao.
+    self.active_receipt = nil
     self.issmelting = nil
     self.canharvest = true
 
@@ -503,6 +511,7 @@ function Smelter:OnSave()
         batch = self.batch,
         smelttime = self.smelttime,
         issmelting = self.issmelting,
+        active_receipt = self.active_receipt,
     }
 end
 
@@ -512,11 +521,25 @@ function Smelter:OnLoad(data)
     if data ~= nil then
         self.product = data.product or nil
         self.batch = data.batch or 1
+        self.active_receipt = nil
+        if type(data.active_receipt) == "table" then
+            local receipt = {}
+            for _, entry in ipairs(data.active_receipt) do
+                if type(entry) == "table" and type(entry.prefab) == "string"
+                    and type(entry.count) == "number" and entry.count > 0
+                    and entry.count % 1 == 0 then
+                    table.insert(receipt, { prefab = entry.prefab, count = entry.count })
+                end
+            end
+            self.active_receipt = #receipt > 0 and receipt or nil
+        end
 
         -- Estado pronto-colher tem precedencia sobre issmelting em saves
         -- antigos/inconsistentes. Nao chamar DoneSmelting durante OnLoad:
         -- o container pode ainda nao ter restaurado as sobras.
         if data.canharvest then
+            -- Save pronto para colher ja confirmou o custo do lote.
+            self.active_receipt = nil
             self.canharvest = true
             self.issmelting = nil
             self.inst:AddTag(READY_TAG)
