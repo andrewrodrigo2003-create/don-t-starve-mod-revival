@@ -75,7 +75,7 @@ class DstModAuditTests(unittest.TestCase):
                 folder = root / mod
                 folder.mkdir()
                 (folder / "modmain.lua").write_text(
-                    "GLOBAL.DAMAGETYPES = {}\\n", encoding="utf-8"
+                    "GLOBAL.DAMAGETYPES = {}\n", encoding="utf-8"
                 )
             report = MODULE.audit(root)
             conflicts = report["potential_cross_mod_conflicts"]
@@ -94,7 +94,7 @@ class DstModAuditTests(unittest.TestCase):
                 folder = root / mod
                 folder.mkdir()
                 (folder / "modmain.lua").write_text(
-                    "AddStategraphActionHandler('wilson', ActionHandler(ACTIONS.ATTACK, 'attack'))\\n",
+                    "AddStategraphActionHandler('wilson', ActionHandler(ACTIONS.ATTACK, 'attack'))\n",
                     encoding="utf-8",
                 )
             report = MODULE.audit(root)
@@ -112,7 +112,7 @@ class DstModAuditTests(unittest.TestCase):
                 folder = root / mod
                 folder.mkdir()
                 (folder / "modmain.lua").write_text(
-                    "AddComponentPostInit('combat', function(self) end)\\n",
+                    "AddComponentPostInit('combat', function(self) end)\n",
                     encoding="utf-8",
                 )
             report = MODULE.audit(root)
@@ -124,8 +124,8 @@ class DstModAuditTests(unittest.TestCase):
             ))
 
     def test_lua_comments_do_not_create_conflict_candidates(self):
-        source = "-- AddComponentPostInit('combat', fn)\\n"
-        source += "AddPrefabPostInit('lucy', fn) -- GLOBAL.DAMAGETYPES = {}\\n"
+        source = "-- AddComponentPostInit('combat', fn)\n"
+        source += "AddPrefabPostInit('lucy', fn) -- GLOBAL.DAMAGETYPES = {}\n"
         found = MODULE.extract_registration_candidates("modmain.lua", source)
         self.assertEqual([(x["kind"], x["target"]) for x in found], [("prefab_postinit", "lucy")])
 
