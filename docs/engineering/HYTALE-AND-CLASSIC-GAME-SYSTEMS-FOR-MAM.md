@@ -108,3 +108,23 @@ Não fazer agora:
 ## Proveniência
 
 Pesquisa de arquitetura e documentação pública. As propostas de aplicação ao MAM são inferências de engenharia, não recursos implementados nem testes executados. Confirmar toda API DST contra os scripts da build instalada antes de implementar.
+
+
+## RimWorld — componentes, dados e atualização escalonada
+
+RimWorld oferece uma referência particularmente útil para mods extensíveis:
+- Defs em XML descrevem itens, receitas, pesquisas e conteúdo; o código fornece o comportamento. Isso ajuda a manter dados ajustáveis sem espalhar regras por funções.
+- XPath/PatchOperations permitem alterar partes específicas de definições existentes, em vez de sobrescrever o Def inteiro. A documentação da comunidade destaca essa abordagem como mais compatível.
+- ThingComps acrescentam comportamento modular a entidades compatíveis, enquanto DefModExtensions carregam campos estáticos. Cada ferramenta tem limites claros.
+- O jogo distingue atualizações normais, raras e longas; a documentação de modding alerta para o custo de fazer trabalho pesado em cada tick e recomenda intervalos apropriados e distribuição escalonada do trabalho.
+
+**Aplicação ao MAM:** reforça três decisões: preferir extensão localizada a substituição global; manter configuração declarativa separada do comportamento; e não executar verificações caras a cada frame/tick. No DST, não copiar os intervalos do RimWorld: usar eventos/tasks do DST e medir o custo real.
+
+**Cuidado de compatibilidade:** a própria documentação de RimWorld ressalta que sobrescrever Defs pode destruir compatibilidade, enquanto patches específicos e componentes são alternativas mais localizadas. É uma analogia forte para evitar overrides globais de métodos DST sem necessidade.
+
+Fontes:
+- https://www.rimworldwiki.com/wiki/Modding_Tutorials/Modifying_defs
+- https://rimworldwiki.com/wiki/Modding_Tutorials/XML_Defs
+- https://rimworldwiki.com/wiki/Modding_Tutorials/ThingComp
+- https://github.com/Dev-Jahn/rimworld-modding-reference/blob/main/08-advanced-topics/performance.md
+- https://github.com/Dev-Jahn/rimworld-modding-reference/blob/main/01-rimworld-core/tick-system.md
