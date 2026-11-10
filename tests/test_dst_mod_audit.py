@@ -164,5 +164,25 @@ class DstModAuditTests(unittest.TestCase):
         self.assertEqual([(x["kind"], x["target"]) for x in found], [("prefab_postinit", "lucy")])
 
 
+    def test_lua_long_bracket_strings_do_not_create_hook_candidates(self):
+        source = (
+            'local documentation = [=[\\n'
+            "AddAction('fake_action') -- this is string content\\n"
+            "AddComponentPostInit('fake_component', fn)\\n"
+            "]=]\\n"
+            "AddAction('real_action')\\n"
+        )
+        found = MODULE.extract_registration_candidates("modmain.lua", source)
+        self.assertEqual(
+            [(item["kind"], item["target"]) for item in found],
+            [("action_definition", "real_action")],
+        )
+
+    def test_lua_long_bracket_strings_support_equals_levels(self):
+        source = 'local text = [==[ -- AddAction("fake") ]==]\\nAddAction("real")'
+        found = MODULE.extract_registration_candidates("modmain.lua", source)
+        self.assertEqual([item["target"] for item in found], ["real"])
+
+
 if __name__ == "__main__":
     unittest.main()
