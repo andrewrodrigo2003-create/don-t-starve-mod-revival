@@ -284,10 +284,6 @@ function Smelter:Harvest(harvester)
         return false
     end
 
-    if self.onharvest then
-        self.onharvest(self.inst)
-    end
-
     if self.product ~= nil and harvester ~= nil and harvester.components.inventory ~= nil then
         local remaining = self.batch or 1
         if remaining < 1 then
@@ -332,6 +328,10 @@ function Smelter:Harvest(harvester)
 
             remaining = remaining - n
         end
+    end
+
+    if self.onharvest then
+        self.onharvest(self.inst)
     end
 
     self:ResetSmelter()
