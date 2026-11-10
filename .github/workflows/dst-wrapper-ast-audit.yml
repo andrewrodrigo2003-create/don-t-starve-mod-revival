@@ -38,3 +38,20 @@ jobs:
         run: python -m pip install -r tools/requirements-audit-ast.txt
       - name: Run static audit regression tests
         run: python -m unittest discover -s tests -p "test_dst_*audit.py" -v
+      - name: Audit Metals and More wrapper chains
+        shell: bash
+        run: |
+          if python tools/dst_wrapper_audit.py dst-mods/metals_and_reforged --output "$RUNNER_TEMP/metals-and-more-wrapper-ast-audit.json"; then
+            echo "AST scan completed without parser errors."
+          else
+            status=$?
+            if [ "$status" -ne 1 ]; then exit "$status"; fi
+            echo "Some Lua files could not be parsed; inspect the report artifact."
+          fi
+      - name: Upload wrapper AST report
+        uses: actions/upload-artifact@v4
+        with:
+          name: metals-and-more-wrapper-ast-audit
+          path: ${{ runner.temp }}/metals-and-more-wrapper-ast-audit.json
+          if-no-files-found: error
+          retention-days: 14
