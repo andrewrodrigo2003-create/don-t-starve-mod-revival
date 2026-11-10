@@ -107,6 +107,7 @@ local function make_instance()
     function inst:Remove() self.removed = true end
     return inst
 end
+CreateEntity = make_instance
 
 local fx = {
     Transform = { SetPosition = function(self, ...) self.position = { ... } end },
