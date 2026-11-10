@@ -30,6 +30,28 @@ MAX_AST_TOTAL_BYTES = 32 * 1024 * 1024
 FUNCTION_NODE_NAMES = {"AnonymousFunction", "Function", "Method", "LocalFunction", "GlobalFunction"}
 CONTROL_NODE_NAMES = {"If", "ElseIf", "While", "Repeat", "Fornum", "Forin"}
 
+# Signature snapshots from the public DST combat.lua mirror inspected on 2026-11-10.
+# These are comparison hints, not a guarantee for every installed DST build.
+DST_PUBLIC_API_CONTRACTS = {
+    "CalcDamage": {
+        "parameters": ["self", "target", "weapon", "multiplier"],
+        "return_count": 2,
+        "returns": ["damage", "spdamage"],
+        "source": "https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua",
+    },
+    "DoAttack": {
+        "parameters": [
+            "self", "targ", "weapon", "projectile", "stimuli",
+            "instancemult", "instrangeoverride", "instpos",
+        ],
+        "source": "https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua",
+    },
+    "GetAttacked": {
+        "parameters": ["self", "attacker", "damage", "weapon", "stimuli", "spdamage"],
+        "source": "https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua",
+    },
+}
+
 
 def _children(node):
     if not isinstance(node, astnodes.Node):
@@ -197,6 +219,44 @@ def _argument_evidence(function_node, call_node):
     }
 
 
+def _api_contract_evidence(target, function_node, captured_results, returns):
+    method_name = target.rsplit(".", 1)[-1]
+    contract = DST_PUBLIC_API_CONTRACTS.get(method_name)
+    if contract is None:
+        return None
+    parameters, has_varargs = _function_parameters(function_node)
+    expected_parameters = contract["parameters"]
+    missing_count = max(0, len(expected_parameters) - len(parameters))
+    result = {
+        "profile": "public_dst_combat_lua_mirror_2026-11-10",
+        "source": contract["source"],
+        "expected_parameter_count_including_self": len(expected_parameters),
+        "observed_wrapper_parameter_count_including_self": len(parameters),
+        "missing_trailing_parameter_count": missing_count,
+        "wrapper_accepts_varargs": has_varargs,
+        "parameter_arity_risk": (
+            "possible_trailing_argument_loss"
+            if missing_count and not has_varargs else
+            "varargs_may_accept_trailing_arguments"
+            if missing_count and has_varargs else
+            "parameter_count_matches_profile"
+        ),
+    }
+    if "return_count" in contract:
+        result["expected_return_count"] = contract["return_count"]
+        result["expected_return_names"] = contract["returns"]
+        if any(
+            item["handling"] == "captured_single_result_then_returned"
+            for item in captured_results
+        ) and contract["return_count"] > 1:
+            result["return_arity_risk"] = "possible_multi_return_truncation"
+        elif returns:
+            result["return_arity_risk"] = "direct_return_detected_review_control_flow"
+        else:
+            result["return_arity_risk"] = "not_determined"
+    return result
+
+
 def _analyze_wrapper(path, target, capture, alias, function_node, body):
     calls = _call_nodes(body, alias)
     returns = _direct_return_positions(body, alias)
@@ -226,6 +286,7 @@ def _analyze_wrapper(path, target, capture, alias, function_node, body):
         else:
             return_handling = "previous_call_not_directly_returned"
         argument_evidence = _argument_evidence(function_node, calls[0])
+    api_contract = _api_contract_evidence(target, function_node, captured_results, returns)
     return {
         "path": path,
         "target": target,
@@ -235,6 +296,7 @@ def _analyze_wrapper(path, target, capture, alias, function_node, body):
         "call_lines": [_line(call) for call in calls],
         "direct_return_sites": returns,
         "captured_result_evidence": captured_results,
+        "api_contract_evidence": api_contract,
         "delegation": delegation,
         "return_handling": return_handling,
         "control_flow_contains_conditionals": conditional,
