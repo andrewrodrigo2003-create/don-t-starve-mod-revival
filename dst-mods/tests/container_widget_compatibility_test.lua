@@ -29,7 +29,10 @@ local forecast = {
 }
 local config = { on = function(_, key) return key == "mam_batch" end }
 local container_settings = {
-    accepts_stacks = function(inst, default) return inst.server_accepts_stacks ~= nil and inst.server_accepts_stacks or default end,
+    accepts_stacks = function(inst, default)
+        if inst.server_accepts_stacks ~= nil then return inst.server_accepts_stacks end
+        return default
+    end,
 }
 local smelting = { IsSmelterIngredient = function() return true end }
 
