@@ -1,0 +1,126 @@
+import importlib.util
+import tempfile
+import unittest
+from pathlib import Path
+
+MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "dst_wrapper_audit.py"
+SPEC = importlib.util.spec_from_file_location("dst_wrapper_audit", MODULE_PATH)
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+
+
+class DstWrapperAuditTests(unittest.TestCase):
+    def finding(self, source):
+        result = MODULE.analyze_source("modmain.lua", source)
+        self.assertIsNone(result["parse_error"])
+        self.assertEqual(len(result["findings"]), 1)
+        return result["findings"][0]
+
+    def test_cooperative_wrapper_returns_previous_results(self):
+        finding = self.finding("""
+AddComponentPostInit("health", function(self)
+    local old_setval = self.SetVal
+    self.SetVal = function(self, val, cause)
+        return old_setval(self, val, cause)
+    end
+end)
+""")
+        self.assertEqual(finding["target"], "self.SetVal")
+        self.assertEqual(finding["delegation"], "delegation_found")
+        self.assertEqual(finding["return_handling"], "previous_call_is_last_return_expression")
+        self.assertEqual(finding["argument_evidence"]["self_forwarded_as_first_argument"], True)
+
+    def test_capture_without_delegation_is_flagged(self):
+        finding = self.finding("""
+local old_update = component.Update
+component.Update = function(self, dt)
+    self.counter = self.counter + dt
+end
+""")
+        self.assertEqual(finding["delegation"], "no_delegation_found")
+        self.assertEqual(finding["severity"], "high")
+
+    def test_previous_call_without_return_is_flagged_for_review(self):
+        finding = self.finding("""
+local old_get = object.GetValue
+object.GetValue = function(self)
+    old_get(self)
+    return self.cached
+end
+""")
+        self.assertEqual(finding["return_handling"], "previous_call_not_directly_returned")
+
+    def test_varargs_forwarded(self):
+        finding = self.finding("""
+local old_attack = combat.DoAttack
+combat.DoAttack = function(self, target, ...)
+    return old_attack(self, target, ...)
+end
+""")
+        self.assertEqual(finding["argument_evidence"]["vararg_forwarding"], "forwarded")
+
+    def test_varargs_not_forwarded(self):
+        finding = self.finding("""
+local old_attack = combat.DoAttack
+combat.DoAttack = function(self, target, ...)
+    return old_attack(self, target)
+end
+""")
+        self.assertEqual(
+            finding["argument_evidence"]["vararg_forwarding"],
+            "not_forwarded_in_this_call",
+        )
+
+    def test_missing_self_is_visible(self):
+        finding = self.finding("""
+local old_set = self.SetVal
+self.SetVal = function(self, value)
+    return old_set(value)
+end
+""")
+        self.assertFalse(finding["argument_evidence"]["self_forwarded_as_first_argument"])
+
+    def test_nested_closure_call_is_not_misclassified_as_direct_delegation(self):
+        finding = self.finding("""
+local old_tick = inst.OnUpdate
+inst.OnUpdate = function(self, dt)
+    self.task = function()
+        old_tick(self, dt)
+    end
+end
+""")
+        self.assertEqual(finding["delegation"], "no_delegation_found")
+
+    def test_conditional_delegation_is_marked_as_conditional(self):
+        finding = self.finding("""
+local old_fn = obj.Method
+obj.Method = function(self, value)
+    if self.enabled then
+        return old_fn(self, value)
+    end
+    return false
+end
+""")
+        self.assertTrue(finding["control_flow_contains_conditionals"])
+
+    def test_unrelated_assignment_is_not_a_wrapper(self):
+        result = MODULE.analyze_source(
+            "modmain.lua",
+            "object.Method = function(self) return true end\n",
+        )
+        self.assertEqual(result["findings"], [])
+
+    def test_alias_capture_in_different_block_is_not_paired(self):
+        result = MODULE.analyze_source("modmain.lua", """
+do
+    local old_fn = obj.Method
+end
+obj.Method = function(self)
+    return true
+end
+""")
+        self.assertEqual(result["findings"], [])
+
+
+if __name__ == "__main__":
+    unittest.main()
