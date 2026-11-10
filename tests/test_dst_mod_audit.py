@@ -123,6 +123,16 @@ class DstModAuditTests(unittest.TestCase):
                 for c in report["potential_cross_mod_conflicts"]
             ))
 
+
+    def test_single_mod_zip_does_not_report_own_files_as_cross_mod(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "single-mod.zip"
+            with zipfile.ZipFile(archive, "w") as zf:
+                zf.writestr("modmain.lua", "GLOBAL.DAMAGETYPES = {}\\n")
+                zf.writestr("scripts/extra.lua", "GLOBAL.DAMAGETYPES = {}\\n")
+            report = MODULE.audit(archive)
+            self.assertEqual(report["potential_cross_mod_conflicts"], [])
+
     def test_lua_comments_do_not_create_conflict_candidates(self):
         source = "-- AddComponentPostInit('combat', fn)\n"
         source += "AddPrefabPostInit('lucy', fn) -- GLOBAL.DAMAGETYPES = {}\n"
