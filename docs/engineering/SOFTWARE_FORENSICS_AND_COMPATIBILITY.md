@@ -292,3 +292,21 @@ After the first real scan, the prototype was extended to:
 New regression tests cover tuple capture/truncation, preservation of multiple return values, implicit method `self`, missing `DoAttack` optional parameters, missing `GetAttacked.spdamage`, and direct `DoAreaAttack.onlyontarget` override. These changes are committed in the PR #25 branch, but no new CI run has yet been confirmed for this expanded version. The 23-test green run #11 belongs to the preceding prototype and must not be used as evidence for these newer checks.
 
 The public API profile is explicitly a reference snapshot, not the installed build contract. It should be replaced/confirmed against the exact game scripts supplied by the user before any gameplay patch.
+
+
+## 18. Rechargeable owner buffable nil-guard candidate — 2026-11-10
+
+A separate global component-post-init risk was confirmed in the MAM source:
+- `scripts/mod_main.lua:37–45` adds the `buffable` component through `AddPlayerPostInit`, which covers player entities.
+- `scripts/mod_main.lua:588–627` hooks every `rechargeable` component. On the `equipped` and `equip` events it reads `self.owner.components.buffable:GetBuffData("cooldown_mult")` at lines 594 and 605 without checking whether `owner.components.buffable` exists.
+
+### Risk
+If a rechargeable item is equipped by a non-player owner that lacks `buffable` (for example, a modded follower/NPC or another entity that can equip items), this callback can attempt to index a missing component and raise a Lua error. This is conditional: the exact base-game entities and installed mods that equip rechargeable items must be enumerated before calling it a reproduced defect.
+
+### Verification plan
+- Identify rechargeable prefabs and supported non-player equipment owners in the installed build.
+- In a disposable QA world, equip a rechargeable item on a player, a buffable NPC, and a non-buffable NPC/follower.
+- Observe the `equipped` and `equip` event paths, logs, and charge-time behavior.
+- Confirm the intended fallback multiplier before proposing a nil guard; do not silently change cooldown balance.
+
+This is not a startup-crash explanation and no gameplay code was changed.
