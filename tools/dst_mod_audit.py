@@ -175,12 +175,12 @@ def extract_registration_candidates(path: str, content: str) -> list[dict]:
     """Extract high-value DST registration/override signals; not a full Lua parser."""
     code = strip_lua_comments(content)
     patterns = [
-        ("component_postinit", r"\bAddComponentPostInit\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
-        ("prefab_postinit", r"\bAddPrefabPostInit(?:Any)?\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
-        ("stategraph_postinit", r"\bAddStategraphPostInit\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
-        ("stategraph_action_handler", r"\bAddStategraphActionHandler\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*ActionHandler\s*\(\s*ACTIONS\.([A-Za-z_]\w*)", "keyed_registration", "high"),
-        ("stategraph_state", r"\bAddStategraphState\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]", "keyed_registration", "high"),
-        ("action_definition", r"\bAddAction\s*\(\s*['\"]([^'\"]+)['\"]", "keyed_registration", "high"),
+        ("component_postinit", r"\bAddComponentPostInit\s*\(\s*['\"]([^'\"\r\n]+)['\"]", "additive", "informational"),
+        ("prefab_postinit", r"\bAddPrefabPostInit(?:Any)?\s*\(\s*['\"]([^'\"\r\n]+)['\"]", "additive", "informational"),
+        ("stategraph_postinit", r"\bAddStategraphPostInit\s*\(\s*['\"]([^'\"\r\n]+)['\"]", "additive", "informational"),
+        ("stategraph_action_handler", r"\bAddStategraphActionHandler\s*\(\s*['\"]([^'\"\r\n]+)['\"]\s*,\s*ActionHandler\s*\(\s*ACTIONS\.([A-Za-z_]\w*)", "keyed_registration", "high"),
+        ("stategraph_state", r"\bAddStategraphState\s*\(\s*['\"]([^'\"\r\n]+)['\"]\s*,\s*['\"]([^'\"\r\n]+)['\"]", "keyed_registration", "high"),
+        ("action_definition", r"\bAddAction\s*\(\s*['\"]([^'\"\r\n]+)['\"]", "keyed_registration", "high"),
         ("action_assignment", r"\bACTIONS\.([A-Za-z_]\w*)\s*=", "replacement", "high"),
         ("global_assignment", r"\b(?:_G|GLOBAL)\.([A-Za-z_]\w*)\s*=", "replacement", "high"),
         ("entityscript_method_override", r"\b(?:function\s+EntityScript\s*[:.]|EntityScript\s*\.\s*)([A-Za-z_]\w*)", "replacement", "high"),
@@ -227,11 +227,11 @@ def resolve_mod_id(path: str, target: Path, single_root: bool) -> str:
 def extract_modinfo_metadata(path: str, content: str, mod_id: str) -> dict:
     """Read only simple literal modinfo fields; never execute modinfo.lua."""
     code = strip_lua_comments(content)
-    name_match = re.search(r"(?m)^\s*name\s*=\s*['\"]([^'\"]+)['\"]", code)
+    name_match = re.search(r"(?m)^\s*name\s*=\s*['\"]([^'\"\r\n]+)['\"]", code)
     priority_match = re.search(r"(?m)^\s*priority\s*=\s*(-?\d+)", code)
     dependencies_match = re.search(r"\bmod_dependencies\s*=\s*\{([^}]*)\}", code, re.S)
     dependencies = (
-        re.findall(r"['\"]([^'\"]+)['\"]", dependencies_match.group(1))
+        re.findall(r"['\"]([^'\"\r\n]+)['\"]", dependencies_match.group(1))
         if dependencies_match else []
     )
     return {
