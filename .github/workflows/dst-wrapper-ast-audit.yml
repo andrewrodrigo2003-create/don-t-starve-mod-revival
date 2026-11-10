@@ -11,6 +11,7 @@ on:
       - "tests/test_dst_mod_audit.py"
       - ".github/workflows/dst-wrapper-ast-audit.yml"
       - "docs/engineering/SOFTWARE_FORENSICS_AND_COMPATIBILITY.md"
+      - "docs/engineering/DST-COMBAT-WRAPPER-CONTRACT-AUDIT.md"
   push:
     paths:
       - "tools/dst_wrapper_audit.py"
