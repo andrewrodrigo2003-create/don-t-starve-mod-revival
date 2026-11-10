@@ -130,6 +130,10 @@ assert(client_net:ApplySnapshot(server_net:Snapshot()))
 check("client receives completed phase",
     client_net:Get("smelter_plan") == forge.plan_string)
 
+SpawnPrefab = function(prefab)
+    return make_item(prefab, 1, 20)
+end
+
 local received = {}
 local player = {
     components = {
