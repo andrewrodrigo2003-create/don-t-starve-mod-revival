@@ -17,6 +17,7 @@ local Text = require("widgets/text")
 local DIRTY_EVENT = "mamplandirty"
 local FORGE_PREFAB = "metal_smelter"
 local FONT = GLOBAL.BODYTEXTFONT or GLOBAL.UIFONT or GLOBAL.NUMBERFONT
+local QUANTITY_FONT = GLOBAL.NUMBERFONT or "stint-ucr"
 
 local function button_info(self)
     if self.container == nil or self.container.replica == nil
@@ -64,22 +65,28 @@ local function make_preview(self)
 
     panel.slotbg = panel:AddChild(Image("images/hud.xml", "inv_slot.tex"))
     panel.slotbg:SetPosition(-48, 22, 0)
-    panel.slotbg:SetScale(1.55)
+    panel.slotbg:SetScale(1.8)
 
     panel.icon = panel:AddChild(Image())
     panel.icon:SetPosition(-48, 22, 0)
-    panel.icon:SetScale(0.85)
+    panel.icon:SetScale(1.45)
     panel.icon:Hide()
 
-    panel.name = panel:AddChild(Text(FONT, 23, "Add materials"))
-    panel.name:SetPosition(43, 36, 0)
-    panel.name:SetHAlign(GLOBAL.ANCHOR_LEFT)
-    panel.name:SetRegionSize(135, 54)
+    -- O nome faz parte da imagem: fica sobreposto no topo do proprio icone.
+    panel.name = panel:AddChild(Text(FONT, 17, "Add materials"))
+    panel.name:SetPosition(-48, 54, 0)
+    panel.name:SetHAlign(GLOBAL.ANCHOR_MIDDLE)
+    panel.name:SetVAlign(GLOBAL.ANCHOR_MIDDLE)
+    panel.name:SetRegionSize(104, 30)
     panel.name:EnableWordWrap(true)
 
-    panel.quantity = panel:AddChild(Text(FONT, 21, ""))
-    panel.quantity:SetPosition(43, 4, 0)
-    panel.quantity:SetHAlign(GLOBAL.ANCHOR_LEFT)
+    -- Mesmo padrao visual do ItemTile vanilla: NUMBERFONT, tamanho 42 e
+    -- limite 999+. O contador fica dentro do canto inferior direito do icone.
+    panel.quantity = panel:AddChild(Text(QUANTITY_FONT, 42, ""))
+    panel.quantity:SetSize(42)
+    panel.quantity:SetPosition(-20, -5, 0)
+    panel.quantity:SetHAlign(GLOBAL.ANCHOR_RIGHT)
+    panel.quantity:SetRegionSize(42, 42)
 
     panel.details = panel:AddChild(Text(FONT, 18, "The forge result will appear here."))
     panel.details:SetPosition(0, -55, 0)
@@ -158,7 +165,7 @@ local function update_preview(self)
     end
 
     local product, count, name, details = preview_data(plan)
-    local quantity = count ~= nil and ("Quantity: " .. tostring(count)) or ""
+    local quantity = count ~= nil and (count > 999 and "999+" or tostring(count)) or ""
     local fingerprint = table.concat({
         tostring(product or ""),
         tostring(count or ""),
@@ -174,6 +181,8 @@ local function update_preview(self)
 
     panel.name:SetString(name or "Preview unavailable")
     panel.quantity:SetString(quantity)
+    panel.quantity:SetSize(count ~= nil and count > 999 and 36 or 42)
+    panel.quantity:SetPosition(-20, -5, 0)
     panel.details:SetString(details or "")
 
     if product ~= nil then
