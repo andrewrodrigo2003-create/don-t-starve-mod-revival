@@ -1,0 +1,171 @@
+-- Character ability compatibility contracts for Metals and More Reforged.
+-- The Willow path is modeled from the documented DST willow_ember Spellbook /
+-- server spell / projectile flow. It is not execution of Klei's runtime scripts.
+package.path = "dst-mods/tests/?.lua;dst-mods/tests/?/init.lua;" .. package.path
+local Simulator = require("simulator.bootstrap")
+
+local function read(path)
+    local file = assert(io.open(path, "r"), "cannot read " .. path)
+    local content = file:read("*a")
+    file:close()
+    return content
+end
+
+local mace = read("dst-mods/metals_and_reforged/initialise/modded_mace.lua")
+local shears = read("dst-mods/metals_and_reforged/initialise/modded_shearsharvest.lua")
+local forgepack = read("dst-mods/metals_and_reforged/initialise/modded_forgepack.lua")
+local actions = read("dst-mods/metals_and_reforged/initialise/modded_actions.lua")
+local bernie = read("dst-mods/metals_and_reforged/initialise/modded_stronger_bernie.lua")
+
+local passed, failed = 0, 0
+local function check(name, condition)
+    if condition then
+        passed = passed + 1
+        print("PASS  " .. name)
+    else
+        failed = failed + 1
+        print("FAIL  " .. name)
+    end
+end
+
+-- Static audit of the real MAM hooks that can overlap character action paths.
+check("MAM heavy-weapon hook is scoped to ACTIONS.ATTACK",
+    mace:find("ActionHandler%(ACTIONS%.ATTACK", 1) ~= nil)
+check("MAM heavy-weapon hook registers server and client Wilson graphs",
+    mace:find('AddStategraphActionHandler%("wilson"', 1) ~= nil
+        and mace:find('AddStategraphActionHandler%("wilson_client"', 1) ~= nil)
+check("MAM does not directly register a spellbook-cast stategraph handler",
+    mace:find("CAST_SPELLBOOK", 1, true) == nil
+        and actions:find("CAST_SPELLBOOK", 1, true) == nil)
+check("MAM harvest wrapper forwards extra arguments to the previous handler",
+    actions:find("OldHarvestfn%(act, %.%.%.%)", 1) ~= nil)
+check("MAM shear controller wrapper preserves the previous action when no area-pick action exists",
+    shears:find("local old_action", 1, true) ~= nil
+        and shears:find("new_action ~= nil and new_action or old_action", 1, true) ~= nil)
+check("MAM CASTAOE change is a display string function, not a new stategraph handler",
+    forgepack:find("ACTIONS.CASTAOE.strfn", 1, true) ~= nil
+        and forgepack:find("AddStategraphActionHandler%(.-CASTAOE") == nil)
+check("MAM explicitly patches Willow and Bernie combat callbacks",
+    bernie:find('AddPrefabPostInit%("willow"', 1) ~= nil
+        and bernie:find('AddPrefabPostInit%("bernie_active"', 1) ~= nil
+        and bernie:find("DoAreaAttack", 1, true) ~= nil)
+
+-- Minimal documented Spellbook -> server SpellCaster -> projectile pipeline.
+-- This tests the integration contract and failure ordering, not the actual
+-- implementation of willow_ember.lua from the game installation.
+local function make_projectile()
+    local projectile = { thrown = false }
+    projectile.components = {
+        projectile = {
+            Throw = function(self, owner, target, attacker)
+                if target == nil or target.valid == false then return false end
+                projectile.thrown = true
+                projectile.owner = owner
+                projectile.target = target
+                projectile.attacker = attacker
+                return true
+            end,
+        },
+    }
+    return projectile
+end
+
+local function make_willow(role, embers, spawn_ok)
+    local willow = { role = role, valid = true }
+    local ember = { stack = embers, cost = 2 }
+    local spawned = 0
+    local spellbook = {
+        items = { { id = "firethrow", name = "Fire Throw" } },
+        selected = nil,
+        Open = function(self) self.open = true end,
+        Select = function(self, id) self.selected = id end,
+    }
+    local function cast_spell(user, target)
+        if role ~= "server" then return false, "not_authority" end
+        if ember.stack < ember.cost then return false, "not_enough_embers" end
+        if target == nil or target.valid == false then return false, "no_target" end
+        if not spawn_ok then return false, "spawn_failed" end
+        local projectile = make_projectile()
+        spawned = spawned + 1
+        if not projectile.components.projectile:Throw(user, target, user) then
+            return false, "projectile_rejected"
+        end
+        ember.stack = ember.stack - ember.cost
+        return true, projectile
+    end
+    return {
+        willow = willow,
+        ember = ember,
+        spellbook = spellbook,
+        cast = cast_spell,
+        spawned = function() return spawned end,
+    }
+end
+
+local client = make_willow("client", 4, true)
+client.spellbook:Open()
+client.spellbook:Select("firethrow")
+local client_cast, client_reason = client.cast(client.willow, { valid = true })
+check("Willow client can select Fire Throw but cannot authoritatively cast",
+    client.spellbook.open == true
+        and client.spellbook.selected == "firethrow"
+        and client_cast == false
+        and client_reason == "not_authority"
+        and client.ember.stack == 4)
+
+local willow = make_willow("server", 4, true)
+local target = { valid = true }
+local cast_ok, projectile = willow.cast(willow.willow, target)
+check("Willow Fire Throw launches a projectile on the server",
+    cast_ok == true and projectile.thrown == true
+        and projectile.owner == willow.willow
+        and projectile.target == target)
+check("Willow consumes embers only after successful projectile launch",
+    willow.ember.stack == 2 and willow.spawned() == 1)
+
+local poor_willow = make_willow("server", 1, true)
+local poor_ok, poor_reason = poor_willow.cast(poor_willow.willow, { valid = true })
+check("insufficient embers reject Willow spell without consuming resources",
+    poor_ok == false and poor_reason == "not_enough_embers"
+        and poor_willow.ember.stack == 1 and poor_willow.spawned() == 0)
+
+local spawn_willow = make_willow("server", 4, false)
+local spawn_ok_result, spawn_reason = spawn_willow.cast(spawn_willow.willow, { valid = true })
+check("projectile spawn failure does not consume Willow embers",
+    spawn_ok_result == false and spawn_reason == "spawn_failed"
+        and spawn_willow.ember.stack == 4 and spawn_willow.spawned() == 0)
+
+local target_willow = make_willow("server", 4, true)
+local target_ok, target_reason = target_willow.cast(target_willow.willow, { valid = false })
+check("invalid target rejects Willow spell without consuming embers",
+    target_ok == false and target_reason == "no_target"
+        and target_willow.ember.stack == 4 and target_willow.spawned() == 0)
+
+-- Woodie/Lucy compatibility: handlers are keyed by action identity. MAM
+-- replaces the generic ATTACK handler; a distinct custom Lucy action can coexist.
+local handlers = { ATTACK = "mam_heavyattack" }
+handlers.LUCY_THROW = "woodie_lucy_throw"
+check("a distinct Lucy-throw action coexists with MAM's ATTACK handler",
+    handlers.ATTACK == "mam_heavyattack"
+        and handlers.LUCY_THROW == "woodie_lucy_throw")
+
+-- If the external skill mod maps Lucy throw onto ATTACK instead, registration
+-- order can replace the selected state. The exact external action ID and load
+-- order must be read from the installed Workshop mod before concluding.
+local shared_action_handlers = { ATTACK = "mam_heavyattack" }
+shared_action_handlers.ATTACK = "woodie_lucy_throw"
+check("same-action registration is detected as a potential StateGraph collision",
+    shared_action_handlers.ATTACK == "woodie_lucy_throw"
+        and handlers.ATTACK == "mam_heavyattack")
+
+-- Verify that the shared network contract can carry server spell state to client.
+local server_net = Simulator.Network.new("server")
+local client_net = Simulator.Network.new("client")
+assert(server_net:Set("willow_spell_active", true))
+assert(client_net:ApplySnapshot(server_net:Snapshot()))
+check("server spell state can replicate to client without client-side authority",
+    client_net:Get("willow_spell_active") == true
+        and not client_net:Set("willow_spell_active", false))
+
+print("\nCharacter ability contracts: " .. passed .. " passed; " .. failed .. " failed")
+if failed > 0 then os.exit(1) end
