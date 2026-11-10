@@ -195,8 +195,8 @@ assert(widget.mam_forge_preview.name.string == "Possible results",
     "ambiguous forecasts must be labelled as possibilities")
 assert(widget.mam_forge_preview.details.string == "Copper Ingot / Iron Ingot",
     "all visible ambiguous outcomes must be listed")
-assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex",
-    "ambiguous forecasts must still show a real candidate image")
+assert(not widget.mam_forge_preview.icon.visible,
+    "ambiguous forecasts must not visually privilege the first candidate")
 
 current_plan = {
     phase = "ready",
@@ -216,8 +216,8 @@ assert(widget.mam_forge_preview.quantity.string == "",
     "ambiguous alternatives must not show one outcome's quantity as certain")
 assert(widget.mam_forge_preview.details.string == "3 x Copper Ingot / 2 x Iron Ingot",
     "ambiguous alternatives must show each candidate quantity")
-assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex",
-    "ambiguous weighted forecasts must retain a real candidate image")
+assert(not widget.mam_forge_preview.icon.visible,
+    "ambiguous weighted forecasts must not visually privilege one outcome")
 
 current_plan = { phase = "invalid", state = "invalid" }
 widget:Refresh()
