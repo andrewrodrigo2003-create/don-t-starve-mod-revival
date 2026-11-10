@@ -11,6 +11,8 @@ package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
 Simulator.Scheduler = require("simulator.core.scheduler")
 Simulator.EventBus = require("simulator.core.event_bus")
 Simulator.Entity = require("simulator.core.entity")
+Simulator.Item = require("simulator.core.item")
+Simulator.Container = require("simulator.core.container")
 Simulator.World = require("simulator.core.world")
 
 function Simulator.HealthCheck()
