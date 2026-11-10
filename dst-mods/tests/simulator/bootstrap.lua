@@ -1,6 +1,6 @@
 -- Shared entry point and health check for the DST behavioral simulator.
 local Simulator = {
-    version = "0.1.0",
+    version = "0.2.0",
     api_profile = "behavioral-core-no-game-build",
     evidence_level = "L3-foundation-only",
 }
@@ -14,6 +14,7 @@ Simulator.Entity = require("simulator.core.entity")
 Simulator.Item = require("simulator.core.item")
 Simulator.Container = require("simulator.core.container")
 Simulator.World = require("simulator.core.world")
+Simulator.Network = require("simulator.core.network")
 
 function Simulator.HealthCheck()
     local world = Simulator.World.new()
