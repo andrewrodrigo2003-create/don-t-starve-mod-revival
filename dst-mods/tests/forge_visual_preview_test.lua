@@ -42,7 +42,8 @@ local function make_node(name)
         child.parent = self
         return child
     end
-    function node:SetPosition(value) self.position = value end
+    function node:SetPosition(...) self.position = { ... } end
+    function node:SetSize(value) self.size = value end
     function node:SetScale(value) self.scale = value end
     function node:SetColour(...) self.colour = { ... } end
     function node:SetString(value) self.string = value end
@@ -164,7 +165,18 @@ local forge = make_container("metal_smelter")
 assert(widget:Open(forge) == "opened", "base Open return value must be preserved")
 assert(widget.mam_forge_preview ~= nil, "forge preview panel must be created")
 assert(widget.mam_forge_preview.name.string == "Copper Ingot", "product name must be displayed")
-assert(widget.mam_forge_preview.quantity.string == "Quantity: 3", "predicted quantity must be displayed")
+assert(widget.mam_forge_preview.name.position[1] == -48
+    and widget.mam_forge_preview.name.position[2] == 54,
+    "product name must overlay the top of the product image")
+assert(widget.mam_forge_preview.quantity.string == "3",
+    "predicted quantity must use the compact vanilla stack label")
+assert(widget.mam_forge_preview.quantity.font == "number",
+    "quantity must use the vanilla number font")
+assert(widget.mam_forge_preview.quantity.size == 42,
+    "quantity must use the vanilla stack number size")
+assert(widget.mam_forge_preview.quantity.position[1] > -48
+    and widget.mam_forge_preview.quantity.position[2] < 22,
+    "quantity must sit inside the lower-right area of the product image")
 assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex", "real product texture must be selected")
 assert(widget.mam_forge_preview.icon.visible, "product image must be visible")
 assert(widget.mam_forge_preview.details.string == "Predicted output", "forecast state must be displayed")
@@ -177,8 +189,20 @@ current_plan = {
 }
 widget:OnItemGet({})
 assert(widget.mam_forge_preview.name.string == "Iron Ingot", "item changes must refresh product name")
-assert(widget.mam_forge_preview.quantity.string == "Quantity: 2", "item changes must refresh quantity")
+assert(widget.mam_forge_preview.quantity.string == "2", "item changes must refresh the stack count")
 assert(widget.mam_forge_preview.icon.texture == "iron_ingot.tex", "item changes must refresh product image")
+
+current_plan = {
+    phase = "ready",
+    state = "ready",
+    product = "copper_ingot",
+    count = 1500,
+}
+widget:Refresh()
+assert(widget.mam_forge_preview.quantity.string == "999+",
+    "large stacks must follow the vanilla 999+ display cap")
+assert(widget.mam_forge_preview.quantity.size == 36,
+    "999+ must use the vanilla compact number size")
 
 current_plan = { phase = "harvest", product = "iron_ingot", count = 2 }
 forge.listeners.mamplandirty()
