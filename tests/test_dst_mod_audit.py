@@ -67,5 +67,68 @@ class DstModAuditTests(unittest.TestCase):
             report2 = MODULE.audit(root)
             self.assertEqual(report1["files"][0]["sha256"], report2["files"][0]["sha256"])
 
+
+    def test_cross_mod_global_override_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for mod in ("workshop-alpha", "workshop-beta"):
+                folder = root / mod
+                folder.mkdir()
+                (folder / "modmain.lua").write_text(
+                    "GLOBAL.DAMAGETYPES = {}\\n", encoding="utf-8"
+                )
+            report = MODULE.audit(root)
+            conflicts = report["potential_cross_mod_conflicts"]
+            self.assertTrue(any(
+                c["kind"] == "global_assignment"
+                and c["target"] == "DAMAGETYPES"
+                and c["severity"] == "high"
+                and set(c["mods"]) == {"workshop-alpha", "workshop-beta"}
+                for c in conflicts
+            ))
+
+    def test_duplicate_stategraph_handler_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for mod in ("character-one", "combat-overhaul"):
+                folder = root / mod
+                folder.mkdir()
+                (folder / "modmain.lua").write_text(
+                    "AddStategraphActionHandler('wilson', ActionHandler(ACTIONS.ATTACK, 'attack'))\\n",
+                    encoding="utf-8",
+                )
+            report = MODULE.audit(root)
+            self.assertTrue(any(
+                c["kind"] == "stategraph_action_handler"
+                and c["target"] == "wilson::ATTACK"
+                and c["severity"] == "high"
+                for c in report["potential_cross_mod_conflicts"]
+            ))
+
+    def test_component_postinit_overlap_is_informational(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for mod in ("mod-a", "mod-b"):
+                folder = root / mod
+                folder.mkdir()
+                (folder / "modmain.lua").write_text(
+                    "AddComponentPostInit('combat', function(self) end)\\n",
+                    encoding="utf-8",
+                )
+            report = MODULE.audit(root)
+            self.assertTrue(any(
+                c["kind"] == "component_postinit"
+                and c["target"] == "combat"
+                and c["severity"] == "informational"
+                for c in report["potential_cross_mod_conflicts"]
+            ))
+
+    def test_lua_comments_do_not_create_conflict_candidates(self):
+        source = "-- AddComponentPostInit('combat', fn)\\n"
+        source += "AddPrefabPostInit('lucy', fn) -- GLOBAL.DAMAGETYPES = {}\\n"
+        found = MODULE.extract_registration_candidates("modmain.lua", source)
+        self.assertEqual([(x["kind"], x["target"]) for x in found], [("prefab_postinit", "lucy")])
+
+
 if __name__ == "__main__":
     unittest.main()
