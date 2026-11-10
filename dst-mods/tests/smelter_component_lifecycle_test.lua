@@ -175,6 +175,66 @@ check("invalid plan cannot start", invalid_smelter:StartSmelting() == false)
 check("invalid plan preserves input", invalid_container.slots[1] == untouched and not untouched.removed)
 check("invalid plan leaves container open", invalid_container.canbeopened == true and not invalid_container.closed)
 
+-- A stale plan must be rejected before any input is consumed.
+local stale_item = make_item("iron_ore", 4)
+local stale_container = make_container({ [1] = stale_item })
+local stale_smelter = new_smelter(stale_container)
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 10,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 2 } },
+}
+check("stale receipt cannot start", stale_smelter:StartSmelting() == false)
+check("stale receipt preserves all input", stale_container.slots[1] == stale_item
+    and stale_item.components.stackable.stacksize == 4)
+check("stale receipt leaves machine idle", not stale_smelter.issmelting
+    and stale_container.canbeopened == true)
+
+-- Failed output creation preserves only the undelivered remainder for retry.
+local output_container = make_container({})
+local output_smelter = new_smelter(output_container)
+output_smelter.canharvest = true
+output_smelter.product = "copper_ingot"
+output_smelter.batch = 3
+local delivered = 0
+local harvester = {
+    components = {
+        inventory = {
+            GiveItem = function(_, item)
+                delivered = delivered + 1
+                item.removed = true
+            end,
+        },
+    },
+}
+SpawnPrefab = function() return nil end
+check("failed output spawn keeps harvest pending", output_smelter:Harvest(harvester) == false)
+check("failed output spawn preserves full remainder", output_smelter.canharvest
+    and output_smelter.product == "copper_ingot" and output_smelter.batch == 3)
+check("failed output spawn delivers nothing", delivered == 0)
+
+SpawnPrefab = function(prefab)
+    return {
+        prefab = prefab,
+        components = {},
+        DoTaskInTime = function() end,
+    }
+end
+check("retry harvest succeeds", output_smelter:Harvest(harvester) == true)
+check("retry delivers each remaining unit once", delivered == 3)
+check("successful retry clears output entitlement", output_smelter.product == nil
+    and not output_smelter.canharvest)
+
+-- A missing recipient must not clear a ready output entitlement.
+output_smelter.canharvest = true
+output_smelter.product = "copper_ingot"
+output_smelter.batch = 2
+check("harvest without inventory is rejected", output_smelter:Harvest(nil) == false)
+check("harvest without inventory preserves output", output_smelter.canharvest
+    and output_smelter.product == "copper_ingot" and output_smelter.batch == 2)
+
 -- Interruption follows the leftovers setting in both directions.
 config.mam_leftovers = 1
 local returned_container = make_container({ [1] = make_item("copper_ore", 2) })
