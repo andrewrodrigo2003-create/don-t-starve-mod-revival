@@ -141,22 +141,11 @@ check("invalid target rejects Willow spell without consuming embers",
     target_ok == false and target_reason == "no_target"
         and target_willow.ember.stack == 4 and target_willow.spawned() == 0)
 
--- Woodie/Lucy compatibility: handlers are keyed by action identity. MAM
--- replaces the generic ATTACK handler; a distinct custom Lucy action can coexist.
-local handlers = { ATTACK = "mam_heavyattack" }
-handlers.LUCY_THROW = "woodie_lucy_throw"
-check("a distinct Lucy-throw action coexists with MAM's ATTACK handler",
-    handlers.ATTACK == "mam_heavyattack"
-        and handlers.LUCY_THROW == "woodie_lucy_throw")
-
--- If the external skill mod maps Lucy throw onto ATTACK instead, registration
--- order can replace the selected state. The exact external action ID and load
--- order must be read from the installed Workshop mod before concluding.
-local shared_action_handlers = { ATTACK = "mam_heavyattack" }
-shared_action_handlers.ATTACK = "woodie_lucy_throw"
-check("same-action registration is detected as a potential StateGraph collision",
-    shared_action_handlers.ATTACK == "woodie_lucy_throw"
-        and handlers.ATTACK == "mam_heavyattack")
+-- Woodie/Lucy action identity remains unknown until the Workshop source is
+-- supplied. The dedicated StateGraph compatibility suite now models the
+-- source-backed registration/build/lookup behavior rather than a toy table.
+check("MAM ATTACK registration is present; external Lucy action remains unverified",
+    mace:find("ActionHandler%(ACTIONS%.ATTACK", 1) ~= nil)
 
 -- Verify that the shared network contract can carry server spell state to client.
 local server_net = Simulator.Network.new("server")
