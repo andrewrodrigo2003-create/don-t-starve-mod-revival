@@ -28,8 +28,6 @@ local Smelter = Class(function(self, inst)
     self.donesmeltingfn = nil
     self.onharvest = nil
     self.onplanfn = nil
-
-    self:Update(0)
 end)
 
 ---------------------------------------------------------------------------
@@ -55,19 +53,79 @@ end
 
 --- Consome `amount` pecas de um slot, espelhando a regra de tryconsume() do
 --- container vanilla: pilha parcial reduz o tamanho, pilha inteira sai do slot.
-function Smelter:ConsumeSlot(slot, amount)
+function Smelter:CanConsumePlan(consumed)
     local container = self.inst.components.container
-    if container == nil or amount <= 0 then
+    if container == nil or type(consumed) ~= "table" or #consumed == 0 then
+        return false
+    end
+
+    -- Aggregate requirements by slot before mutating anything. This also
+    -- rejects duplicate entries that individually fit but exceed the stack.
+    local required = {}
+    for _, entry in ipairs(consumed) do
+        if type(entry) ~= "table"
+            or type(entry.slot) ~= "number"
+            or entry.slot < 1
+            or entry.slot % 1 ~= 0
+            or type(entry.prefab) ~= "string"
+            or type(entry.count) ~= "number"
+            or entry.count < 1
+            or entry.count % 1 ~= 0 then
+            return false
+        end
+
+        local current = required[entry.slot]
+        if current ~= nil and current.prefab ~= entry.prefab then
+            return false
+        end
+
+        if current == nil then
+            current = { prefab = entry.prefab, count = 0 }
+            required[entry.slot] = current
+        end
+        current.count = current.count + entry.count
+    end
+
+    for slot, entry in pairs(required) do
+        local item = container.slots[slot]
+        if item == nil
+            or not item:IsValid()
+            or item.prefab ~= entry.prefab
+            or stack_size(item) < entry.count then
+            return false
+        end
+    end
+
+    return next(required) ~= nil
+end
+
+function Smelter:ConsumeSlot(slot, amount, expected_prefab)
+    local container = self.inst.components.container
+    if container == nil
+        or type(amount) ~= "number"
+        or amount < 1
+        or amount % 1 ~= 0 then
         return 0
     end
 
     local item = container.slots[slot]
-    if item == nil or not item:IsValid() then
+    if item == nil or not item:IsValid()
+        or (expected_prefab ~= nil and item.prefab ~= expected_prefab) then
+        return 0
+    end
+
+    -- Never partially satisfy a plan: output count was calculated from the
+    -- full planned amount, so consuming less could create free production.
+    local available = stack_size(item)
+    if available < amount then
         return 0
     end
 
     local stackable = item.components.stackable
-    if stackable == nil then
+    if stackable == nil or not stackable:IsStack() then
+        if amount ~= 1 then
+            return 0
+        end
         container:RemoveItem(item):Remove()
         return 1
     elseif stackable.stacksize > amount then
@@ -135,30 +193,39 @@ function Smelter:StartSmelting(doer)
         return false
     end
 
+    -- Revalidate the exact slots after planning and before any callback or
+    -- state change. If a slot changed, do not start from stale inputs.
+    if not self:CanConsumePlan(plan.consumed) then
+        return false
+    end
+
     self.issmelting = true
     self.canharvest = nil
     self.product = plan.product
     self.batch = plan.count or 1
     self.smelttime = plan.smelttime or 1
 
-    if self.startsmeltingfn then
-        self.startsmeltingfn(self.inst)
+    -- Consome exatamente o que foi validado antes de executar callbacks
+    -- externos. Um retorno parcial/invalido aborta o lote em vez de produzir
+    -- unidades sem pagar o custo planejado.
+    for i = #plan.consumed, 1, -1 do
+        local c = plan.consumed[i]
+        local taken = self:ConsumeSlot(c.slot, c.count, c.prefab)
+        if taken ~= c.count then
+            self:ResetSmelter()
+            return false
+        end
     end
 
-    -- Consumo exato do lote. O que sobrar fica nos slots e volta para o
-    -- jogador no harvest, em vez de ser destruido silenciosamente.
-    if type(plan.consumed) == "table" then
-        for i = #plan.consumed, 1, -1 do
-            local c = plan.consumed[i]
-            self:ConsumeSlot(c.slot, c.count)
-        end
+    if self.startsmeltingfn then
+        self.startsmeltingfn(self.inst)
     end
 
     container:Close()
     container.canbeopened = false
 
     self:PublishPlan()
-    self:Update(0)
+    self:StartUpdating()
 
     if self.onplanfn then
         self.onplanfn(self.inst, plan)
@@ -184,12 +251,13 @@ function Smelter:ResumeSmelting()
     -- Em um save feito exatamente no fim da contagem, a conclusao sera
     -- agendada por OnLoad depois que os outros componentes restaurarem dados.
     if self.smelttime > 0 then
-        self:Update(0)
+        self:StartUpdating()
     end
 end
 
 function Smelter:DoneSmelting()
     self.issmelting = nil
+    self:StopUpdating()
     self.canharvest = true
 
     if self.donesmeltingfn then
@@ -235,10 +303,7 @@ function Smelter:ResetSmelter()
 
     self.inst:RemoveTag(READY_TAG)
 
-    if self.task then
-        self.task:Cancel()
-        self.task = nil
-    end
+    self:StopUpdating()
 
     self:PublishPlan()
 end
@@ -326,6 +391,21 @@ local function OnDoUpdate(inst, self, period)
     self:Update(period)
 end
 
+-- A forja so precisa de polling enquanto existe uma contagem em andamento.
+-- Manter um task por maquina em idle/ready causa trabalho periodico inutil.
+function Smelter:StartUpdating()
+    if self.task == nil then
+        self.task = self.inst:DoPeriodicTask(0.5, OnDoUpdate, nil, self, 0.5)
+    end
+end
+
+function Smelter:StopUpdating()
+    if self.task ~= nil then
+        self.task:Cancel()
+        self.task = nil
+    end
+end
+
 function Smelter:Update(dt)
     if self.issmelting and not self.canharvest then
         self.smelttime = self.smelttime - dt
@@ -340,9 +420,6 @@ function Smelter:Update(dt)
         end
     end
 
-    if self.task == nil then
-        self.task = self.inst:DoPeriodicTask(0.5, OnDoUpdate, nil, self, 0.5)
-    end
 end
 
 ------------------------------------------------------------------------------------------------------
