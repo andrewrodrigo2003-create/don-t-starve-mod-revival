@@ -309,57 +309,69 @@ function Smelter:ResetSmelter()
 end
 
 function Smelter:Harvest(harvester)
-    if not self.canharvest then
+    if not self.canharvest or self.product == nil
+        or harvester == nil or harvester.components == nil
+        or harvester.components.inventory == nil then
         return false
+    end
+
+    -- Prepare every output stack before delivering any of them. If SpawnPrefab
+    -- fails partway through a batch, remove the prepared stacks and keep the
+    -- furnace ready so a later harvest can retry without duplicating or losing
+    -- part of the batch.
+    local remaining = math.max(1, math.floor(tonumber(self.batch) or 1))
+    local outputs = {}
+
+    while remaining > 0 do
+        local ok, loot = pcall(SpawnPrefab, self.product)
+        if not ok or loot == nil then
+            for _, prepared in ipairs(outputs) do
+                if prepared.Remove ~= nil then
+                    pcall(prepared.Remove, prepared)
+                end
+            end
+            MAMLog.Warn("produto %s nao pode ser gerado; lote mantido para nova tentativa",
+                tostring(self.product))
+            return false
+        end
+
+        local amount = 1
+        local stackable = loot.components ~= nil and loot.components.stackable or nil
+        if stackable ~= nil then
+            local maxsize = math.floor(tonumber(stackable.maxsize) or 20)
+            if maxsize < 1 then
+                maxsize = 1
+            end
+            amount = math.min(remaining, maxsize)
+            if amount > 1 then
+                stackable:SetStackSize(amount)
+            end
+        end
+
+        loot.targetMoisture = 0
+        table.insert(outputs, loot)
+        remaining = remaining - amount
+    end
+
+    -- All outputs now exist. GiveItem handles a full inventory by dropping at
+    -- the furnace position, matching the previous delivery behavior.
+    local inventory = harvester.components.inventory
+    for _, loot in ipairs(outputs) do
+        inventory:GiveItem(loot, nil, self.inst:GetPosition())
+        loot:DoTaskInTime(2 * FRAMES, function()
+            if loot.components ~= nil and loot.components.moisturelistener then
+                loot.components.moisturelistener.moisture = loot.targetMoisture
+                loot.targetMoisture = nil
+                loot.components.moisturelistener:DoUpdate()
+            end
+        end)
     end
 
     if self.onharvest then
         self.onharvest(self.inst)
     end
 
-    if self.product ~= nil and harvester ~= nil and harvester.components.inventory ~= nil then
-        local remaining = self.batch or 1
-        if remaining < 1 then
-            remaining = 1
-        end
-
-        while remaining > 0 do
-            local loot = SpawnPrefab(self.product)
-            if loot == nil then
-                MAMLog.Warn("produto %s nao pode ser gerado", tostring(self.product))
-                break
-            end
-
-            local n = remaining
-            if loot.components.stackable ~= nil then
-                local maxsize = loot.components.stackable.maxsize or 20
-                if maxsize > 0 and n > maxsize then
-                    n = maxsize
-                end
-                if n > 1 then
-                    loot.components.stackable:SetStackSize(n)
-                end
-            else
-                n = 1
-            end
-
-            loot.targetMoisture = 0
-            loot:DoTaskInTime(2 * FRAMES, function()
-                if loot.components.moisturelistener then
-                    loot.components.moisturelistener.moisture = loot.targetMoisture
-                    loot.targetMoisture = nil
-                    loot.components.moisturelistener:DoUpdate()
-                end
-            end)
-
-            harvester.components.inventory:GiveItem(loot, nil, self.inst:GetPosition())
-
-            remaining = remaining - n
-        end
-    end
-
     self:ResetSmelter()
-
     return true
 end
 
