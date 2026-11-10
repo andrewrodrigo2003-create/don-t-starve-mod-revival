@@ -37,7 +37,7 @@ assert(not container:Close(player), "closed opener must not close twice")
 assert(events.open == 1 and events.close == 1)
 
 local removed = container:RemoveItemBySlot(3)
-assert(removed == iron and container:GetItemInSlot(2) == nil)
+assert(removed == iron and container:GetItemInSlot(3) == nil)
 assert(events.lose == 1)
 local dropped = container:DropEverything()
 assert(#dropped == 2 and dropped[1] == copper and dropped[2] == more_copper)
