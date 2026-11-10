@@ -114,6 +114,17 @@ local function preview_data(plan)
         end
         return plan.possibilities ~= nil and plan.possibilities[1] or nil, nil,
             "Possible results", table.concat(names, " / ")
+    elseif plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
+        local outcomes = {}
+        for i, outcome in ipairs(plan.outcomes) do
+            if i > 4 then
+                outcomes[#outcomes + 1] = "..."
+                break
+            end
+            local outcome_name = MAMForecast.product_name(outcome.product) or outcome.product
+            outcomes[#outcomes + 1] = tostring(outcome.count or 1) .. " x " .. outcome_name
+        end
+        return plan.outcomes[1].product, nil, "Possible results", table.concat(outcomes, " / ")
     end
 
     local product = plan.product
@@ -129,17 +140,6 @@ local function preview_data(plan)
         details = "Currently smelting"
     elseif phase == "harvest" then
         details = "Ready to collect"
-    elseif plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
-        local outcomes = {}
-        for i, outcome in ipairs(plan.outcomes) do
-            if i > 4 then
-                outcomes[#outcomes + 1] = "..."
-                break
-            end
-            local outcome_name = MAMForecast.product_name(outcome.product) or outcome.product
-            outcomes[#outcomes + 1] = tostring(outcome.count or 1) .. " x " .. outcome_name
-        end
-        details = "Possible results: " .. table.concat(outcomes, " / ")
     else
         details = "Predicted output"
     end
