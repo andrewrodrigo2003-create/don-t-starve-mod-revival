@@ -32,7 +32,15 @@ function World:SpawnPrefab(name, ...)
 end
 
 function World:SpawnEntity(name)
-    return self:SpawnPrefab(name or "simulated_entity")
+    local prefab = name or "simulated_entity"
+    local factory = self.prefabs[prefab]
+    if factory ~= nil then return self:SpawnPrefab(prefab) end
+    local entity = Entity.new(prefab)
+    entity.world = self
+    entity.GUID = self.next_guid
+    self.next_guid = self.next_guid + 1
+    self.entities[entity.GUID] = entity
+    return entity
 end
 
 function World:AdvanceTime(delta, max_callbacks)
