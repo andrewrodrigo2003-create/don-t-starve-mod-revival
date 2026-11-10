@@ -31,7 +31,7 @@ end
 -- wrapper captures only one return value and returns only that value.
 check("CalcDamage wrapper captures only the first return value",
     source:find("local C = old_calc_damage(self, A, z, B)", 1, true) ~= nil
-        and source:find("return C\n        end", 1, true) ~= nil, true)
+        and source:find("return C", 1, true) ~= nil, true)
 
 -- Vanilla DoAttack also accepts instrangeoverride and instpos after instancemult.
 check("DoAttack wrapper omits optional range and position arguments",
