@@ -67,3 +67,19 @@ Do not apply these changes as a blind patch: the four methods interact, and a pa
 ## Relationship to the AST auditor
 
 The optional `tools/dst_wrapper_audit.py` now has a public-reference contract profile for `CalcDamage`, `DoAttack`, `GetAttacked` and `DoAreaAttack`. It can identify parameter-count mismatches, captured single-result patterns, and direct overrides without a same-block capture. The latest API-profile additions still require a fresh CI run; the earlier successful run #11 validated only the preceding prototype.
+
+
+## Relevance to Woodie - Better Skill Tree (Workshop 3516850707)
+
+The public Workshop description and pinned detailed-change discussion document:
+- Lucy can be thrown in a Forge-like attack;
+- the mastered Werebeaver tail attack creates a shadow ring dealing 90 planar damage;
+- Lunar items add planar damage to normal attacks and Lucy's third thrown hit.
+
+Sources:
+- https://steamcommunity.com/sharedfiles/filedetails/?id=3516850707
+- https://steamcommunity.com/workshop/filedetails/discussion/3516850707/599657301526191078/
+
+This makes the MAM `CalcDamage`/`GetAttacked` special-damage contract candidates especially relevant to a **combat behavior compatibility test** with Woodie - Better Skill Tree. If that mod routes its planar attacks through the affected DST combat methods, dropped `spdamage` could suppress those effects. Its exact call path is not publicly verified, so this remains a test hypothesis.
+
+This does **not** explain the reported game-start failure by itself. A startup failure is more likely to require inspection of the local mod's `modmain.lua`, action registration, StateGraph registrations, dependencies, and load-time errors. The Workshop page currently says the item was removed from the community and incompatible with DST, but its local installed source has not yet been supplied. Do not infer the crash cause from the description alone.
