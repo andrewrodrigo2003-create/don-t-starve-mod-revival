@@ -555,6 +555,10 @@ function Smelter:OnLoad(data)
                 end)
             end
         elseif data.issmelting then
+            if self.active_receipt == nil then
+                MAMLog.WarnOnce("smelter:legacy-save-without-receipt",
+                    "save antigo de fundicao ativa nao possui recibo; materiais ja debitados nao podem ser reconstruidos")
+            end
             -- Saves antigos ou interrompidos podem nao ter smelttime; tratar
             -- nil/valor invalido como contagem concluida, nunca subtrair nil.
             local remaining = tonumber(data.smelttime) or 0
