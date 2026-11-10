@@ -184,6 +184,26 @@ forge.listeners.mamplandirty()
 assert(widget.mam_forge_preview.details.string == "Ready to collect",
     "server plan updates must refresh the forge phase")
 
+current_plan = {
+    phase = "ambiguous",
+    state = "ambiguous",
+    possibilities = { "copper_ingot", "iron_ingot" },
+}
+widget:Refresh()
+assert(widget.mam_forge_preview.name.string == "Possible results",
+    "ambiguous forecasts must be labelled as possibilities")
+assert(widget.mam_forge_preview.details.string == "Copper Ingot / Iron Ingot",
+    "all visible ambiguous outcomes must be listed")
+assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex",
+    "ambiguous forecasts must still show a real candidate image")
+
+current_plan = { phase = "invalid", state = "invalid" }
+widget:Refresh()
+assert(widget.mam_forge_preview.name.string == "No valid result",
+    "invalid mixtures must be explained")
+assert(not widget.mam_forge_preview.icon.visible,
+    "invalid mixtures must not leave a stale product image")
+
 local panel = widget.mam_forge_preview
 local listener = forge.listeners.mamplandirty
 widget:Close()
@@ -196,4 +216,4 @@ chest_widget:Open(make_container("treasurechest"))
 assert(chest_widget.mam_forge_preview == nil, "non-forge containers must not receive the preview")
 chest_widget:Close()
 
-print("forge visual preview: 14 checks passed")
+print("forge visual preview: 20 checks passed")
