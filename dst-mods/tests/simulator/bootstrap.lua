@@ -31,7 +31,7 @@ function Simulator.HealthCheck()
     return {
         version = Simulator.version,
         api_profile = Simulator.api_profile,
-        checks = 5,
+        checks = 4,
         evidence_level = Simulator.evidence_level,
     }
 end
