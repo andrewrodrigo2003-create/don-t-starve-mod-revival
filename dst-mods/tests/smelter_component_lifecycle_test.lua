@@ -198,6 +198,8 @@ local output_smelter = new_smelter(output_container)
 output_smelter.canharvest = true
 output_smelter.product = "copper_ingot"
 output_smelter.batch = 3
+local harvest_callbacks = 0
+output_smelter.onharvest = function() harvest_callbacks = harvest_callbacks + 1 end
 local delivered = 0
 local harvester = {
     components = {
@@ -214,6 +216,7 @@ check("failed output spawn keeps harvest pending", output_smelter:Harvest(harves
 check("failed output spawn preserves full remainder", output_smelter.canharvest
     and output_smelter.product == "copper_ingot" and output_smelter.batch == 3)
 check("failed output spawn delivers nothing", delivered == 0)
+check("failed output spawn keeps ready animation callback untouched", harvest_callbacks == 0)
 
 SpawnPrefab = function(prefab)
     return {
@@ -224,6 +227,7 @@ SpawnPrefab = function(prefab)
 end
 check("retry harvest succeeds", output_smelter:Harvest(harvester) == true)
 check("retry delivers each remaining unit once", delivered == 3)
+check("successful retry invokes harvest animation callback", harvest_callbacks == 1)
 check("successful retry clears output entitlement", output_smelter.product == nil
     and not output_smelter.canharvest)
 
