@@ -310,3 +310,32 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação ainda precisa de confirmação do usuário antes da implementação.
 - Implementação deve ser transação atômica no servidor, falhar sem consumo quando não houver espaço para todos os retornos e impedir duplicação, retorno parcial ou bypass da progressão.
 - Estado: especificação/auditoria; nenhum código de gameplay foi alterado.
+
+
+---
+
+## Atualização de execução — 2026-11-10
+
+### Build combinado de teste (PR #30)
+
+- Branch de integração: `integration/combined-test-build-2026-11-10`.
+- Base preservada: `main` em `e30b0fb7bbb45bb5d736f5173f05d9fa223107de`; a branch não está atrás da main.
+- Reúne as correções de ciclo de vida/consumo da forja, testes do planejador e wrappers de stategraph/armas dos PRs #26, #27 e #29, sem fazer merge desses PRs.
+- CI da integração: workflow `Metals and More Lua checks` e workflow `MAM stategraph wrapper contract` concluídos com sucesso no commit `4e784462e3f6cc1400e755d85ee195a30ace4bac`.
+- Harnesses confirmados nos logs: planejador 270/270; previsão ambígua 14/14; ciclo de vida da forja 52/52; configurações de pilha 16/16; contratos de stategraph/armas aprovados. Os harnesses de baú, drops e configuração também executaram sem interromper o workflow.
+- Empacotamento instalável gerado como artefato do workflow #42805238928.
+
+### Correção adicional — colheita transacional do lote
+
+- Encontrado caminho de falha em `Smelter:Harvest`: se `SpawnPrefab` falhasse no meio de um lote dividido em várias pilhas, parte do lote poderia já ter sido entregue e o restante seria perdido no reset.
+- Agora a forja prepara todas as pilhas antes de entregar qualquer uma. Se a criação falhar ou lançar erro, as pilhas preparadas são removidas e a forja permanece pronta para nova tentativa.
+- Um harvester inválido não limpa o lote pronto.
+- O callback visual de colheita só é chamado depois que todas as pilhas foram preparadas e entregues.
+- Teste de regressão: falha na segunda criação, rollback sem entrega parcial, retry de 45 unidades em pilhas 20/20/5, callback único e preservação do lote sem harvester.
+- Resultado do harness do componente no commit acima: 52 verificações aprovadas, 0 falhas.
+
+### Limitações mantidas
+
+- CI usa Lua 5.1 e harnesses com stubs; não substitui o motor DST.
+- Ainda pendentes: teste in-game, multiplayer, servidor dedicado, save/load real e compatibilidade runtime com a versão atual do Uncompromising Mode Beta.
+- PR #30 continua draft e não foi integrado à `main`; nenhuma publicação na Oficina foi feita.
