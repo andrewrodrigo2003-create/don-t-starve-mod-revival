@@ -66,7 +66,7 @@ Do not apply these changes as a blind patch: the four methods interact, and a pa
 
 ## Relationship to the AST auditor
 
-The optional `tools/dst_wrapper_audit.py` now has a public-reference contract profile for `CalcDamage`, `DoAttack`, `GetAttacked` and `DoAreaAttack`. It can identify parameter-count mismatches, captured single-result patterns, and direct overrides without a same-block capture. The latest API-profile additions still require a fresh CI run; the earlier successful run #11 validated only the preceding prototype.
+The optional `tools/dst_wrapper_audit.py` now has a public-reference contract profile for `CalcDamage`, `DoAttack`, `GetAttacked` and `DoAreaAttack`. It can identify parameter-count mismatches, captured single-result patterns, and direct overrides without a same-block capture. The expanded API-profile implementation is now CI-verified by run #25 (ID 42843372770): 30 tests passed; the actual MAM scan covered 92 Lua files / 520,131 bytes and found 24 wrapper/direct-override candidates with zero parse errors and zero skipped files. Artifact ID 13775209661: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42843372770/artifacts/13775209661. This still does not verify the public API profile against the user's installed scripts.zip or establish runtime effects.
 
 
 ## Relevance to Woodie - Better Skill Tree (Workshop 3516850707)
