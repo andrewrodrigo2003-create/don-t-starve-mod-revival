@@ -103,6 +103,51 @@ end
 """)
         self.assertTrue(finding["control_flow_contains_conditionals"])
 
+    def test_single_captured_result_return_flags_possible_tuple_truncation(self):
+        finding = self.finding("""
+local old_calc = combat.CalcDamage
+combat.CalcDamage = function(self, target, weapon, multiplier)
+    local damage = old_calc(self, target, weapon, multiplier)
+    return damage
+end
+""")
+        self.assertEqual(
+            finding["return_handling"],
+            "captured_single_result_then_returned_possible_tuple_truncation",
+        )
+        self.assertTrue(
+            finding["captured_result_evidence"][0]["possible_multi_return_truncation"]
+        )
+
+    def test_multiple_captured_results_returned_are_recognized(self):
+        finding = self.finding("""
+local old_calc = combat.CalcDamage
+combat.CalcDamage = function(self, target, weapon, multiplier)
+    local damage, spdamage = old_calc(self, target, weapon, multiplier)
+    return damage, spdamage
+end
+""")
+        self.assertEqual(
+            finding["return_handling"],
+            "captured_multiple_results_then_returned",
+        )
+        self.assertFalse(
+            finding["captured_result_evidence"][0]["possible_multi_return_truncation"]
+        )
+
+    def test_colon_method_includes_implicit_self_parameter(self):
+        finding = self.finding("""
+local old_method = obj.Method
+function obj:Method(value)
+    return old_method(self, value)
+end
+""")
+        self.assertEqual(
+            finding["argument_evidence"]["wrapper_parameters"],
+            ["self", "value"],
+        )
+        self.assertTrue(finding["argument_evidence"]["self_forwarded_as_first_argument"])
+
     def test_unrelated_assignment_is_not_a_wrapper(self):
         result = MODULE.analyze_source(
             "modmain.lua",
