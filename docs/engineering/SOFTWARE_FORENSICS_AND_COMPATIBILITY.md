@@ -141,3 +141,29 @@ Next:
 
 Additional DST security context:
 - Klei's January 2025 mod API discussion describes emergency changes after malicious code abused permissive mod APIs to spread through other mods and use command-and-control behavior: https://kleiforums.com/forums/topic/163519-mod-api-discussion-thread/
+
+
+## 12. Cross-mod conflict candidate scanner (2026-11-10)
+
+The read-only audit tool now emits two additional report sections:
+- `registration_candidates`: source path/line, API family, target symbol, operation type and provisional severity.
+- `potential_cross_mod_conflicts`: repeated targets observed across top-level mod folders.
+
+Current recognized surfaces:
+- AddComponentPostInit, AddPrefabPostInit/AddPrefabPostInitAny, AddStategraphPostInit;
+- AddStategraphActionHandler keyed by graph + ACTIONS identifier;
+- AddStategraphState keyed by graph + state name;
+- AddAction identifiers;
+- direct ACTIONS/global assignments;
+- EntityScript method overrides and containers.widgetsetup replacement.
+
+Interpretation rules:
+- Repeated component/prefab/StateGraph post-init hooks are informational because multiple callbacks can be valid and additive.
+- Repeated StateGraph action handlers, state names, AddAction IDs and direct global/action assignments are high-priority candidates for manual inspection.
+- A candidate is not proof of a runtime collision. The scanner does not evaluate load order, callback bodies, conditional registration, dynamic names, function delegation or actual registry semantics.
+- Scan a collection root containing one folder per mod to obtain cross-mod grouping. Scanning a single mod folder inventories its own hooks but cannot infer conflicts with absent mods.
+- The scanner is conservative regex-based triage, not a complete Lua parser. Dynamically constructed registrations may be missed; unusual syntax and strings may create false positives. Every report must be reviewed against source and actual load logs.
+
+New regression fixtures cover competing global assignments, duplicate StateGraph handlers, additive component post-init hooks, Lua comments, and a single-mod ZIP containing multiple internal folders. The existing CI workflow already runs `tests/test_dst_mod_audit.py`, so no new framework or dependency is introduced.
+
+This extension does not change gameplay code, install software, execute scanned Lua, extract ZIPs, or prove in-game compatibility.
