@@ -289,7 +289,11 @@ After the first real scan, the prototype was extended to:
 - compare known combat wrapper parameter counts against a versioned public-reference profile for `CalcDamage`, `DoAttack`, `GetAttacked` and `DoAreaAttack`;
 - flag direct overrides of those known methods even when no previous function was captured in the same block.
 
-New regression tests cover tuple capture/truncation, preservation of multiple return values, implicit method `self`, missing `DoAttack` optional parameters, missing `GetAttacked.spdamage`, and direct `DoAreaAttack.onlyontarget` override. These changes are committed in the PR #25 branch, but no new CI run has yet been confirmed for this expanded version. The 23-test green run #11 belongs to the preceding prototype and must not be used as evidence for these newer checks.
+New regression tests cover tuple capture/truncation, preservation of multiple return values, implicit method `self`, missing `DoAttack` optional parameters, missing `GetAttacked.spdamage`, and direct `DoAreaAttack.onlyontarget` override.
+
+**Expanded version CI confirmed:** DST Lua wrapper AST audit run #25, ID `42843372770`, completed successfully. All 30 tests passed. The actual MAM source scan reported 92 Lua files, 520,131 bytes, 24 wrapper/direct-override candidates, zero parser errors, and zero skipped files. Artifact ID `13775209661`: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42843372770/artifacts/13775209661
+
+The public-reference API profile in the artifact reports the four expected contract candidates: CalcDamage possible second-return truncation; DoAttack two missing trailing parameters; GetAttacked one missing trailing spdamage parameter; DoAreaAttack direct override with one missing onlyontarget parameter. These remain static comparisons against a public source profile, not verified against the user's installed scripts.zip.
 
 The public API profile is explicitly a reference snapshot, not the installed build contract. It should be replaced/confirmed against the exact game scripts supplied by the user before any gameplay patch.
 
