@@ -38,6 +38,7 @@ package.preload["mam/log"] = function()
             return ok, result
         end,
         Warn = function() end,
+        WarnOnce = function() end,
     }
 end
 
@@ -104,6 +105,8 @@ local function make_container(slots)
     function container:Close() self.closed = true end
     function container:DropEverything()
         self.drop_everything = true
+        self.dropped = self.dropped or {}
+        for _, item in pairs(self.slots) do table.insert(self.dropped, item) end
         self.slots = {}
     end
     function container:DestroyContents()
@@ -116,7 +119,7 @@ end
 local function make_instance(container)
     local inst = {
         prefab = "metal_smelter",
-        components = { container = container },
+        components = { container = container, lootdropper = { flung = {} } },
         deferred = {},
         tags = {},
         mam_plan = {
@@ -133,6 +136,9 @@ local function make_instance(container)
     function inst:AddTag(tag) self.tags[tag] = true end
     function inst:RemoveTag(tag) self.tags[tag] = nil end
     function inst:GetPosition() return {} end
+    function inst.components.lootdropper:FlingItem(item)
+        table.insert(self.flung, item)
+    end
     return inst
 end
 
@@ -254,6 +260,97 @@ local destroyed_smelter = new_smelter(destroyed_container)
 destroyed_smelter.issmelting = true
 destroyed_smelter:ResetSmelter()
 check("interruption destroys leftovers when disabled", destroyed_container.destroy_contents == true)
+
+-- An active batch is a transaction: consumed ingredients and unconsumed
+-- leftovers are both returned when the player cancels it with a hammer.
+config.mam_leftovers = 0
+local rollback_copper = make_item("copper_ore", 5)
+local rollback_iron = make_item("iron_ore", 2)
+local rollback_container = make_container({ [1] = rollback_copper, [2] = rollback_iron })
+local rollback_smelter, rollback_inst = new_smelter(rollback_container)
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 2,
+    smelttime = 30,
+    consumed = {
+        { slot = 1, prefab = "copper_ore", count = 3 },
+        { slot = 2, prefab = "iron_ore", count = 2 },
+    },
+}
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+check("rollback scenario starts active batch", rollback_smelter:StartSmelting() == true)
+check("active receipt records exact consumed inputs",
+    #rollback_smelter.active_receipt == 2
+        and rollback_smelter.active_receipt[1].prefab == "iron_ore"
+        and rollback_smelter.active_receipt[1].count == 2)
+local rollback_save = rollback_smelter:OnSave()
+check("active receipt is persisted in save data",
+    rollback_save.active_receipt ~= nil and #rollback_save.active_receipt == 2)
+
+-- Fail during staging after one prefab was created: nothing may be delivered
+-- and the original receipt must remain intact for retry.
+local spawn_calls, staged_item = 0, nil
+SpawnPrefab = function(prefab)
+    spawn_calls = spawn_calls + 1
+    if spawn_calls == 1 then
+        staged_item = make_item(prefab, 1)
+        return staged_item
+    end
+    return nil
+end
+check("failed rollback staging does not reset active batch",
+    rollback_smelter:ResetSmelter() == false and rollback_smelter.issmelting == true)
+check("failed rollback staging removes temporary item",
+    staged_item ~= nil and staged_item.removed and #rollback_inst.components.lootdropper.flung == 0)
+check("failed rollback staging preserves full receipt",
+    #rollback_smelter.active_receipt == 2 and rollback_smelter.active_receipt[1].count == 2)
+
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+check("hammer cancellation completes rollback", rollback_smelter:ResetSmelter() == true)
+local returned = {}
+for _, item in ipairs(rollback_inst.components.lootdropper.flung) do
+    local count = item.components.stackable ~= nil and item.components.stackable.stacksize or 1
+    returned[item.prefab] = (returned[item.prefab] or 0) + count
+end
+for _, item in ipairs(rollback_container.dropped or {}) do
+    local count = item.components.stackable ~= nil and item.components.stackable.stacksize or 1
+    returned[item.prefab] = (returned[item.prefab] or 0) + count
+end
+check("rollback restores all copper including leftover", returned.copper_ore == 5)
+check("rollback restores all iron consumed by batch", returned.iron_ore == 2)
+check("active cancellation returns leftovers even when option is disabled",
+    rollback_container.drop_everything == true and rollback_container.destroy_contents ~= true)
+check("successful rollback clears receipt", rollback_smelter.active_receipt == nil)
+
+-- A completed batch commits its receipt; later reset/harvest must not refund it.
+local committed_container = make_container({})
+local committed_smelter, committed_inst = new_smelter(committed_container)
+committed_smelter.issmelting = true
+committed_smelter.active_receipt = { { prefab = "iron_ore", count = 4 } }
+committed_smelter:DoneSmelting()
+check("completion commits and clears active receipt", committed_smelter.active_receipt == nil)
+committed_smelter:ResetSmelter()
+check("committed batch is never refunded", #committed_inst.components.lootdropper.flung == 0)
+
+-- Receipt saved during smelting is restored and can still be refunded.
+local loaded_container = make_container({})
+local loaded_smelter, loaded_inst = new_smelter(loaded_container)
+loaded_smelter:OnLoad({
+    issmelting = true,
+    product = "copper_ingot",
+    batch = 1,
+    smelttime = 10,
+    active_receipt = { { prefab = "gold_ore", count = 3 } },
+})
+check("active receipt is restored from save", loaded_smelter.active_receipt ~= nil
+    and loaded_smelter.active_receipt[1].prefab == "gold_ore"
+    and loaded_smelter.active_receipt[1].count == 3)
+check("loaded active receipt can be refunded", loaded_smelter:ResetSmelter() == true)
+local loaded_returned = loaded_inst.components.lootdropper.flung[1]
+check("loaded rollback returns exact saved quantity",
+    loaded_returned ~= nil and loaded_returned.prefab == "gold_ore"
+        and loaded_returned.components.stackable.stacksize == 3)
 
 -- Positive-time saves resume; zero-time saves defer completion until the task.
 local active_container = make_container({})
