@@ -278,3 +278,17 @@ These mismatches are supported by direct source inspection plus a public DST API
 - Public DST combat.lua source (CalcDamage returns damage and spdamage; GetAttacked; DoAreaAttack): https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua
 - DST combat API reference (build 722832, updated 2026-04-21; DoAttack, GetAttacked, CalcDamage, DoAreaAttack signatures): https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/combat
 - Lua 5.1 manual, expression adjustment and multiple results: https://www.lua.org/manual/5.1/manual.html
+
+
+## 17. AST analyzer contract-profile expansion — pending verification (2026-11-10)
+
+After the first real scan, the prototype was extended to:
+- recognize a previous function call assigned to local variables and later returned;
+- distinguish one captured result from multiple captured results;
+- model implicit `self` in colon-method declarations;
+- compare known combat wrapper parameter counts against a versioned public-reference profile for `CalcDamage`, `DoAttack`, `GetAttacked` and `DoAreaAttack`;
+- flag direct overrides of those known methods even when no previous function was captured in the same block.
+
+New regression tests cover tuple capture/truncation, preservation of multiple return values, implicit method `self`, missing `DoAttack` optional parameters, missing `GetAttacked.spdamage`, and direct `DoAreaAttack.onlyontarget` override. These changes are committed in the PR #25 branch, but no new CI run has yet been confirmed for this expanded version. The 23-test green run #11 belongs to the preceding prototype and must not be used as evidence for these newer checks.
+
+The public API profile is explicitly a reference snapshot, not the installed build contract. It should be replaced/confirmed against the exact game scripts supplied by the user before any gameplay patch.
