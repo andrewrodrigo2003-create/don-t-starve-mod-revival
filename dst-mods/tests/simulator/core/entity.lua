@@ -13,6 +13,7 @@ function Entity.new(prefab, id)
         events = EventBus.new(),
         tags = {},
         position = { x = 0, y = 0, z = 0 },
+        _subscriptions = {},
     }, Entity)
 end
 
@@ -30,7 +31,9 @@ end
 function Entity:RemoveComponent(name) self.components[name] = nil end
 function Entity:ListenForEvent(event, callback, source)
     local bus = source and source.events or self.events
-    return bus:Listen(event, callback, self)
+    local token = bus:Listen(event, callback, self)
+    self._subscriptions[#self._subscriptions + 1] = { bus = bus, event = event, token = token }
+    return token
 end
 function Entity:RemoveEventCallback(event, callback, source)
     local bus = source and source.events or self.events
@@ -49,6 +52,10 @@ function Entity:Remove()
     if not self.valid then return false end
     self.valid = false
     self.events:Push("onremove", { entity = self })
+    for _, subscription in ipairs(self._subscriptions) do
+        subscription.bus:Remove(subscription.event, subscription.token)
+    end
+    self._subscriptions = {}
     self.events:RemoveOwner(self)
     for _, component in pairs(self.components) do
         if type(component.OnRemoveFromEntity) == "function" then
