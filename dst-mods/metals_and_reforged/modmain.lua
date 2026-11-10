@@ -219,14 +219,8 @@ AddRecipe2("marble_chest", {Ingredient("marble", 5), Ingredient("gold_ingot", 2,
 
 AddRecipe2("cold_safe", {Ingredient("gears", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("bluegem", 1)}, TECH.ALCHEMY_ONE, {placer = "cold_safe_placer", min_spacing=0.5, image="icebox_victorian.tex"}, {"CRAFTING_STATION", "COOKING"})
 
--- Armazenamento dedicado aos ingredientes aceitos pela metalurgia.
-if MAMConfig.on("mam_metalschest") then
-    AddRecipe2("metal_storage_chest", {
-        Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"),
-        Ingredient("cutstone", 2),
-        Ingredient("gears", 1),
-    }, TECH.ALCHEMY_ONE, { placer = "metal_storage_chest_placer", min_spacing = 0.5, image = "icebox_victorian.tex" }, { "CRAFTING_STATION", "CONTAINERS" })
-end
+-- metal_storage_chest e legado: prefab/widget continuam registrados para saves antigos,
+-- mas nao existe mais receita/opcao para construi-lo em mundos novos.
 
 AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
 
