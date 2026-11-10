@@ -83,3 +83,12 @@ Sources:
 This makes the MAM `CalcDamage`/`GetAttacked` special-damage contract candidates especially relevant to a **combat behavior compatibility test** with Woodie - Better Skill Tree. If that mod routes its planar attacks through the affected DST combat methods, dropped `spdamage` could suppress those effects. Its exact call path is not publicly verified, so this remains a test hypothesis.
 
 This does **not** explain the reported game-start failure by itself. A startup failure is more likely to require inspection of the local mod's `modmain.lua`, action registration, StateGraph registrations, dependencies, and load-time errors. The Workshop page currently says the item was removed from the community and incompatible with DST, but its local installed source has not yet been supplied. Do not infer the crash cause from the description alone.
+
+
+### Public compatibility history relevant to startup failure
+
+The Workshop page currently shows version 0.5, 336.599 KB, updated 18 Apr 2026, and Steam marks the item removed from the community/incompatible with DST. More importantly, a public comment dated 3 Nov 2025 reports that the game would not open when Woodie - Better Skill Tree and Feast and Famine were enabled together; the author replied on 4 Nov 2025 that they could investigate compatibility.
+
+This is evidence that the mod has had at least one reported startup compatibility conflict with another mod. It does **not** establish that MAM is the cause, nor that the same conflict exists in the user's installed copy. It strengthens the reason to inspect the exact local `modmain.lua`, dependencies, Action/StateGraph registrations, and first startup error rather than focusing only on in-world combat APIs.
+
+Source: https://steamcommunity.com/sharedfiles/filedetails/?id=3516850707 (page metadata, compatibility status, and dated comments).
