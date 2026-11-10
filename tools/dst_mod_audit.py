@@ -206,9 +206,10 @@ def extract_registration_candidates(path: str, content: str) -> list[dict]:
 def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]:
     """Group repeated registrations across top-level mod folders; report candidates, not verdicts."""
     groups: dict[tuple[str, str], list[dict]] = {}
+    single_mod_root = target.is_dir() and ((target / "modmain.lua").exists() or (target / "modinfo.lua").exists())
     for item in candidates:
         parts = PurePosixPath(item["path"]).parts
-        mod_id = parts[0] if len(parts) > 1 else target.name
+        mod_id = target.name if single_mod_root or len(parts) == 1 else parts[0]
         item["mod_id"] = mod_id
         key = (item["kind"], item["target"])
         groups.setdefault(key, []).append(item)
