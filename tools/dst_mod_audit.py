@@ -207,9 +207,16 @@ def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]
     """Group repeated registrations across top-level mod folders; report candidates, not verdicts."""
     groups: dict[tuple[str, str], list[dict]] = {}
     single_mod_root = target.is_dir() and ((target / "modmain.lua").exists() or (target / "modinfo.lua").exists())
+    if target.is_file() and zipfile.is_zipfile(target):
+        with zipfile.ZipFile(target) as archive:
+            single_mod_root = any(
+                len(PurePosixPath(info.filename).parts) == 1
+                and PurePosixPath(info.filename).name in {"modmain.lua", "modinfo.lua"}
+                for info in archive.infolist()
+            )
     for item in candidates:
         parts = PurePosixPath(item["path"]).parts
-        mod_id = target.name if single_mod_root or len(parts) == 1 else parts[0]
+        mod_id = target.stem if single_mod_root else (parts[0] if len(parts) > 1 else target.name)
         item["mod_id"] = mod_id
         key = (item["kind"], item["target"])
         groups.setdefault(key, []).append(item)
