@@ -112,8 +112,7 @@ local function preview_data(plan)
             end
             names[#names + 1] = MAMForecast.product_name(prefab) or prefab
         end
-        return plan.possibilities ~= nil and plan.possibilities[1] or nil, nil,
-            "Possible results", table.concat(names, " / ")
+        return nil, nil, "Possible results", table.concat(names, " / ")
     elseif plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
         local outcomes = {}
         for i, outcome in ipairs(plan.outcomes) do
@@ -124,7 +123,7 @@ local function preview_data(plan)
             local outcome_name = MAMForecast.product_name(outcome.product) or outcome.product
             outcomes[#outcomes + 1] = tostring(outcome.count or 1) .. " x " .. outcome_name
         end
-        return plan.outcomes[1].product, nil, "Possible results", table.concat(outcomes, " / ")
+        return nil, nil, "Possible results", table.concat(outcomes, " / ")
     end
 
     local product = plan.product
