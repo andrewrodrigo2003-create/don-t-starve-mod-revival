@@ -145,6 +145,25 @@ local function new_smelter(container)
     return Smelter(inst), inst
 end
 
+local function make_output(prefab, maxsize)
+    local item = {
+        prefab = prefab,
+        components = {
+            stackable = {
+                maxsize = maxsize or 20,
+                stacksize = 1,
+                SetStackSize = function(self, value) self.stacksize = value end,
+            },
+        },
+        removed = false,
+    }
+    function item:Remove() self.removed = true end
+    function item:DoTaskInTime(delay, fn)
+        self.moisture_task = { delay = delay, fn = fn }
+    end
+    return item
+end
+
 -- The component must consume only the exact planned units from each slot.
 local first = make_item("copper_ore", 5)
 local second = make_item("iron_ore", 2)
@@ -298,6 +317,66 @@ local missing_smelter = new_smelter(missing_container)
 missing_smelter:OnLoad({ issmelting = true, product = nil, smelttime = 10 })
 check("active save without product resets safely", not missing_smelter.issmelting and missing_smelter.product == nil)
 check("missing-product reset applies leftovers-off policy", missing_container.destroy_contents == true)
+
+-- Harvest must be all-or-retry if creating any stack in a batch fails.
+config.mam_leftovers = 1
+local harvest_container = make_container({})
+local harvest_smelter = new_smelter(harvest_container)
+harvest_smelter.canharvest = true
+harvest_smelter.product = "copper_ingot"
+harvest_smelter.batch = 45
+local delivered = {}
+local inventory = { GiveItem = function(self, item) table.insert(delivered, item) end }
+local harvester = { components = { inventory = inventory } }
+local spawned_outputs = {}
+local spawn_attempt = 0
+local previous_spawn_prefab = SpawnPrefab
+SpawnPrefab = function(prefab)
+    spawn_attempt = spawn_attempt + 1
+    if spawn_attempt == 2 then return nil end
+    local item = make_output(prefab, 20)
+    table.insert(spawned_outputs, item)
+    return item
+end
+local harvest_callback_count = 0
+harvest_smelter.onharvest = function() harvest_callback_count = harvest_callback_count + 1 end
+check("failed output spawn aborts harvest", harvest_smelter:Harvest(harvester) == false)
+check("failed output spawn delivers no partial batch", #delivered == 0)
+check("failed output spawn rolls back prepared stacks",
+    #spawned_outputs == 1 and spawned_outputs[1].removed == true)
+check("failed output spawn preserves ready product and batch",
+    harvest_smelter.canharvest == true and harvest_smelter.product == "copper_ingot"
+        and harvest_smelter.batch == 45)
+check("failed output spawn does not run harvest callback", harvest_callback_count == 0)
+
+-- Retrying after the transient failure delivers all 45 units as 20/20/5.
+spawn_attempt = 0
+SpawnPrefab = function(prefab)
+    local item = make_output(prefab, 20)
+    table.insert(spawned_outputs, item)
+    return item
+end
+check("retry harvest succeeds", harvest_smelter:Harvest(harvester) == true)
+check("retry delivers every output stack", #delivered == 3)
+check("retry output stack sizes are exact",
+    delivered[1].components.stackable.stacksize == 20
+        and delivered[2].components.stackable.stacksize == 20
+        and delivered[3].components.stackable.stacksize == 5)
+check("successful retry runs harvest callback once", harvest_callback_count == 1)
+check("successful retry resets the furnace", harvest_smelter.canharvest == nil
+    and harvest_smelter.product == nil and harvest_smelter.batch == 1)
+check("successful retry schedules moisture updates", delivered[1].moisture_task ~= nil
+    and delivered[2].moisture_task ~= nil and delivered[3].moisture_task ~= nil)
+
+-- An invalid harvester must not clear a ready batch.
+local retained_container = make_container({})
+local retained_smelter = new_smelter(retained_container)
+retained_smelter.canharvest = true
+retained_smelter.product = "iron_ingot"
+retained_smelter.batch = 2
+check("missing harvester preserves ready batch", retained_smelter:Harvest(nil) == false
+    and retained_smelter.canharvest == true and retained_smelter.batch == 2)
+SpawnPrefab = previous_spawn_prefab
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
