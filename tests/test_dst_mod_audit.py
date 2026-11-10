@@ -128,8 +128,8 @@ class DstModAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "single-mod.zip"
             with zipfile.ZipFile(archive, "w") as zf:
-                zf.writestr("modmain.lua", "GLOBAL.DAMAGETYPES = {}\\n")
-                zf.writestr("scripts/extra.lua", "GLOBAL.DAMAGETYPES = {}\\n")
+                zf.writestr("modmain.lua", "GLOBAL.DAMAGETYPES = {}\n")
+                zf.writestr("scripts/extra.lua", "GLOBAL.DAMAGETYPES = {}\n")
             report = MODULE.audit(archive)
             self.assertEqual(report["potential_cross_mod_conflicts"], [])
 
