@@ -314,3 +314,13 @@ If a rechargeable item is equipped by a non-player owner that lacks `buffable` (
 - Confirm the intended fallback multiplier before proposing a nil guard; do not silently change cooldown balance.
 
 This is not a startup-crash explanation and no gameplay code was changed.
+
+
+## 19. Combined forensic toolkit CI confirmation — 2026-11-10
+
+The same PR branch also passed the existing DST forensic toolkit workflow #79, run ID `42843372787`:
+- 13/13 scanner tests passed;
+- the MAM source inventory completed;
+- artifact ID `13775543865`: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/42843372787/artifacts/13775543865
+
+Together with AST workflow #25 (30/30 tests, 92 Lua files, 24 wrapper/direct override candidates, zero parser errors/skips), both the regex inventory and AST wrapper-analysis pipelines are green on the PR's code snapshot. These are L0/static and test-harness results only. They do not validate the installed game build, live world behavior, mod-stack startup, Uncompromising Mode Beta, or multiplayer. PR #25 remains draft and unmerged.
