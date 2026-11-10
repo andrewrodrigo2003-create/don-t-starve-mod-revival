@@ -227,9 +227,9 @@ def resolve_mod_id(path: str, target: Path, single_root: bool) -> str:
 def extract_modinfo_metadata(path: str, content: str, mod_id: str) -> dict:
     """Read only simple literal modinfo fields; never execute modinfo.lua."""
     code = strip_lua_comments(content)
-    name_match = re.search(r"(?m)^\\s*name\\s*=\\s*['\"]([^'\"]+)['\"]", code)
-    priority_match = re.search(r"(?m)^\\s*priority\\s*=\\s*(-?\\d+)", code)
-    dependencies_match = re.search(r"\\bmod_dependencies\\s*=\\s*\\{([^}]*)\\}", code, re.S)
+    name_match = re.search(r"(?m)^\s*name\s*=\s*['\"]([^'\"]+)['\"]", code)
+    priority_match = re.search(r"(?m)^\s*priority\s*=\s*(-?\d+)", code)
+    dependencies_match = re.search(r"\bmod_dependencies\s*=\s*\{([^}]*)\\}", code, re.S)
     dependencies = (
         re.findall(r"['\"]([^'\"]+)['\"]", dependencies_match.group(1))
         if dependencies_match else []
