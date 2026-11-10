@@ -197,6 +197,27 @@ assert(widget.mam_forge_preview.details.string == "Copper Ingot / Iron Ingot",
 assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex",
     "ambiguous forecasts must still show a real candidate image")
 
+current_plan = {
+    phase = "ready",
+    state = "ready",
+    ambiguous = true,
+    product = "copper_ingot",
+    count = 3,
+    outcomes = {
+        { product = "copper_ingot", count = 3 },
+        { product = "iron_ingot", count = 2 },
+    },
+}
+widget:Refresh()
+assert(widget.mam_forge_preview.name.string == "Possible results",
+    "weighted alternatives must not be labelled as a selected product")
+assert(widget.mam_forge_preview.quantity.string == "",
+    "ambiguous alternatives must not show one outcome's quantity as certain")
+assert(widget.mam_forge_preview.details.string == "3 x Copper Ingot / 2 x Iron Ingot",
+    "ambiguous alternatives must show each candidate quantity")
+assert(widget.mam_forge_preview.icon.texture == "copper_ingot.tex",
+    "ambiguous weighted forecasts must retain a real candidate image")
+
 current_plan = { phase = "invalid", state = "invalid" }
 widget:Refresh()
 assert(widget.mam_forge_preview.name.string == "No valid result",
@@ -216,4 +237,4 @@ chest_widget:Open(make_container("treasurechest"))
 assert(chest_widget.mam_forge_preview == nil, "non-forge containers must not receive the preview")
 chest_widget:Close()
 
-print("forge visual preview: 20 checks passed")
+print("forge visual preview: 24 checks passed")
