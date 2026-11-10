@@ -101,8 +101,70 @@ def _direct_return_positions(function_body, alias):
 def _function_parameters(function_node):
     args = list(getattr(function_node, "args", []) or [])
     names = [_name(arg) for arg in args if _name(arg)]
+    # Lua's colon method syntax inserts an implicit first parameter named self.
+    if type(function_node).__name__ == "Method":
+        names.insert(0, "self")
     has_varargs = any(type(arg).__name__ in {"Dots", "Varargs"} for arg in args)
     return names, has_varargs
+
+
+def _captured_result_evidence(function_body, alias):
+    """Track simple local/assignment capture of a previous call into return values."""
+    evidence = []
+    for node in walk(function_body, stop_at_nested_functions=True):
+        if type(node).__name__ not in {"LocalAssign", "Assign"}:
+            continue
+        targets = list(getattr(node, "targets", []) or [])
+        values = list(getattr(node, "values", []) or [])
+        for value_index, value in enumerate(values):
+            if not _is_alias_call(value, alias) or not targets:
+                continue
+            # Lua expands only the final RHS call into the remaining target slots.
+            if value_index == len(values) - 1:
+                captured_targets = targets[value_index:]
+            else:
+                captured_targets = targets[value_index:value_index + 1]
+            captured_names = [_name(target) for target in captured_targets]
+            captured_names = [name for name in captured_names if name]
+            if not captured_names:
+                continue
+            for ret in walk(function_body, stop_at_nested_functions=True):
+                if type(ret).__name__ != "Return":
+                    continue
+                return_names = [_name(item) for item in (getattr(ret, "values", []) or [])]
+                return_names = [name for name in return_names if name]
+                cursor = -1
+                returned_names = []
+                for name in captured_names:
+                    try:
+                        cursor = return_names.index(name, cursor + 1)
+                        returned_names.append(name)
+                    except ValueError:
+                        break
+                if len(returned_names) == len(captured_names):
+                    handling = (
+                        "captured_single_result_then_returned"
+                        if len(captured_names) == 1
+                        else "captured_multiple_results_then_returned"
+                    )
+                elif returned_names:
+                    handling = "captured_result_partially_returned"
+                else:
+                    handling = "captured_result_not_found_in_return"
+                evidence.append({
+                    "capture_line": _line(node),
+                    "call_line": _line(value),
+                    "captured_target_names": captured_names,
+                    "return_line": _line(ret),
+                    "return_names": return_names,
+                    "returned_captured_names": returned_names,
+                    "handling": handling,
+                    "possible_multi_return_truncation": (
+                        len(captured_names) == 1 or
+                        len(returned_names) < len(captured_names)
+                    ),
+                })
+    return evidence
 
 
 def _argument_evidence(function_node, call_node):
@@ -138,6 +200,7 @@ def _argument_evidence(function_node, call_node):
 def _analyze_wrapper(path, target, capture, alias, function_node, body):
     calls = _call_nodes(body, alias)
     returns = _direct_return_positions(body, alias)
+    captured_results = _captured_result_evidence(body, alias)
     conditional = any(
         type(node).__name__ in CONTROL_NODE_NAMES
         for node in walk(body, stop_at_nested_functions=True)
@@ -154,6 +217,12 @@ def _analyze_wrapper(path, target, capture, alias, function_node, body):
             return_handling = "previous_call_is_last_return_expression"
         elif nonfinal_returned:
             return_handling = "previous_call_is_nonfinal_return_expression"
+        elif any(item["handling"] == "captured_multiple_results_then_returned" for item in captured_results):
+            return_handling = "captured_multiple_results_then_returned"
+        elif any(item["handling"] == "captured_single_result_then_returned" for item in captured_results):
+            return_handling = "captured_single_result_then_returned_possible_tuple_truncation"
+        elif captured_results:
+            return_handling = captured_results[0]["handling"]
         else:
             return_handling = "previous_call_not_directly_returned"
         argument_evidence = _argument_evidence(function_node, calls[0])
@@ -165,6 +234,7 @@ def _analyze_wrapper(path, target, capture, alias, function_node, body):
         "override_line": _line(function_node),
         "call_lines": [_line(call) for call in calls],
         "direct_return_sites": returns,
+        "captured_result_evidence": captured_results,
         "delegation": delegation,
         "return_handling": return_handling,
         "control_flow_contains_conditionals": conditional,
