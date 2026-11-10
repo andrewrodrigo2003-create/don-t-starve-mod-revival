@@ -135,6 +135,32 @@ function Smelter:StartSmelting(doer)
         return false
     end
 
+    -- Preflight the complete receipt before mutating any slot. Reject stale
+    -- plans if a slot changed or a third-party container hook altered contents.
+    if type(plan.consumed) ~= "table" or #plan.consumed == 0 then
+        MAMLog.Warn("plano de fundicao sem recibo de consumo valido")
+        return false
+    end
+
+    local validated = {}
+    for _, entry in ipairs(plan.consumed) do
+        local item = container.slots[entry.slot]
+        if item == nil or not item:IsValid() or item.prefab ~= entry.prefab
+            or type(entry.count) ~= "number" or entry.count < 1
+            or entry.count % 1 ~= 0 then
+            MAMLog.Warn("plano de fundicao desatualizado no slot %s", tostring(entry.slot))
+            return false
+        end
+
+        local available = item.components.stackable ~= nil
+            and item.components.stackable.stacksize or 1
+        if available < entry.count or validated[entry.slot] then
+            MAMLog.Warn("recibo de consumo invalido no slot %s", tostring(entry.slot))
+            return false
+        end
+        validated[entry.slot] = true
+    end
+
     self.issmelting = true
     self.canharvest = nil
     self.product = plan.product
@@ -147,10 +173,14 @@ function Smelter:StartSmelting(doer)
 
     -- Consumo exato do lote. O que sobrar fica nos slots e volta para o
     -- jogador no harvest, em vez de ser destruido silenciosamente.
-    if type(plan.consumed) == "table" then
-        for i = #plan.consumed, 1, -1 do
-            local c = plan.consumed[i]
-            self:ConsumeSlot(c.slot, c.count)
+    for i = #plan.consumed, 1, -1 do
+        local entry = plan.consumed[i]
+        local consumed = self:ConsumeSlot(entry.slot, entry.count)
+        if consumed ~= entry.count then
+            MAMLog.Warn("consumo divergente no slot %s: esperado %d, consumido %d",
+                tostring(entry.slot), entry.count, consumed)
+            self:ResetSmelter()
+            return false
         end
     end
 
@@ -248,6 +278,12 @@ function Smelter:Harvest(harvester)
         return false
     end
 
+    -- Keep the ready output entitlement if this callback has no valid recipient.
+    if self.product ~= nil and (harvester == nil or harvester.components == nil
+        or harvester.components.inventory == nil) then
+        return false
+    end
+
     if self.onharvest then
         self.onharvest(self.inst)
     end
@@ -261,8 +297,13 @@ function Smelter:Harvest(harvester)
         while remaining > 0 do
             local loot = SpawnPrefab(self.product)
             if loot == nil then
-                MAMLog.Warn("produto %s nao pode ser gerado", tostring(self.product))
-                break
+                -- Preserve the undelivered remainder. Earlier stacks may
+                -- already have been delivered; retrying must not duplicate them.
+                self.batch = remaining
+                MAMLog.Warn("produto %s nao pode ser gerado; %d unidade(s) pendentes",
+                    tostring(self.product), remaining)
+                self:PublishPlan()
+                return false
             end
 
             local n = remaining
