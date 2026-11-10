@@ -182,6 +182,28 @@ end
         self.assertEqual(contract["expected_return_count"], 2)
         self.assertEqual(contract["return_arity_risk"], "possible_multi_return_truncation")
 
+    def test_dst_doareaattack_direct_override_reports_missing_onlyontarget(self):
+        result = MODULE.analyze_source("modmain.lua", """
+AddComponentPostInit("combat", function(self)
+    function self:DoAreaAttack(target, range, weapon, validfn, stimuli, excludetags)
+        return 0
+    end
+end)
+""")
+        self.assertIsNone(result["parse_error"])
+        finding = next(
+            item for item in result["findings"]
+            if item["target"] == "self.DoAreaAttack"
+        )
+        self.assertEqual(
+            finding["delegation"],
+            "no_previous_function_capture_found_in_same_block",
+        )
+        self.assertEqual(
+            finding["api_contract_evidence"]["missing_trailing_parameter_count"],
+            1,
+        )
+
     def test_unrelated_assignment_is_not_a_wrapper(self):
         result = MODULE.analyze_source(
             "modmain.lua",
