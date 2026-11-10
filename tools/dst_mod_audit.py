@@ -145,6 +145,20 @@ def strip_lua_comments(source: str) -> str:
             quote = ch
             i += 1
             continue
+        # Mask Lua long-bracket strings before comment recognition. They can contain
+        # apparent comments or registration calls that must not become code findings.
+        if ch == "[":
+            long_string = re.match(r"\[(=*)\[", source[i:])
+            if long_string:
+                close = "]" + long_string.group(1) + "]"
+                body_start = i + long_string.end()
+                end_at = source.find(close, body_start)
+                end = n if end_at < 0 else end_at + len(close)
+                for j in range(i, end):
+                    if out[j] not in "\r\n":
+                        out[j] = " "
+                i = end
+                continue
         if source.startswith("--", i):
             # Lua long comment: --[=[ ... ]=], with any number of '='.
             match = re.match(r"--\[(=*)\[", source[i:])
