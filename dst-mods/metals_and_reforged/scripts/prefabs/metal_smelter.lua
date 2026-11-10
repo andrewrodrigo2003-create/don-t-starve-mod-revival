@@ -23,32 +23,51 @@ end
 
 
 local function onhammered(inst, worker)
-    inst.components.lootdropper:DropLoot()
+    local smelter = inst.components.smelter
+    local outputs = {}
 
-	if inst.components.smelter.canharvest and inst.components.smelter.product then
-        -- Entrega o lote inteiro, dividindo em pilhas quando necessario.
-        local product = inst.components.smelter.product
-        local remaining = inst.components.smelter.batch or 1
+    if smelter.canharvest and smelter.product ~= nil then
+        -- Prepare the complete batch before dropping loot or removing the
+        -- furnace. A failed SpawnPrefab must leave the ready furnace intact.
+        local remaining = math.max(1, math.floor(tonumber(smelter.batch) or 1))
         while remaining > 0 do
-            local loot = SpawnPrefab(product)
-            if loot == nil then
-                print("[Metals and More] Nao foi possivel gerar produto ao destruir a forja: " .. tostring(product))
-                break
+            local ok, loot = pcall(SpawnPrefab, smelter.product)
+            if not ok or loot == nil then
+                for _, prepared in ipairs(outputs) do
+                    if prepared.Remove ~= nil then
+                        pcall(prepared.Remove, prepared)
+                    end
+                end
+
+                print("[Metals and More] Nao foi possivel preparar o lote completo ao destruir a forja: "
+                    .. tostring(smelter.product) .. ". Tente novamente.")
+                inst.components.workable:SetWorkLeft(1)
+                return
             end
 
             local amount = 1
-            if loot.components.stackable ~= nil then
-                local maxsize = loot.components.stackable.maxsize or 20
+            local stackable = loot.components ~= nil and loot.components.stackable or nil
+            if stackable ~= nil then
+                local maxsize = math.floor(tonumber(stackable.maxsize) or 20)
+                if maxsize < 1 then
+                    maxsize = 1
+                end
                 amount = math.min(remaining, maxsize)
                 if amount > 1 then
-                    loot.components.stackable:SetStackSize(amount)
+                    stackable:SetStackSize(amount)
                 end
             end
 
-            inst.components.lootdropper:FlingItem(loot)
+            table.insert(outputs, loot)
             remaining = remaining - amount
         end
-	end
+    end
+
+    -- No operation below can destroy the ready batch until all outputs exist.
+    inst.components.lootdropper:DropLoot()
+    for _, loot in ipairs(outputs) do
+        inst.components.lootdropper:FlingItem(loot)
+    end
 
     -- As sobras da carga precisam sair antes do entity morrer: o container
     -- vanilla destroi o conteudo no Remove, e sem isto o jogador perdia item.
@@ -57,9 +76,10 @@ local function onhammered(inst, worker)
     end
 
     local fx = SpawnPrefab("collapse_small")
-	
-    fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
-    fx:SetMaterial("stone")
+    if fx ~= nil then
+        fx.Transform:SetPosition(inst.Transform:GetWorldPosition())
+        fx:SetMaterial("stone")
+    end
     inst:Remove()
 end
 
