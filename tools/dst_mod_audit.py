@@ -125,8 +125,119 @@ def source_entries(target: Path):
     else:
         raise ValueError("Target must be a directory or a readable ZIP archive.")
 
+
+def strip_lua_comments(source: str) -> str:
+    """Mask Lua comments while preserving newlines and quoted strings for conservative scanning."""
+    out = list(source)
+    i, n = 0, len(source)
+    quote = None
+    while i < n:
+        ch = source[i]
+        if quote:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == quote:
+                quote = None
+            i += 1
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            i += 1
+            continue
+        if source.startswith("--", i):
+            # Lua long comment: --[=[ ... ]=], with any number of '='.
+            match = re.match(r"--\[(=*)\[", source[i:])
+            if match:
+                close = "]" + match.group(1) + "]"
+                start = i
+                body_start = i + match.end()
+                end_at = source.find(close, body_start)
+                end = n if end_at < 0 else end_at + len(close)
+                for j in range(start, end):
+                    if out[j] not in "\r\n":
+                        out[j] = " "
+                i = end
+            else:
+                end = source.find("\n", i)
+                if end < 0:
+                    end = n
+                for j in range(i, end):
+                    if out[j] != "\r":
+                        out[j] = " "
+                i = end
+            continue
+        i += 1
+    return "".join(out)
+
+
+def extract_registration_candidates(path: str, content: str) -> list[dict]:
+    """Extract high-value DST registration/override signals; not a full Lua parser."""
+    code = strip_lua_comments(content)
+    patterns = [
+        ("component_postinit", r"\bAddComponentPostInit\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
+        ("prefab_postinit", r"\bAddPrefabPostInit(?:Any)?\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
+        ("stategraph_postinit", r"\bAddStategraphPostInit\s*\(\s*['\"]([^'\"]+)['\"]", "additive", "informational"),
+        ("stategraph_action_handler", r"\bAddStategraphActionHandler\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*ActionHandler\s*\(\s*ACTIONS\.([A-Za-z_]\w*)", "keyed_registration", "high"),
+        ("stategraph_state", r"\bAddStategraphState\s*\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]", "keyed_registration", "high"),
+        ("action_definition", r"\bAddAction\s*\(\s*['\"]([^'\"]+)['\"]", "keyed_registration", "high"),
+        ("action_assignment", r"\bACTIONS\.([A-Za-z_]\w*)\s*=", "replacement", "high"),
+        ("global_assignment", r"\b(?:_G|GLOBAL)\.([A-Za-z_]\w*)\s*=", "replacement", "high"),
+        ("entityscript_method_override", r"\b(?:function\s+EntityScript\s*[:.]|EntityScript\s*\.\s*)([A-Za-z_]\w*)", "replacement", "high"),
+        ("container_widget_override", r"\bcontainers\.widgetsetup\s*=", "replacement", "high"),
+    ]
+    found = []
+    for kind, pattern, operation, severity in patterns:
+        for match in re.finditer(pattern, code):
+            line = code.count("\n", 0, match.start()) + 1
+            groups = [value for value in match.groups() if value is not None]
+            target = "::".join(groups) if groups else kind
+            found.append({
+                "path": path,
+                "line": line,
+                "kind": kind,
+                "target": target,
+                "operation": operation,
+                "severity_if_competing": severity,
+            })
+    return found
+
+
+def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]:
+    """Group repeated registrations across top-level mod folders; report candidates, not verdicts."""
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for item in candidates:
+        parts = PurePosixPath(item["path"]).parts
+        mod_id = parts[0] if len(parts) > 1 else target.name
+        item["mod_id"] = mod_id
+        key = (item["kind"], item["target"])
+        groups.setdefault(key, []).append(item)
+
+    conflicts = []
+    additive = {"component_postinit", "prefab_postinit", "stategraph_postinit"}
+    for (kind, symbol), entries in sorted(groups.items()):
+        mods = sorted({entry["mod_id"] for entry in entries})
+        if len(mods) < 2:
+            continue
+        if kind in additive:
+            severity = "informational"
+            interpretation = "Multiple post-init registrations can be additive; inspect callback behavior and order."
+        else:
+            severity = "high"
+            interpretation = "The same keyed registration or replacement appears in multiple mod folders; inspect actual registration semantics and load order."
+        conflicts.append({
+            "kind": kind,
+            "target": symbol,
+            "severity": severity,
+            "mods": mods,
+            "occurrences": entries,
+            "interpretation": interpretation,
+        })
+    return conflicts
+
+
 def audit(target: Path, run_luac: bool = False) -> dict:
-    files, signals, errors, lua_paths = [], [], [], []
+    files, signals, errors, lua_paths, registrations = [], [], [], [], []
     for name, data, error in source_entries(target):
         if error:
             errors.append({"path": name, "error": error})
@@ -136,6 +247,9 @@ def audit(target: Path, run_luac: bool = False) -> dict:
         files.append(item)
         if name.lower().endswith(".lua"):
             lua_paths.append(name)
+            decoded_lua = decode_text(data)
+            if decoded_lua is not None:
+                registrations.extend(extract_registration_candidates(name, decoded_lua))
         if Path(name).suffix.lower() not in TEXT_SUFFIXES:
             continue
         content = decode_text(data)
@@ -182,6 +296,8 @@ def audit(target: Path, run_luac: bool = False) -> dict:
         "lua_file_count": len(lua_paths),
         "files": files,
         "signals": signals,
+        "registration_candidates": registrations,
+        "potential_cross_mod_conflicts": find_cross_mod_conflicts(registrations, target),
         "read_errors": errors,
         "lua_syntax_check": lua_check,
         "interpretation": (
