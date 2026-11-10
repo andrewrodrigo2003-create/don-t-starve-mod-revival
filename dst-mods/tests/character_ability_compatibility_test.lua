@@ -167,5 +167,79 @@ check("server spell state can replicate to client without client-side authority"
     client_net:Get("willow_spell_active") == true
         and not client_net:Set("willow_spell_active", false))
 
+
+-- Execute MAM's real Willow/Bernie post-init wrappers with controlled combat
+-- fixtures. This checks callback composition and guards, not animation/physics.
+local prefab_postinits = {}
+GLOBAL = {
+    setmetatable = setmetatable,
+    rawget = rawget,
+}
+env = {}
+TheWorld = { ismastersim = true }
+local nearby_entities = {}
+TheSim = {
+    FindEntities = function() return nearby_entities end,
+}
+AddPrefabPostInit = function(prefab, fn)
+    prefab_postinits[prefab] = fn
+end
+dofile("dst-mods/metals_and_reforged/initialise/modded_stronger_bernie.lua")
+
+local function make_combatant(prefab, health)
+    local inst = {
+        prefab = prefab,
+        components = {
+            health = {
+                currenthealth = health,
+                SetMaxHealth = function(self, value) self.maxhealth = value end,
+            },
+            combat = {
+                last_damage = nil,
+                GetAttacked = function(self, attacker, damage)
+                    self.last_damage = damage
+                    return true
+                end,
+                DoAreaAttack = function() return -1 end,
+                SetDefaultDamage = function(self, value) self.defaultdamage = value end,
+                SetAreaDamage = function(self, value) self.areahitrange = value end,
+                IsValidTarget = function() return true end,
+            },
+        },
+        Transform = {
+            GetWorldPosition = function() return 0, 0, 0 end,
+        },
+    }
+    inst.components.combat.inst = inst
+    function inst:PushEvent() end
+    return inst
+end
+
+local active_bernie = make_combatant("bernie_active", 500)
+prefab_postinits.bernie_active(active_bernie)
+active_bernie.components.combat:GetAttacked({}, 100)
+check("MAM Bernie Active damage wrapper executes without error",
+    active_bernie.components.combat.last_damage == 75)
+
+local willow_actor = make_combatant("willow", 100)
+nearby_entities = { active_bernie }
+prefab_postinits.willow(willow_actor)
+willow_actor.components.combat:GetAttacked({}, 100)
+check("MAM Willow combat wrapper detects nearby injured Bernie",
+    willow_actor.components.combat.last_damage == 75)
+
+local big_bernie = make_combatant("bernie_big", 3000)
+prefab_postinits.bernie_big(big_bernie)
+local area_target = make_combatant("target_primary", 100)
+local area_secondary = make_combatant("target_secondary", 100)
+area_target.Transform.GetWorldPosition = function() return 0, 0, 0 end
+nearby_entities = { area_target, area_secondary }
+local hit_count = big_bernie.components.combat:DoAreaAttack(area_target, 4)
+check("MAM Bernie Big area attack runs through its replacement callback",
+    hit_count == 1 and area_secondary.components.combat.last_damage == 54)
+check("MAM Bernie Big combat wrapper initializes its configured health and damage",
+    big_bernie.components.health.maxhealth == 3200
+        and big_bernie.components.combat.defaultdamage == 56)
+
 print("\nCharacter ability contracts: " .. passed .. " passed; " .. failed .. " failed")
 if failed > 0 then os.exit(1) end
