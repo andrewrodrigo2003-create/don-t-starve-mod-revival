@@ -227,3 +227,12 @@ Sources:
 - DST component post-init execution: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/entityscript.lua
 - DST prefab post-init execution: https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/mainfunctions.lua
 - Community explanation of callback ordering: https://kleiforums.com/forums/topic/108970-mod-load-order-priority/
+
+
+## 15. Lua lexical masking hardening — long-bracket strings (2026-11-10)
+
+The regex inventory previously masked Lua comments and skipped quoted short strings, but did not recognize long-bracket strings such as `[[...]]`, `[=[...]=]` and higher equals levels. A documentation string containing text like `AddAction("fake")` could therefore be misreported as a live registration candidate.
+
+The masker now recognizes and masks long-bracket string bodies while preserving newline positions, before it interprets comment markers. Two regression tests cover fake hook text inside long-bracket strings and alternate equals levels. This is a false-positive reduction, not a complete Lua lexer; the optional AST analyzer remains the stronger syntax-aware path.
+
+Latest CI run containing these tests: DST Lua wrapper AST audit run #11, ID 42841816648. The unit-test step completed successfully; the full workflow is also running the MAM source scan and artifact upload. Record the final workflow conclusion and actual scan report separately.
