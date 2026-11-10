@@ -32,7 +32,16 @@ function M.WrapCastState(state, target_time, get_equipped_item)
             local components = equip.components
             local reticule = components ~= nil and components.reticule_spawner or nil
             if reticule ~= nil and reticule.Interrupt ~= nil then
-                reticule:Interrupt()
+                -- A third-party reticule hook must not prevent vanilla state cleanup.
+                -- Preserve the error after onexit so the underlying compatibility
+                -- problem remains visible instead of silently swallowing it.
+                local interrupt_ok, interrupt_err = pcall(reticule.Interrupt, reticule)
+                if not interrupt_ok then
+                    if old_onexit ~= nil then
+                        old_onexit(inst, ...)
+                    end
+                    error(interrupt_err, 0)
+                end
             end
         end
 
