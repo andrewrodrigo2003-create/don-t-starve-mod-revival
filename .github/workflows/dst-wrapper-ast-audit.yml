@@ -1,0 +1,40 @@
+name: DST Lua wrapper AST audit
+
+on:
+  pull_request:
+    paths:
+      - "tools/dst_wrapper_audit.py"
+      - "tools/dst_mod_audit.py"
+      - "tools/requirements-audit-ast.txt"
+      - "tests/test_dst_wrapper_audit.py"
+      - "tests/test_dst_mod_audit.py"
+      - ".github/workflows/dst-wrapper-ast-audit.yml"
+  push:
+    paths:
+      - "tools/dst_wrapper_audit.py"
+      - "tools/dst_mod_audit.py"
+      - "tools/requirements-audit-ast.txt"
+      - "tests/test_dst_wrapper_audit.py"
+      - "tests/test_dst_mod_audit.py"
+      - ".github/workflows/dst-wrapper-ast-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  wrapper-ast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tools/requirements-audit-ast.txt
+      - name: Install isolated AST audit dependencies
+        run: python -m pip install -r tools/requirements-audit-ast.txt
+      - name: Run static audit regression tests
+        run: python -m unittest discover -s tests -p "test_dst_*audit.py" -v
