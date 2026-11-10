@@ -129,8 +129,8 @@ class DstModAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             definitions = {
-                "workshop-alpha": ('name = "Alpha\npriority = 40\nmod_dependencies = {"workshop-base"}\n'),
-                "workshop-beta": ('name = "Beta\npriority = -5\n'),
+                "workshop-alpha": ('name = "Alpha"\npriority = 40\nmod_dependencies = {"workshop-base"}\n'),
+                "workshop-beta": ('name = "Beta"\npriority = -5\n'),
             }
             for mod, modinfo in definitions.items():
                 folder = root / mod
