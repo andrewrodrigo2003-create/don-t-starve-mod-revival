@@ -241,22 +241,126 @@ function Smelter:DoneSmelting()
     self:PublishPlan()
 end
 
+function Smelter:RefundActiveReceipt()
+    local receipt = self.active_receipt
+    if type(receipt) ~= "table" or #receipt == 0 then
+        self.active_receipt = nil
+        return true
+    end
+
+    local lootdropper = self.inst.components.lootdropper
+    if lootdropper == nil or type(lootdropper.FlingItem) ~= "function" then
+        MAMLog.Warn("nao foi possivel devolver recibo: lootdropper indisponivel")
+        return false
+    end
+
+    -- Prepara todos os itens antes de entregar qualquer um. Se um prefab nao
+    -- puder nascer, remove os temporarios e mantem o recibo sem alteracao.
+    local staged = {}
+    for index, entry in ipairs(receipt) do
+        if type(entry) ~= "table" or type(entry.prefab) ~= "string"
+            or type(entry.count) ~= "number" or entry.count < 1
+            or entry.count % 1 ~= 0 then
+            for _, pending in ipairs(staged) do
+                if pending.item ~= nil and pending.item:IsValid() then
+                    pending.item:Remove()
+                end
+            end
+            MAMLog.Warn("recibo de estorno invalido; lote permanece protegido")
+            return false
+        end
+
+        local remaining = entry.count
+        while remaining > 0 do
+            local ok, item = MAMLog.Try("smelter:refund:SpawnPrefab", SpawnPrefab, entry.prefab)
+            if not ok or item == nil then
+                for _, pending in ipairs(staged) do
+                    if pending.item ~= nil and pending.item:IsValid() then
+                        pending.item:Remove()
+                    end
+                end
+                MAMLog.Warn("estorno de %s pausado; %d unidade(s) continuam no recibo",
+                    entry.prefab, entry.count)
+                return false
+            end
+
+            local stackable = item.components ~= nil and item.components.stackable or nil
+            local amount = 1
+            if stackable ~= nil then
+                local maxsize = tonumber(stackable.maxsize) or 20
+                if maxsize > 0 then
+                    amount = math.min(remaining, maxsize)
+                end
+                if amount > 1 then
+                    stackable:SetStackSize(amount)
+                end
+            end
+
+            table.insert(staged, { item = item, receipt_index = index, amount = amount })
+            remaining = remaining - amount
+        end
+    end
+
+    -- FlingItem e sincrono no lootdropper vanilla. Atualiza o recibo a cada
+    -- entrega para que uma falha posterior nao duplique itens ja lancados.
+    for i, pending in ipairs(staged) do
+        local ok = MAMLog.Try("smelter:refund:FlingItem",
+            lootdropper.FlingItem, lootdropper, pending.item)
+        if not ok then
+            for j = i, #staged do
+                local item = staged[j].item
+                if item ~= nil and item:IsValid() then
+                    item:Remove()
+                end
+            end
+            local remaining_receipt = {}
+            for _, entry in ipairs(receipt) do
+                if entry.count > 0 then
+                    table.insert(remaining_receipt, entry)
+                end
+            end
+            self.active_receipt = #remaining_receipt > 0 and remaining_receipt or nil
+            MAMLog.Warn("estorno parcialmente entregue; recibo restante preservado")
+            return false
+        end
+
+        local entry = receipt[pending.receipt_index]
+        entry.count = entry.count - pending.amount
+    end
+
+    local remaining_receipt = {}
+    for _, entry in ipairs(receipt) do
+        if entry.count > 0 then
+            table.insert(remaining_receipt, entry)
+        end
+    end
+    self.active_receipt = #remaining_receipt > 0 and remaining_receipt or nil
+    return self.active_receipt == nil
+end
+
 function Smelter:ResetSmelter()
+    local was_active = self.issmelting == true or self.active_receipt ~= nil
+    if self.active_receipt ~= nil and not self:RefundActiveReceipt() then
+        -- Nao limpar estado nem recibo se a devolucao nao foi concluida.
+        return false
+    elseif was_active and self.active_receipt == nil then
+        MAMLog.WarnOnce("smelter:legacy-active-without-receipt",
+            "fundicao ativa sem recibo salvo; materiais debitados em save antigo nao podem ser reconstruidos")
+    end
+
     self.issmelting = nil
     self.product = nil
     self.canharvest = nil
     self.batch = 1
-
     self.smelttime = 0
 
     local container = self.inst.components.container
     if container ~= nil then
         container.canbeopened = true
 
-        -- A opcao controla tambem uma fundicao interrompida:
-        -- ligada, devolve os materiais que ainda estavam na forja;
-        -- desligada, preserva o comportamento original e destroi as sobras.
-        if MAMConfig.on("mam_leftovers") then
+        -- Cancelamento ativo e rollback integral: devolve tambem as entradas
+        -- ja debitadas, independentemente da antiga opcao de sobras.
+        if was_active or MAMConfig.on("mam_leftovers") then
             container:DropEverything()
         else
             container:DestroyContents()
@@ -271,6 +375,7 @@ function Smelter:ResetSmelter()
     end
 
     self:PublishPlan()
+    return true
 end
 
 function Smelter:Harvest(harvester)
