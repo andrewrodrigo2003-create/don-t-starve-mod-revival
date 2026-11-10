@@ -46,12 +46,29 @@ local distinct_lucy = distinct:ResolveAction("LUCY_THROW")
 check("distinct action IDs coexist in one StateGraph",
     distinct_attack == "heavyattack" and distinct_lucy == "lucy_throw")
 
-local mam_last = make_graph("wilson"):Build({ "WoodieSkillTree", "MetalsAndMore" })
-local woodie_first = make_graph("wilson"):Build({ "MetalsAndMore", "WoodieSkillTree" })
-check("same action ID resolves to the handler applied last (MAM last)",
+local function make_shared_attack_graph()
+    local graph = StateGraph.new("wilson", vanilla_states, vanilla_handlers)
+    graph:RegisterModState("MetalsAndMore", "heavyattack", {
+        name = "heavyattack", owner = "MetalsAndMore",
+    })
+    graph:RegisterModActionHandler("MetalsAndMore", "ATTACK", {
+        destination = "heavyattack", owner = "MetalsAndMore",
+    })
+    graph:RegisterModState("WoodieSkillTree", "lucy_throw", {
+        name = "lucy_throw", owner = "WoodieSkillTree",
+    })
+    graph:RegisterModActionHandler("WoodieSkillTree", "ATTACK", {
+        destination = "lucy_throw", owner = "WoodieSkillTree",
+    })
+    return graph
+end
+
+local mam_last = make_shared_attack_graph():Build({ "WoodieSkillTree", "MetalsAndMore" })
+local woodie_last = make_shared_attack_graph():Build({ "MetalsAndMore", "WoodieSkillTree" })
+check("same ATTACK action resolves to the handler applied last (MAM last)",
     mam_last:ResolveAction("ATTACK") == "heavyattack")
-check("same action ID resolves to the handler applied last (character mod last)",
-    woodie_first:ResolveAction("ATTACK") == "attack")
+check("same ATTACK action resolves to the handler applied last (character mod last)",
+    woodie_last:ResolveAction("ATTACK") == "lucy_throw")
 
 -- A second registration under the same mod is appended and applied in order.
 local repeated = StateGraph.new("wilson", vanilla_states, vanilla_handlers)
