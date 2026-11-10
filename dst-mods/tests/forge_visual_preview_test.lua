@@ -49,6 +49,7 @@ local function make_node(name)
     function node:SetHAlign(value) self.halign = value end
     function node:SetVAlign(value) self.valign = value end
     function node:SetRegionSize(w, h) self.region = { w, h } end
+    function node:EnableWordWrap(value) self.word_wrap = value end
     function node:SetTexture(atlas, texture)
         self.atlas = atlas
         self.texture = texture
