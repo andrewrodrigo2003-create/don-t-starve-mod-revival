@@ -50,6 +50,15 @@ DST_PUBLIC_API_CONTRACTS = {
         "parameters": ["self", "attacker", "damage", "weapon", "stimuli", "spdamage"],
         "source": "https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua",
     },
+    "DoAreaAttack": {
+        "parameters": [
+            "self", "target", "range", "weapon", "validfn",
+            "stimuli", "excludetags", "onlyontarget",
+        ],
+        "return_count": 1,
+        "returns": ["hitcount"],
+        "source": "https://github.com/vietnd69/dst-scripts/blob/main/components/combat.lua",
+    },
 }
 
 
@@ -311,6 +320,41 @@ def _analyze_wrapper(path, target, capture, alias, function_node, body):
     }
 
 
+def _analyze_direct_override(path, target, function_node):
+    contract = _api_contract_evidence(target, function_node, [], [])
+    parameters, has_varargs = _function_parameters(function_node)
+    return {
+        "path": path,
+        "target": target,
+        "captured_alias": None,
+        "capture_line": None,
+        "override_line": _line(function_node),
+        "call_lines": [],
+        "direct_return_sites": [],
+        "captured_result_evidence": [],
+        "api_contract_evidence": contract,
+        "delegation": "no_previous_function_capture_found_in_same_block",
+        "return_handling": "direct_override_without_detected_chain",
+        "control_flow_contains_conditionals": False,
+        "argument_evidence": {
+            "wrapper_parameters": parameters,
+            "wrapper_accepts_varargs": has_varargs,
+            "call_argument_names": [],
+            "call_forwards_varargs": False,
+            "parameter_names_not_seen_as_direct_arguments": [],
+            "self_forwarded_as_first_argument": None,
+            "vararg_forwarding": "not_applicable",
+            "interpretation": "No captured previous function was paired in this lexical block.",
+        },
+        "severity": "review",
+        "confidence": "medium",
+        "analysis_scope": (
+            "AST-based direct method override candidate. A previous implementation may "
+            "exist in another scope/file or be intentionally replaced; runtime behavior is unknown."
+        ),
+    }
+
+
 def analyze_source(path: str, source: str) -> dict:
     try:
         tree = ast.parse(source)
@@ -345,11 +389,17 @@ def analyze_source(path: str, source: str) -> dict:
                 if receiver and method_name:
                     overrides.append((f"{receiver}.{method_name}", statement, statement.body))
         for target, function_node, body in overrides:
-            for alias, capture in captures.items():
-                if capture["target"] == target:
+            matching_captures = [
+                (alias, capture) for alias, capture in captures.items()
+                if capture["target"] == target
+            ]
+            if matching_captures:
+                for alias, capture in matching_captures:
                     findings.append(_analyze_wrapper(
                         path, target, capture, alias, function_node, body
                     ))
+            elif target.rsplit(".", 1)[-1] in DST_PUBLIC_API_CONTRACTS:
+                findings.append(_analyze_direct_override(path, target, function_node))
     return {"path": path, "parse_error": None, "findings": findings}
 
 
