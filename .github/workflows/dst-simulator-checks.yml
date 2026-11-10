@@ -33,5 +33,8 @@ jobs:
             done
           luac5.1 -p dst-mods/tests/simulator_bootstrap_test.lua
 
-      - name: Run simulator self-test
-        run: lua5.1 dst-mods/tests/simulator_bootstrap_test.lua
+      - name: Run simulator self-tests
+        run: |
+          set -euo pipefail
+          lua5.1 dst-mods/tests/simulator_bootstrap_test.lua
+          lua5.1 dst-mods/tests/simulator_container_test.lua
