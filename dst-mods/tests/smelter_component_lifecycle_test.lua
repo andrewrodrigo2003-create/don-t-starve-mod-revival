@@ -259,7 +259,7 @@ local destroyed_container = make_container({ [1] = make_item("copper_ore", 2) })
 local destroyed_smelter = new_smelter(destroyed_container)
 destroyed_smelter.issmelting = true
 destroyed_smelter:ResetSmelter()
-check("interruption destroys leftovers when disabled", destroyed_container.destroy_contents == true)
+check("active interruption returns leftovers even when disabled", destroyed_container.drop_everything == true and destroyed_container.destroy_contents ~= true)
 
 -- An active batch is a transaction: consumed ingredients and unconsumed
 -- leftovers are both returned when the player cancels it with a hammer.
