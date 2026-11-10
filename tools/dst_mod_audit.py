@@ -127,7 +127,7 @@ def source_entries(target: Path):
 
 
 def strip_lua_comments(source: str) -> str:
-    """Mask Lua comments while preserving newlines and quoted strings for conservative scanning."""
+    """Mask comments and long-bracket strings while preserving newlines and quoted strings."""
     out = list(source)
     i, n = 0, len(source)
     quote = None
