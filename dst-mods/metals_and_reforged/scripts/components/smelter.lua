@@ -339,11 +339,12 @@ function Smelter:RefundActiveReceipt()
 end
 
 function Smelter:ResetSmelter()
-    local was_active = self.issmelting == true or self.active_receipt ~= nil
-    if self.active_receipt ~= nil and not self:RefundActiveReceipt() then
+    local had_receipt = self.active_receipt ~= nil
+    local was_active = self.issmelting == true or had_receipt
+    if had_receipt and not self:RefundActiveReceipt() then
         -- Nao limpar estado nem recibo se a devolucao nao foi concluida.
         return false
-    elseif was_active and self.active_receipt == nil then
+    elseif was_active and not had_receipt then
         MAMLog.WarnOnce("smelter:legacy-active-without-receipt",
             "fundicao ativa sem recibo salvo; materiais debitados em save antigo nao podem ser reconstruidos")
     end
