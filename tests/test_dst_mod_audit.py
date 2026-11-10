@@ -124,6 +124,30 @@ class DstModAuditTests(unittest.TestCase):
             ))
 
 
+
+    def test_modinfo_priority_and_dependencies_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            definitions = {
+                "workshop-alpha": ('name = "Alpha\npriority = 40\nmod_dependencies = {"workshop-base"}\n'),
+                "workshop-beta": ('name = "Beta\npriority = -5\n'),
+            }
+            for mod, modinfo in definitions.items():
+                folder = root / mod
+                folder.mkdir()
+                (folder / "modinfo.lua").write_text(modinfo, encoding="utf-8")
+                (folder / "modmain.lua").write_text("GLOBAL.DAMAGETYPES = {}\n", encoding="utf-8")
+            report = MODULE.audit(root)
+            metadata = {item["mod_id"]: item for item in report["mod_metadata"]}
+            self.assertEqual(metadata["workshop-alpha"]["name"], "Alpha")
+            self.assertEqual(metadata["workshop-alpha"]["priority"], 40)
+            self.assertEqual(metadata["workshop-alpha"]["mod_dependencies"], ["workshop-base"])
+            conflict = next(
+                c for c in report["potential_cross_mod_conflicts"]
+                if c["kind"] == "global_assignment"
+            )
+            self.assertEqual(conflict["mod_details"]["workshop-beta"]["priority"], -5)
+
     def test_single_mod_zip_does_not_report_own_files_as_cross_mod(self):
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / "single-mod.zip"
