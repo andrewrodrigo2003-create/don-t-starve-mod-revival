@@ -167,3 +167,10 @@ Interpretation rules:
 New regression fixtures cover competing global assignments, duplicate StateGraph handlers, additive component post-init hooks, Lua comments, and a single-mod ZIP containing multiple internal folders. The existing CI workflow already runs `tests/test_dst_mod_audit.py`, so no new framework or dependency is introduced.
 
 This extension does not change gameplay code, install software, execute scanned Lua, extract ZIPs, or prove in-game compatibility.
+
+
+### Mod metadata enrichment
+
+The scanner also reads only simple literal assignments from `modinfo.lua`: `name`, numeric `priority`, and string entries in `mod_dependencies`. The values are emitted in `mod_metadata` and attached to conflict records as `mod_details`. It does not execute modinfo, resolve expressions/variables, or claim to know the effective load order. Treat priority/dependency values as declared metadata only; confirm actual order from the DST startup log and the exact loader build.
+
+A regression fixture verifies numeric priority, declared dependency extraction, and metadata association with a synthetic conflict. The scanner still requires a collection root (one directory per mod) to compare separate mods.
