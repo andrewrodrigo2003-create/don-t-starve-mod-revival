@@ -174,3 +174,34 @@ This extension does not change gameplay code, install software, execute scanned 
 The scanner also reads only simple literal assignments from `modinfo.lua`: `name`, numeric `priority`, and string entries in `mod_dependencies`. The values are emitted in `mod_metadata` and attached to conflict records as `mod_details`. It does not execute modinfo, resolve expressions/variables, or claim to know the effective load order. Treat priority/dependency values as declared metadata only; confirm actual order from the DST startup log and the exact loader build.
 
 A regression fixture verifies numeric priority, declared dependency extraction, and metadata association with a synthetic conflict. The scanner still requires a collection root (one directory per mod) to compare separate mods.
+
+
+## 13. AST-based wrapper-chain triage (2026-11-10)
+
+An optional, isolated Python tool was added at `tools/dst_wrapper_audit.py`, using pinned `luaparser==4.2.0` and a dedicated requirements file/workflow. The core regex scanner remains independent of this optional dependency.
+
+Current prototype recognizes a conservative same-block pattern:
+1. A local alias captures a dotted receiver method (for example, `local previous = self.SetVal`).
+2. The same lexical block assigns an anonymous function or named method back to that target.
+3. The wrapper body is inspected for calls to the captured alias, direct return of that call, basic `self` forwarding, vararg presence/forwarding, and conditional control-flow nodes.
+
+The report distinguishes no delegation, direct delegation, previous-call return placement, and simple argument evidence. It reports parser errors and applies per-file/total source-size caps. It never executes scanned Lua.
+
+### Prototype limits
+- Same-block matching is not a complete Lua lexical-scope resolver. Shadowing, alias reassignment, aliases passed through tables/closures, bracket/dynamic keys, and cross-file chains may be missed or misassociated.
+- A call appearing inside a conditional is not proof every path delegates. The current conditional flag is a coarse signal, not path-sensitive analysis.
+- Parameter-name matching cannot infer API semantics, intentional transformations, optional arguments, or all multiple-return behavior.
+- The parser's Lua 5.1 grammar pass is not a substitute for the exact game's `luac` or engine runtime.
+- Findings are medium-confidence review candidates, not confirmed defects.
+
+### Regression corpus
+The isolated test module covers cooperative return, missing delegation, previous call without direct return, vararg forwarding and omission, missing `self`, nested closures, conditional calls, unrelated assignments, and captures in different blocks. A dedicated CI workflow installs only the AST tool's optional dependencies and runs both scanner test modules. The workflow result must be checked before calling this extension verified.
+
+### Research decision
+Python `luaparser` was selected over a first Tree-sitter integration because the current scanner is Python and the library exposes typed Lua AST nodes, traversal and source line information. The parser is MIT licensed and supports Lua 5.1; its AST analysis remains optional to avoid coupling the core inventory tool to parser dependencies. Tree-sitter Lua remains a candidate for a future independent comparison, especially if parser resilience/performance becomes a problem.
+
+Sources:
+- https://py-lua-parser.readthedocs.io/en/latest/astnodes.html
+- https://py-lua-parser.readthedocs.io/en/latest/api.html
+- https://pypi.org/project/luaparser/4.2.0/
+- https://tree-sitter-grammars.github.io/tree-sitter-lua/
