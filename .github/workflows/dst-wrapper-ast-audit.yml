@@ -1,6 +1,7 @@
 name: DST Lua wrapper AST audit
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "tools/dst_wrapper_audit.py"
@@ -9,6 +10,7 @@ on:
       - "tests/test_dst_wrapper_audit.py"
       - "tests/test_dst_mod_audit.py"
       - ".github/workflows/dst-wrapper-ast-audit.yml"
+      - "docs/engineering/SOFTWARE_FORENSICS_AND_COMPATIBILITY.md"
   push:
     paths:
       - "tools/dst_wrapper_audit.py"
