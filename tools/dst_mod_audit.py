@@ -203,20 +203,54 @@ def extract_registration_candidates(path: str, content: str) -> list[dict]:
     return found
 
 
-def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]:
-    """Group repeated registrations across top-level mod folders; report candidates, not verdicts."""
-    groups: dict[tuple[str, str], list[dict]] = {}
-    single_mod_root = target.is_dir() and ((target / "modmain.lua").exists() or (target / "modinfo.lua").exists())
+
+def is_single_mod_root(target: Path) -> bool:
+    if target.is_dir():
+        return (target / "modmain.lua").exists() or (target / "modinfo.lua").exists()
     if target.is_file() and zipfile.is_zipfile(target):
         with zipfile.ZipFile(target) as archive:
-            single_mod_root = any(
+            return any(
                 len(PurePosixPath(info.filename).parts) == 1
                 and PurePosixPath(info.filename).name in {"modmain.lua", "modinfo.lua"}
                 for info in archive.infolist()
             )
+    return False
+
+
+def resolve_mod_id(path: str, target: Path, single_root: bool) -> str:
+    if single_root:
+        return target.stem if target.is_file() else target.name
+    parts = PurePosixPath(path).parts
+    return parts[0] if len(parts) > 1 else target.name
+
+
+def extract_modinfo_metadata(path: str, content: str, mod_id: str) -> dict:
+    """Read only simple literal modinfo fields; never execute modinfo.lua."""
+    code = strip_lua_comments(content)
+    name_match = re.search(r"(?m)^\\s*name\\s*=\\s*['\"]([^'\"]+)['\"]", code)
+    priority_match = re.search(r"(?m)^\\s*priority\\s*=\\s*(-?\\d+)", code)
+    dependencies_match = re.search(r"\\bmod_dependencies\\s*=\\s*\\{([^}]*)\\}", code, re.S)
+    dependencies = (
+        re.findall(r"['\"]([^'\"]+)['\"]", dependencies_match.group(1))
+        if dependencies_match else []
+    )
+    return {
+        "mod_id": mod_id,
+        "path": path,
+        "name": name_match.group(1) if name_match else None,
+        "priority": int(priority_match.group(1)) if priority_match else None,
+        "mod_dependencies": dependencies,
+        "metadata_is_partial": name_match is None or priority_match is None,
+    }
+
+
+def find_cross_mod_conflicts(candidates: list[dict], target: Path, metadata_by_mod: dict | None = None) -> list[dict]:
+    """Group repeated registrations across top-level mod folders; report candidates, not verdicts."""
+    groups: dict[tuple[str, str], list[dict]] = {}
+    single_mod_root = is_single_mod_root(target)
+    metadata_by_mod = metadata_by_mod or {}
     for item in candidates:
-        parts = PurePosixPath(item["path"]).parts
-        mod_id = target.stem if single_mod_root else (parts[0] if len(parts) > 1 else target.name)
+        mod_id = resolve_mod_id(item["path"], target, single_mod_root)
         item["mod_id"] = mod_id
         key = (item["kind"], item["target"])
         groups.setdefault(key, []).append(item)
@@ -239,6 +273,7 @@ def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]
             "severity": severity,
             "mods": mods,
             "occurrences": entries,
+            "mod_details": {mod: metadata_by_mod.get(mod) for mod in mods},
             "interpretation": interpretation,
         })
     return conflicts
@@ -246,6 +281,8 @@ def find_cross_mod_conflicts(candidates: list[dict], target: Path) -> list[dict]
 
 def audit(target: Path, run_luac: bool = False) -> dict:
     files, signals, errors, lua_paths, registrations = [], [], [], [], []
+    mod_metadata = {}
+    single_mod_root = is_single_mod_root(target)
     for name, data, error in source_entries(target):
         if error:
             errors.append({"path": name, "error": error})
@@ -258,6 +295,9 @@ def audit(target: Path, run_luac: bool = False) -> dict:
             decoded_lua = decode_text(data)
             if decoded_lua is not None:
                 registrations.extend(extract_registration_candidates(name, decoded_lua))
+                if PurePosixPath(name).name.lower() == "modinfo.lua":
+                    mod_id = resolve_mod_id(name, target, single_mod_root)
+                    mod_metadata[mod_id] = extract_modinfo_metadata(name, decoded_lua, mod_id)
         if Path(name).suffix.lower() not in TEXT_SUFFIXES:
             continue
         content = decode_text(data)
@@ -305,7 +345,8 @@ def audit(target: Path, run_luac: bool = False) -> dict:
         "files": files,
         "signals": signals,
         "registration_candidates": registrations,
-        "potential_cross_mod_conflicts": find_cross_mod_conflicts(registrations, target),
+        "mod_metadata": [mod_metadata[key] for key in sorted(mod_metadata)],
+        "potential_cross_mod_conflicts": find_cross_mod_conflicts(registrations, target, mod_metadata),
         "read_errors": errors,
         "lua_syntax_check": lua_check,
         "interpretation": (
