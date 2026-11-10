@@ -58,9 +58,13 @@ local function make_item(prefab, count, max_stack)
     item.components = {}
     item.components.stackable = {
         maxsize = max_stack or 40,
+        stacksize = item:StackSize(),
         IsStack = function() return item:IsStack() end,
         StackSize = function() return item:StackSize() end,
-        SetStackSize = function(_, value) return item:SetStackSize(value) end,
+        SetStackSize = function(self, value)
+            item:SetStackSize(value)
+            self.stacksize = value
+        end,
     }
     function item:DoTaskInTime(delay, fn)
         return world.scheduler:Schedule(delay, fn)
