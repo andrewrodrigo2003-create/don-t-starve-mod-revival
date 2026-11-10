@@ -44,9 +44,8 @@ end
 
 local require = GLOBAL.require
 
-local function PositionMiniMap(controls, screensize)
+local function PositionMiniMap(controls, screenw_full, screenh_full)
 	local hudscale = controls.top_root:GetScale()
-	local screenw_full, screenh_full = GLOBAL.unpack(screensize)
 	local screenw = screenw_full/hudscale.x
 	local screenh = screenh_full/hudscale.y
 	controls.minimap_small:SetPosition(
@@ -71,16 +70,25 @@ local function AddMiniMap(controls)
 		local MiniMapWidget = require "widgets/minimapwidget"
 
 		controls.minimap_small = controls.top_root:AddChild( MiniMapWidget( mapscale ) )
-		local screensize = {GLOBAL.TheSim:GetScreenSize()}
-		PositionMiniMap(controls, screensize)
+		local screenw, screenh = GLOBAL.TheSim:GetScreenSize()
+		PositionMiniMap(controls, screenw, screenh)
 
 		local OnUpdate_base = controls.OnUpdate
 		controls.OnUpdate = function(self, dt)
 			OnUpdate_base(self, dt)
-			local curscreensize = {GLOBAL.TheSim:GetScreenSize()}
-			if curscreensize[1] ~= screensize[1] or curscreensize[2] ~= screensize[2] then
-				PositionMiniMap(controls, curscreensize)
-				screensize = curscreensize
+
+			-- The vanilla Controls:OnUpdate updates these cached dimensions when
+			-- the screen size changes. Reuse them instead of querying TheSim and
+			-- allocating a temporary table a second time every frame.
+			local curscreenw, curscreenh = self._scrnw, self._scrnh
+			if curscreenw == nil or curscreenh == nil then
+				-- Compatibility fallback for game builds without the cached fields.
+				curscreenw, curscreenh = GLOBAL.TheSim:GetScreenSize()
+			end
+
+			if curscreenw ~= screenw or curscreenh ~= screenh then
+				screenw, screenh = curscreenw, curscreenh
+				PositionMiniMap(self, screenw, screenh)
 			end
 		end
 
