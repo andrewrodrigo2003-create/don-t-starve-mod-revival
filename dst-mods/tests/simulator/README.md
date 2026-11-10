@@ -12,6 +12,7 @@ Run from repository root:
 
 ```sh
 lua5.1 dst-mods/tests/simulator_bootstrap_test.lua
+lua5.1 dst-mods/tests/simulator_container_test.lua
 ```
 
 Evidence is limited to L1/L2 for the implemented core and L3 only for the small combined bootstrap scenario. No real DST runtime, rendering, physics, networking, replicas, save system or game assets are emulated yet.
