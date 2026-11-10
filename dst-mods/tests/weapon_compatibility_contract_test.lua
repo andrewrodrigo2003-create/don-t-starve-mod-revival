@@ -194,6 +194,36 @@ empty_state.onenter({})
 empty_state.onupdate({}, 0.5)
 empty_state.onexit({})
 
+-- A failing third-party reticule hook must not skip vanilla onexit cleanup.
+-- The hook error is rethrown after cleanup so it remains diagnosable.
+local interrupt_failure_cleanup_called = false
+local interrupt_failure_state = {
+    onexit = function()
+        interrupt_failure_cleanup_called = true
+        return "cleaned-after-interrupt-error"
+    end,
+}
+local interrupt_failure_equip = {
+    components = {
+        reticule_spawner = {
+            Interrupt = function()
+                error("simulated reticule interruption failure")
+            end,
+        },
+    },
+}
+stategraph_wrappers.WrapCastState(interrupt_failure_state, 1, function()
+    return interrupt_failure_equip
+end)
+local interrupt_failure_inst = {
+    sg = { statemem = { tm = 0, trgt = 1, equip = interrupt_failure_equip } },
+}
+local interrupt_ok, interrupt_err = pcall(interrupt_failure_state.onexit, interrupt_failure_inst)
+assert(not interrupt_ok and tostring(interrupt_err):find("simulated reticule interruption failure", 1, true),
+    "reticule interruption failure must remain visible")
+assert(interrupt_failure_cleanup_called,
+    "reticule interruption failure must not skip vanilla onexit cleanup")
+
 print("stategraph wrapper contract: OK (arguments, returns, cleanup and guards preserved)")
 
 print("weapon compatibility contract: OK (legacy projectile hook removed; melee/AOE retained)")
