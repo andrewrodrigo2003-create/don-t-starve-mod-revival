@@ -101,9 +101,16 @@ check(server.task_delay == 0.1 and type(server.task) == "function",
 
 -- Preserve the original stack and slot when held by an inventory/container component.
 local received
+local inventory_order = {}
 local inventory = {
-    GiveItem = function(_, item, slot)
-        received = { item = item, slot = slot }
+    RemoveItem = function(_, item, whole_stack)
+        assert(item == server and whole_stack == true, "remove the original stack first")
+        table.insert(inventory_order, "remove")
+        return item
+    end,
+    GiveItem = function(_, item, slot, src_pos, drop_on_fail)
+        received = { item = item, slot = slot, drop_on_fail = drop_on_fail }
+        table.insert(inventory_order, "give")
         return true
     end,
 }
@@ -114,6 +121,9 @@ server.task(server)
 local held_gold = get_spawned()
 check(received ~= nil and received.item == held_gold, "replacement is inserted into owner")
 check(received.slot == 5, "replacement keeps original slot")
+check(received.drop_on_fail == false, "failed container insertion cannot auto-drop elsewhere")
+check(inventory_order[1] == "remove" and inventory_order[2] == "give",
+    "legacy slot is freed before replacement insertion")
 check(held_gold.stack_size == 7, "replacement preserves full legacy stack size")
 check(server.removed, "legacy entity is removed after migration")
 
