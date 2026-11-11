@@ -141,7 +141,11 @@ local function make_instance(container)
     function inst:RemoveTag(tag) self.tags[tag] = nil end
     function inst:GetPosition() return {} end
     function inst.components.lootdropper:FlingItem(item)
+        if self.fail_fling then
+            return false
+        end
         table.insert(self.flung, item)
+        return true
     end
     return inst
 end
@@ -343,6 +347,55 @@ check("rollback restores all iron consumed by batch", returned.iron_ore == 2)
 check("active cancellation returns leftovers even when option is disabled",
     rollback_container.drop_everything == true and rollback_container.destroy_contents ~= true)
 check("successful rollback clears receipt", rollback_smelter.active_receipt == nil)
+
+-- A non-throwing FlingItem rejection must not consume the refund receipt.
+local rejected_container = make_container({})
+local rejected_smelter, rejected_inst = new_smelter(rejected_container)
+rejected_smelter.issmelting = true
+rejected_smelter.active_receipt = { { prefab = "iron_ore", count = 3 } }
+rejected_inst.components.lootdropper.fail_fling = true
+local rejected_spawn
+SpawnPrefab = function(prefab)
+    rejected_spawn = make_item(prefab, 1)
+    return rejected_spawn
+end
+check("FlingItem false return keeps rollback active",
+    rejected_smelter:ResetSmelter() == false and rejected_smelter.issmelting == true)
+check("FlingItem false return preserves full receipt",
+    rejected_smelter.active_receipt ~= nil
+        and rejected_smelter.active_receipt[1].count == 3)
+check("FlingItem false return removes undelivered staged item",
+    rejected_spawn ~= nil and rejected_spawn.removed)
+check("FlingItem false return does not record delivery",
+    #rejected_inst.components.lootdropper.flung == 0)
+
+-- Extension callbacks must not interrupt authoritative state transitions.
+local callback_container = make_container({ [1] = make_item("copper_ore", 2) })
+local callback_smelter = new_smelter(callback_container)
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 3,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 1 } },
+}
+callback_smelter.startsmeltingfn = function() error("simulated visual callback failure") end
+callback_smelter.onplanfn = function() error("simulated plan callback failure") end
+check("callback errors do not abort a valid smelting transaction",
+    callback_smelter:StartSmelting() == true and callback_smelter.issmelting == true)
+callback_smelter.donesmeltingfn = function() error("simulated completion callback failure") end
+callback_smelter:DoneSmelting()
+check("completion callback error does not block ready state",
+    callback_smelter.canharvest == true and callback_smelter.issmelting == nil)
+callback_smelter.onharvest = function() error("simulated harvest callback failure") end
+SpawnPrefab = function(prefab)
+    return { prefab = prefab, components = {}, DoTaskInTime = function() end }
+end
+local callback_delivered = 0
+local callback_harvester = { components = { inventory = {
+    GiveItem = function(_, item) callback_delivered = callback_delivered + 1; item.removed = true end,
+} } }
+check("harvest callback error does not prevent output reset",
+    callback_smelter:Harvest(callback_harvester) == true
+        and callback_smelter.product == nil and callback_smelter.canharvest == nil)
+check("harvest callback error still delivers output", callback_delivered == 1)
 
 -- A completed batch commits its receipt; later reset/harvest must not refund it.
 local committed_container = make_container({})
