@@ -19,6 +19,16 @@ local FORGE_PREFAB = "metal_smelter"
 local FONT = GLOBAL.BODYTEXTFONT or GLOBAL.UIFONT or GLOBAL.NUMBERFONT
 local QUANTITY_FONT = GLOBAL.NUMBERFONT or "stint-ucr"
 
+local unpack = GLOBAL.unpack or unpack
+
+local function pack(...)
+    return { n = select("#", ...), ... }
+end
+
+local function unpack_results(results)
+    return unpack(results, 1, results.n)
+end
+
 local function button_info(self)
     if self.container == nil or self.container.replica == nil
         or self.container.replica.container == nil then
@@ -220,8 +230,8 @@ AddClassPostConstruct("widgets/containerwidget", function(ContainerWidget)
     -- Open: instala o listener de plano replicado e cria o preview da forja
     ---------------------------------------------------------------------
     local oldOpen = ContainerWidget.Open
-    function ContainerWidget:Open(container, doer)
-        local ret = oldOpen(self, container, doer)
+    function ContainerWidget:Open(container, doer, ...)
+        local results = pack(oldOpen(self, container, doer, ...))
 
         if container ~= nil and self.mam_plan_listener == nil then
             self.mam_plan_listener = function()
@@ -234,7 +244,7 @@ AddClassPostConstruct("widgets/containerwidget", function(ContainerWidget)
         make_preview(self)
         update_container(self)
 
-        return ret
+        return unpack_results(results)
     end
 
     ---------------------------------------------------------------------
@@ -244,9 +254,9 @@ AddClassPostConstruct("widgets/containerwidget", function(ContainerWidget)
         local old = ContainerWidget[name]
         if type(old) == "function" then
             ContainerWidget[name] = function(self, ...)
-                local ret, ret2 = old(self, ...)
+                local results = pack(old(self, ...))
                 MAMLog.Try("forecast:" .. name, update_container, self)
-                return ret, ret2
+                return unpack_results(results)
             end
         end
     end
