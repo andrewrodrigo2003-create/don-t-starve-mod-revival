@@ -258,6 +258,10 @@ function Smelter:ResumeSmelting()
 end
 
 function Smelter:DoneSmelting()
+    if self.refund_pending then
+        return false
+    end
+
     self:StopUpdating()
     -- O custo foi confirmado: nao ha reembolso apos concluir a fundicao.
     self.active_receipt = nil
