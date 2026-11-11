@@ -44,6 +44,7 @@ jobs:
             dst-mods/tests/forecast_ambiguous_start_test.lua \
             dst-mods/tests/legacy_recipe_default_weight_test.lua \
             dst-mods/tests/smelter_component_lifecycle_test.lua \
+            dst-mods/tests/smelter_destruction_harvest_test.lua \
             dst-mods/tests/smelter_stack_settings_test.lua \
             dst-mods/tests/metal_storage_chest_test.lua \
             dst-mods/tests/mam_config_test.lua \
