@@ -1,26 +1,49 @@
 -- Stategraph callback wrappers for MAM spell/cast states.
 -- Preserve vanilla callback arguments and return values, and always run onexit.
 local M = {}
+local unpack = unpack
+
+local function pack(...)
+    return { n = select("#", ...), ... }
+end
+
+local function unpack_results(results)
+    return unpack(results, 1, results.n)
+end
 
 function M.WrapCastState(state, target_time, get_equipped_item)
-    if type(state) ~= "table" then
+    if type(state) ~= "table" or state.mam_cast_wrapper then
         return false
     end
+
+    state.mam_cast_wrapper = true
 
     local old_onenter = state.onenter
     local old_onexit = state.onexit
     local old_onupdate = state.onupdate
 
     state.onenter = function(inst, ...)
-        local statemem = inst.sg ~= nil and inst.sg.statemem or nil
+        local statemem = inst ~= nil and inst.sg ~= nil and inst.sg.statemem or nil
+        local equipped_ok, equipped = true, nil
+        if type(get_equipped_item) == "function" then
+            equipped_ok, equipped = pcall(get_equipped_item, inst)
+        end
+
         if statemem ~= nil then
             statemem.tm = 0
             statemem.trgt = target_time
-            statemem.equip = get_equipped_item ~= nil and get_equipped_item(inst) or nil
+            statemem.equip = equipped_ok and equipped or nil
         end
 
+        local results
         if old_onenter ~= nil then
-            return old_onenter(inst, ...)
+            results = pack(old_onenter(inst, ...))
+        end
+        if not equipped_ok then
+            error(equipped, 0)
+        end
+        if results ~= nil then
+            return unpack_results(results)
         end
     end
 
