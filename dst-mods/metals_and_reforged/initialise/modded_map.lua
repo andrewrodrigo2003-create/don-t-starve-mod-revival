@@ -42,7 +42,6 @@ elseif y_align == "bottom" then
 	margin_dir_vert = 1
 end
 
-local require = GLOBAL.require
 
 local function PositionMiniMap(controls, screenw_full, screenh_full)
 	local hudscale = controls.top_root:GetScale()
@@ -113,7 +112,7 @@ AddClassPostConstruct( "widgets/controls", AddMiniMap )
 -- special case: ToggleMap gets bypassed when the map gets hidden while on the map screen
 local MapScreen = require "screens/mapscreen"
 
-MapScreen_OnControl_base = MapScreen.OnControl
+local MapScreen_OnControl_base = MapScreen.OnControl
 MapScreen.OnControl = function( self, control, down )
 	local ret = MapScreen_OnControl_base(self, control, down)
 
@@ -128,7 +127,7 @@ end
 -- keep track of zooming while on the map screen
 local MapWidget = require "widgets/mapwidget"
 
-MapWidget_OnZoomIn_base = MapWidget.OnZoomIn
+local MapWidget_OnZoomIn_base = MapWidget.OnZoomIn
 MapWidget.OnZoomIn = function(self)
 	MapWidget_OnZoomIn_base( self )
 	if minimap_small and self.shown then
@@ -136,7 +135,7 @@ MapWidget.OnZoomIn = function(self)
 	end
 end
 
-MapWidget_OnZoomOut_base = MapWidget.OnZoomOut
+local MapWidget_OnZoomOut_base = MapWidget.OnZoomOut
 MapWidget.OnZoomOut = function(self)
 	MapWidget_OnZoomOut_base( self )
 	if minimap_small and self.shown then
