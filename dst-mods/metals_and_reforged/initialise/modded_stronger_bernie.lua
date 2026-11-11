@@ -6,7 +6,7 @@ AddPrefabPostInit("bernie_big", function(inst)
     end
     inst.attacktime = 0
             local _getAttacked = inst.components.combat.GetAttacked
-                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli)
+                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli, spdamage, ...)
                               local currenthealth = inst.components.health.currenthealth
                                      if inst.attacktime > 0 then
                                                 damage = 0
@@ -18,40 +18,58 @@ AddPrefabPostInit("bernie_big", function(inst)
                                             damage = damage*0.45  
                                      end 
 
-                     return _getAttacked(self, attacker, damage, weapon, stimuli) 
+                     return _getAttacked(self, attacker, damage, weapon, stimuli, spdamage, ...) 
       end
 
             local _doAreaAttack = inst.components.combat.DoAreaAttack
-                   inst.components.combat.DoAreaAttack = function(self, target, range, weapon, validfn, stimuli, excludetags) --damage默认为攻击者的攻击力
-                            
-
-    local hitcount = 0
-    local excludetags = { "INLIMBO", "player", "companion", "wall" }                              
-    local x, y, z = target.Transform:GetWorldPosition()
-    local ents = TheSim:FindEntities(x, y, z, range, { "_combat" }, excludetags)
-    for i, ent in ipairs(ents) do
-        local leaders = ent.components.follower and ent.components.follower.leader
-        if ent ~= target and
-            ent ~= self.inst and
-            self:IsValidTarget(ent) and
-            (validfn == nil or validfn(ent, self.inst)) and not (leaders and leaders:HasTag("player")) then
-            self.inst:PushEvent("onareaattackother", { target = ent, weapon = weapon, stimuli = stimuli })
-                  if inst.components.combat.defaultdamage == 72.8 then  --
-                        ent.components.combat:GetAttacked(self.inst, 70.2, weapon, stimuli)
-                  elseif inst.components.combat.defaultdamage == 85 then  --
-                        ent.components.combat:GetAttacked(self.inst, 82, weapon, stimuli)                        
-                  else
-                        ent.components.combat:GetAttacked(self.inst, 54, weapon, stimuli)
-                  end       
-            hitcount = hitcount + 1
+                   inst.components.combat.DoAreaAttack = function(self, target, range, weapon, validfn, stimuli, excludetags, onlyontarget, ...)
+        local function get_area_damage()
+            if inst.components.combat.defaultdamage == 72.8 then
+                return 70.2
+            elseif inst.components.combat.defaultdamage == 85 then
+                return 82
+            end
+            return 54
         end
-    end
 
-    return hitcount                  
-                    -- return _doAreaAttack(self, target, range, weapon, validfn, stimuli, excludetags) 
-      end
+        if target == nil then
+            return 0
+        end
 
-   -- inst.components.combat.areahitrange = 4
+        if onlyontarget then
+            if self:IsValidTarget(target) and
+                (validfn == nil or validfn(target, self.inst)) and
+                target.components.combat ~= nil then
+                self.inst:PushEvent("onareaattackother", { target = target, weapon = weapon, stimuli = stimuli })
+                target.components.combat:GetAttacked(self.inst, get_area_damage(), weapon, stimuli)
+                return 1
+            end
+            return 0
+        end
+
+        local hitcount = 0
+        local bernie_exclude_tags = { "INLIMBO", "player", "companion", "wall" }
+        for _, tag in ipairs(excludetags or {}) do
+            table.insert(bernie_exclude_tags, tag)
+        end
+        if target.Transform == nil then
+            return 0
+        end
+        local x, y, z = target.Transform:GetWorldPosition()
+        local ents = TheSim:FindEntities(x, y, z, range, { "_combat" }, bernie_exclude_tags)
+        for _, ent in ipairs(ents) do
+            local leaders = ent.components.follower and ent.components.follower.leader
+            if ent ~= target and ent ~= self.inst and self:IsValidTarget(ent) and
+                (validfn == nil or validfn(ent, self.inst)) and
+                not (leaders and leaders:HasTag("player")) and ent.components.combat ~= nil then
+                self.inst:PushEvent("onareaattackother", { target = ent, weapon = weapon, stimuli = stimuli })
+                ent.components.combat:GetAttacked(self.inst, get_area_damage(), weapon, stimuli)
+                hitcount = hitcount + 1
+            end
+        end
+
+        return hitcount
+    end = 4
     inst.components.combat:SetDefaultDamage(56)
     inst.components.combat:SetAreaDamage(4)
     inst.components.health:SetMaxHealth(3200)
@@ -90,7 +108,7 @@ AddPrefabPostInit("bernie_active", function(inst) --._leader
 
     inst.components.health:SetMaxHealth(1500)
                 local _getAttacked = inst.components.combat.GetAttacked
-                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli) 
+                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli, spdamage, ...) 
                               local currenthealth = inst.components.health.currenthealth
                                       if inst.attacktime > 0 then
                                                 damage = 0
@@ -99,7 +117,7 @@ AddPrefabPostInit("bernie_active", function(inst) --._leader
                                                      damage = damage*0.75
    
                                      end              
-                     return _getAttacked(self, attacker, damage, weapon, stimuli) 
+                     return _getAttacked(self, attacker, damage, weapon, stimuli, spdamage, ...) 
       end
 end)
 
@@ -110,7 +128,7 @@ AddPrefabPostInit("willow", function(inst) --._leader
     end
 
                 local _getAttacked = inst.components.combat.GetAttacked
-                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli)
+                   inst.components.combat.GetAttacked = function(self, attacker, damage, weapon, stimuli, spdamage, ...)
                                           local x, y, z = inst.Transform:GetWorldPosition()
                                           local ents = TheSim:FindEntities(x, y, z, 30)
                                               for i, ent in ipairs(ents) do
@@ -118,7 +136,7 @@ AddPrefabPostInit("willow", function(inst) --._leader
                                                                 damage = damage*0.75
                                                           end       
                                                end             
-                     return _getAttacked(self, attacker, damage, weapon, stimuli) 
+                     return _getAttacked(self, attacker, damage, weapon, stimuli, spdamage, ...) 
       end
 end)      
 
