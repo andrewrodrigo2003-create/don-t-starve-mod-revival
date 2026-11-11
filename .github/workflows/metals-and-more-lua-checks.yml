@@ -59,6 +59,9 @@ jobs:
             fi
           done
 
+      - name: Verify registered custom asset paths
+        run: python3 dst-mods/tests/mod_asset_reference_test.py
+
       - name: Package installable mod
         run: |
           set -euo pipefail
