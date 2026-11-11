@@ -50,6 +50,8 @@ jobs:
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
             dst-mods/tests/weapon_compatibility_contract_test.lua
+            dst-mods/tests/combat_wrapper_contract_test.lua \
+            dst-mods/tests/forge_visual_preview_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
