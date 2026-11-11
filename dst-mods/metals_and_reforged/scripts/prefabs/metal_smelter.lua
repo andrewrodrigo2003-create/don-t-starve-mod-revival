@@ -97,7 +97,7 @@ local function onhammered(inst, worker)
     for index, entry in ipairs(staged) do
         local ok, result = pcall(lootdropper.FlingItem, lootdropper, entry.item)
         if not ok or result == false then
-            remove_staged_items(staged, index + 1)
+            remove_staged_items(staged, index)
             if smelter ~= nil then
                 smelter.batch = remaining
             end
@@ -149,7 +149,11 @@ end
 local function onhit(inst)
 
 	if inst.components.smelter.issmelting then
-		inst.components.smelter:ResetSmelter()
+		local reset = inst.components.smelter:ResetSmelter()
+		if reset == false then
+			-- Estorno temporariamente indisponivel: preserve o estado visual ativo.
+			return
+		end
 		inst.AnimState:PlayAnimation("hit_empty")
 		inst.AnimState:PushAnimation("idle_empty")
 	elseif inst.components.smelter.canharvest and inst.components.smelter.product then
