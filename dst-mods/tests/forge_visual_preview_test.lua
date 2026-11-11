@@ -111,23 +111,32 @@ function ContainerWidget:AddChild(child)
     child.parent = self
     return child
 end
-function ContainerWidget:Open(container)
+function ContainerWidget:Open(container, doer, extra)
     self.container = container
     self.button = {
         text = "",
         SetText = function(button, value) button.text = value end,
     }
     self.isopen = true
-    return "opened"
+    return "opened", nil, extra
 end
 function ContainerWidget:Close()
     self.container = nil
     self.isopen = false
     return "closed"
 end
-function ContainerWidget:Refresh() self.refreshes = (self.refreshes or 0) + 1 end
-function ContainerWidget:OnItemGet() self.itemgets = (self.itemgets or 0) + 1 end
-function ContainerWidget:OnItemLose() self.itemloses = (self.itemloses or 0) + 1 end
+function ContainerWidget:Refresh()
+    self.refreshes = (self.refreshes or 0) + 1
+    return "refreshed", nil, "refresh-tail"
+end
+function ContainerWidget:OnItemGet()
+    self.itemgets = (self.itemgets or 0) + 1
+    return "got-item", nil, "itemget-tail"
+end
+function ContainerWidget:OnItemLose()
+    self.itemloses = (self.itemloses or 0) + 1
+    return "lost-item", nil, "itemlose-tail"
+end
 
 local source = "dst-mods/metals_and_reforged/initialise/modded_ui_forecast.lua"
 dofile(source)
@@ -162,7 +171,9 @@ end
 
 local widget = setmetatable({ children = {} }, ContainerWidget)
 local forge = make_container("metal_smelter")
-assert(widget:Open(forge) == "opened", "base Open return value must be preserved")
+local open_result, open_middle, open_tail = widget:Open(forge, "doer", "open-tail")
+assert(open_result == "opened" and open_middle == nil and open_tail == "open-tail",
+    "Open must preserve all base return values and forward extra arguments")
 assert(widget.mam_forge_preview ~= nil, "forge preview panel must be created")
 assert(widget.mam_forge_preview.name.string == "Copper Ingot", "product name must be displayed")
 assert(widget.mam_forge_preview.name.position[1] == -48
@@ -187,7 +198,9 @@ current_plan = {
     product = "iron_ingot",
     count = 2,
 }
-widget:OnItemGet({})
+local get_result, get_middle, get_tail = widget:OnItemGet({})
+assert(get_result == "got-item" and get_middle == nil and get_tail == "itemget-tail",
+    "OnItemGet must preserve all base return values")
 assert(widget.mam_forge_preview.name.string == "Iron Ingot", "item changes must refresh product name")
 assert(widget.mam_forge_preview.quantity.string == "2", "item changes must refresh the stack count")
 assert(widget.mam_forge_preview.icon.texture == "iron_ingot.tex", "item changes must refresh product image")
@@ -198,7 +211,9 @@ current_plan = {
     product = "copper_ingot",
     count = 1500,
 }
-widget:Refresh()
+local refresh_result, refresh_middle, refresh_tail = widget:Refresh()
+assert(refresh_result == "refreshed" and refresh_middle == nil and refresh_tail == "refresh-tail",
+    "Refresh must preserve all base return values")
 assert(widget.mam_forge_preview.quantity.string == "999+",
     "large stacks must follow the vanilla 999+ display cap")
 assert(widget.mam_forge_preview.quantity.size == 36,
