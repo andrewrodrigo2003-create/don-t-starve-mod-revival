@@ -379,6 +379,10 @@ check("failed rollback locks the container against new input",
 local pending_save = rejected_smelter:OnSave()
 check("pending rollback state is persisted",
     pending_save.refund_pending == true and pending_save.active_receipt ~= nil)
+check("pending refund cannot be committed as finished output",
+    rejected_smelter:DoneSmelting() == false
+        and rejected_smelter.canharvest == nil
+        and rejected_smelter.active_receipt ~= nil)
 rejected_inst.components.lootdropper.fail_fling = false
 rejected_smelter:Update(0.5)
 check("scheduled update retries and completes the refund",
