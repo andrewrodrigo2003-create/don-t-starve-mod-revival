@@ -771,12 +771,14 @@ AddComponentPostInit(
 )
 local cast_state_times = { book = 25 * b, castspell = 53 * b }
 for state_name, target_time in pairs(cast_state_times) do
+    -- Lua 5.1 closures capture loop variables; copy both values per callback.
+    local wrapped_state_name, wrapped_target_time = state_name, target_time
     AddStategraphPostInit(
         "wilson",
         function(self)
-            local state = self.states ~= nil and self.states[state_name] or nil
+            local state = self.states ~= nil and self.states[wrapped_state_name] or nil
             if state ~= nil then
-                MAMStategraphWrappers.WrapCastState(state, target_time, function(inst)
+                MAMStategraphWrappers.WrapCastState(state, wrapped_target_time, function(inst)
                     local inventory = inst.components ~= nil and inst.components.inventory or nil
                     return inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
                 end)
