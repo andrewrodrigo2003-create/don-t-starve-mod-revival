@@ -59,5 +59,9 @@ assert(bernie_source:find("function(self, attacker, damage, weapon, stimuli, spd
     "Bernie damage wrappers must preserve special damage")
 assert(bernie_source:find("_doAreaAttack(self, target, range, weapon, validfn, stimuli, excludetags, onlyontarget, ...)", 1, true),
     "Bernie area wrapper must preserve onlyontarget semantics")
+assert(bernie_source:find('if select("#", ...) > 0 then', 1, true),
+    "Bernie area wrapper must delegate unknown trailing arguments")
+assert(bernie_source:find('not (leaders and leaders:HasTag("player"))', 1, true),
+    "Bernie area wrapper must preserve its player-follower exclusion")
 
 print("combat wrapper contract: OK (spdamage, varargs, area multiplier, scoped override)")
