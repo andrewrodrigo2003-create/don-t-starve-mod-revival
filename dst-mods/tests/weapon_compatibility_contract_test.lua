@@ -33,6 +33,11 @@ for _, fragment in ipairs(required) do
         "Missing retained weapon compatibility contract: " .. fragment)
 end
 
+assert(weapon_source:find("local wrapped_state_name, wrapped_target_time = state_name, target_time", 1, true),
+    "stategraph loop must capture a fresh state name and target time per callback")
+assert(weapon_source:find("self.states[wrapped_state_name]", 1, true),
+    "stategraph callback must use the captured state name")
+
 local forbidden = {
     "function self:SetProjectile",
     "self.altprojectile",
@@ -223,6 +228,31 @@ assert(not interrupt_ok and tostring(interrupt_err):find("simulated reticule int
     "reticule interruption failure must remain visible")
 assert(interrupt_failure_cleanup_called,
     "reticule interruption failure must not skip vanilla onexit cleanup")
+
+-- onenter must still run vanilla setup when the optional equipment getter fails.
+local getter_error_state = {
+    onenter = function()
+        getter_old_enter_called = true
+        return "vanilla-entered", nil, "tail"
+    end,
+}
+local getter_old_enter_called = false
+stategraph_wrappers.WrapCastState(getter_error_state, 1, function()
+    error("simulated equipment getter failure")
+end)
+local getter_ok, getter_error = pcall(getter_error_state.onenter, { sg = { statemem = {} } })
+assert(not getter_ok and tostring(getter_error):find("simulated equipment getter failure", 1, true),
+    "equipment getter failure must remain visible")
+assert(getter_old_enter_called, "equipment getter failure must not skip vanilla onenter")
+
+-- Wrapping the same state twice must not double-advance or interrupt it.
+local idempotent_state = { onupdate = function() return "once" end }
+assert(stategraph_wrappers.WrapCastState(idempotent_state, 1, function() return nil end),
+    "first wrapper should install")
+assert(stategraph_wrappers.WrapCastState(idempotent_state, 1, function() return nil end) == false,
+    "second wrapper should be rejected")
+assert(idempotent_state.onupdate({ sg = { statemem = {} } }, 0.5) == "once",
+    "idempotent wrapper must call original once")
 
 print("stategraph wrapper contract: OK (arguments, returns, cleanup and guards preserved)")
 
