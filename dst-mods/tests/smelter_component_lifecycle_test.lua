@@ -126,8 +126,10 @@ local function make_instance(container)
             set = function(self, value) self.value = value end,
         },
     }
-    function inst:DoPeriodicTask()
+    function inst:DoPeriodicTask(period, fn, initial_delay, ...)
         self.periodic_calls = (self.periodic_calls or 0) + 1
+        self.last_periodic_fn = fn
+        self.last_periodic_args = { ... }
         local task = { cancelled = false }
         function task:Cancel() self.cancelled = true end
         self.last_periodic_task = task
@@ -368,6 +370,27 @@ check("FlingItem false return removes undelivered staged item",
     rejected_spawn ~= nil and rejected_spawn.removed)
 check("FlingItem false return does not record delivery",
     #rejected_inst.components.lootdropper.flung == 0)
+check("failed rollback enters a dedicated retry state",
+    rejected_smelter.refund_pending == true
+        and rejected_smelter.task ~= nil
+        and rejected_smelter.issmelting == true)
+check("failed rollback locks the container against new input",
+    rejected_container.canbeopened == false and rejected_container.closed == true)
+local pending_save = rejected_smelter:OnSave()
+check("pending rollback state is persisted",
+    pending_save.refund_pending == true and pending_save.active_receipt ~= nil)
+rejected_inst.components.lootdropper.fail_fling = false
+rejected_smelter:Update(0.5)
+check("scheduled update retries and completes the refund",
+    rejected_smelter.refund_pending == nil
+        and rejected_smelter.active_receipt == nil
+        and rejected_smelter.issmelting == nil)
+check("successful retry unlocks the container",
+    rejected_container.canbeopened == true)
+check("successful retry delivers the exact owed amount",
+    #rejected_inst.components.lootdropper.flung == 1
+        and rejected_inst.components.lootdropper.flung[1].prefab == "iron_ore"
+        and rejected_inst.components.lootdropper.flung[1].components.stackable.stacksize == 3)
 
 -- Extension callbacks must not interrupt authoritative state transitions.
 local callback_container = make_container({ [1] = make_item("copper_ore", 2) })
