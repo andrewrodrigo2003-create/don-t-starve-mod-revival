@@ -29,6 +29,11 @@ local function fn()
     inst.entity:AddNetwork()
 
     MakeInventoryPhysics(inst)
+
+    -- This legacy migration prefab is networked even though it exists only
+    -- briefly before being replaced by gold nuggets. Mark it pristine on both
+    -- server and clients before the master-sim-only component setup.
+    inst.entity:SetPristine()
 		
 	if not TheWorld.ismastersim then
         return inst
