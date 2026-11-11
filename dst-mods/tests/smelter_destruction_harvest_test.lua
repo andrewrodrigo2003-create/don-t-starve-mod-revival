@@ -54,9 +54,13 @@ local function make_inst()
             self.components.lootdropper = {
                 flung = {},
                 dropped = false,
+                fling_calls = 0,
                 FlingItem = function(c, item)
+                    c.fling_calls = c.fling_calls + 1
                     if c.fail_fling then error("simulated FlingItem failure") end
+                    if c.fail_fling_on == c.fling_calls then return false end
                     table.insert(c.flung, item)
+                    return true
                 end,
                 DropLoot = function(c) c.dropped = true end,
             }
@@ -149,6 +153,32 @@ check("retry stack quantities are 20/20/5",
         and flung[3].components.stackable.stacksize == 5)
 check("retry drops structure loot after product", inst.components.lootdropper.dropped)
 check("retry drops container contents before removal", inst.components.container.dropped)
+
+-- Partial delivery rejection retains only the undelivered remainder.
+current_smelter = {
+    issmelting = false, canharvest = true, product = "copper_ingot", batch = 45,
+    ResetSmelter = function(s) s.issmelting = false; return true end,
+}
+local partial_inst = captured.fn()
+partial_inst.components.lootdropper.fail_fling_on = 2
+product_attempts = 0
+fail_on_second_spawn = false
+partial_inst.components.workable.finish(partial_inst, {})
+check("partial delivery rejection keeps furnace alive", not partial_inst.removed)
+check("partial delivery rejection preserves remaining batch", current_smelter.batch == 25)
+check("partial delivery rejection keeps first delivered stack exactly once",
+    #partial_inst.components.lootdropper.flung == 1
+        and partial_inst.components.lootdropper.flung[1].components.stackable.stacksize == 20)
+check("partial delivery rejection restores hammer work", partial_inst.components.workable.workleft == 1)
+check("partial delivery rejection does not drop container or structure loot",
+    not partial_inst.components.container.dropped and not partial_inst.components.lootdropper.dropped)
+partial_inst.components.lootdropper.fail_fling_on = nil
+partial_inst.components.workable.finish(partial_inst, {})
+check("partial delivery retry destroys furnace after completion", partial_inst.removed)
+check("partial delivery retry delivers only remaining 25 units",
+    #partial_inst.components.lootdropper.flung == 3
+        and partial_inst.components.lootdropper.flung[2].components.stackable.stacksize == 20
+        and partial_inst.components.lootdropper.flung[3].components.stackable.stacksize == 5)
 
 -- Active smelting is not destroyed when its transactional refund fails.
 current_smelter = {
