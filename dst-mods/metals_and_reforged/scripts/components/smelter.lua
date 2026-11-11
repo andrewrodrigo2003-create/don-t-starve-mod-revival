@@ -606,7 +606,13 @@ function Smelter:OnLoad(data)
         if self.refund_pending then
             self.issmelting = true
             self.canharvest = nil
-            self:ResumeSmelting()
+            local container = self.inst.components.container
+            if container ~= nil then
+                container:Close()
+                container.canbeopened = false
+            end
+            self:PublishPlan()
+            self:Update(0)
         -- Estado pronto-colher tem precedencia sobre issmelting em saves
         -- antigos/inconsistentes. Nao chamar DoneSmelting durante OnLoad:
         -- o container pode ainda nao ter restaurado as sobras.
