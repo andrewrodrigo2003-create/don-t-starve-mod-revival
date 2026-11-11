@@ -219,7 +219,7 @@ function Smelter:StartSmelting(doer)
     end
 
     if self.startsmeltingfn then
-        self.startsmeltingfn(self.inst)
+        MAMLog.Try("smelter:startsmeltingfn", self.startsmeltingfn, self.inst)
     end
 
     container:Close()
@@ -229,7 +229,7 @@ function Smelter:StartSmelting(doer)
     self:Update(0)
 
     if self.onplanfn then
-        self.onplanfn(self.inst, plan)
+        MAMLog.Try("smelter:onplanfn", self.onplanfn, self.inst, plan)
     end
 
     return true
@@ -264,7 +264,7 @@ function Smelter:DoneSmelting()
     self.canharvest = true
 
     if self.donesmeltingfn then
-        self.donesmeltingfn(self.inst)
+        MAMLog.Try("smelter:donesmeltingfn", self.donesmeltingfn, self.inst)
     end
 
     self.inst:AddTag(READY_TAG)
@@ -345,9 +345,9 @@ function Smelter:RefundActiveReceipt()
     -- FlingItem e sincrono no lootdropper vanilla. Atualiza o recibo a cada
     -- entrega para que uma falha posterior nao duplique itens ja lancados.
     for i, pending in ipairs(staged) do
-        local ok = MAMLog.Try("smelter:refund:FlingItem",
+        local ok, delivered = MAMLog.Try("smelter:refund:FlingItem",
             lootdropper.FlingItem, lootdropper, pending.item)
-        if not ok then
+        if not ok or delivered == false then
             for j = i, #staged do
                 local item = staged[j].item
                 if item ~= nil and item:IsValid() then
@@ -475,7 +475,7 @@ function Smelter:Harvest(harvester)
     end
 
     if self.onharvest then
-        self.onharvest(self.inst)
+        MAMLog.Try("smelter:onharvest", self.onharvest, self.inst)
     end
 
     self:ResetSmelter()
