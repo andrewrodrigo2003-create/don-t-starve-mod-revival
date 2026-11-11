@@ -230,13 +230,13 @@ assert(interrupt_failure_cleanup_called,
     "reticule interruption failure must not skip vanilla onexit cleanup")
 
 -- onenter must still run vanilla setup when the optional equipment getter fails.
+local getter_old_enter_called = false
 local getter_error_state = {
     onenter = function()
         getter_old_enter_called = true
         return "vanilla-entered", nil, "tail"
     end,
 }
-local getter_old_enter_called = false
 stategraph_wrappers.WrapCastState(getter_error_state, 1, function()
     error("simulated equipment getter failure")
 end)
