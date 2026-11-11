@@ -61,7 +61,8 @@ local function onhammered(inst, worker)
     if smelter ~= nil and smelter.canharvest and smelter.product ~= nil then
         local product = smelter.product
         remaining = math.max(0, math.floor(tonumber(smelter.batch) or 1))
-        while remaining > 0 do
+        local to_stage = remaining
+        while to_stage > 0 do
             local ok, loot = pcall(SpawnPrefab, product)
             if not ok or loot == nil then
                 remove_staged_items(staged)
@@ -74,7 +75,7 @@ local function onhammered(inst, worker)
             local stackable = loot.components ~= nil and loot.components.stackable or nil
             if stackable ~= nil then
                 local maxsize = tonumber(stackable.maxsize) or 20
-                amount = maxsize > 0 and math.min(remaining, maxsize) or 1
+                amount = maxsize > 0 and math.min(to_stage, maxsize) or 1
                 if amount > 1 then
                     local set_ok = pcall(stackable.SetStackSize, stackable, amount)
                     if not set_ok then
@@ -87,7 +88,7 @@ local function onhammered(inst, worker)
             end
 
             table.insert(staged, { item = loot, amount = amount })
-            remaining = remaining - amount
+            to_stage = to_stage - amount
         end
     end
 
