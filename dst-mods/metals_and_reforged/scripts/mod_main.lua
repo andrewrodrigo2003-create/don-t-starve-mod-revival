@@ -252,7 +252,11 @@ AddComponentPostInit(
             X = X * J * I
             return old_get_attacked(self, G, X, z, x, spdamage, ...)
         end
+        local old_do_area_attack = self.DoAreaAttack
         function self:DoAreaAttack(A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            if select("#", ...) > 0 then
+                return old_do_area_attack(self, A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            end
             local hitcount = 0
 
             if onlyontarget then
