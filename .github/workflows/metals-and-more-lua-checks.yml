@@ -36,6 +36,22 @@ jobs:
               luac5.1 -p "$file"
             done
 
+      - name: Parse DST behavioral simulator Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/tests/simulator -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+          for file in \
+            dst-mods/tests/smelter_simulator_integration_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua
+          do
+            luac5.1 -p "$file"
+          done
+
       - name: Run available Metals and More regression harnesses
         run: |
           set -euo pipefail
@@ -52,7 +68,11 @@ jobs:
             dst-mods/tests/loot_rewrite_runtime_test.lua \
             dst-mods/tests/weapon_compatibility_contract_test.lua \
             dst-mods/tests/combat_wrapper_contract_test.lua \
-            dst-mods/tests/forge_visual_preview_test.lua
+            dst-mods/tests/forge_visual_preview_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua \
+            dst-mods/tests/smelter_simulator_integration_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
