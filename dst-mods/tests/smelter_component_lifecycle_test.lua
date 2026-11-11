@@ -127,7 +127,11 @@ local function make_instance(container)
         },
     }
     function inst:DoPeriodicTask()
-        return { Cancel = function(self) self.cancelled = true end }
+        self.periodic_calls = (self.periodic_calls or 0) + 1
+        local task = { cancelled = false }
+        function task:Cancel() self.cancelled = true end
+        self.last_periodic_task = task
+        return task
     end
     function inst:DoTaskInTime(delay, fn)
         table.insert(self.deferred, { delay = delay, fn = fn })
@@ -381,6 +385,38 @@ local missing_smelter = new_smelter(missing_container)
 missing_smelter:OnLoad({ issmelting = true, product = nil, smelttime = 10 })
 check("active save without product resets safely", not missing_smelter.issmelting and missing_smelter.product == nil)
 check("missing-product reset applies leftovers-off policy", missing_container.destroy_contents == true)
+
+-- Idle lifecycle: no permanent timer per furnace. Poll only while smelting.
+local idle_container = make_container({})
+local idle_smelter, idle_inst = new_smelter(idle_container)
+check("new idle smelter creates no periodic task", idle_smelter.task == nil)
+check("new idle smelter performs no polling", (idle_inst.periodic_calls or 0) == 0)
+
+local running_container = make_container({})
+local running_smelter, running_inst = new_smelter(running_container)
+running_smelter.issmelting = true
+running_smelter.product = "copper_ingot"
+running_smelter.smelttime = 5
+running_smelter:ResumeSmelting()
+check("resumed active smelter starts one periodic task",
+    running_smelter.task ~= nil and running_inst.periodic_calls == 1)
+local running_task = running_smelter.task
+running_smelter:DoneSmelting()
+check("completed smelter cancels periodic task",
+    running_task.cancelled == true and running_smelter.task == nil)
+
+local reset_container = make_container({})
+local reset_smelter, reset_inst = new_smelter(reset_container)
+reset_smelter.issmelting = true
+reset_smelter.product = "copper_ingot"
+reset_smelter.smelttime = 10
+reset_smelter:ResumeSmelting()
+local reset_task = reset_smelter.task
+reset_smelter:ResetSmelter()
+check("reset smelter cancels periodic task",
+    reset_task.cancelled == true and reset_smelter.task == nil)
+check("reset smelter does not leave a polling task",
+    (reset_inst.periodic_calls or 0) == 1)
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
