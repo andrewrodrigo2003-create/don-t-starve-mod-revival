@@ -16,6 +16,10 @@ class ModAssetReferenceTests(unittest.TestCase):
         self.assertIn('Asset("ATLAS", "minimap/obsidian_workbench.xml")', modmain)
         self.assertTrue((MOD_ROOT / "minimap/obsidian_workbench.tex").is_file())
         self.assertTrue((MOD_ROOT / "minimap/obsidian_workbench.xml").is_file())
+        self.assertIn('Asset("IMAGE", "images/inventoryimages/obsidian_workbench.tex")', modmain)
+        self.assertIn('Asset("ATLAS", "images/inventoryimages/obsidian_workbench.xml")', modmain)
+        self.assertTrue((MOD_ROOT / "images/inventoryimages/obsidian_workbench.tex").is_file())
+        self.assertTrue((MOD_ROOT / "images/inventoryimages/obsidian_workbench.xml").is_file())
 
     def test_warworkbench_animation_asset_is_present(self):
         prefab = (MOD_ROOT / "scripts/prefabs/warworkbench.lua").read_text(encoding="utf-8")
