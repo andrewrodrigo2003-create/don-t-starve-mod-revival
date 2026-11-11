@@ -396,6 +396,39 @@ check("successful retry delivers the exact owed amount",
         and rejected_inst.components.lootdropper.flung[1].prefab == "iron_ore"
         and rejected_inst.components.lootdropper.flung[1].components.stackable.stacksize == 3)
 
+-- A world reload must restore a pending rollback, keep the container locked,
+-- and retry the refund instead of completing the saved smelting timer.
+local pending_load_container = make_container({})
+local pending_load_smelter, pending_load_inst = new_smelter(pending_load_container)
+pending_load_inst.components.lootdropper.fail_fling = true
+pending_load_smelter:OnLoad({
+    refund_pending = true,
+    issmelting = true,
+    product = "copper_ingot",
+    batch = 1,
+    smelttime = 0,
+    active_receipt = { { prefab = "gold_ore", count = 2 } },
+})
+check("load restores pending refund before any output completion",
+    pending_load_smelter.refund_pending == true
+        and pending_load_smelter.canharvest == nil
+        and pending_load_smelter.active_receipt ~= nil)
+check("loaded pending refund keeps container locked and schedules retry",
+    pending_load_container.canbeopened == false
+        and pending_load_smelter.task ~= nil)
+pending_load_inst.components.lootdropper.fail_fling = false
+pending_load_smelter:Update(0.5)
+local loaded_refund_count = 0
+for _, item in ipairs(pending_load_inst.components.lootdropper.flung) do
+    loaded_refund_count = loaded_refund_count
+        + (item.components.stackable ~= nil and item.components.stackable.stacksize or 1)
+end
+check("loaded pending refund retries without duplicating or losing materials",
+    pending_load_smelter.refund_pending == nil
+        and pending_load_smelter.active_receipt == nil
+        and pending_load_smelter.issmelting == nil
+        and loaded_refund_count == 2)
+
 -- Extension callbacks must not interrupt authoritative state transitions.
 local callback_container = make_container({ [1] = make_item("copper_ore", 2) })
 local callback_smelter = new_smelter(callback_container)
