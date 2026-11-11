@@ -146,7 +146,6 @@ local function apply_vanilla_overrides(where)
     if has_been_applied then
         return 0, 0
     end
-    has_been_applied = true
 
     local applied, total = 0, #OVERRIDES
     for _, override in ipairs(OVERRIDES) do
@@ -154,6 +153,10 @@ local function apply_vanilla_overrides(where)
             applied = applied + 1
         end
     end
+
+    -- Only mark the pass complete after every entry has been processed.
+    -- MAMLog.Try catches failures; leaving this false lets the world-task fallback retry.
+    has_been_applied = true
 
     MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d aplicadas", where, applied, total)
     MAMRecipeGuard.dump()
