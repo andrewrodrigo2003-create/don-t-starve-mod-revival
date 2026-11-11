@@ -608,6 +608,7 @@ function Smelter:OnLoad(data)
         -- A devolucao pendente tem prioridade sobre qualquer estado de lote:
         -- um rollback nunca pode virar produto apos carregar o mundo.
         if self.refund_pending then
+            defer_expired_completion = true
             self.issmelting = true
             self.canharvest = nil
             local container = self.inst.components.container
@@ -620,7 +621,7 @@ function Smelter:OnLoad(data)
         -- Estado pronto-colher tem precedencia sobre issmelting em saves
         -- antigos/inconsistentes. Nao chamar DoneSmelting durante OnLoad:
         -- o container pode ainda nao ter restaurado as sobras.
-        if data.canharvest then
+        elseif data.canharvest then
             -- Save pronto para colher ja confirmou o custo do lote.
             self.active_receipt = nil
             self.canharvest = true
