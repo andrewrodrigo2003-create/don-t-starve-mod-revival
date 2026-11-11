@@ -57,19 +57,71 @@ end
 
 --- Consome `amount` pecas de um slot, espelhando a regra de tryconsume() do
 --- container vanilla: pilha parcial reduz o tamanho, pilha inteira sai do slot.
-function Smelter:ConsumeSlot(slot, amount)
+function Smelter:CanConsumePlan(consumed)
     local container = self.inst.components.container
-    if container == nil or amount <= 0 then
+    if container == nil or type(consumed) ~= "table" or #consumed == 0 then
+        return false
+    end
+
+    -- Aggregate by slot so duplicate requirements cannot overdraw one stack.
+    local required = {}
+    for _, entry in ipairs(consumed) do
+        if type(entry) ~= "table"
+            or type(entry.slot) ~= "number"
+            or entry.slot < 1
+            or entry.slot % 1 ~= 0
+            or type(entry.prefab) ~= "string"
+            or type(entry.count) ~= "number"
+            or entry.count < 1
+            or entry.count % 1 ~= 0 then
+            return false
+        end
+
+        local current = required[entry.slot]
+        if current ~= nil and current.prefab ~= entry.prefab then
+            return false
+        end
+        if current == nil then
+            current = { prefab = entry.prefab, count = 0 }
+            required[entry.slot] = current
+        end
+        current.count = current.count + entry.count
+    end
+
+    for slot, entry in pairs(required) do
+        local item = container.slots[slot]
+        if item == nil or not item:IsValid()
+            or item.prefab ~= entry.prefab
+            or stack_size(item) < entry.count then
+            return false
+        end
+    end
+    return next(required) ~= nil
+end
+
+function Smelter:ConsumeSlot(slot, amount, expected_prefab)
+    local container = self.inst.components.container
+    if container == nil or type(amount) ~= "number"
+        or amount < 1 or amount % 1 ~= 0 then
         return 0
     end
 
     local item = container.slots[slot]
-    if item == nil or not item:IsValid() then
+    if item == nil or not item:IsValid()
+        or (expected_prefab ~= nil and item.prefab ~= expected_prefab) then
+        return 0
+    end
+
+    local available = stack_size(item)
+    if available < amount then
         return 0
     end
 
     local stackable = item.components.stackable
-    if stackable == nil then
+    if stackable == nil or not stackable:IsStack() then
+        if amount ~= 1 then
+            return 0
+        end
         container:RemoveItem(item):Remove()
         return 1
     elseif stackable.stacksize > amount then
@@ -137,30 +189,10 @@ function Smelter:StartSmelting(doer)
         return false
     end
 
-    -- Preflight the complete receipt before mutating any slot. Reject stale
-    -- plans if a slot changed or a third-party container hook altered contents.
-    if type(plan.consumed) ~= "table" or #plan.consumed == 0 then
-        MAMLog.Warn("plano de fundicao sem recibo de consumo valido")
+    -- Validate the complete plan before changing machine state or consuming input.
+    if not self:CanConsumePlan(plan.consumed) then
+        MAMLog.Warn("plano de fundicao desatualizado ou inconsistente")
         return false
-    end
-
-    local validated = {}
-    for _, entry in ipairs(plan.consumed) do
-        local item = container.slots[entry.slot]
-        if item == nil or not item:IsValid() or item.prefab ~= entry.prefab
-            or type(entry.count) ~= "number" or entry.count < 1
-            or entry.count % 1 ~= 0 then
-            MAMLog.Warn("plano de fundicao desatualizado no slot %s", tostring(entry.slot))
-            return false
-        end
-
-        local available = item.components.stackable ~= nil
-            and item.components.stackable.stacksize or 1
-        if available < entry.count or validated[entry.slot] then
-            MAMLog.Warn("recibo de consumo invalido no slot %s", tostring(entry.slot))
-            return false
-        end
-        validated[entry.slot] = true
     end
 
     self.issmelting = true
@@ -174,7 +206,7 @@ function Smelter:StartSmelting(doer)
     -- for cancelado antes de concluir.
     for i = #plan.consumed, 1, -1 do
         local entry = plan.consumed[i]
-        local consumed = self:ConsumeSlot(entry.slot, entry.count)
+        local consumed = self:ConsumeSlot(entry.slot, entry.count, entry.prefab)
         if consumed > 0 then
             table.insert(self.active_receipt, { prefab = entry.prefab, count = consumed })
         end
