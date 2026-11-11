@@ -75,7 +75,7 @@ AddPrefabPostInit("bernie_big", function(inst)
         end
 
         return hitcount
-    end = 4
+    end
     inst.components.combat:SetDefaultDamage(56)
     inst.components.combat:SetAreaDamage(4)
     inst.components.health:SetMaxHealth(3200)
