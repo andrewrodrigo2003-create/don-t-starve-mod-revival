@@ -30,6 +30,9 @@ local function instantiate(is_master)
         end,
     }
     inst.order = {}
+    function CreateEntity()
+        return inst
+    end
     inst.Transform = {
         SetPosition = function(_, x, y, z)
             inst.position = { x = x, y = y, z = z }
