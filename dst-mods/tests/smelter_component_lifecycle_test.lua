@@ -202,6 +202,23 @@ check("stale receipt preserves all input", stale_container.slots[1] == stale_ite
 check("stale receipt leaves machine idle", not stale_smelter.issmelting
     and stale_container.canbeopened == true)
 
+-- A plan cannot overdraw a stack through duplicate slot requirements.
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 5,
+    consumed = {
+        { slot = 1, prefab = "copper_ore", count = 2 },
+        { slot = 1, prefab = "copper_ore", count = 2 },
+    },
+}
+local duplicate_item = make_item("copper_ore", 3)
+local duplicate_container = make_container({ [1] = duplicate_item })
+local duplicate_smelter = new_smelter(duplicate_container)
+check("duplicate slot requirements exceeding stack are rejected",
+    duplicate_smelter:StartSmelting() == false)
+check("duplicate slot rejection preserves original stack",
+    duplicate_container.slots[1] == duplicate_item
+        and duplicate_item.components.stackable.stacksize == 3)
+
 -- Failed output creation preserves only the undelivered remainder for retry.
 local output_container = make_container({})
 local output_smelter = new_smelter(output_container)
