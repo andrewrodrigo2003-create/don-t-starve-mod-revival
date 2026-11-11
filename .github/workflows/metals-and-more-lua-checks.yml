@@ -92,6 +92,8 @@ jobs:
             echo "Test-only files leaked into the installable package"
             exit 1
           fi
+      - name: Verify install package contents
+        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip"
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@v4
