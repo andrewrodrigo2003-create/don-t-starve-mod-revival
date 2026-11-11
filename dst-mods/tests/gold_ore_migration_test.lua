@@ -93,7 +93,7 @@ check(client.task == nil, "client does not schedule server migration")
 -- Server construction also marks pristine before adding authoritative components.
 local server, get_spawned = instantiate(true)
 check(server.pristine, "server marks legacy prefab pristine")
-check(server.pristine_order < 1 + #server.order, "pristine call is recorded")
+check(server.order[1] == "pristine", "pristine is set before server components")
 check(server.components.inventoryitem ~= nil and server.components.stackable ~= nil,
     "server creates migration components")
 check(server.task_delay == 0.1 and type(server.task) == "function",
