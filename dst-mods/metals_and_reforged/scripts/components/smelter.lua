@@ -239,7 +239,7 @@ function Smelter:ResumeSmelting()
     self.issmelting = true
 
     if self.startsmeltingfn then
-        self.startsmeltingfn(self.inst)
+        MAMLog.Try("smelter:startsmeltingfn", self.startsmeltingfn, self.inst)
     end
 
     local container = self.inst.components.container
@@ -595,7 +595,7 @@ function Smelter:OnLoad(data)
 
             if self.donesmeltingfn then
                 self.inst:DoTaskInTime(2, function()
-                    self.donesmeltingfn(self.inst)
+                    MAMLog.Try("smelter:donesmeltingfn", self.donesmeltingfn, self.inst)
                 end)
             end
         elseif data.issmelting then
