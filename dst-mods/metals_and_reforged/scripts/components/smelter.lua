@@ -201,6 +201,7 @@ function Smelter:StartSmelting(doer)
     self.batch = plan.count or 1
     self.smelttime = plan.smelttime or 1
     self.active_receipt = {}
+    self.refund_pending = nil
 
     -- Registra cada debito confirmado para permitir rollback se o lote ativo
     -- for cancelado antes de concluir.
@@ -383,7 +384,17 @@ function Smelter:ResetSmelter()
     local had_receipt = self.active_receipt ~= nil
     local was_active = self.issmelting == true or had_receipt
     if had_receipt and not self:RefundActiveReceipt() then
-        -- Nao limpar estado nem recibo se a devolucao nao foi concluida.
+        -- Keep the transaction in a dedicated retry state. Never let the
+        -- normal smelting timer complete a batch whose rollback is pending.
+        self.refund_pending = true
+        self.issmelting = true
+        self.canharvest = nil
+        local container = self.inst.components.container
+        if container ~= nil then
+            container:Close()
+            container.canbeopened = false
+        end
+        self:StartUpdating()
         return false
     elseif was_active and not had_receipt then
         MAMLog.WarnOnce("smelter:legacy-active-without-receipt",
@@ -391,6 +402,7 @@ function Smelter:ResetSmelter()
     end
 
     self.issmelting = nil
+    self.refund_pending = nil
     self.product = nil
     self.canharvest = nil
     self.batch = 1
@@ -525,6 +537,15 @@ function Smelter:StopUpdating()
 end
 
 function Smelter:Update(dt)
+    -- A failed refund is not a smelting job. Retry the rollback first and
+    -- never decrement the cook timer or grant output while inputs are owed.
+    if self.refund_pending then
+        if not self:ResetSmelter() then
+            self:StartUpdating()
+        end
+        return
+    end
+
     if not self.issmelting or self.canharvest then
         self:StopUpdating()
         return
@@ -556,6 +577,7 @@ function Smelter:OnSave()
         smelttime = self.smelttime,
         issmelting = self.issmelting,
         active_receipt = self.active_receipt,
+        refund_pending = self.refund_pending,
     }
 end
 
@@ -566,6 +588,7 @@ function Smelter:OnLoad(data)
         self.product = data.product or nil
         self.batch = data.batch or 1
         self.active_receipt = nil
+        self.refund_pending = data.refund_pending == true
         if type(data.active_receipt) == "table" then
             local receipt = {}
             for _, entry in ipairs(data.active_receipt) do
@@ -578,6 +601,12 @@ function Smelter:OnLoad(data)
             self.active_receipt = #receipt > 0 and receipt or nil
         end
 
+        -- A devolucao pendente tem prioridade sobre qualquer estado de lote:
+        -- um rollback nunca pode virar produto apos carregar o mundo.
+        if self.refund_pending then
+            self.issmelting = true
+            self.canharvest = nil
+            self:ResumeSmelting()
         -- Estado pronto-colher tem precedencia sobre issmelting em saves
         -- antigos/inconsistentes. Nao chamar DoneSmelting durante OnLoad:
         -- o container pode ainda nao ter restaurado as sobras.
