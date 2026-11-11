@@ -397,6 +397,9 @@ check("harvest callback error does not prevent output reset",
         and callback_smelter.product == nil and callback_smelter.canharvest == nil)
 check("harvest callback error still delivers output", callback_delivered == 1)
 
+-- Restore stack-capable prefabs for the save/load receipt tests below.
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+
 -- A completed batch commits its receipt; later reset/harvest must not refund it.
 local committed_container = make_container({})
 local committed_smelter, committed_inst = new_smelter(committed_container)
