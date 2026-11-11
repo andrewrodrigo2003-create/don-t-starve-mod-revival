@@ -178,8 +178,7 @@ AddComponentPostInit(
                         type(self.damage_override) == "function" and self.damage_override(self.inst, A) or
                         self.damage_override
                 end
-                C = (C - (self.damagebonus or 0)) / D
-                C = C * E + (self.damagebonus or 0)
+                C = MAMCombatWrapperHelpers.ApplyAltDamage(C, D, self.damagebonus, E)
             end
             return C, spdamage
         end
