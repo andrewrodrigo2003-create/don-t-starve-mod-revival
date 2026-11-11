@@ -38,6 +38,9 @@ local function instantiate(is_master)
             inst.position = { x = x, y = y, z = z }
         end,
     }
+    function inst:GetPosition()
+        return self.position or { x = 0, y = 0, z = 0 }
+    end
     function inst:AddComponent(name)
         self.components[name] = {}
         if name == "inventoryitem" then
