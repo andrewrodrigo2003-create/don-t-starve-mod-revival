@@ -31,7 +31,7 @@ local Smelter = Class(function(self, inst)
     -- Recibo das entradas debitadas do lote ativo; so e confirmado ao concluir.
     self.active_receipt = nil
 
-    self:Update(0)
+    -- O componente permanece ocioso sem polling; o timer so nasce ao iniciar/resumir um lote.
 end)
 
 ---------------------------------------------------------------------------
@@ -225,6 +225,7 @@ function Smelter:ResumeSmelting()
 end
 
 function Smelter:DoneSmelting()
+    self:StopUpdating()
     -- O custo foi confirmado: nao ha reembolso apos concluir a fundicao.
     self.active_receipt = nil
     self.issmelting = nil
@@ -378,10 +379,7 @@ function Smelter:ResetSmelter()
 
     self.inst:RemoveTag(READY_TAG)
 
-    if self.task then
-        self.task:Cancel()
-        self.task = nil
-    end
+    self:StopUpdating()
 
     self:PublishPlan()
     return true
@@ -481,23 +479,37 @@ local function OnDoUpdate(inst, self, period)
     self:Update(period)
 end
 
-function Smelter:Update(dt)
-    if self.issmelting and not self.canharvest then
-        self.smelttime = self.smelttime - dt
-
-        if self.smelttime <= 0 then
-            if self.product ~= nil then
-                self:DoneSmelting()
-            else
-                -- Nenhum produto valido: devolve a carga em vez de travar a maquina.
-                self:ResetSmelter()
-            end
-        end
-    end
-
-    if self.task == nil then
+function Smelter:StartUpdating()
+    if self.task == nil and self.issmelting and not self.canharvest then
         self.task = self.inst:DoPeriodicTask(0.5, OnDoUpdate, nil, self, 0.5)
     end
+end
+
+function Smelter:StopUpdating()
+    if self.task ~= nil then
+        self.task:Cancel()
+        self.task = nil
+    end
+end
+
+function Smelter:Update(dt)
+    if not self.issmelting or self.canharvest then
+        self:StopUpdating()
+        return
+    end
+
+    self.smelttime = (tonumber(self.smelttime) or 0) - (tonumber(dt) or 0)
+    if self.smelttime <= 0 then
+        if self.product ~= nil then
+            self:DoneSmelting()
+        elseif not self:ResetSmelter() then
+            -- A devolucao pode falhar temporariamente; mantenha um unico timer para retry.
+            self:StartUpdating()
+        end
+        return
+    end
+
+    self:StartUpdating()
 end
 
 ------------------------------------------------------------------------------------------------------
