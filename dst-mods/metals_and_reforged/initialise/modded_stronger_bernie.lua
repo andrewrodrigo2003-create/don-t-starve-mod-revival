@@ -36,9 +36,15 @@ AddPrefabPostInit("bernie_big", function(inst)
             return 0
         end
 
+        if select("#", ...) > 0 then
+            return _doAreaAttack(self, target, range, weapon, validfn, stimuli, excludetags, onlyontarget, ...)
+        end
+
         if onlyontarget then
+            local leaders = target.components.follower and target.components.follower.leader
             if self:IsValidTarget(target) and
                 (validfn == nil or validfn(target, self.inst)) and
+                not (leaders and leaders:HasTag("player")) and
                 target.components.combat ~= nil then
                 self.inst:PushEvent("onareaattackother", { target = target, weapon = weapon, stimuli = stimuli })
                 target.components.combat:GetAttacked(self.inst, get_area_damage(), weapon, stimuli)
