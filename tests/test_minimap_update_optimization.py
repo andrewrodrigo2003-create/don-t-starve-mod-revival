@@ -40,6 +40,17 @@ class MinimapUpdateOptimizationTests(unittest.TestCase):
             self.source,
         )
 
+    def test_wrapped_base_methods_stay_local_to_this_module(self):
+        self.assertIn("local MapScreen_OnControl_base = MapScreen.OnControl", self.source)
+        self.assertIn("local MapWidget_OnZoomIn_base = MapWidget.OnZoomIn", self.source)
+        self.assertIn("local MapWidget_OnZoomOut_base = MapWidget.OnZoomOut", self.source)
+        self.assertNotIn("\\nMapScreen_OnControl_base =", self.source)
+        self.assertNotIn("\\nMapWidget_OnZoomIn_base =", self.source)
+        self.assertNotIn("\\nMapWidget_OnZoomOut_base =", self.source)
+
+    def test_require_alias_is_declared_once(self):
+        self.assertEqual(self.source.count("local require = GLOBAL.require"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
