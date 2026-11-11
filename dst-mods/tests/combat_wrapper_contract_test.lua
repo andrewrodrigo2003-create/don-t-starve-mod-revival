@@ -26,6 +26,13 @@ assert(helpers.AreaDamageMultiplier(nil, 1, 1) == 1,
 assert(helpers.AreaDamageMultiplier(0.5, 2, 3) == 3,
     "area damage must multiply area percent, additive and multiplicative buffs")
 
+assert(helpers.ApplyAltDamage(10, 10, 0, 20) == 20,
+    "alt damage must scale relative to nonzero base damage")
+assert(helpers.ApplyAltDamage(10, 0, 0, 20) == 20,
+    "alt damage must remain finite when the base damage is zero")
+assert(helpers.ApplyAltDamage(12, 10, 2, nil) == 12,
+    "missing override must fall back to the original base damage")
+
 local modmain = assert(io.open("dst-mods/metals_and_reforged/scripts/mod_main.lua", "r"))
 local source = modmain:read("*a")
 modmain:close()
