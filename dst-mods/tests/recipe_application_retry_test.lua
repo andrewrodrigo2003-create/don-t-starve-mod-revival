@@ -43,6 +43,10 @@ local function run_case(module_path, method_name, expected_minimum)
         return true, "applied"
     end
 
+    package.loaded["mam/log"] = nil
+    package.loaded["mam/recipe_guard"] = nil
+    package.loaded["recipe"] = nil
+    package.loaded["techtree"] = nil
     package.preload["mam/log"] = function() return log end
     package.preload["mam/recipe_guard"] = function() return guard end
     package.preload["recipe"] = function() return true end
