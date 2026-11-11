@@ -806,6 +806,88 @@ for au, av in pairs(at) do
         end
     )
 end
+AddStategraphPostInit(
+    "wilson",
+    function(self)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.components ~= nil and inst.components.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
+            end
+        end
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and type(invobject.HasTag) == "function" and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
+            end
+        end
+    end
+)
+AddStategraphPostInit(
+    "wilson_client",
+    function(self)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.replica ~= nil and inst.replica.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
+            end
+        end
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and invobject.HasTag ~= nil and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
+            end
+        end
+    end
+)
+AddComponentPostInit(
+    "debuffable",
+    function(self)
+        local ar = self.AddDebuff
+        local as = self.RemoveDebuff
+        function self:AddDebuff(m, ...)
+            if self.debuffs[m] == nil and self.inst.player_classified then
+                self.inst.player_classified.net_buffs:set(a.encode({name = m, removed = false}))
+            end
+            ar(self, m, ...)
+        end
+        function self:RemoveDebuff(m, ...)
+            if self.debuffs[m] ~= nil and self.inst.player_classified then
+                self.inst.player_classified.net_buffs:set(a.encode({name = m, removed = true}))
+            end
+            as(self, m, ...)
+        end
+    end
+)
+
 local cast_state_times = { book = 25 * b, castspell = 53 * b }
 for state_name, target_time in pairs(cast_state_times) do
     -- Lua 5.1 closures capture loop variables; copy both values per callback.
