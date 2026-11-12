@@ -204,7 +204,7 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
 
     local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab,
         math.random, recipe, durability)
-    if plan == nil or #plan == 0 then
+    if plan == nil then
         return false
     end
 
