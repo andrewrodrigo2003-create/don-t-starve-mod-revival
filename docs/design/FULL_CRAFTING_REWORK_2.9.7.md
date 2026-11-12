@@ -95,3 +95,19 @@ This clarification refines the existing full-update request; it does not replace
 - **Sawing Table:** retain the previously requested alternative only if a real vanilla/UM implementation and API are verified. It cannot re-enable the disabled vanilla recipe path by accident.
 - Both tool gates must be server-authoritative, validate a real equipped/carried tool by supported components/tags, reject broken/invalid tools, and fail closed for unknown third-party tools. Neither tool is consumed as an ingredient.
 - This is a clarification only. The rest of the 2.9.7 scope and the master update/ideas map remain active and must continue to be implemented.
+
+
+## Clarification from user — granular, independently configurable integrations (2026-11-12)
+
+All compatibility and balance changes must be player-configurable at the smallest sensible feature boundary. Do not use one broad switch that disables unrelated MAM mechanics.
+
+- Third-party recipe integration/modification is permitted, but must have its own setting, independently disableable. When disabled, preserve the live third-party recipe and metadata without MAM mutation.
+- The third-party recipe setting must NOT disable MAM-owned mandatory axe-gated board crafting, reusable chisel-gated cut-stone crafting, or a verified Sawing Table route. These are separate MAM crafting mechanics with separate settings only if a player-facing toggle is appropriate; never couple them to third-party compatibility.
+- Third-party drop integration/modification must have its own independent setting(s), separate from recipe integration. Preserve the other mod's drops when disabled; do not remove or replace its loot tables as a side effect.
+- MAM-owned drop behavior must expose independent controls for relevant sources/categories and adjustable parameters such as chance and quantity/range where technically safe. Include sensible documented defaults and bounds; prevent invalid values, zero-cost loops, duplicate rolls and unintended farming exploits. Do not expose third-party drop tuning as if it were MAM-owned content.
+- MAM-owned recipe/crafting rules, vanilla recipe replacement, mandatory tool requirements, Sawing Table support, third-party recipe adapters, third-party drop adapters, and MAM drop tuning must be separate settings domains. Each option's description must state exactly what it changes and what it does not change.
+- Prefer the granular, category-by-category configurability exemplified by Uncompromising Mode: players should be able to keep integrations they like and disable only the changes they dislike.
+- Settings must be safe under multiplayer: authoritative server configuration governs world mechanics; clients receive consistent state. Define behavior for world creation, existing saves, missing mods, load order and configuration migration. Defaults should preserve the intended MAM experience while avoiding destructive third-party overwrites.
+- Add configuration contract tests proving each switch changes only its own feature boundary, including combinations of switches. Explicitly test that disabling third-party recipe integration leaves axe/chisel gates intact and that disabling third-party drop integration does not disable MAM's own drops.
+
+This clarification expands configurability; it does not remove or replace any previously requested 2.9.7 feature or the master ideas map.
