@@ -44,8 +44,11 @@ jobs:
           PY
           cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
           cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
-          "$RUNNER_TEMP/ktools/build/ktech" \
-            "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.png" \
+          convert "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.svg" \\
+            -background none -resize 256x256 \\
+            "$RUNNER_TEMP/metals_and_more_reforged_icon.png"
+          "$RUNNER_TEMP/ktools/build/ktech" \\
+            "$RUNNER_TEMP/metals_and_more_reforged_icon.png" \\
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
           "$RUNNER_TEMP/ktools/build/ktech" --info "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
