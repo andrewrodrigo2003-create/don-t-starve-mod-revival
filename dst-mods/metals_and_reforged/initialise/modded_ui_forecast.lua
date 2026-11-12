@@ -67,11 +67,15 @@ local function make_preview(self)
     end
 
     local panel = self:AddChild(Widget("MAMForgePreview"))
-    panel:SetPosition(GLOBAL.Vector3(-145, 0, 0))
+    panel:SetPosition(GLOBAL.Vector3(-270, 0, 0))
+    -- Keep the preview clear of the smelter input slots; scale the complete HUD
+    -- (frame, icon, labels and quantity) by the requested 20%.
+    panel:SetScale(1.2)
 
     panel.header = panel:AddChild(Text(FONT, 22, "FORGE PREVIEW"))
     panel.header:SetPosition(0, 91, 0)
-    panel.header:SetColour(1, 0.82, 0.48, 1)
+    panel.header:SetColour(1, 0.9, 0.72, 1)
+    panel.header:SetShadowOffset(1, -1)
 
     panel.slotbg = panel:AddChild(Image("images/hud.xml", "inv_slot.tex"))
     panel.slotbg:SetPosition(-48, 22, 0)
@@ -89,6 +93,8 @@ local function make_preview(self)
     panel.name:SetVAlign(GLOBAL.ANCHOR_MIDDLE)
     panel.name:SetRegionSize(104, 30)
     panel.name:EnableWordWrap(true)
+    panel.name:SetColour(1, 0.96, 0.84, 1)
+    panel.name:SetShadowOffset(1, -1)
 
     -- Mesmo padrao visual do ItemTile vanilla: NUMBERFONT, tamanho 42 e
     -- limite 999+. O contador fica dentro do canto inferior direito do icone.
@@ -96,7 +102,9 @@ local function make_preview(self)
     panel.quantity:SetSize(42)
     panel.quantity:SetPosition(-20, -5, 0)
     panel.quantity:SetHAlign(GLOBAL.ANCHOR_RIGHT)
-    panel.quantity:SetRegionSize(42, 42)
+    panel.quantity:SetRegionSize(48, 48)
+    panel.quantity:SetColour(1, 1, 1, 1)
+    panel.quantity:SetShadowOffset(1, -1)
 
     panel.details = panel:AddChild(Text(FONT, 18, "The forge result will appear here."))
     panel.details:SetPosition(0, -55, 0)
@@ -104,6 +112,8 @@ local function make_preview(self)
     panel.details:EnableWordWrap(true)
     panel.details:SetHAlign(GLOBAL.ANCHOR_MIDDLE)
     panel.details:SetVAlign(GLOBAL.ANCHOR_MIDDLE)
+    panel.details:SetColour(1, 0.94, 0.8, 1)
+    panel.details:SetShadowOffset(1, -1)
 
     self.mam_forge_preview = panel
 end
@@ -163,6 +173,23 @@ local function preview_data(plan)
     return product, count, name, details
 end
 
+local MAM_INVENTORY_PRODUCTS = {
+    copper_ore = true, iron_ore = true,
+    copper_ingot = true, iron_ingot = true, bronze_ingot = true,
+    gold_ingot = true, moonglass_ingot = true, adamantium_ingot = true,
+    junk_dust = true, copper_dust = true, iron_dust = true, gold_dust = true,
+}
+
+local function get_product_atlas(product, image_name)
+    -- Custom MAM products each own a dedicated atlas; GetInventoryItemAtlas
+    -- only knows them when the global lookup has been registered.
+    if MAM_INVENTORY_PRODUCTS[product] then
+        return "images/inventoryimages/" .. product .. ".xml"
+    end
+    local ok, atlas = pcall(GLOBAL.GetInventoryItemAtlas, image_name)
+    return ok and atlas or nil
+end
+
 local function update_preview(self)
     local panel = self.mam_forge_preview
     if panel == nil or self.container == nil then
@@ -197,8 +224,8 @@ local function update_preview(self)
 
     if product ~= nil then
         local image_name = product .. ".tex"
-        local atlas_ok, atlas = pcall(GLOBAL.GetInventoryItemAtlas, image_name)
-        if atlas_ok and atlas ~= nil then
+        local atlas = get_product_atlas(product, image_name)
+        if atlas ~= nil then
             local texture_ok = pcall(panel.icon.SetTexture, panel.icon, atlas, image_name)
             if texture_ok then
                 panel.icon:Show()
