@@ -172,7 +172,7 @@ end
 -- Ciclo de fundicao
 ---------------------------------------------------------------------------
 
-function Smelter:StartSmelting(doer)
+function Smelter:StartSmelting(doer, supplied_plan)
     local container = self.inst.components.container
     if container == nil then
         return false
@@ -183,9 +183,16 @@ function Smelter:StartSmelting(doer)
         return false
     end
 
-    local ok, plan = MAMLog.Try("smelting.CalculateSmelterPlan",
-        smelting.CalculateSmelterPlan, self.inst.prefab, items)
-    if not ok or plan == nil or plan.state ~= "ready" or plan.product == nil then
+    local plan = supplied_plan
+    if plan == nil then
+        local ok
+        ok, plan = MAMLog.Try("smelting.CalculateSmelterPlan",
+            smelting.CalculateSmelterPlan, self.inst.prefab, items)
+        if not ok then
+            return false
+        end
+    end
+    if plan == nil or plan.state ~= "ready" or plan.product == nil then
         return false
     end
 
@@ -234,6 +241,177 @@ function Smelter:StartSmelting(doer)
     end
 
     return true
+end
+
+-- Pull only the exact ingredients selected by the normal planner, and only
+-- while a fueled collector robot is deployed nearby. The user opts in via
+-- mam_robot_smelting; player inventories are never scanned.
+local function has_active_collector_robot(inst)
+    local x, y, z = inst.Transform:GetWorldPosition()
+    local robots = TheSim:FindEntities(x, y, z, 8, { "storagerobot" }, { "INLIMBO", "broken", "NOCLICK" })
+    local platform = inst:GetCurrentPlatform()
+    for _, robot in ipairs(robots) do
+        local fueled = robot.components ~= nil and robot.components.fueled or nil
+        local inventoryitem = robot.components ~= nil and robot.components.inventoryitem or nil
+        if fueled ~= nil and not fueled:IsEmpty()
+            and inventoryitem ~= nil and not inventoryitem:IsHeld()
+            and robot:GetCurrentPlatform() == platform then
+            if robot.prefab ~= "winona_storage_robot"
+                or (robot._deployed == true and robot._isactive ~= nil and robot._isactive:value()) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function get_nearby_metal_containers(inst)
+    local x, y, z = inst.Transform:GetWorldPosition()
+    local platform = inst:GetCurrentPlatform()
+    local entities = TheSim:FindEntities(x, y, z, 8, { "_container" },
+        { "INLIMBO", "NOCLICK", "DECOR", "companion", "portablestorage", "readonlycontainer", "burnt" })
+    local containers = {}
+    for _, entity in ipairs(entities) do
+        local container = entity.components ~= nil and entity.components.container or nil
+        if container ~= nil
+            and (container.type == "chest" or container.type == "pack")
+            and (container.canbeopened or container.canacceptgivenitems)
+            and entity:IsOnPassablePoint()
+            and entity:GetCurrentPlatform() == platform then
+            table.insert(containers, container)
+        end
+    end
+    table.sort(containers, function(a, b)
+        return a.inst:GetDistanceSqToInst(inst) < b.inst:GetDistanceSqToInst(inst)
+    end)
+    return containers
+end
+
+local function rollback_robot_transfer(machine_container, sources, machine)
+    for slot = 1, machine_container.numslots do
+        local item = machine_container.slots[slot]
+        if item ~= nil then
+            local returned = machine_container:RemoveItem(item, true)
+            local restored = false
+            if returned ~= nil then
+                for _, source in ipairs(sources) do
+                    if source ~= nil and source.inst ~= nil and source.inst:IsValid()
+                        and source:GiveItem(returned) then
+                        restored = true
+                        break
+                    end
+                end
+                if not restored and returned:IsValid() then
+                    local x, y, z = machine.Transform:GetWorldPosition()
+                    returned.Transform:SetPosition(x, y, z)
+                    returned.components.inventoryitem:OnDropped(true)
+                end
+            end
+        end
+    end
+end
+
+function Smelter:TryStartRobotBatch()
+    if not MAMConfig.on("mam_robot_smelting")
+        or self.issmelting or self.canharvest then
+        return false
+    end
+
+    local machine_container = self.inst.components.container
+    if machine_container == nil or machine_container.canbeopened == false
+        or next(machine_container.slots) ~= nil
+        or not has_active_collector_robot(self.inst) then
+        return false
+    end
+
+    local containers = get_nearby_metal_containers(self.inst)
+    local items = {}
+    local sources = {}
+    for _, source in ipairs(containers) do
+        for slot = 1, source.numslots do
+            local item = source.slots[slot]
+            if item ~= nil and item:IsValid() and smelting.IsSmelterIngredient(item.prefab) then
+                table.insert(items, { slot = #items + 1, prefab = item.prefab, count = stack_size(item) })
+                sources[#items] = { container = source, item = item }
+            end
+        end
+    end
+    if #items == 0 then
+        return false
+    end
+
+    local ok, plan = MAMLog.Try("smelting.robot.CalculateSmelterPlan",
+        smelting.CalculateSmelterPlan, self.inst.prefab, items)
+    if not ok or plan == nil or plan.state ~= "ready" or plan.product == nil
+        or type(plan.consumed) ~= "table" or #plan.consumed == 0 then
+        return false
+    end
+
+    local unique = {}
+    for _, entry in ipairs(plan.consumed) do
+        unique[entry.prefab] = true
+    end
+    local unique_count = 0
+    for _ in pairs(unique) do unique_count = unique_count + 1 end
+    if unique_count > machine_container.numslots then
+        return false
+    end
+
+    local moved_sources = {}
+    for _, entry in ipairs(plan.consumed) do
+        local source = sources[entry.slot]
+        if source == nil or source.item == nil or not source.item:IsValid() then
+            rollback_robot_transfer(machine_container, moved_sources, self.inst)
+            return false
+        end
+        local already = false
+        for _, existing in ipairs(moved_sources) do
+            if existing == source.container then already = true break end
+        end
+        if not already then table.insert(moved_sources, source.container) end
+
+        for _ = 1, entry.count do
+            local split = source.container:RemoveItem(source.item, false)
+            if split == nil then
+                rollback_robot_transfer(machine_container, moved_sources, self.inst)
+                return false
+            end
+            if not machine_container:GiveItem(split) then
+                if split:IsValid() then
+                    if not source.container:GiveItem(split) then
+                        local x, y, z = source.container.inst.Transform:GetWorldPosition()
+                        split.Transform:SetPosition(x, y, z)
+                        split.components.inventoryitem:OnDropped(true)
+                    end
+                end
+                rollback_robot_transfer(machine_container, moved_sources, self.inst)
+                return false
+            end
+        end
+    end
+
+    -- The remote planner has already chosen the output. Rebuild only the slot
+    -- receipts against the staged smelter container; do not roll the recipe a
+    -- second time and accidentally choose a different product.
+    local local_items = self:GetItems()
+    local local_consumed = {}
+    for _, entry in ipairs(local_items) do
+        table.insert(local_consumed, {
+            slot = entry.slot,
+            prefab = entry.prefab,
+            count = entry.count,
+        })
+    end
+    local local_plan = {
+        state = "ready",
+        product = plan.product,
+        count = plan.count,
+        smelttime = plan.smelttime,
+        consumed = local_consumed,
+        recipe = plan.recipe,
+        possibilities = plan.possibilities,
+    }
+    return self:StartSmelting(nil, local_plan)
 end
 
 function Smelter:ResumeSmelting()
