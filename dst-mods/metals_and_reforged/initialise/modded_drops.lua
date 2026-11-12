@@ -280,23 +280,20 @@ end
 
 -- Listas do v2.9.3, usadas apenas no modo "Rewrite" (comportamento original).
 local function shrub_original(inst)
-    local shrubshort = { "rocks", "marblebean" }
-    local shrubnormal = { "marble", "iron_ore", "rocks", "rocks", "marblebean" }
-    local shrubtall = { "marble", "marble", "iron_ore", "iron_ore", "rocks", "rocks", "rocks", "marblebean" }
-
     if inst.components.lootdropper == nil then
         inst:AddComponent("lootdropper")
     end
 
     inst.components.lootdropper:SetLootSetupFn(function(lootdropper)
         local stage = inst.components.growable ~= nil and inst.components.growable.stage or 1
-        if stage == 1 then
-            lootdropper:SetLoot(shrubshort)
-        elseif stage == 2 then
-            lootdropper:SetLoot(shrubnormal)
-        else
-            lootdropper:SetLoot(shrubtall)
+        local loot = stage == 1 and { "rocks", "marblebean" }
+            or stage == 2 and { "marble", "rocks", "rocks", "marblebean" }
+            or { "marble", "marble", "rocks", "rocks", "rocks", "marblebean" }
+        local wanted = shrub_iron_amount(stage)
+        for _ = 1, wanted do
+            table.insert(loot, "iron_ore")
         end
+        lootdropper:SetLoot(loot)
     end)
 end
 
