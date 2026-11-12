@@ -36,7 +36,7 @@ Storage
 - Its old prefab/widget remain registered only to preserve existing saves; no new chest can be crafted.
 
 Icon and packaging
-- Add the 256px icon source PNG and SVG.
+- Keep the SVG icon source; rasterize a 256px PNG during CI.
 - Build the open-source KTools `ktech` converter in CI and generate the final `modicon.tex` during package creation.
 - Update the atlas to the full square texture coordinates.
 
