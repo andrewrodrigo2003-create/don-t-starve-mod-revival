@@ -1,0 +1,63 @@
+# Metals and More Reforged 2.9.5 — teste local
+
+**Build:** PR #50, branch `fix/smelter-refund-retry-2026-11-11`  
+**Commit exato:** `b26c078d31722dca770242aa974971ea169f7328`  
+**Pacote:** `metals-and-more-reforged-2.9.5.zip`  
+**SHA-256:** `e72e1e66d6a6f2a4c3e56126105d2ee267d2a2e4e598aa47156eea9dc24ce414`
+
+## Instalação
+
+1. Baixe o artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43274625559/artifacts/13969597340
+2. Extraia o ZIP do artefato. Dentro dele estará o pacote instalável `metals-and-more-reforged-2.9.5.zip`.
+3. Extraia o pacote instalável na pasta de mods do DST. O resultado deve ser uma pasta `metals_and_reforged` contendo `modinfo.lua` e `modmain.lua`.
+4. Desative/remova da lista de mods ativos qualquer cópia duplicada/antiga de Metals and More. Não deixe Workshop antigo e pasta local carregarem simultaneamente.
+5. Não substitua nem edite Hydrated/Dehydrated, Better Lucy ou Uncompromising Mode.
+
+## Teste recomendado
+
+Use o mundo **mundo de testes de mod**. Faça primeiro uma execução com o conjunto mínimo já usado para testar o mod e depois repita com o conjunto de compatibilidade.
+
+### A. Forja e prévia
+- Abrir a forja vazia; verificar se a interface não apresenta erro.
+- Colocar cobre/ferro e conferir nome do produto sobre a imagem e quantidade prevista no canto inferior direito.
+- Testar misturas ambíguas; a UI deve indicar possibilidades sem prometer um resultado fixo.
+- Ativar/desativar lote e testar pilhas, limite e crescimento de tempo.
+- Iniciar fundição, tentar inserir itens enquanto processa e confirmar que o container permanece bloqueado.
+- Colher o resultado e conferir quantidade exata e sobras.
+- Interromper por martelo/dano e conferir devolução dos materiais.
+- Salvar/recarregar durante processamento e quando estiver pronto para colher.
+- Testar inventário cheio e saída sem espaço; não pode sumir nem duplicar produto.
+
+### B. Armas e personagens
+- Testar o machado normal de Woodie.
+- Testar as quatro armas da Forja: ataques normais, ataques especiais, AOE, parry, durabilidade e cooldown conforme configuração.
+- Confirmar que não existe mais o antigo arremesso global da Lucy vindo do Metals and More.
+- Testar Willow/Bernie e habilidades relacionadas, sem atribuir ao MAM erros que apontem para outro mod.
+
+### C. Compatibilidade
+- Repetir com Uncompromising Mode Public Beta habilitado.
+- Observar receitas, drops, tech trees, forja, UI, containers e erros de carregamento.
+- Repetir com Improved Scaled Furnace/Scaled Stove e mods de armazenamento/inventário usados no mundo.
+- Verificar se o antigo Metals and More da Oficina está desativado, evitando duas cópias do mesmo mod.
+
+### D. Logs
+Após o teste, guardar:
+- `client_log.txt`
+- `server_log.txt` (se host/servidor)
+- lista de mods habilitados e configuração do MAM
+- descrição curta do passo exato que causou o problema
+
+## O que esta build não contém ainda
+
+- Livro metalúrgico informativo multi-página.
+- Desconstrução reversível dos metais.
+- Baú metalúrgico reativado para fabricação em novos mundos / consulta próxima a depósitos.
+- Automação de forja com W.O.B.O.T./W.I.N.bot.
+- Matriz completa de receitas individuais e estações.
+- Ícone convertido para KTEX.
+
+O prefab antigo `metal_storage_chest` e seu widget continuam registrados para compatibilidade com saves antigos, mas a receita/opção de criação foi retirada nesta build de teste. Não testar como se fosse um recurso novo craftável.
+
+## Limite de validação
+
+CI passou em Lua 5.1, harnesses e simuladores; nenhum teste foi executado no motor real do DST. Esta build é candidata para teste local, não lançamento final nem compatibilidade integral certificada.
