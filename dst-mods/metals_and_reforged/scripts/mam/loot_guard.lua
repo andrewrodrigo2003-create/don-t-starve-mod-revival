@@ -105,13 +105,16 @@ local function state(source)
     if mode == 2 and not MAMConfig.on("mam_allow_third_party_drop_overrides") then
         mode = 1 -- fallback aditivo: nunca substituir loot tables compartilhadas sem opt-in
     end
-    if source.parent_key ~= nil and not MAMConfig.on("mam_drop_" .. source.parent_key) then
+    local parent_value = source.parent_key ~= nil
+        and MAMConfig.int("mam_drop_" .. source.parent_key, 1) or nil
+    if parent_value ~= nil and parent_value <= 0 then
         return false, "parent-source-off"
     end
     local value = MAMConfig.int("mam_drop_" .. source.key, 1)
     if value <= 0 then
         return false, "source-off"
     end
+    local compatibility_value = parent_value ~= nil and parent_value or value
     if mode == 0 then
         return false, "disabled"
     end
@@ -123,13 +126,13 @@ local function state(source)
         -- Hounds: no modo Rewrite, Auto sem UM usa a tabela original; com UM,
         -- Auto cede e Always soma nossos fragmentos sem apagar as gemas do UM.
         local rewrite_additive = source.apply_in_rewrite
-            or (source.skip_if_um and value == 2 and M.HasUncompromising())
+            or (source.skip_if_um and compatibility_value == 2 and M.HasUncompromising())
         if not rewrite_additive then
             return false, "rewrite-mode"
         end
     end
 
-    if source.skip_if_um and value == 1 and M.HasUncompromising() then
+    if source.skip_if_um and compatibility_value == 1 and M.HasUncompromising() then
         return false, "um-present"
     end
     return true, "on"
