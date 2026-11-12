@@ -110,9 +110,11 @@ M.results = {}
 -- ambiente, entao quem roda no modmain precisa injetar a funcao aqui.
 local add_recipe_2 = nil
 local add_recipe_to_filter = nil
-function M.Init(addrecipe2, addrecipetofilter)
+local remove_recipe_from_filter = nil
+function M.Init(addrecipe2, addrecipetofilter, removerecipefromfilter)
     add_recipe_2 = addrecipe2
     add_recipe_to_filter = addrecipetofilter or add_recipe_to_filter
+    remove_recipe_from_filter = removerecipefromfilter or remove_recipe_from_filter
 end
 
 local function describe(recipe)
@@ -315,7 +317,19 @@ function M.set_station(name, tech, filter)
                 "AddRecipeToFilter indisponivel para '%s'; tecnologia alterada, filtro nao.", name)
             return false, result.reason
         end
+
+        -- Remove the recipe from its former vanilla/mod filters so it appears
+        -- in the War Bench station filter only.
+        if remove_recipe_from_filter ~= nil and GLOBAL.CRAFTING_FILTERS ~= nil then
+            for filter_name, filter_def in pairs(GLOBAL.CRAFTING_FILTERS) do
+                if filter_name ~= filter and filter_def.default_sort_values ~= nil
+                    and filter_def.default_sort_values[name] ~= nil then
+                    remove_recipe_from_filter(name, filter_name)
+                end
+            end
+        end
         add_recipe_to_filter(name, filter)
+        recipe.filter = filter
     end
 
     result.applied = true
