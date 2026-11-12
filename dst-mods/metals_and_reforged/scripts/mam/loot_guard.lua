@@ -61,7 +61,14 @@ end
 --- 2.5 unidades esperadas). Escalar preserva o peso relativo de cada roll e corta
 --- a expectativa para 1 -- e' a opcao "sem farm facil", desligada por padrao para
 --- nao mudar o balanceamento original sem o jogador pedir.
-local function prepare(entries)
+local function prepare(entries, scale)
+    scale = type(scale) == "number" and math.max(0, scale) or 1
+    local scaled = {}
+    for i, entry in ipairs(entries) do
+        scaled[i] = { entry[1], math.min(1, math.max(0, entry[2] * scale)) }
+    end
+    entries = scaled
+
     if not MAMConfig.on("mam_drops_normalise") then
         return entries
     end
@@ -89,6 +96,9 @@ local function state(source)
     end
 
     local mode = MAMConfig.int("mam_drops_mode", 1)
+    if mode == 2 and not MAMConfig.on("mam_allow_third_party_drop_overrides") then
+        mode = 1 -- fallback aditivo: nunca substituir loot tables compartilhadas sem opt-in
+    end
     local value = MAMConfig.int("mam_drop_" .. source.key, 1)
     if value <= 0 then
         return false, "source-off"
@@ -159,9 +169,10 @@ function M.Declare(prefabs, key, entries, opts)
         prefabs = { prefabs }
     end
 
+    local chance_scale = MAMConfig.int("mam_drop_" .. key .. "_chance", 100) / 100
     local source = {
         key = key,
-        entries = prepare(entries),
+        entries = prepare(entries, chance_scale),
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
         apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
     }
