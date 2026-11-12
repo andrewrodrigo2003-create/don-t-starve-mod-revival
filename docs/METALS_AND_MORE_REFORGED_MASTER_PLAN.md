@@ -134,6 +134,8 @@
 
 ## 10. Pesquisa e referências
 
+**Mapa de pesquisa da família Don't Starve — Parte 1:** [docs/research/DONT_STARVE_FAMILY_RESEARCH_MAP_PART1.md](research/DONT_STARVE_FAMILY_RESEARCH_MAP_PART1.md). Separa DS/RoG/SW/HAM como referências comparativas e mantém DST como única fonte técnica direta. O documento registra correções, evidências e pendências; não autoriza portar APIs entre jogos.
+
 - [ ] Pesquisar mods de DST e outros jogos com boas soluções de mineração, metalurgia, fabricação, forjas, armazenamento, transporte e interfaces.
 - [ ] Registrar fonte, versão, mecânica observada e o que pode ser adaptado.
 - [ ] Usar referências como inspiração técnica, sem copiar código/assets protegidos nem alterar a identidade do Metals and More.
