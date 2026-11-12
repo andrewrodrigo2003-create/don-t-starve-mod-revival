@@ -325,3 +325,14 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - A atualização 2.9.5 inclui segurança transacional da forja, retry de devoluções, proteção da migração de gold_ore, retry de aplicação de receitas, prévia visual de fundição, wrappers de combate/stategraph e otimização do minimapa. A mecânica global antiga de arremesso de Lucy continua removida; armas corpo a corpo/AOE e machado normal permanecem.
 - Funcionalidades essenciais ainda não concluídas no plano mestre: livro metalúrgico somente leitura; desconstrução reversível (a estação recomendada é warworkbench, mas ainda não confirmada); matriz final de receitas/estações; consulta segura de depósitos; automação W.O.B.O.T./W.I.N.bot; conversão KTEX do ícone; matriz de compatibilidade UM Beta + conjunto de mods do usuário. Não marcar o pedido inteiro como concluído.
 - Próxima validação local: instalar uma única cópia do build de teste, testar a forja e as armas no mundo `mundo de testes de mod`, depois testar com UM Beta e mods de armazenamento/fornalhas. Preservar Hydrated/Dehydrated e Better Lucy.
+
+
+### Auditoria adicional — Uncompromising Mode Public Beta 6.0.3.9 (2026-11-12)
+
+- A branch correta para o beta público foi identificada como `utw-beta`, versão `6.0.3.9`, commit observado `fc09a5924fbb096a4dcb3582e22907b9c94a73ca`. Não confundir com a branch `live` (1.5.4.6).
+- Revalidados os conflitos conhecidos: UM escreve diretamente `AllRecipes.glasscutter.ingredients` quando `celestialitems_revert` está ativo; MAM usa assinatura vanilla e guarda de receita para ceder quando outro mod alterou o conteúdo.
+- Hounds elementais: UM define `hound_fire`/`hound_cold` em `AddSimPostInit` com gemas a 0.3; MAM `Auto` detecta `GLOBAL.UMCommonFns` e pula os fragmentos próprios. `Always` é uma escolha explícita que pode somar materiais.
+- Shark: UM adiciona `rockjawleather`; MAM adiciona `sharkscale` por `AddChanceLoot`, sem substituir o wrapper `DropLoot` do UM.
+- Containers: UM tem `um_scrapper` e amplia o componente vanilla; o baú MAM usa prefab/widget/tags próprios e não substitui os parâmetros globais de containers.
+- Criado relatório detalhado em `docs/compatibility/UNCOMPROMISING_MODE_PUBLIC_BETA_6.0.3.9_AUDIT_2026-11-12.md`. A referência no comentário de `recipe_guard.lua` foi atualizada de 6.0.3.8 para 6.0.3.9.
+- Isto é auditoria de código, não teste de integração in-game. Testar no mundo local: recipes (celestialitems_revert), hounds em Auto, shark, baú, forja, depois mods de fornalha/armazenamento e conjunto completo.
