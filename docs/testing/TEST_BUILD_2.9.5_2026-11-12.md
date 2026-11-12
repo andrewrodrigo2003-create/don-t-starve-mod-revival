@@ -1,15 +1,16 @@
 # Metals and More Reforged 2.9.5 — teste local
 
 **Build:** PR #50, branch `fix/smelter-refund-retry-2026-11-11`  
-**Commit exato:** `b26c078d31722dca770242aa974971ea169f7328`  
+**Commit testado:** `594c6ace575e9bc9b0c45026b9fb01b326eeb9c1`  
 **Pacote:** `metals-and-more-reforged-2.9.5.zip`  
-**SHA-256:** `e72e1e66d6a6f2a4c3e56126105d2ee267d2a2e4e598aa47156eea9dc24ce414`
+**SHA-256 do artefato externo do GitHub:** `a8ef5513533ab41b119b1383d4ba85b926d15c61fc8b9450949f41436b45f377`  
+**Tamanho:** 6.520.736 bytes
 
 ## Instalação
 
-1. Baixe o artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43274625559/artifacts/13969597340
+1. Baixe o artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43275633835/artifacts/13971540102
 2. Extraia o ZIP do artefato. Dentro dele estará o pacote instalável `metals-and-more-reforged-2.9.5.zip`.
-3. Extraia o pacote instalável na pasta de mods do DST. O resultado deve ser uma pasta `metals_and_reforged` contendo `modinfo.lua` e `modmain.lua`.
+3. Dentro do artefato estará o ZIP instalável. Extraia esse ZIP na pasta de mods do DST. O resultado deve ser uma pasta `metals_and_reforged` contendo `modinfo.lua` e `modmain.lua`.
 4. Desative/remova da lista de mods ativos qualquer cópia duplicada/antiga de Metals and More. Não deixe Workshop antigo e pasta local carregarem simultaneamente.
 5. Não substitua nem edite Hydrated/Dehydrated, Better Lucy ou Uncompromising Mode.
 
