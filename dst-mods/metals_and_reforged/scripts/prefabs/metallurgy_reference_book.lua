@@ -1,8 +1,4 @@
-local assets =
-{
-    Asset("ANIM", "anim/book_maxwell.zip"),
-    Asset("SOUND", "sound/together.fsb"),
-}
+local assets = {}
 
 local function OnReadBook(inst, reader)
     if reader ~= nil and reader.ShowPopUp ~= nil then
@@ -36,6 +32,7 @@ local function fn()
     inst:AddComponent("inspectable")
     inst:AddComponent("inventoryitem")
     inst.components.inventoryitem.imagename = "waxwelljournal"
+    inst.components.inventoryitem.atlasname = "images/inventoryimages.xml"
 
     inst:AddComponent("simplebook")
     inst.components.simplebook.onreadfn = OnReadBook
