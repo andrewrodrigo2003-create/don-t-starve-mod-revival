@@ -45,6 +45,7 @@ local forbidden = {
     "function self:CanRangedAttack",
     "old_can_ranged_attack",
     "self.projectile =",
+    "SetSpellFn",
 }
 
 for _, fragment in ipairs(forbidden) do
