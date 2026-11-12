@@ -55,6 +55,11 @@ assert(CRAFTING_FILTERS.TOOLS.default_sort_values.goldenaxe == nil, "old filter 
 assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil, "War Bench filter must receive the recipe")
 assert(#filter_calls == 2 and filter_calls[1].filter == "removed:TOOLS")
 assert(filter_calls[2].filter == "CRAFTING_STATION" and filter_calls[2].name == "goldenaxe")
+
+local calls_after_first_pass = #filter_calls
+assert(guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
+assert(#filter_calls == calls_after_first_pass, "repeated station migration must not duplicate filter entries")
+
 assert(not guard.set_station("removed_recipe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
 
 print("PASS: War Bench station migration preserves live recipe metadata and ingredients")
