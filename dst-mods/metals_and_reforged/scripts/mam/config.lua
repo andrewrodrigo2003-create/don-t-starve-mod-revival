@@ -36,8 +36,6 @@ local DEFAULTS = {
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
     mam_drop_shark       = 1,  -- sharkscale
 
-    -- Armazenamento (Etapa 3)
-    mam_metalschest      = 1,
 }
 
 -- Apenas valores que existem nas configuration_options do modinfo.lua.
@@ -61,7 +59,6 @@ local ALLOWED = {
     mam_drop_marbletree   = { [0] = true, [1] = true },
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
-    mam_metalschest       = { [0] = true, [1] = true },
 }
 
 local values = {}
