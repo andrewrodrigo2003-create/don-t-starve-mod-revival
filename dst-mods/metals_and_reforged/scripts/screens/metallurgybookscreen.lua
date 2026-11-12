@@ -245,7 +245,7 @@ local MetallurgyBookScreen = Class(Screen, function(self, owner)
 end)
 
 function MetallurgyBookScreen:SetPage(page)
-    self.page = math.clamp(page, 1, #self.pages)
+    self.page = math.max(1, math.min(page, #self.pages))
     local data = self.pages[self.page]
     self.title:SetString(data.title)
     self.body:SetString(data.body)
