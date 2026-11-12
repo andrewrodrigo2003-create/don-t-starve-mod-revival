@@ -16,6 +16,7 @@ end
 local config_values = {
     mam_extra_drops = 1,
     mam_drops_mode = 1,
+    mam_allow_third_party_drop_overrides = 1,
     mam_drops_normalise = 0,
     mam_drop_boulders = 1,
     mam_drop_stalagmites = 1,
@@ -155,6 +156,15 @@ end
 assert_true(math.abs(gold_total - 1.0) < 0.000001, "normalizer should cap aggregate gold_dust chance")
 config_values.mam_drops_normalise = 0
 
+-- Per-source chance scaling affects only MAM's own rolls and is also used by Rewrite.
+config_values.mam_drop_hounds_chance = 50
+local half_chance = LootGuard.PrepareEntries({ { "redgem_shard", 0.8 } }, "hounds")
+assert_true(math.abs(half_chance[1][2] - 0.4) < 0.000001, "source chance multiplier")
+config_values.mam_drop_hounds_chance = 150
+local increased_chance = LootGuard.PrepareEntries({ { "redgem_shard", 0.8 } }, "hounds")
+assert_eq(increased_chance[1][2], 1, "chance scaling clamps individual rolls at 1.0")
+config_values.mam_drop_hounds_chance = nil
+
 -- Load the actual newrocks prefab file with the minimum DST registration stubs.
 local rewrite_names = {
     "rock2", "rock_moon", "rock_moon_shell",
@@ -193,6 +203,10 @@ for _, name in ipairs(rewrite_names) do
 end
 assert_eq(present, 18, "number of vanilla Rewrite tables")
 
+local protected_tables = load_rewrite_tables({ mam_allow_third_party_drop_overrides = 0 })
+assert_true(next(protected_tables) == nil, "third-party overwrite opt-out must preserve shared loot tables")
+assert_eq(#run_prefab("rock2"), 2, "safe fallback keeps additive MAM boulder drops")
+
 local no_boulders = load_rewrite_tables({ mam_drop_boulders = 0 })
 assert_true(no_boulders.rock2 == nil and no_boulders.rock_moon == nil and no_boulders.rock_moon_shell == nil,
     "boulder source switch must gate all three tables")
@@ -225,4 +239,4 @@ for _, name in ipairs(rewrite_names) do
     assert_true(disabled_tables[name] == nil, "master switch must gate " .. name)
 end
 
-print("PASS: actual loot_guard + modded_drops + newrocks runtime harness; Rewrite sources, UM Auto/Always, normalization and all 18 table gates")
+print("PASS: loot_guard + modded_drops + newrocks; independent overwrite opt-in, chance tuning, UM Auto/Always, normalization and 18 table gates")
