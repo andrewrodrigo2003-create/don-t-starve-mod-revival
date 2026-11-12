@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/allow-ambiguous-smelting
+      - fix/smelter-refund-retry-2026-11-11
   pull_request:
     branches:
       - main
