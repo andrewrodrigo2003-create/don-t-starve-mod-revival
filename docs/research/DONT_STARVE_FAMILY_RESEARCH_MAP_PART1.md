@@ -108,7 +108,7 @@ Os nomes acima são pontos de entrada para inspeção, não uma lista de APIs ap
 **Limitação importante:** não foi localizado, nesta etapa, um pacote dos scripts vanilla DS/RoG/SW/HAM e tampouco foi validada a versão instalada do DST. Portanto, não se declara concluída a inspeção de código desses jogos. O mapa organiza a pesquisa e corrige a metodologia; a confirmação técnica depende dos arquivos correspondentes.
 
 
-## 5. Inspeção inicial de scripts DST — snapshot comunitário
+## 6. Inspeção inicial de scripts DST — snapshot comunitário
 
 Foi feita uma inspeção direta dos arquivos Lua disponíveis no espelho comunitário taichunmin/dont-starve-together-game-scripts (branch master). Isso é **evidência de código de um snapshot comunitário**, não prova de correspondência com a build instalada do usuário. SHAs observados:
 
@@ -142,7 +142,7 @@ Links diretos para os arquivos do snapshot:
 
 **Limite:** não foi identificado o commit/build do espelho como correspondente à versão instalada do usuário. Antes de usar uma assinatura ou comportamento em código de produção, comparar com os scripts extraídos da versão alvo do DST. O arquivo storage_robot_common.lua e o caminho completo de coleta/armazenamento ainda precisam ser examinados.
 
-## 6. Critérios de conclusão da Parte 1
+## 7. Critérios de conclusão da Parte 1
 
 - [x] Separação formal entre DS, RoG, SW, HAM e DST.
 - [x] DST definido como única base técnica direta do Metals and More Reforged.
