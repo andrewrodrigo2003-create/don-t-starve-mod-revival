@@ -105,6 +105,9 @@ local function state(source)
     if mode == 2 and not MAMConfig.on("mam_allow_third_party_drop_overrides") then
         mode = 1 -- fallback aditivo: nunca substituir loot tables compartilhadas sem opt-in
     end
+    if source.parent_key ~= nil and not MAMConfig.on("mam_drop_" .. source.parent_key) then
+        return false, "parent-source-off"
+    end
     local value = MAMConfig.int("mam_drop_" .. source.key, 1)
     if value <= 0 then
         return false, "source-off"
@@ -166,7 +169,7 @@ end
 -- @param prefabs  nome do prefab, ou lista de nomes que compartilham a mesma fonte
 -- @param key      identificador da opcao no modinfo (sem o prefixo mam_drop_)
 -- @param entries  { {item, chance}, ... } -- chances exatamente como no v2.9.3
--- @param opts     { skip_if_um = true } cede quando o UM ja' reequilibrou a fonte
+-- @param opts     { skip_if_um = true, parent_key = "chess" } permite controle hierarquico
 function M.Declare(prefabs, key, entries, opts)
     if add_prefab_post_init == nil then
         MAMLog.Error("loot_guard.Declare('%s') chamado sem MAMLootGuard.Init(AddPrefabPostInit)",
@@ -185,6 +188,7 @@ function M.Declare(prefabs, key, entries, opts)
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
         apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
         skip_if_followed = opts ~= nil and opts.skip_if_followed == true,
+        parent_key = opts ~= nil and opts.parent_key or nil,
     }
 
     local record = M.declared[key]
