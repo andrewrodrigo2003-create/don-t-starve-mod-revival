@@ -28,7 +28,7 @@ class ModAssetReferenceTests(unittest.TestCase):
         atlas = (MOD_ROOT / "modicon.xml").read_text(encoding="utf-8")
 
         data = source.read_bytes()
-        self.assertEqual(data[:8], b"\\x89PNG\\r\\n\\x1a\\n")
+        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
         self.assertEqual(struct.unpack(">II", data[16:24]), (256, 256))
         self.assertTrue(texture.is_file())
         self.assertIn('filename="modicon.tex"', atlas)
