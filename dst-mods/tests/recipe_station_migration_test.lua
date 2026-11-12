@@ -20,8 +20,17 @@ _G.CRAFTING_FILTERS = {
 package.preload["techtree"] = function()
     return { Create = function(tree) return { ALCHEMY = tree.ALCHEMY } end }
 end
+local third_party_recipe_integration = true
 package.preload["mam/config"] = function()
-    return { int = function(_, _, default) return default or 1 end }
+    return {
+        int = function(_, _, default) return default or 1 end,
+        on = function(key)
+            if key == "mam_third_party_recipe_integration" then
+                return third_party_recipe_integration
+            end
+            return true
+        end,
+    }
 end
 package.preload["mam/log"] = function()
     return {
@@ -62,4 +71,20 @@ assert(#filter_calls == calls_after_first_pass, "repeated station migration must
 
 assert(not guard.set_station("removed_recipe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
 
-print("PASS: War Bench station migration preserves live recipe metadata and ingredients")
+-- A recipe modified by another mod is left entirely untouched when the
+-- independent third-party integration switch is disabled.
+local third_party_ingredients = { { type = "modded_metal", amount = 3 } }
+AllRecipes.goldenaxe.ingredients = third_party_ingredients
+third_party_recipe_integration = false
+local skipped, skipped_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+assert(not skipped and skipped_reason == "third-party-integration-disabled")
+assert(AllRecipes.goldenaxe.ingredients == third_party_ingredients, "disabled integration must preserve third-party ingredients")
+
+-- Re-enabling the integration permits the supported station adaptation while
+-- still preserving the third-party recipe's ingredient table.
+third_party_recipe_integration = true
+local adapted, adapted_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+assert(adapted and adapted_reason == "applied")
+assert(AllRecipes.goldenaxe.ingredients == third_party_ingredients, "enabled integration must preserve third-party ingredients")
+
+print("PASS: War Bench migration preserves metadata and honors the independent third-party recipe switch")
