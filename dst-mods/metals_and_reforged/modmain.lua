@@ -70,6 +70,21 @@ Assets = {
 	Asset("IMAGE", "images/tabimages/theforge_tab.tex"),
 }
 
+-- Make every custom metal ingredient discoverable by vanilla GetInventoryItemAtlas.
+-- This is used by crafting ingredient widgets, inventory previews and other UI.
+if RegisterInventoryItemAtlas ~= nil then
+    for _, item in ipairs({
+        "copper_ore", "iron_ore",
+        "copper_dust", "iron_dust", "gold_dust",
+        "copper_ingot", "iron_ingot", "bronze_ingot",
+        "gold_ingot", "moonglass_ingot", "adamantium_ingot", "junk_dust",
+        "redgem_shard", "yellowgem_shard", "bluegem_shard",
+        "purplegem_shard", "greengem_shard", "orangegem_shard",
+    }) do
+        RegisterInventoryItemAtlas("images/inventoryimages/" .. item .. ".xml", item .. ".tex")
+    end
+end
+
 PrefabFiles = {
 	"warworkbench",
 
