@@ -397,3 +397,14 @@ Este registro supersede as etapas antigas que ainda descreviam como pendentes o 
 - Wiring do livro, automação de robôs, referências de assets e conteúdo do pacote instalável: passaram.
 - Artefato: [metals-and-more-reforged-2.9.6](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936/artifacts/13974480896), 6.587.858 bytes, SHA-256 `9a0baedff6b894e80913cce9e88390896d08d1e92b8018a72acd64178a42c091`, expira em 26/11/2026.
 - A validação in-game, multiplayer, save migration e a coleção completa de mods do usuário continuam pendentes. O PR #50 permanece draft, sem merge.
+
+
+## 18. Clarificação do usuário — fabricação obrigatória com ferramenta (2026-11-12)
+
+Esta decisão complementa a lista mestre e o mapa de atualizações/ideias; não substitui nenhum item anterior da atualização 2.9.7.
+
+- **Tábuas:** desativar a receita/método vanilla padrão que está sendo substituído. Todos os personagens passam a fabricar tábuas pelo novo método com requisito de ferramenta. Qualquer machado válido do DST serve; o machado não é consumido como ingrediente e mantém o desgaste normal da ferramenta. A redução de custo já existente na habilidade vanilla de Woodie será verificada na fonte da versão ativa do DST e convertida em regra compartilhada por todos os sobreviventes. Não inventar valor e não editar Woodie - Better Skill Tree nem qualquer outro mod.
+- **Pedra trabalhada / cutstone:** desativar o método vanilla padrão que está sendo substituído. Criar o novo item **Cinzel de Entalhe em Pedra**, reutilizável, sem consumo de durabilidade nem de pilha. O cinzel é requisito de ferramenta, não ingrediente consumido, e a regra vale para todos os personagens.
+- **Validação:** servidor valida ferramenta real e funcional; usar componentes/tags estáveis, rejeitar ferramenta quebrada/inválida e falhar com segurança para ferramentas de terceiros não identificadas. Não aceitar pelo nome do prefab isoladamente.
+- **Mesa de Serragem:** a alternativa já prevista no documento 2.9.7 permanece condicionada à verificação de um prefab e API reais de vanilla/UM. Ela não pode reativar o método vanilla desativado.
+- **Escopo preservado:** permanecem ativos todos os demais itens do pedido anterior e do mapa de ideias: localização completa, desmontagem de todos os materiais, livro, bancadas, matriz de balanceamento madeira/pedra, adaptadores de compatibilidade, testes e demais tarefas do plano mestre. Esta clarificação corrige somente a interpretação da fabricação de tábuas e pedra.
