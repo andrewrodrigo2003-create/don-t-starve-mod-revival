@@ -154,7 +154,9 @@ local function apply(name, inst)
         local follower = inst.components.follower
         local followed = source.skip_if_followed and follower ~= nil and follower.leader ~= nil
         if enabled and not followed then
-            for _, entry in ipairs(source.entries) do
+            local chance_scale = MAMConfig.int("mam_drop_" .. source.key .. "_chance", 100) / 100
+            local entries = prepare(source.entries, chance_scale)
+            for _, entry in ipairs(entries) do
                 lootdropper:AddChanceLoot(entry[1], entry[2])
                 M.stats.applied = M.stats.applied + 1
             end
@@ -181,10 +183,9 @@ function M.Declare(prefabs, key, entries, opts)
         prefabs = { prefabs }
     end
 
-    local chance_scale = MAMConfig.int("mam_drop_" .. key .. "_chance", 100) / 100
     local source = {
         key = key,
-        entries = prepare(entries, chance_scale),
+        entries = entries,
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
         apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
         skip_if_followed = opts ~= nil and opts.skip_if_followed == true,
