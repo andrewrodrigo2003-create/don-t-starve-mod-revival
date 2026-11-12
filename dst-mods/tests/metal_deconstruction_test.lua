@@ -34,7 +34,10 @@ assert(specialist[1].count == 3, "Wilson should have 100% recovery")
 
 local base_success = assert(recovery.BuildPlan("copper_ingot", "generic", always_success))
 assert(base_success[1].count == 3, "successful 75% rolls should recover each component")
-local none = assert(recovery.BuildPlan("copper_ingot", "generic", always_fail))
+local none = assert(recovery.BuildPlan("halberd", "generic", always_fail, {
+    ingredients = { { type = "rope", amount = 1 } },
+    numtogive = 1,
+}))
 assert(#none == 0, "failed 75% rolls should not create material")
 
 assert(recovery.GetRecoveryRate("winona", "nonmagical") == 1)
