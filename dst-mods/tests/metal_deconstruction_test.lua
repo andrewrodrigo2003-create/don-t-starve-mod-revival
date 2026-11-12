@@ -37,6 +37,25 @@ assert(recovery.GetRecoveryRate("waxwell", "shadow") == 1)
 assert(recovery.GetRecoveryRate("wilson", "lunar") == 1)
 assert(recovery.GetRecoveryRate("wx78", "nonmagical") == 0.75)
 assert(recovery.GetRecoveryRate("wickerbottom", "lunar") == 0.75)
+
+local crafted = assert(recovery.BuildPlan("halberd", "winona", always_fail, {
+    ingredients = {
+        { type = "log", amount = 2 },
+        { type = "iron_ingot", amount = 3 },
+        { type = "rope", amount = 1 },
+    },
+    numtogive = 1,
+}))
+assert(#crafted == 1 and crafted[1].prefab == "iron_ingot" and crafted[1].count == 3,
+    "Winona should fully recover the nonmagical metal portion of equipment")
+local damaged = assert(recovery.BuildPlan("halberd", "wilson", always_success, {
+    ingredients = { { type = "iron_ingot", amount = 4 } },
+    numtogive = 1,
+}, 0.5))
+assert(damaged[1].count == 2, "equipment salvage should scale with remaining durability")
+assert(recovery.BuildPlan("halberd", "generic", always_success, nil) == nil,
+    "crafted equipment requires its live recipe")
+
 assert(recovery.BuildPlan("unknown_metal", "wilson", always_success) == nil)
 
 print("PASS: material deconstruction rates, alloys, specialists and unsupported inputs")
