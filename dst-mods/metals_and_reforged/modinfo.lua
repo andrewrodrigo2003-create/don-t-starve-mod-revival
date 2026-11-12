@@ -1,7 +1,7 @@
 name = "Metals and More Reforged"
-description = "Create armor and weapons at your new craftable workbench."
+description = "Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
-version = "2.9.5"
+version = "2.9.6"
 forumthread = ""
 
 api_version = 10
