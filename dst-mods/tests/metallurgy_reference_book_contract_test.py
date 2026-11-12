@@ -16,9 +16,11 @@ assert "recipe.max_batch" in screen
 assert "Max input batch" in screen
 assert "can_fit_staged_outputs" in actions
 assert 'BASE_RECOVERY = 0.75' in module
-assert 'character == "wilson"' in module
-assert 'character == "winona"' in module
-assert 'character == "waxwell"' in module
+assert 'wilson = { all = 1 }' in module
+assert 'winona = { nonmagical = 1 }' in module
+assert 'waxwell = { shadow = 1 }' in module
+assert 'local function character_rate(character, material)' in module
+assert 'return MAMDeconstruction.BASE_RECOVERY' in module
 assert 'simplebook' in prefab and 'components.simplebook.onreadfn' in prefab
 assert 'smelting_products' in screen
 assert 'metallurgy_reference_book' in modmain
