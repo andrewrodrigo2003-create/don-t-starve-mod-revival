@@ -287,6 +287,21 @@ local function load_rewrite_tables(overrides, has_um)
     config_values.mam_drop_stalagmites = 1
     config_values.mam_drop_chess = 1
     config_values.mam_drop_hounds = 1
+    config_values.mam_allow_third_party_drop_overrides = 1
+    config_values.mam_drop_chessjunk = 1
+    config_values.mam_drop_knight = 1
+    config_values.mam_drop_rook = 1
+    config_values.mam_drop_bishop = 1
+    config_values.mam_drop_firehound = 1
+    config_values.mam_drop_icehound = 1
+    config_values.mam_drop_boulders_chance = 100
+    config_values.mam_drop_stalagmites_chance = 100
+    config_values.mam_drop_chessjunk_chance = 100
+    config_values.mam_drop_knight_chance = 100
+    config_values.mam_drop_rook_chance = 100
+    config_values.mam_drop_bishop_chance = 100
+    config_values.mam_drop_firehound_chance = 100
+    config_values.mam_drop_icehound_chance = 100
     for key, value in pairs(overrides or {}) do
         config_values[key] = value
     end
@@ -336,6 +351,25 @@ end
 local no_hounds = load_rewrite_tables({ mam_drop_hounds = 0 })
 assert_true(no_hounds.hound_fire == nil and no_hounds.hound_cold == nil,
     "hounds source switch must gate both hound tables")
+
+local no_knight = load_rewrite_tables({ mam_drop_knight = 0 })
+assert_true(no_knight.knight == nil and no_knight.knight_nightmare == nil,
+    "knight switch must gate both normal and nightmare tables")
+local no_rook = load_rewrite_tables({ mam_drop_rook = 0 })
+assert_true(no_rook.rook == nil and no_rook.rook_nightmare == nil,
+    "rook switch must gate both normal and nightmare tables")
+local no_bishop = load_rewrite_tables({ mam_drop_bishop = 0 })
+assert_true(no_bishop.bishop == nil and no_bishop.bishop_nightmare == nil,
+    "bishop switch must gate both normal and nightmare tables")
+local no_chessjunk = load_rewrite_tables({ mam_drop_chessjunk = 0 })
+assert_true(no_chessjunk.chess_junk == nil,
+    "chess junk switch must gate its own shared table")
+local no_firehound = load_rewrite_tables({ mam_drop_firehound = 0 })
+assert_true(no_firehound.hound_fire == nil and no_firehound.hound_cold ~= nil,
+    "firehound switch must not disable icehound Rewrite table")
+local no_icehound = load_rewrite_tables({ mam_drop_icehound = 0 })
+assert_true(no_icehound.hound_cold == nil and no_icehound.hound_fire ~= nil,
+    "icehound switch must not disable firehound Rewrite table")
 
 local half_boulder_tables = load_rewrite_tables({ mam_drop_boulders_chance = 50 })
 local half_gold_rolls = {}
