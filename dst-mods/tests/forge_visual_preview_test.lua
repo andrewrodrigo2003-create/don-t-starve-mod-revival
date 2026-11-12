@@ -176,7 +176,7 @@ local open_result, open_middle, open_tail = widget:Open(forge, "doer", "open-tai
 assert(open_result == "opened" and open_middle == nil and open_tail == "open-tail",
     "Open must preserve all base return values and forward extra arguments")
 assert(widget.mam_forge_preview ~= nil, "forge preview panel must be created")
-assert(widget.mam_forge_preview.position[1] == -270,
+assert(widget.mam_forge_preview.position.x == -270,
     "forge preview must move clear of the input slots")
 assert(widget.scale == 1.2,
     "forge container HUD and its preview must be enlarged by 20%")
