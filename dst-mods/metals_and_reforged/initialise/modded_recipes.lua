@@ -164,7 +164,9 @@ local function apply_vanilla_overrides(where, force)
     {
         "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
         "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
-        "armormarble", "portablecookpot_item", "portableblender_item",
+        "armormarble", "armordragonfly", "ruinshat", "armorruins",
+        "multitool_axe_pickaxe", "winterometer", "rainometer", "nightlight",
+        "portablecookpot_item", "portableblender_item",
         "portablespicer_item", "glasscutter", "archive_resonator_item",
         "moondial", "moonrockcrater", "moonglassaxe",
     }
