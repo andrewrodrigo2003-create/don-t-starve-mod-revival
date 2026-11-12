@@ -386,3 +386,14 @@ Este registro supersede as etapas antigas que ainda descreviam como pendentes o 
 - Os resultados de CI da build 2.9.6 devem ser conferidos pelo head mais recente da PR #50; execuções anteriores que falharam na conversão de imagem ou no teste de configuração não contam como aprovação.
 - Ainda dependem de teste real: leitura e navegação do livro no cliente, interação de desmontagem, energia/estados dos dois robôs, host/cliente, multiplayer, save migration, UM Public Beta 6.0.3.9 e coleção completa de mods do usuário.
 - O conjunto completo de 57 mods não está certificado. Não declarar compatibilidade total nem mover a PR para ready/merge antes do teste consolidado no mundo `mundo de testes de mod`.
+
+
+### Validação CI e artefato 2.9.6 — 2026-11-12
+
+- GitHub Actions: [run 43283223936](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936), conclusão `success`, head exato `ea57c9489c26113d807f63f60934f16b0172571a`.
+- KTools `ktech` build + SVG rasterization + KTEX conversion: passou.
+- Lua 5.1 parse dos arquivos MAM e do simulador: passou.
+- Regressões: fundição 270/270; preview 14/14; ciclo de vida 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de gold_ore 16 contratos; retry de receitas 10 contratos; deconstruction; migração da War Bench; loot runtime; habilidades 19/19; integração da forja 15/15.
+- Wiring do livro, automação de robôs, referências de assets e conteúdo do pacote instalável: passaram.
+- Artefato: [metals-and-more-reforged-2.9.6](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936/artifacts/13974480896), 6.587.858 bytes, SHA-256 `9a0baedff6b894e80913cce9e88390896d08d1e92b8018a72acd64178a42c091`, expira em 26/11/2026.
+- A validação in-game, multiplayer, save migration e a coleção completa de mods do usuário continuam pendentes. O PR #50 permanece draft, sem merge.
