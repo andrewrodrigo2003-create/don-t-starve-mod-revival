@@ -1,3 +1,5 @@
+package.path = "dst-mods/metals_and_reforged/scripts/?.lua;" .. package.path
+
 _G.GLOBAL = _G
 _G.AllRecipes = {
     goldenaxe = {
