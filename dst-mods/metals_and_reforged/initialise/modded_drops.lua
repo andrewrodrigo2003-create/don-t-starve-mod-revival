@@ -117,53 +117,53 @@ MAMLootGuard.Declare("stalagmite_tall_low", "stalagmites", {
 -- Criatura perigosa da ruina da' material melhor que a rocha da superficie:
 -- knight/rook/bishop soltam lingote, a sucata da' po e fragmento de gema.
 ----------------------------------------------------------------------
-MAMLootGuard.Declare({ "chessjunk", "chessjunk1", "chessjunk2", "chessjunk3" }, "chess", {
+MAMLootGuard.Declare({ "chessjunk", "chessjunk1", "chessjunk2", "chessjunk3" }, "chessjunk", {
     { "redgem_shard",   0.50 },
     { "greengem_shard", 0.25 },
     { "bluegem_shard",  0.50 },
     { "copper_dust",    0.50 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("knight", "chess", {
+MAMLootGuard.Declare("knight", "knight", {
     { "copper_ore", 0.50 },
     { "copper_ore", 1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("knight_nightmare", "chess", {
+MAMLootGuard.Declare("knight_nightmare", "knight", {
     { "copper_ore", 0.50 },
     { "copper_ore", 0.50 },
     { "copper_ore", 1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("rook", "chess", {
+MAMLootGuard.Declare("rook", "rook", {
     { "copper_ingot", 0.75 },
     { "copper_ingot", 0.75 },
     { "iron_ingot",   1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("rook_nightmare", "chess", {
+MAMLootGuard.Declare("rook_nightmare", "rook", {
     { "copper_ingot", 0.75 },
     { "copper_ingot", 0.75 },
     { "iron_ingot",   1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("bishop", "chess", {
+MAMLootGuard.Declare("bishop", "bishop", {
     { "bluegem_shard", 1.00 },
     { "redgem_shard",  1.00 },
     { "bluegem_shard", 0.50 },
     { "redgem_shard",  0.50 },
     { "copper_ingot",  0.75 },
     { "iron_ingot",    1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("bishop_nightmare", "chess", {
+MAMLootGuard.Declare("bishop_nightmare", "bishop", {
     { "copper_ingot",    0.50 },
     { "iron_ingot",      1.00 },
     { "purplegem_shard", 1.00 },
     { "purplegem_shard", 0.75 },
     { "purplegem_shard", 0.50 },
     { "purplegem_shard", 0.25 },
-})
+}, { parent_key = "chess" })
 
 ----------------------------------------------------------------------
 -- Caes elementais -- CEDE ao Uncompromising Mode
@@ -175,19 +175,19 @@ MAMLootGuard.Declare("bishop_nightmare", "chess", {
 -- que desliga esta fonte quando o UM esta' ativo. "Always" forca; sem UM, "Auto"
 -- se comporta exatamente como o original.
 ----------------------------------------------------------------------
-MAMLootGuard.Declare("firehound", "hounds", {
+MAMLootGuard.Declare("firehound", "firehound", {
     { "redgem_shard", 1.00 },
     { "redgem_shard", 0.75 },
     { "redgem_shard", 0.50 },
     { "redgem_shard", 0.25 },
-}, { skip_if_um = true })
+}, { skip_if_um = true, parent_key = "hounds" })
 
-MAMLootGuard.Declare("icehound", "hounds", {
+MAMLootGuard.Declare("icehound", "icehound", {
     { "bluegem_shard", 1.00 },
     { "bluegem_shard", 0.75 },
     { "bluegem_shard", 0.50 },
     { "bluegem_shard", 0.25 },
-}, { skip_if_um = true })
+}, { skip_if_um = true, parent_key = "hounds" })
 
 ----------------------------------------------------------------------
 -- Arvore de marmore NATURAL
@@ -231,6 +231,16 @@ MAMLootGuard.Declare("rocky", "rocky", {
     { "copper_dust", 0.20 },
     { "iron_dust",   0.05 },
 }, { apply_in_rewrite = true, skip_if_followed = true })
+
+-- Criaturas blindadas das cavernas: o casco pode conter residuos ferrosos.
+-- Quantidades baixas e poeira apenas; nao substitui a progressao de minerio.
+MAMLootGuard.Declare("slurtle", "slurtle", {
+    { "iron_dust", 0.08 },
+})
+
+MAMLootGuard.Declare("snurtle", "snurtle", {
+    { "iron_dust", 0.12 },
+})
 
 -- Escombros de cavernas: minerar rubble pode revelar particulas metalicas.
 -- O drop base de pedras continua intacto; apenas acrescentamos poeira rara.
