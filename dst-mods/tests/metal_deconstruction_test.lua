@@ -54,8 +54,9 @@ local crafted = assert(recovery.BuildPlan("halberd", "winona", always_fail, {
     },
     numtogive = 1,
 }))
-assert(#crafted == 1 and crafted[1].prefab == "iron_ingot" and crafted[1].count == 3,
-    "Winona should fully recover the nonmagical metal portion of equipment")
+assert(#crafted == 2 and crafted[1].prefab == "iron_ingot" and crafted[1].count == 3
+    and crafted[2].prefab == "log" and crafted[2].count == 1,
+    "Winona should fully recover metal while other ingredients keep standard fractional salvage")
 local damage_roll_index = 0
 local function damage_roll()
     damage_roll_index = damage_roll_index + 1
