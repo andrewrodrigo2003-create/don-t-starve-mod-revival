@@ -18,11 +18,11 @@ local function run_case(module_path, method_name, expected_minimum)
 
     local log = {
         Try = function(_, fn, ...)
-            local ok = pcall(fn, ...)
+            local ok, result = pcall(fn, ...)
             if not ok then
                 caught_errors = caught_errors + 1
             end
-            return ok
+            return ok, result
         end,
         Info = function() end,
         WarnOnce = function() end,
