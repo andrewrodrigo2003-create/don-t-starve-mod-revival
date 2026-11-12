@@ -33,8 +33,9 @@ jobs:
           # Upstream declares inverseOf(ProjectiveMatrix) as void but returns a matrix.
           # Correct this obvious signature typo in the isolated CI checkout only.
           python3 - <<'PY'
+          import os
           from pathlib import Path
-          path = Path("$RUNNER_TEMP/ktools/src/common/algebra.hpp")
+          path = Path(os.environ["RUNNER_TEMP"]) / "ktools/src/common/algebra.hpp"
           source = path.read_text()
           old = "inline void inverseOf(const ProjectiveMatrix<2, T>& M)"
           new = "inline ProjectiveMatrix<2, T> inverseOf(const ProjectiveMatrix<2, T>& M)"
