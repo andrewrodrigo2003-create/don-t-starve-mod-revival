@@ -36,6 +36,7 @@ local DEFAULTS = {
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
     mam_drop_shark       = 1,  -- sharkscale
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
+    mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
 
 }
 
@@ -61,6 +62,7 @@ local ALLOWED = {
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
     mam_robot_smelting    = { [0] = true, [1] = true },
+    mam_language          = { ptbr = true, en = true },
 }
 
 local values = {}
