@@ -15,6 +15,8 @@ local allowed = {
     mam_leftovers = { 0, 1 },
     mam_batch_cap = { 4, 10, 20 },
     mam_recipe_overrides = { 0, 1, 2 },
+    mam_third_party_recipe_integration = { 0, 1 },
+    mam_allow_third_party_drop_overrides = { 0, 1 },
     mam_extra_drops = { 0, 1 },
     mam_drops_mode = { 1, 2 },
     mam_drops_normalise = { 0, 1 },
@@ -25,16 +27,27 @@ local allowed = {
     mam_drop_marbletree = { 0, 1 },
     mam_drop_marbleshrub = { 0, 1 },
     mam_drop_shark = { 0, 1 },
+    mam_drop_boulders_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_stalagmites_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_chess_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_hounds_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_marbletree_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_shark_chance = { 25, 50, 75, 100, 125, 150 },
+    mam_drop_marbleshrub_quantity = { 0, 100, 200, 300 },
     mam_robot_smelting = { 0, 1 },
 }
 
 local defaults = {
     mam_batch = 1, mam_batch_time = 25, mam_forecast = 2, mam_leftovers = 1,
-    mam_batch_cap = 10, mam_recipe_overrides = 1, mam_extra_drops = 1,
+    mam_batch_cap = 10, mam_recipe_overrides = 1, mam_third_party_recipe_integration = 1,
+    mam_allow_third_party_drop_overrides = 0, mam_extra_drops = 1,
     mam_drops_mode = 1, mam_drops_normalise = 0, mam_drop_boulders = 1,
     mam_drop_stalagmites = 1, mam_drop_chess = 1, mam_drop_hounds = 1,
     mam_drop_marbletree = 1, mam_drop_marbleshrub = 1, mam_drop_shark = 1,
-    mam_robot_smelting = 0,
+    mam_drop_boulders_chance = 100, mam_drop_stalagmites_chance = 100,
+    mam_drop_chess_chance = 100, mam_drop_hounds_chance = 100,
+    mam_drop_marbletree_chance = 100, mam_drop_shark_chance = 100,
+    mam_drop_marbleshrub_quantity = 100, mam_robot_smelting = 0,
 }
 
 -- Todos os valores de configuracao publicados devem ser aceitos sem alteracao.
@@ -68,6 +81,21 @@ end, { mam_batch_cap = 20, mam_forecast = 99, mam_drops_mode = "2" })
 equal(Config.get("mam_batch_cap"), 20, "override valido aplicado")
 equal(Config.get("mam_forecast"), 2, "override numerico invalido ignorado")
 equal(Config.get("mam_drops_mode"), 1, "override de tipo errado ignorado")
+
+-- As integracoes sao independentes: desligar receitas de terceiros nao altera
+-- os overrides de custo vanilla; o Rewrite de drops exige opt-in separado.
+Config.Init(function(k)
+    if k == "mam_third_party_recipe_integration" then return 0 end
+    if k == "mam_recipe_overrides" then return 1 end
+    if k == "mam_allow_third_party_drop_overrides" then return 0 end
+    if k == "mam_drops_mode" then return 2 end
+end)
+equal(Config.on("mam_third_party_recipe_integration"), false, "integracao de receitas de terceiros desligavel")
+equal(Config.get("mam_recipe_overrides"), 1, "override vanilla independente da integracao de terceiros")
+equal(Config.on("mam_allow_third_party_drop_overrides"), false, "substituicao de loot de terceiros exige opt-in")
+equal(Config.get("mam_drops_mode"), 2, "modo Rewrite continua selecionavel separadamente")
+equal(Config.get("mam_drop_hounds_chance"), 100, "chance de hounds tem ajuste independente")
+equal(Config.get("mam_drop_marbleshrub_quantity"), 100, "quantidade do arbusto tem ajuste independente")
 
 -- set() tambem nao permite contornar a validacao.
 Config.set("mam_batch", 0)
