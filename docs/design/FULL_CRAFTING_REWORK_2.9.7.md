@@ -37,17 +37,19 @@ Required coverage includes every MAM material prefab, not only the current coppe
 ## 3. Stoneworking — smooth stone and the reusable chisel
 
 - Add a new **Stone-Carving Chisel** item. It is a reusable, infinite-use tool: no durability consumption and no stack consumption on use.
-- Smooth stone / cut-stone production must require either the chisel as an available tool or the in-game Sawing Table.
+- Smooth stone / cut-stone production must require the chisel as an available tool; the old vanilla crafting route for the replaced output is disabled/removed so the new tool-gated route is mandatory.
 - The chisel is a tool requirement, not a consumed ingredient. It must not be possible to satisfy the recipe by carrying a broken/invalid substitute or by duplicating a crafted result through repeat callbacks.
-- The Sawing Table provides the alternative processing route and must integrate with its actual vanilla/UM prefab and action APIs. Do not invent a prefab or assume a table exists without source verification.
+- Sawing Table integration remains a separately specified alternative only where an actual vanilla/UM table prefab and action API are verified from source. Do not invent a prefab or assume a table exists. It must not silently restore the disabled vanilla route.
 - Audit all stone-family materials and outputs (rocks, flint, marble, cutstone, thulecite and modded stone-like materials) before changing costs. Do not force every stone material through one recipe if that damages progression.
 
-## 4. Woodworking — boards require an axe or Sawing Table
+## 4. Woodworking — boards require any axe
 
-- Board production requires a valid axe tool or the Sawing Table.
+- Board production requires a valid axe tool. Any valid vanilla axe tier must satisfy the requirement; do not restrict the recipe to one specific axe prefab.
 - Axe is a tool requirement and is not consumed. Preserve axe durability according to the game's normal tool-use conventions; do not make the new recipe consume an axe as an ingredient.
-- Support vanilla axe tiers and compatible third-party axes through stable tags/components where possible. If a modded axe cannot be safely identified, it must not be accepted by an unsafe name heuristic.
-- Sawing Table is the alternative route.
+- The old vanilla board crafting route is disabled/removed; boards must be produced through the new axe-gated route. The axe is required for every character.
+- Make Woodie's existing board-cost reduction/woodworking skill effect a native, shared crafting rule available to every survivor, not a Woodie-only perk. Apply the exact existing vanilla discount/value after source verification; do not invent a new discount or modify Woodie's external skill-tree mod.
+- Support compatible third-party axes through stable tags/components where possible. If a modded axe cannot be safely identified, it must not be accepted by an unsafe name heuristic.
+- Sawing Table integration remains a separately specified alternative only where an actual vanilla/UM table prefab and action API are verified from source. It must not silently restore the disabled vanilla route.
 - Audit logs, boards, living logs, driftwood, twig sources and UM-specific wood materials before rebalance. Preserve character and world-source differences.
 
 ## 5. Rebalance framework — wood and stone first
@@ -74,7 +76,7 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale still need provenance-based decisions before claiming complete material coverage.
 2. Implement the localization registry and language selection; add complete string-coverage tests.
 3. Replace the narrow deconstruction allowlist with a material-only registry and explicit character profile resolver; add full survivor/material coverage tests.
-4. Implement non-consuming tool validation for chisel/axe and Sawing Table integration after verifying the real DST/UM APIs.
+4. Implement non-consuming tool validation for chisel/axe and verified Sawing Table integration; remove the replaced vanilla board/cut-stone crafting routes without disabling unrelated recipes.
 5. Produce the acquisition/processing/usage balance matrix for stone and wood; change recipes only with documented rationale.
 6. Add compatibility adapters and source-contract tests for vanilla, UM Beta and representative modded recipes.
 7. Run Lua 5.1 parsing, unit/contract tests, multiplayer/save-load checks where possible, and build a single consolidated package.
@@ -83,3 +85,13 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 ## Out of scope for this milestone
 
 New biomes, bosses, mobs, broad new item families, and new world structures. These belong to a later content expansion after the crafting foundation is stable.
+
+## Clarification from user — tool-gated crafting (2026-11-12)
+
+This clarification refines the existing full-update request; it does not replace the master plan or the prior requested feature list.
+
+- **Boards:** disable the standard vanilla board recipe. All survivors must use the new tool-gated route. Any valid axe works and is not consumed. Use the actual vanilla Woodie board-cost reduction as the common baseline for every survivor; verify its exact value/implementation from the active DST source before coding. Preserve ordinary axe durability/use behavior and do not edit Woodie's skill-tree mod.
+- **Cut stone:** disable the standard vanilla cut-stone route being replaced. Add a new reusable Stone-Carving Chisel item; it is a non-consumed tool requirement, with no durability or stack consumption. Follow the same shared rule for every survivor.
+- **Sawing Table:** retain the previously requested alternative only if a real vanilla/UM implementation and API are verified. It cannot re-enable the disabled vanilla recipe path by accident.
+- Both tool gates must be server-authoritative, validate a real equipped/carried tool by supported components/tags, reject broken/invalid tools, and fail closed for unknown third-party tools. Neither tool is consumed as an ingredient.
+- This is a clarification only. The rest of the 2.9.7 scope and the master update/ideas map remain active and must continue to be implemented.
