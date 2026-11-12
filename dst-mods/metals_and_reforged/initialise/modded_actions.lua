@@ -185,7 +185,25 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
     end
 
     local inventory = doer.components.inventory
-    local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab)
+    local recipe = GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[item.prefab] or nil
+    if recipe ~= nil and recipe.no_deconstruction then
+        return false
+    end
+
+    local durability = 1
+    local finiteuses = item.components.finiteuses
+    local armor = item.components.armor
+    local fueled = item.components.fueled
+    local durability_component = finiteuses or armor or fueled
+    if durability_component ~= nil and type(durability_component.GetPercent) == "function" then
+        local ok, percent = pcall(durability_component.GetPercent, durability_component)
+        if ok and type(percent) == "number" then
+            durability = math.max(0, math.min(1, percent))
+        end
+    end
+
+    local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab,
+        math.random, recipe, durability)
     if plan == nil or #plan == 0 then
         return false
     end
@@ -232,7 +250,7 @@ deconstruct_action.mount_valid = true
 
 AddComponentAction("INVENTORY", "inventoryitem", function(inst, doer, actions, right)
     if right and inst ~= nil and inst:IsValid()
-        and MAMDeconstruction.GetReturns(inst.prefab) ~= nil
+        and MAMDeconstruction.IsSupported(inst.prefab)
         and has_warworkbench(doer) then
         table.insert(actions, ACTIONS.MAM_DECONSTRUCT_METAL)
     end
