@@ -37,12 +37,18 @@ local DEFAULTS = {
     mam_drop_marbletree  = 1,  -- arvore de marmore natural (nao a plantada)
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
     mam_drop_shark = 1,  -- sharkscale
+    mam_drop_rocky = 1, -- wild Rockys only; player-following Rockies are excluded
+    mam_drop_rubble = 1, -- cave rubble mined by players
+    mam_drop_ancient_statues = 1, -- ancient Ruins statues mined by players
     mam_drop_boulders_chance = 100,
     mam_drop_stalagmites_chance = 100,
     mam_drop_chess_chance = 100,
     mam_drop_hounds_chance = 100,
     mam_drop_marbletree_chance = 100,
     mam_drop_shark_chance = 100,
+    mam_drop_rocky_chance = 100,
+    mam_drop_rubble_chance = 100,
+    mam_drop_ancient_statues_chance = 100,
     mam_drop_marbleshrub_quantity = 100,
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
     mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
@@ -72,12 +78,18 @@ local ALLOWED = {
     mam_drop_marbletree   = { [0] = true, [1] = true },
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
+    mam_drop_rocky        = { [0] = true, [1] = true },
+    mam_drop_rubble       = { [0] = true, [1] = true },
+    mam_drop_ancient_statues = { [0] = true, [1] = true },
     mam_drop_boulders_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_stalagmites_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_chess_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_hounds_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_marbletree_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_shark_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rocky_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rubble_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_ancient_statues_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_marbleshrub_quantity = { [0] = true, [100] = true, [200] = true, [300] = true },
     mam_robot_smelting    = { [0] = true, [1] = true },
     mam_language          = { ptbr = true, en = true },
