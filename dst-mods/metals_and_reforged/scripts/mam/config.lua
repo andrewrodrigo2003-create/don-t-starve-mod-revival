@@ -22,7 +22,9 @@ local DEFAULTS = {
     mam_batch_cap      = 10,   -- teto de unidades por operacao
 
     -- Receitas e drops (Etapa 2)
-    mam_recipe_overrides = 1,  -- 0 = nao reescreve receitas vanilla, 1 = so' intactas, 2 = sempre
+    mam_recipe_overrides = 1,  -- vanilla ingredient overrides
+    mam_third_party_recipe_integration = 1,
+    mam_allow_third_party_drop_overrides = 0
     mam_extra_drops      = 1,  -- 0 = nenhum drop extra de rochas/criaturas
     mam_drops_mode       = 1,  -- 1 = aditivo por entidade, 2 = reescreve as tables (original)
     -- 0 = chances do v2.9.3, inclusive rolls repetidos que somam mais de 1.
@@ -34,7 +36,14 @@ local DEFAULTS = {
     mam_drop_hounds      = 1,  -- 1 = auto (cede ao UM), 2 = sempre, 0 = nunca
     mam_drop_marbletree  = 1,  -- arvore de marmore natural (nao a plantada)
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
-    mam_drop_shark       = 1,  -- sharkscale
+    mam_drop_shark = 1,  -- sharkscale
+    mam_drop_boulders_chance = 100,
+    mam_drop_stalagmites_chance = 100,
+    mam_drop_chess_chance = 100,
+    mam_drop_hounds_chance = 100,
+    mam_drop_marbletree_chance = 100,
+    mam_drop_shark_chance = 100,
+    mam_drop_marbleshrub_quantity = 100
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
     mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
 
@@ -51,6 +60,8 @@ local ALLOWED = {
     mam_leftovers         = { [0] = true, [1] = true },
     mam_batch_cap         = { [4] = true, [10] = true, [20] = true },
     mam_recipe_overrides  = { [0] = true, [1] = true, [2] = true },
+    mam_third_party_recipe_integration = { [0] = true, [1] = true },
+    mam_allow_third_party_drop_overrides = { [0] = true, [1] = true },
     mam_extra_drops       = { [0] = true, [1] = true },
     mam_drops_mode        = { [1] = true, [2] = true },
     mam_drops_normalise   = { [0] = true, [1] = true },
@@ -61,6 +72,13 @@ local ALLOWED = {
     mam_drop_marbletree   = { [0] = true, [1] = true },
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
+    mam_drop_boulders_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_stalagmites_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_chess_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_hounds_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_marbletree_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_shark_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_marbleshrub_quantity = { [0] = true, [100] = true, [200] = true, [300] = true },
     mam_robot_smelting    = { [0] = true, [1] = true },
     mam_language          = { ptbr = true, en = true },
 }
