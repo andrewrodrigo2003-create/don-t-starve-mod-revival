@@ -19,8 +19,7 @@ with zipfile.ZipFile(archive) as package:
     assert not leaked, f"test-only files leaked into install package: {leaked}"
     modinfo = package.read("metals_and_reforged/modinfo.lua").decode("utf-8")
     assert 'version = "2.9.5"' in modinfo, "unexpected package version"
-    assert 'name = "mam_metalschest"' in modinfo, "metal chest option missing from package"
     modmain = package.read("metals_and_reforged/modmain.lua").decode("utf-8")
-    assert 'if MAMConfig.on("mam_metalschest") then' in modmain, "metal chest config gate missing"
-    assert 'AddRecipe2("metal_storage_chest"' in modmain, "craftable metal chest recipe missing"
+    assert '"metal_storage_chest"' in modmain, "legacy metal chest prefab registration missing"
+    assert 'AddRecipe2("metal_storage_chest"' not in modmain, "retired chest recipe leaked into package"
 print("PASS: install package contains required runtime files and excludes test-only sources")
