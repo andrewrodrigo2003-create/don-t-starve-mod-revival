@@ -723,7 +723,7 @@ configuration_options = {
 	{
         name = "mam_recipe_overrides",
         label = "Recipe overrides",
-		hover = "How far this mod may rewrite VANILLA recipes (science machine costs, gold tools, the craft book's station). Uncompromising Mode Beta and other balance mods write the same recipe fields, and whoever writes last wins in silence. Safe checks each recipe first: if another mod already rebalanced it we keep those numbers and only apply our own station gating. Full always applies our numbers, which is the original 2.9.3 behaviour. Recipes this mod adds on its own are never affected.",
+		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. War Bench station migration is separate and still moves the listed metal recipes without changing their ingredients. Recipes added by this mod are unaffected.",
         options =
         {
 			{description = "Never - leave vanilla recipes to other mods", data = 0},
