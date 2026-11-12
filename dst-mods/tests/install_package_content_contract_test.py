@@ -24,7 +24,7 @@ with zipfile.ZipFile(archive) as package:
     leaked = sorted(name for name in names if name.startswith("metals_and_reforged/tests/"))
     assert not leaked, f"test-only files leaked into install package: {leaked}"
     modinfo = package.read("metals_and_reforged/modinfo.lua").decode("utf-8")
-    assert 'version = "2.9.5"' in modinfo, "unexpected package version"
+    assert 'version = "2.9.6"' in modinfo, "unexpected package version"
     modmain = package.read("metals_and_reforged/modmain.lua").decode("utf-8")
     assert '"metal_storage_chest"' in modmain, "legacy metal chest prefab registration missing"
     assert '"metallurgy_reference_book"' in modmain, "metallurgy guide prefab missing"
