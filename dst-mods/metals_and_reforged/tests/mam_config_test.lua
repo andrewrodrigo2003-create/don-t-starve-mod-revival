@@ -78,7 +78,7 @@ Config.set("mam_batch_cap", 4.5)
 equal(Config.get("mam_batch_cap"), 20, "set fracionario ignorado")
 
 -- Chaves reservadas sem implementacao nao devem aparentar ser configuracoes ativas.
-equal(Config.get("mam_metalschest"), nil, "opcao do baú dedicado removida")
+equal(Config.get("mam_metalschest"), nil, "baú dedicado removido; compatibilidade de saves antigos não cria opção ativa")
 equal(Config.get("mam_storage_query"), nil, "consulta manual de deposito nao configurada")
 equal(Config.get("mam_station_storage"), nil, "integracao com bancada ainda nao configurada")
 equal(Config.on("mam_batch"), false, "on respeita zero")
