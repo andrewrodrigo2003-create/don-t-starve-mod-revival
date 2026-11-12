@@ -130,6 +130,9 @@ local function build_pages()
             "WX-78 and Wickerbottom have no special recovery bonus assigned yet. The live recipe is used for crafted equipment, so other mods' ingredient changes are respected.",
             "WX-78 e Wickerbottom ainda não têm bônus especial. Equipamentos usam a receita ativa, respeitando mudanças de ingredientes feitas por outros mods.",
             "",
+            "Wilson's separate cross-material transmutation table is not part of this build; only exact ingredient recovery is active.",
+            "A tabela separada de transmutação entre materiais de Wilson não está nesta versão; apenas a recuperação exata dos ingredientes está ativa.",
+            "",
             "The operation consumes one item even if the random recovery roll returns nothing. No retry exploit, upward conversion or free material loop is intended.",
             "A operação consome um item mesmo se o sorteio não devolver materiais. Não há tentativa gratuita, conversão para cima ou ciclo de materiais infinitos.",
         }, "\n"),
@@ -207,16 +210,16 @@ local MetallurgyBookScreen = Class(Screen, function(self, owner)
     local panel = self.root:AddChild(Image("images/quagmire_recipebook.xml", "quagmire_recipe_menu_bg.tex"))
     panel:ScaleToSize(900, 560)
 
-    self.title = self.root:AddChild(Text(HEADERFONT, 30, "", UICOLOURS.GOLD))
+    self.title = self.root:AddChild(Text(HEADERFONT, 30, "", { 1, 0.84, 0.45, 1 }))
     self.title:SetPosition(0, 225)
 
-    self.body = self.root:AddChild(Text(BODYTEXTFONT, 18, "", UICOLOURS.BLACK))
+    self.body = self.root:AddChild(Text(BODYTEXTFONT, 18, "", { 0.10, 0.10, 0.10, 1 }))
     self.body:SetPosition(0, 10)
     self.body:SetRegionSize(760, 390)
     self.body:SetHAlign(ANCHOR_LEFT)
     self.body:SetVAlign(ANCHOR_TOP)
 
-    self.page_text = self.root:AddChild(Text(BODYTEXTFONT, 18, "", UICOLOURS.BROWN_DARK))
+    self.page_text = self.root:AddChild(Text(BODYTEXTFONT, 18, "", { 0.32, 0.22, 0.12, 1 }))
     self.page_text:SetPosition(0, -235)
 
     self.previous = self.root:AddChild(ImageButton("images/global.xml", "square.tex"))
