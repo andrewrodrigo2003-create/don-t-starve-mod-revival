@@ -15,7 +15,7 @@ local MAMRecipeGuard = require("mam/recipe_guard")
 -- AddRecipe2 so existe no ambiente do modmain (modutil.lua:732 a poe em env, nao em
 -- GLOBAL), entao o guarda precisa que alguem a injete para o caminho de migracao de
 -- bancada. Idempotente: modded_craftbook.lua faz o mesmo.
-MAMRecipeGuard.Init(AddRecipe2)
+MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter)
 
 local IRON_ORE_ATLAS = "images/inventoryimages/iron_ore.xml"
 local IRON_INGOT_ATLAS = "images/inventoryimages/iron_ingot.xml"
@@ -157,6 +157,25 @@ local function apply_vanilla_overrides(where)
     -- Only mark the pass complete after every entry has been processed.
     -- MAMLog.Try catches failures; leaving this false lets the world-task fallback retry.
     has_been_applied = true
+
+    -- Ferramentas, equipamentos e estruturas metálicas passam a ser
+    -- fabricáveis na War Bench. ALCHEMY_ONE é fornecido pela própria bancada.
+    -- Pesquisa base (researchlab/researchlab2) e transistor ficam na progressão
+    -- científica para não criar um ciclo que impeça construir a War Bench.
+    local station_recipes =
+    {
+        "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
+        "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
+        "armormarble", "portablecookpot_item", "portableblender_item",
+        "portablespicer_item", "glasscutter", "archive_resonator_item",
+        "moondial", "moonrockcrater", "moonglassaxe",
+    }
+    local station_moved = 0
+    for _, name in ipairs(station_recipes) do
+        local moved = MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+        if moved then station_moved = station_moved + 1 end
+    end
+    MAMLog.Info("receitas metalurgicas migradas para War Bench: %d/%d", station_moved, #station_recipes)
 
     MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d aplicadas", where, applied, total)
     MAMRecipeGuard.dump()
