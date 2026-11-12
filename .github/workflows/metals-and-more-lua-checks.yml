@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   metals-and-more:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -35,6 +35,7 @@ jobs:
           "$RUNNER_TEMP/ktools/build/ktech" \
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.png" \
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
+          "$RUNNER_TEMP/ktools/build/ktech" --info "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
       - name: Install Lua 5.1
         run: |
