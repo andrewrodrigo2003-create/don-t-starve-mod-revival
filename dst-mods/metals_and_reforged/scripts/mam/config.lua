@@ -24,7 +24,7 @@ local DEFAULTS = {
     -- Receitas e drops (Etapa 2)
     mam_recipe_overrides = 1,  -- vanilla ingredient overrides
     mam_third_party_recipe_integration = 1,
-    mam_allow_third_party_drop_overrides = 0
+    mam_allow_third_party_drop_overrides = 0,
     mam_extra_drops      = 1,  -- 0 = nenhum drop extra de rochas/criaturas
     mam_drops_mode       = 1,  -- 1 = aditivo por entidade, 2 = reescreve as tables (original)
     -- 0 = chances do v2.9.3, inclusive rolls repetidos que somam mais de 1.
@@ -43,7 +43,7 @@ local DEFAULTS = {
     mam_drop_hounds_chance = 100,
     mam_drop_marbletree_chance = 100,
     mam_drop_shark_chance = 100,
-    mam_drop_marbleshrub_quantity = 100
+    mam_drop_marbleshrub_quantity = 100,
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
     mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
 
