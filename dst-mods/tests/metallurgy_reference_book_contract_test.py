@@ -3,6 +3,7 @@ from pathlib import Path
 root = Path("dst-mods/metals_and_reforged")
 actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
+module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
 prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
 modmain = (root / "modmain.lua").read_text(encoding="utf-8")
