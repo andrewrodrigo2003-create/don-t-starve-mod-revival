@@ -123,53 +123,61 @@ end
 local function can_fit_staged_outputs(inventory, staged)
     local slots = {}
     local free_slots = 0
-    for index = 1, inventory.maxslots do
-        local item = inventory.itemslots[index]
-        if item == nil then
-            free_slots = free_slots + 1
-        else
-            table.insert(slots, item)
+
+    local function scan(slots_table, count)
+        if slots_table == nil then
+            return
         end
-    end
-    local overflow = inventory:GetOverflowContainer()
-    if overflow ~= nil then
-        for index = 1, overflow.numslots do
-            local item = overflow.slots[index]
+        for index = 1, count or #slots_table do
+            local item = slots_table[index]
             if item == nil then
                 free_slots = free_slots + 1
             else
-                table.insert(slots, item)
+                local room = item.components ~= nil and item.components.stackable ~= nil
+                    and item.components.stackable:RoomLeft() or 0
+                table.insert(slots, { item = item, room = room })
             end
         end
     end
 
-    for _, output in ipairs(staged) do
-        local remaining = output.components.stackable ~= nil
-            and output.components.stackable:StackSize() or 1
-        local maxsize = output.components.stackable ~= nil
-            and math.max(1, output.components.stackable.maxsize or 1) or 1
+    scan(inventory.itemslots, inventory.maxslots)
+    local overflow = inventory:GetOverflowContainer()
+    if overflow ~= nil then
+        scan(overflow.slots, overflow.numslots)
+    end
 
-        for _, existing in ipairs(slots) do
-            if remaining > 0 and existing.components ~= nil
-                and existing.components.stackable ~= nil
-                and output.components.stackable ~= nil
-                and existing.components.stackable:CanStackWith(output) then
-                local room = existing.components.stackable:RoomLeft()
-                local used = math.min(remaining, room)
+    for _, output in ipairs(staged) do
+        local stackable = output.components.stackable
+        local remaining = stackable ~= nil and stackable:StackSize() or 1
+        local maxsize = stackable ~= nil
+            and math.max(1, stackable.maxsize or 1) or 1
+
+        for _, slot in ipairs(slots) do
+            if remaining > 0 and slot.room > 0
+                and slot.item.components ~= nil
+                and slot.item.components.stackable ~= nil
+                and stackable ~= nil
+                and slot.item.components.stackable:CanStackWith(output) then
+                local used = math.min(remaining, slot.room)
+                slot.room = slot.room - used
                 remaining = remaining - used
             end
         end
 
-        local needed = math.ceil(remaining / maxsize)
-        free_slots = free_slots - needed
-        if free_slots < 0 then
-            return false
-        end
-        -- Reserve virtual slots so later outputs cannot reuse the same free slot.
-        for _ = 1, needed do
-            table.insert(slots, output)
+        while remaining > 0 do
+            free_slots = free_slots - 1
+            if free_slots < 0 then
+                return false
+            end
+            local placed = math.min(remaining, maxsize)
+            remaining = remaining - placed
+            table.insert(slots, {
+                item = output,
+                room = stackable ~= nil and (maxsize - placed) or 0,
+            })
         end
     end
+
     return true
 end
 
