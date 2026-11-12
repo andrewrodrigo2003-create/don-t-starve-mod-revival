@@ -5,6 +5,13 @@
 **Uncompromising Mode:** Public Beta 6.0.3.9 (`utw-beta`)  
 **Important:** CI/static checks are not a substitute for an in-game multiplayer test.
 
+[Baixar Metals and More Reforged 2.9.6 — pacote de teste](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936/artifacts/13974480896)
+
+- **SHA-256 do artefato externo:** `9a0baedff6b894e80913cce9e88390896d08d1e92b8018a72acd64178a42c091`
+- **Tamanho:** 6.587.858 bytes
+- **Validade do artefato:** até 26/11/2026
+- O artefato externo contém o ZIP interno instalável. Extraia o artefato e depois extraia o ZIP interno na pasta `mods`.
+
 ## 1. Install and load
 - [ ] Disable the old Workshop copy so two copies do not load at once.
 - [ ] Install the ZIP from the GitHub Actions artifact.
