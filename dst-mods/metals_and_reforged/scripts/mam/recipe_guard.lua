@@ -322,7 +322,9 @@ function M.set_station(name, tech, filter)
         -- in the War Bench station filter only.
         if remove_recipe_from_filter ~= nil and GLOBAL.CRAFTING_FILTERS ~= nil then
             for filter_name, filter_def in pairs(GLOBAL.CRAFTING_FILTERS) do
-                if filter_name ~= filter and filter_def.default_sort_values ~= nil
+                if filter_name ~= filter and filter_name ~= "FAVORITES"
+                    and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
+                    and filter_def.default_sort_values ~= nil
                     and filter_def.default_sort_values[name] ~= nil then
                     remove_recipe_from_filter(name, filter_name)
                 end
