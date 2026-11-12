@@ -142,26 +142,24 @@ local OVERRIDES =
 
 local has_been_applied = false
 
-local function apply_vanilla_overrides(where)
-    if has_been_applied then
-        return 0, 0
+local function apply_vanilla_overrides(where, force)
+    if has_been_applied and not force then
+        return 0, #OVERRIDES, 0
     end
 
-    local applied, total = 0, #OVERRIDES
+    local applied, pending = 0, 0
+    local total = #OVERRIDES
     for _, override in ipairs(OVERRIDES) do
-        if MAMRecipeGuard.apply(override.name, override.ingredients) then
+        local changed, reason = MAMRecipeGuard.apply(override.name, override.ingredients)
+        if changed then
             applied = applied + 1
+        elseif reason == "missing" then
+            pending = pending + 1
         end
     end
 
-    -- Only mark the pass complete after every entry has been processed.
-    -- MAMLog.Try catches failures; leaving this false lets the world-task fallback retry.
-    has_been_applied = true
-
-    -- Ferramentas, equipamentos e estruturas metálicas passam a ser
-    -- fabricáveis na War Bench. ALCHEMY_ONE é fornecido pela própria bancada.
-    -- Pesquisa base (researchlab/researchlab2) e transistor ficam na progressão
-    -- científica para não criar um ciclo que impeça construir a War Bench.
+    -- These recipes are intentionally moved by changing only their live tech
+    -- requirement and filter. Their ingredient tables and metadata stay intact.
     local station_recipes =
     {
         "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
@@ -172,15 +170,20 @@ local function apply_vanilla_overrides(where)
     }
     local station_moved = 0
     for _, name in ipairs(station_recipes) do
-        local moved = MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE, "CRAFTING_STATION")
-        if moved then station_moved = station_moved + 1 end
+        local moved, reason = MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+        if moved then
+            station_moved = station_moved + 1
+        elseif reason == "missing" or reason == "filter-api-unavailable" or reason == "invalid-tech" then
+            pending = pending + 1
+        end
     end
-    MAMLog.Info("receitas metalurgicas migradas para War Bench: %d/%d", station_moved, #station_recipes)
 
-    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d aplicadas", where, applied, total)
+    has_been_applied = pending == 0
+    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d; pendentes: %d",
+        where, applied, total, station_moved, #station_recipes, pending)
     MAMRecipeGuard.dump()
 
-    return applied, total
+    return applied, total, pending
 end
 
 -- Roda no servidor E no cliente, depois de todos os modmain: e' o ponto em que a
@@ -199,10 +202,18 @@ end)
 -- STRINGS.NAMES.MIGRATION_PORTAL -- e STRINGS ainda pode estar incompleto em
 -- tempo de carga de mod, o que silenciosamente registraria o fallback no nome
 -- errado. Registrar os dois custa uma tabela vazia e funciona em qualquer verso.
+local function retry_world_recipe_pass(inst, attempt)
+    inst:DoTaskInTime(0.5, function()
+        local ok, _, _, pending = MAMLog.Try("modded_recipes.world_retry",
+            apply_vanilla_overrides, "primeira task do world", true)
+        if ok and pending ~= nil and pending > 0 and attempt < 3 then
+            retry_world_recipe_pass(inst, attempt + 1)
+        end
+    end)
+end
+
 for _, world_prefab_name in ipairs({ "world", "forest" }) do
     AddPrefabPostInit(world_prefab_name, function(inst)
-        inst:DoTaskInTime(0, function()
-            apply_vanilla_overrides("primeira task do world")
-        end)
+        retry_world_recipe_pass(inst, 1)
     end)
 end
