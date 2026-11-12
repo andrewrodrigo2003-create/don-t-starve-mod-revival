@@ -144,7 +144,7 @@ local has_been_applied = false
 
 local function apply_vanilla_overrides(where, force)
     if has_been_applied and not force then
-        return 0, #OVERRIDES, 0
+        return 0, 0, #OVERRIDES
     end
 
     local applied, pending = 0, 0
@@ -183,7 +183,7 @@ local function apply_vanilla_overrides(where, force)
         where, applied, total, station_moved, #station_recipes, pending)
     MAMRecipeGuard.dump()
 
-    return applied, total, pending
+    return pending, applied, total
 end
 
 -- Roda no servidor E no cliente, depois de todos os modmain: e' o ponto em que a
@@ -204,7 +204,7 @@ end)
 -- errado. Registrar os dois custa uma tabela vazia e funciona em qualquer verso.
 local function retry_world_recipe_pass(inst, attempt)
     inst:DoTaskInTime(0.5, function()
-        local ok, _, _, pending = MAMLog.Try("modded_recipes.world_retry",
+        local ok, pending = MAMLog.Try("modded_recipes.world_retry",
             apply_vanilla_overrides, "primeira task do world", true)
         if ok and pending ~= nil and pending > 0 and attempt < 3 then
             retry_world_recipe_pass(inst, attempt + 1)
