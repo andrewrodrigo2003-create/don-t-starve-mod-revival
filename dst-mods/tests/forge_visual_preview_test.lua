@@ -42,7 +42,17 @@ local function make_node(name)
         child.parent = self
         return child
     end
-    function node:SetPosition(...) self.position = { ... } end
+    function node:SetPosition(...)
+        local values = { ... }
+        -- DST widgets receive either Vector3(x, y, z) or numeric coordinates.
+        -- Preserve a Vector3 as the position object instead of wrapping it in
+        -- a second table; this mirrors the engine API used by the forge panel.
+        if #values == 1 and type(values[1]) == "table" and values[1].x ~= nil then
+            self.position = values[1]
+        else
+            self.position = values
+        end
+    end
     function node:SetSize(value) self.size = value end
     function node:SetScale(value) self.scale = value end
     function node:SetColour(...) self.colour = { ... } end
