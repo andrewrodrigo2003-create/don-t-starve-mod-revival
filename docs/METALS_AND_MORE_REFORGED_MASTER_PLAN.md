@@ -56,6 +56,16 @@
 - [x] Confirmar por harness runtime as gates de Rewrite, com a ressalva de que a substituição de loot tables é comportamento legado e ainda exige validação em mundo real.
 - [ ] Testar cada fonte com as opções geral e individuais desligadas/ligadas.
 
+### Reguladores independentes de criaturas e integrações de mods
+
+- [x] Separar os reguladores de Cavaleiro, Torre, Bispo e sucata de xadrez; o controle geral das Ruínas continua como interruptor mestre opcional.
+- [x] Separar Cão de Fogo e Cão de Gelo; cada espécie possui interruptor e multiplicador próprios, preservando o modo Auto/Sempre do Uncompromising Mode como controle de compatibilidade geral.
+- [x] Adicionar Slurtle e Snurtle como fontes raras e independentes de poeira de ferro (8% e 12% de chance base, respectivamente), sem lingotes e sem substituir loot vanilla.
+- [x] Aplicar os multiplicadores de chance no nascimento da entidade, após leitura da configuração do servidor; cada fonte usa seu próprio regulador.
+- [x] Declarar as opções estaticamente no modinfo. A presença/ausência de outro mod não remove opções do menu; somente a execução do adaptador depende da presença do mod/prefab.
+- [ ] Para cada integração externa futura, exigir uma chave de ativação e regulador de chance/quantidade exclusivos, mesmo quando o mod correspondente não estiver instalado.
+- [ ] Confirmar prefabs e componentes de Slurtle/Snurtle no build ativo do DST e testar em servidor dedicado/multiplayer.
+
 ### Expansao de fontes secundarias de minerio (2.9.7)
 
 - [x] Adicionar Rocky selvagem como fonte secundaria de poeira de cobre (20%) e poeira de ferro (5%); Rockys seguindo jogadores ficam excluidos para impedir farm de companheiros.
