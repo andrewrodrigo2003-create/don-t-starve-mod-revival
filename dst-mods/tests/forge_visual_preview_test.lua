@@ -105,6 +105,7 @@ end
 
 local ContainerWidget = {}
 ContainerWidget.__index = ContainerWidget
+function ContainerWidget:SetScale(value) self.scale = value end
 function ContainerWidget:AddChild(child)
     self.children = self.children or {}
     table.insert(self.children, child)
@@ -177,8 +178,8 @@ assert(open_result == "opened" and open_middle == nil and open_tail == "open-tai
 assert(widget.mam_forge_preview ~= nil, "forge preview panel must be created")
 assert(widget.mam_forge_preview.position[1] == -270,
     "forge preview must move clear of the input slots")
-assert(widget.mam_forge_preview.scale == 1.2,
-    "complete forge preview HUD must be enlarged by 20%")
+assert(widget.scale == 1.2,
+    "forge container HUD and its preview must be enlarged by 20%")
 assert(widget.mam_forge_preview.name.string == "Copper Ingot", "product name must be displayed")
 assert(widget.mam_forge_preview.name.position[1] == -48
     and widget.mam_forge_preview.name.position[2] == 54,
@@ -281,6 +282,7 @@ assert(listener ~= nil, "server-plan listener must have been registered")
 local chest_widget = setmetatable({ children = {} }, ContainerWidget)
 chest_widget:Open(make_container("treasurechest"))
 assert(chest_widget.mam_forge_preview == nil, "non-forge containers must not receive the preview")
+assert(chest_widget.scale == 1, "non-forge containers must retain vanilla scale")
 chest_widget:Close()
 
 print("forge visual preview: 24 checks passed")
