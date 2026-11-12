@@ -111,31 +111,25 @@
 - [ ] Confirmar custos e requisitos originais das receitas e o comportamento com receitas removidas/alteradas por outros mods.
 - [ ] Testar construção, colocação, funcionamento, animações, destruição e drops das estações.
 
-## 7. Armazenamento metalúrgico
+## 7. Armazenamento existente e balanceamento
 
-- [x] Primeiro contêiner dedicado integrado via PR #13 (que incorporou a implementação do PR #5): 25 slots, tags `chest` + `mam_metal_storage`, destruição com martelo devolvendo conteúdo e filtro ligado ao registro real da metalurgia. O filtro aceita ingredientes e produtos registrados (minérios, poeiras, fragmentos, lingotes e ligas). CI completo aprovado; testes in-game/save-load/multiplayer ainda pendentes.
-- [x] Harness isolado do prefab passou com LuaTeX: registro, assets, placer, tags, widget, callbacks, hit sem derramar, martelo devolvendo conteúdo e separação servidor/cliente. Não valida o motor DST nem a aceitação real de itens.
-- [ ] Criar/validar o contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
-- [ ] Definir filtros explícitos por prefab/tag; não aceitar itens arbitrários nem bloquear materiais legítimos.
-- [ ] Preservar inventário ao martelar, fechar, desconectar, salvar e carregar.
-- [ ] Garantir que itens não sejam perdidos se a estrutura for destruída ou se um slot não puder aceitar o item.
-- [ ] Fazer a integração com containers externos de forma passiva e compatível; nunca editar os outros mods.
-- [ ] Priorizar compatibilidade com o armazenamento do Uncompromising Mode Beta, sem presumir APIs internas estáveis.
-- [ ] Implementar consulta centralizada opcional apenas para depósitos próximos e acessíveis.
-- [ ] Mostrar quantidade e localização; retirada deve respeitar distância, propriedade, permissões, slots e multiplayer.
-- [ ] Não permitir acesso global, retirada através de paredes, acesso a depósitos de outros jogadores ou duplicação por corrida de requests.
-- [ ] Integrar consulta com fabricação somente se for possível reservar/consumir itens atomicamente no servidor; sem retirada fantasma.
-- [ ] Adicionar opções para contêiner, consulta e integração com estações, todas desligáveis e com defaults seguros.
+- [x] O mod já possui duas estruturas de armazenamento próprias: `marble_chest` e `cold_safe` (geladeira).
+- [x] `metal_storage_chest` permanece registrado somente para compatibilidade com saves antigos; não deve receber receita nova nem ser apresentado como recurso novo.
+- [ ] Auditar a capacidade real, comportamento de preservação, widget, tags, custo de construção, tier de tecnologia e utilidade de `marble_chest` e `cold_safe`.
+- [ ] Reequilibrar os custos de fabricação dessas duas estruturas de acordo com o que cada uma oferece, comparando com baú e geladeira vanilla e com o acesso aos materiais na progressão.
+- [ ] Testar construção, colocação, funcionamento, animações, destruição, devolução de conteúdo e save/load.
+- [ ] Não criar outro baú metalúrgico, não duplicar funções de armazenamento e não implementar consulta global/depósitos centralizados nesta atualização.
+- [ ] Integrações passivas com containers de outros mods continuam permitidas somente quando necessárias à compatibilidade; nunca editar os outros mods.
 
-**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. As chaves internas `mam_storage_query` e `mam_station_storage` foram removidas em PR #8 até que a consulta/integração exista; não expor essas opções como se funcionassem.
+**Decisão do usuário (2026-11-12):** descartar a criação de um baú metalúrgico novo. O trabalho de armazenamento limita-se ao balanceamento do baú e da geladeira que já existem no mod. A estrutura legada `metal_storage_chest` não deve ganhar receita nova.
 
 ## 8. Configurações
 
 - [x] Existe módulo central `mam/config.lua` e opções para lote, limite, tempo, sobras, previsão, overrides de receitas e drops.
 - [ ] Auditar todos os consumidores de cada opção exposta; a validação de valores do módulo central foi concluída em PR #8, mas a auditoria de uso funcional ainda está em aberto.
 - [ ] Remover ou não expor opções sem implementação; nunca deixar controles placebo.
-- [~] Opção `mam_metalschest` adicionada ao `modinfo.lua` no PR #5 (default on); teste no jogo pendente.
-- [ ] Adicionar configurações de armazenamento/consulta somente quando os recursos estiverem implementados.
+- [x] Não existe opção para um baú metalúrgico novo; esse recurso foi descartado por decisão do usuário. O foco é balancear `marble_chest` e `cold_safe`.
+- [x] Não adicionar configurações para baú novo, consulta centralizada ou automação de depósitos nesta atualização.
 - [ ] Garantir que defaults preservem a experiência original quando a opção estiver desligada.
 - [x] Validar no módulo central os tipos, enums permitidos, limites e fallback para valores ausentes/inválidos; harness direto com 103 verificações em PR #8.
 - [~] Validar transmissão real das configurações entre servidor e cliente e mensagens de configuração; overrides foram testados isoladamente, mas host/cliente real continua pendente.
@@ -190,10 +184,12 @@
 1. Concluir auditoria da fundição e da previsão, incluindo ciclo de vida e save/load.
 2. Validar em jogo a auditoria de mineração/drops e registrar matriz por fonte/configuração, incluindo UM Beta.
 3. Validar craftbook, bancada de guerra e progressão.
-4. Projetar e implementar o armazenamento metalúrgico em etapas pequenas, começando pelo contêiner próprio e seus filtros.
-5. Implementar consulta próxima somente depois que o armazenamento básico estiver seguro.
-6. Completar testes de compatibilidade, multiplayer e mundo de testes.
-7. Finalizar documentação, changelog e entrega.
+4. Implementar as rotas de fabricação com ferramenta obrigatória (machado e cinzel) e validar autoridade do servidor.
+5. Completar desmontagem de materiais, livro informativo e matriz de bancadas sem desbloqueio/fabricação remota.
+6. Auditar e reequilibrar as receitas vanilla alteradas e os custos do `marble_chest`/`cold_safe`, comparando progressão vanilla e UM Beta.
+7. Fazer somente integrações externas que acrescentem valor real, com adaptadores isolados e testes de load order.
+8. Completar localização, testes automatizados, multiplayer/save-load e validação no mundo de testes.
+9. Finalizar documentação, changelog e pacote de teste; manter PR em draft até o usuário testar.
 
 ## Histórico de mudanças já integradas
 
