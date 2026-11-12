@@ -27,9 +27,11 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes cmake build-essential libmagick++-dev
+          sudo apt-get install --yes cmake build-essential libmagick++-dev librsvg2-bin imagemagick
           git clone https://github.com/nsimplex/ktools.git "$RUNNER_TEMP/ktools"
           git -C "$RUNNER_TEMP/ktools" checkout a1d1362bdb2b9aa9146d7177fbf0e351eab414ba
+          ICON_DIR="$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding"
+          rsvg-convert -w 256 -h 256 -o "$ICON_DIR/metals_and_more_reforged_icon.png" "$ICON_DIR/metals_and_more_reforged_icon.svg"
           # Upstream declares inverseOf(ProjectiveMatrix) as void but returns a matrix.
           # Correct this obvious signature typo in the isolated CI checkout only.
           python3 - <<'PY'
