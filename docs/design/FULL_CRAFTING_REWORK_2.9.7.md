@@ -111,3 +111,12 @@ All compatibility and balance changes must be player-configurable at the smalles
 - Add configuration contract tests proving each switch changes only its own feature boundary, including combinations of switches. Explicitly test that disabling third-party recipe integration leaves axe/chisel gates intact and that disabling third-party drop integration does not disable MAM's own drops.
 
 This clarification expands configurability; it does not remove or replace any previously requested 2.9.7 feature or the master ideas map.
+
+
+## Implementation note — granular settings wired for the test candidate (2026-11-12)
+
+The 2.9.7 branch now exposes independent settings for supported third-party recipe adaptation, opt-in legacy shared-loot-table replacement, and MAM-owned material drop tuning. The latter includes separate chance multipliers for boulders, cave formations, clockworks/chess junk, fire/ice hounds, natural marble trees and sharks, plus a separate marble-shrub iron-ore quantity control. The chance scale applies to MAM-owned rolls only and is also honored by the legacy rewrite path.
+
+The third-party recipe switch gates supported recipe migration/overrides when a recipe differs from its vanilla baseline; disabling it leaves that recipe's live ingredient table and metadata untouched. It is separate from the MAM vanilla-cost override setting. The legacy loot-table rewrite now requires a second explicit opt-in; without it, selecting Rewrite falls back to additive mode so shared tables are not replaced. The per-source drop switches remain independent.
+
+These settings and harness assertions are implemented on the branch, but the full 2.9.7 package is not yet ready: mandatory axe/chisel crafting, verified Sawing Table integration, complete recipe/drop adapter coverage, and the remaining rework/localization work are still pending. Automated CI is running; in-game/multiplayer/save-load verification remains required.
