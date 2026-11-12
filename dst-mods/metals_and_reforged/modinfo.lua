@@ -850,5 +850,16 @@ configuration_options = {
         },
         default = 1,
 	},
+	{
+        name = "mam_robot_smelting",
+        label = "Collector robot forge automation",
+        hover = "When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
+        options =
+        {
+            {description = "Off", data = 0},
+            {description = "On", data = 1},
+        },
+        default = 0,
+	},
 
 }
