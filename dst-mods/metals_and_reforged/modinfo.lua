@@ -872,4 +872,62 @@ configuration_options = {
         default = 0,
 	},
 
+
+    {
+        name = "mam_third_party_recipe_integration",
+        label = "Integrate recipes from other mods",
+        hover = "On adapts supported recipes from other mods while preserving their live ingredients and metadata. Off leaves third-party recipes untouched. This does not disable our own axe, chisel or Sawing Table mechanics.",
+        options = {{description = "Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_allow_third_party_drop_overrides",
+        label = "Allow replacing other mods' loot tables",
+        hover = "Only applies to legacy Rewrite mode. On permits whole shared loot-table replacement. Off forces compatible additive drops and preserves live loot tables.",
+        options = {{description = "Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
+        default = 0,
+    },
+    {
+        name = "mam_drop_boulders_chance", label = "Boulder material drop chance",
+        hover = "Scales only Metals and More materials from gold and moon boulders.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_stalagmites_chance", label = "Cave ore and gem chance",
+        hover = "Scales only Metals and More materials from cave stalagmites and stalactites.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_chess_chance", label = "Ruins creature material chance",
+        hover = "Scales only Metals and More materials from clockworks and chess junk.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_hounds_chance", label = "Fire and ice hound gem-shard chance",
+        hover = "Scales only Metals and More gem-shard rolls. The separate Auto/Always option still controls Uncompromising Mode interaction.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_marbletree_chance", label = "Natural marble-tree material chance",
+        hover = "Scales only Metals and More material rolls from naturally generated marble trees.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_shark_chance", label = "Sharkscale drop chance",
+        hover = "Scales only the sharkscale rolls added by Metals and More.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_marbleshrub_quantity", label = "Iron ore from marble shrubs",
+        hover = "Controls only Metals and More iron ore quantity. Other shrub loot and other mods' drops are unchanged.",
+        options = {{description = "Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
+        default = 100,
+    },
+
 }
