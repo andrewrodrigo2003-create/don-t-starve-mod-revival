@@ -25,6 +25,7 @@ local config_values = {
     mam_drop_marbletree = 1,
     mam_drop_shark = 1,
     mam_drop_marbleshrub = 1,
+    mam_drop_marbleshrub_quantity = 100,
 }
 
 local MAMConfig = {
@@ -127,6 +128,46 @@ config_values.mam_drop_hounds = 1
 assert_eq(#run_prefab("firehound"), 0, "additive hounds Auto with UM")
 config_values.mam_drop_hounds = 2
 assert_eq(#run_prefab("firehound"), 4, "additive hounds Always with UM")
+
+-- Per-source chance sliders affect only MAM's own additive rolls.
+config_values.mam_drops_mode = 1
+config_values.mam_drop_shark = 1
+config_values.mam_drop_shark_chance = 50
+local half_shark = run_prefab("shark")
+assert_eq(#half_shark, 2, "shark retains two independent MAM rolls")
+assert_true(math.abs(half_shark[1].chance - 0.5) < 0.000001, "shark chance is scaled")
+config_values.mam_drop_shark_chance = nil
+
+-- Marble-shrub quantity is independent of all other drops and works in additive mode.
+local function make_shrub(stage)
+    local dropper = { loot = { "marble", "rocks", "marblebean" } }
+    function dropper:SetLootSetupFn(fn) self.lootsetupfn = fn end
+    function dropper:SetLoot(loot) self.loot = loot end
+    local inst = { components = { lootdropper = dropper, growable = { stage = stage } } }
+    return inst, dropper
+end
+config_values.mam_drops_mode = 1
+config_values.mam_drop_marbleshrub_quantity = 200
+local shrub_double, shrub_double_dropper = make_shrub(2)
+prefab_callbacks.marbleshrub(shrub_double)
+shrub_double_dropper.lootsetupfn(shrub_double_dropper)
+local shrub_iron = 0
+for _, item in ipairs(shrub_double_dropper.loot) do
+    if item == "iron_ore" then shrub_iron = shrub_iron + 1 end
+end
+assert_eq(shrub_iron, 2, "marble shrub double quantity in additive mode")
+
+-- The same quantity option also governs legacy Rewrite; zero means no MAM iron ore.
+config_values.mam_drops_mode = 2
+config_values.mam_allow_third_party_drop_overrides = 1
+config_values.mam_drop_marbleshrub_quantity = 0
+local shrub_off, shrub_off_dropper = make_shrub(3)
+prefab_callbacks.marbleshrub(shrub_off)
+shrub_off_dropper.lootsetupfn(shrub_off_dropper)
+for _, item in ipairs(shrub_off_dropper.loot) do
+    assert_true(item ~= "iron_ore", "marble shrub quantity Off in Rewrite mode")
+end
+config_values.mam_drop_marbleshrub_quantity = 100
 
 -- Master switch, source switch and client authority are enforced by the real module.
 config_values.mam_extra_drops = 0
@@ -232,6 +273,14 @@ local no_hounds = load_rewrite_tables({ mam_drop_hounds = 0 })
 assert_true(no_hounds.hound_fire == nil and no_hounds.hound_cold == nil,
     "hounds source switch must gate both hound tables")
 
+local half_boulder_tables = load_rewrite_tables({ mam_drop_boulders_chance = 50 })
+local half_gold_rolls = {}
+for _, entry in ipairs(half_boulder_tables.rock2) do
+    if entry[1] == "gold_dust" then table.insert(half_gold_rolls, entry[2]) end
+end
+assert_true(math.abs(half_gold_rolls[1] - 0.375) < 0.000001, "Rewrite mode scales first boulder gold roll")
+assert_eq(half_gold_rolls[2], 0.5, "Rewrite mode scales second boulder gold roll")
+
 local um_tables = load_rewrite_tables({}, true)
 assert_true(um_tables.hound_fire == nil and um_tables.hound_cold == nil,
     "Rewrite hounds must not replace UM tables")
@@ -241,4 +290,4 @@ for _, name in ipairs(rewrite_names) do
     assert_true(disabled_tables[name] == nil, "master switch must gate " .. name)
 end
 
-print("PASS: loot_guard + modded_drops + newrocks; independent overwrite opt-in, chance tuning, UM Auto/Always, normalization and 18 table gates")
+print("PASS: loot_guard + modded_drops + newrocks; independent overwrite opt-in, additive/Rewrite chance tuning, shrub quantity, UM Auto/Always, normalization and 18 table gates")
