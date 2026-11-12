@@ -35,6 +35,7 @@ local DEFAULTS = {
     mam_drop_marbletree  = 1,  -- arvore de marmore natural (nao a plantada)
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
     mam_drop_shark       = 1,  -- sharkscale
+    mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
 
 }
 
