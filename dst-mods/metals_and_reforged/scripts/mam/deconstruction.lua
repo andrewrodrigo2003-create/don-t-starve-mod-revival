@@ -121,17 +121,10 @@ local function character_rate(character, material)
 end
 
 local function add_recovered(totals, prefab, amount, material, character, roll, durability)
-    local whole = math.floor(amount)
-    local fraction = amount - whole
-    local rate = character_rate(character, material) * durability
-    local recovered = 0
-
-    for _ = 1, whole do
-        if rate >= 1 or roll() < rate then
-            recovered = recovered + 1
-        end
-    end
-    if fraction > 0 and roll() < rate * fraction then
+    local expected = amount * character_rate(character, material) * durability
+    local recovered = math.floor(expected)
+    local fraction = expected - recovered
+    if fraction > 0 and roll() < fraction then
         recovered = recovered + 1
     end
     if recovered > 0 then
