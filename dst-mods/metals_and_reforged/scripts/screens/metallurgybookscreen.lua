@@ -71,9 +71,10 @@ local function build_pages()
     table.insert(pages, {
         title = "Materials & progression / Materiais e progressão",
         body = table.concat({
-            "Basic conversion chain / Cadeia básica:",
-            "Metal ore → dust → smelted ingot. Alloys consume their exact component recipe; the forge planner is the authority for batch costs.",
-            "Minério → poeira → lingote fundido. Ligas consomem os componentes exatos; a prévia da forja mostra o custo do lote.",
+            "Smelting / Fundição: dust → ore → ingot. Deconstruction reverses this: ingot → ore → dust.",
+            "Fundição: poeira → minério → lingote. Desmontagem inverte o caminho: lingote → minério → poeira.",
+            "Alloys consume their exact component recipe; the forge planner is the authority for batch costs.",
+            "Ligas consomem seus componentes exatos; a prévia da forja mostra o custo do lote.",
             "",
             "Copper / Cobre: copper dust → copper ore → copper ingot.",
             "Iron / Ferro: iron dust → iron ore → iron ingot.",
