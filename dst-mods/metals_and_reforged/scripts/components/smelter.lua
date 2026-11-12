@@ -276,7 +276,6 @@ local function get_nearby_metal_containers(inst)
         if container ~= nil
             and (container.type == "chest" or container.type == "pack")
             and (container.canbeopened or container.canacceptgivenitems)
-            and entity:IsOnPassablePoint()
             and entity:GetCurrentPlatform() == platform then
             table.insert(containers, container)
         end
