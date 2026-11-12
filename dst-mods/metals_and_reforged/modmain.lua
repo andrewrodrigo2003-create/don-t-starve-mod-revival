@@ -110,6 +110,7 @@ PrefabFiles = {
 	"forkstick",
 	"shears",
 	"craftbook",
+	"metallurgy_reference_book",
 	--"cursed_phantom",
 	"cursed_piggy",
 	"cursed_piggy_mask",
@@ -225,6 +226,12 @@ AddPrototyperDef("craftbook", {
 })
 
 AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("charcoal", 5)}, TECH.SCIENCE_TWO, { placer = "warworkbench_placer", min_spacing = 1, atlas = "images/inventoryimages/obsidian_workbench.xml", image = "obsidian_workbench.tex", }, {"PROTOTYPERS"})
+
+-- Informational reference only: no prototyper, unlock, or remote crafting.
+AddRecipe2("metallurgy_reference_book", {
+    Ingredient("papyrus", 2), Ingredient("charcoal", 2),
+    Ingredient("iron_ingot", 1, "images/inventoryimages/iron_ingot.xml"),
+}, TECH.ALCHEMY_ONE, { image = "waxwelljournal.tex" }, { "CRAFTING_STATION" })
 
 AddRecipe2("armor_sanity", {Ingredient("adamantium_ingot", 2, "images/inventoryimages/adamantium_ingot.xml"),Ingredient("papyrus", 3)}, TECH.ALCHEMY_ONE, {"CRAFTING_STATION"})
 
