@@ -9,6 +9,7 @@
 - [ ] Disable the old Workshop copy so two copies do not load at once.
 - [ ] Install the ZIP from the GitHub Actions artifact.
 - [ ] Confirm the mod version is 2.9.6.
+- [ ] Confirm the new icon renders in the DST mod list without a missing-texture warning.
 - [ ] Start a fresh test world and confirm client/server logs contain no MAM Lua errors.
 - [ ] Load an older save that already contains the retired metal chest; confirm it remains loadable. New worlds must not offer a recipe for that chest.
 
