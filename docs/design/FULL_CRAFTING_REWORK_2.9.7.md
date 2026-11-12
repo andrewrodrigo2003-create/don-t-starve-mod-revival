@@ -120,6 +120,16 @@ The 2.9.7 branch now exposes independent settings for supported third-party reci
 The third-party recipe switch gates supported recipe migration/overrides when a recipe differs from its vanilla baseline; disabling it leaves that recipe's live ingredient table and metadata untouched. It is separate from the MAM vanilla-cost override setting. The legacy loot-table rewrite now requires a second explicit opt-in; without it, selecting Rewrite falls back to additive mode so shared tables are not replaced. The per-source drop switches remain independent.
 
 
+## Creature-level controls and optional mod integrations (2026-11-12)
+
+- Clockwork Knight, Rook, Bishop and chess junk now have independent source toggles and chance multipliers. The existing Ruins-wide toggle remains as a family master switch.
+- Fire Hound and Ice Hound now have independent source toggles and chance multipliers. The existing hounds Auto/Always compatibility setting remains the master policy for Uncompromising Mode interaction; per-species Off does not disable the other species.
+- Slurtle and Snurtle are added as separate low-yield cave creature sources: iron dust at 8% and 12% base chance respectively. No ingots are granted and vanilla loot is not replaced.
+- Chance multipliers are read when the server-side entity is initialized, so the source's own setting controls only that creature's MAM rolls.
+- All options are declared statically in modinfo and remain visible whether a supported external mod is installed or absent. Only runtime adapters are conditional on the actual mod/prefab being present. Future mod-specific sources must receive independent enable and chance/quantity settings rather than borrowing a global third-party toggle.
+- Harness coverage added for individual creature switches, chance scaling, hound compatibility inheritance and shell-creature loot. In-game prefab/component and multiplayer checks remain pending.
+
+
 ## Implementation note — expanded ore acquisition routes (2026-11-12)
 
 The branch now adds three independently configurable secondary sources, all using the existing additive loot guard and per-source chance scaling:
