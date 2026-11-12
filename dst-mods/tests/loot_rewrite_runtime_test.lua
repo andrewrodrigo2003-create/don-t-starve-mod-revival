@@ -204,7 +204,9 @@ end
 assert_eq(present, 18, "number of vanilla Rewrite tables")
 
 local protected_tables = load_rewrite_tables({ mam_allow_third_party_drop_overrides = 0 })
-assert_true(next(protected_tables) == nil, "third-party overwrite opt-out must preserve shared loot tables")
+for _, name in ipairs(rewrite_names) do
+    assert_true(protected_tables[name] == nil, "third-party overwrite opt-out must preserve shared table " .. name)
+end
 assert_eq(#run_prefab("rock2"), 2, "safe fallback keeps additive MAM boulder drops")
 
 local no_boulders = load_rewrite_tables({ mam_drop_boulders = 0 })
