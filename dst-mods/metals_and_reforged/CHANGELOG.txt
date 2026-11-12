@@ -1,36 +1,51 @@
 Metals and More Reforged — Changelog
 =====================================
 
-Version 2.9.5 — test build (2026-11-12)
----------------------------------------
+Version 2.9.6 — integrated test build (2026-11-12)
+--------------------------------------------------
 
 Forge and smelting
-- Validate the exact ingredient receipt before consuming any input.
-- Preserve and retry refunds when an interrupted batch cannot return every item immediately.
-- Keep the forge locked while a refund is pending; persist the pending state across save/load.
-- Preserve ready output if spawning/harvesting fails, and retry without duplicating delivered items.
-- Recover materials safely when the forge is hammered during processing.
-- Retry incomplete vanilla/craftbook recipe migration passes instead of marking partial work complete.
-- Keep the forge preview client-side for responsiveness while the server remains authoritative for the final result.
-- Display predicted product name over its image and quantity in the lower-right of the image.
+- Preserve transactional ingredient receipts, pending-refund recovery, ready output and save/load state.
+- Keep the forge preview client-side while the server validates the final plan.
+- Preserve product name over its image and predicted quantity in the lower-right of the preview.
+- Add opt-in collector robot automation: an active fueled W.O.B.O.T. or deployed W.I.N.bot can trigger nearby smelters to pull registered ingredients from compatible chests/packs and deposit completed products into compatible nearby storage.
+- Automation is Off by default and never scans player inventories or portable storage.
 
-Compatibility and performance
-- Remove the legacy global Lucy projectile hook; keep normal Lucy/axe behavior and the mod's melee/AOE weapon features.
-- Wrap stategraph/combat callbacks while preserving arguments, return values and cleanup.
-- Preserve fallback behavior for actions and recipes modified by other mods.
-- Reduce repeated screen-size table allocation in the minimap update path.
-- Register custom metal inventory atlases for crafting and preview UI.
+Crafting progression
+- Move metal equipment, tools and selected metal structures to the War Bench crafting filter using ALCHEMY_ONE.
+- Preserve live ingredient lists and recipe metadata from other mods; only the station technology and filter are changed.
+- Keep the Science Machine / Alchemy Engine progression components and transistor on the science path to avoid a crafting dependency loop.
+- Existing MAM forge weapons and equipment remain individually craftable at their existing War Bench recipes.
 
-Mining and storage
-- Keep the additive extra-drop mode and its source-specific controls.
-- Restore the optional 25-slot metal storage chest recipe (default: On). Its filter accepts registered smelting ingredients and products only.
-- The chest does not yet query nearby containers or automatically feed the forge.
+Metallurgy reference book
+- Add a craftable read-only guide at the War Bench.
+- The in-game pages cover the live smelting recipe table, materials, sources, War Bench progression, salvage rules, robot automation and compatibility settings.
+- The guide does not unlock recipes or craft items remotely.
 
-Balance and scope
-- No smelting recipe costs, output quantities, weapon damage values or progression costs were changed in this test build.
-- Hydrated/Dehydrated, Better Lucy, Uncompromising Mode and other mods were not edited.
-- The metallurgy reference book, reversible material deconstruction, final recipe/station matrix, nearby-storage query, W.O.B.O.T./W.I.N.bot forge automation and KTEX icon conversion remain in development.
+Deconstruction and salvage
+- Add right-click deconstruction near the War Bench for supported metal materials and metal equipment.
+- Material ingots return their canonical lower-stage components; crafted equipment uses its live AllRecipes ingredient list.
+- Standard recovery is 75% expected return per ingredient unit; item durability scales equipment salvage.
+- Wilson recovers 100% of listed ingredients; Winona recovers non-magical metal components at 100%; Maxwell recovers shadow materials at 100%.
+- WX-78 and Wickerbottom remain at the standard rate pending a user-approved specialty.
+- An unsuccessful recovery roll still consumes the dismantled item, preventing reroll exploits.
+- Wilson's separate cross-material transmutation table is not included because no exact conversion matrix has been defined.
 
-Verification
-- Lua 5.1 parsing, regression harnesses, behavioral simulator contracts, custom asset references and install-package content checks passed in GitHub Actions for the 2.9.5 test build.
-- This is not a claim of in-game, multiplayer, save migration or Uncompromising Mode Public Beta compatibility. Test in the dedicated world before using in a main world.
+Storage
+- The dedicated metal chest recipe and configuration option are removed as requested.
+- Its old prefab/widget remain registered only to preserve existing saves; no new chest can be crafted.
+
+Icon and packaging
+- Add the 256px icon source PNG and SVG.
+- Build the open-source KTools `ktech` converter in CI and generate the final `modicon.tex` during package creation.
+- Update the atlas to the full square texture coordinates.
+
+Compatibility
+- Recipe guards yield when another mod changes a protected vanilla ingredient list.
+- UM Public Beta 6.0.3.9 source audit covers recipe overrides, hound drops, shark loot and container integration.
+- Hydrated/Dehydrated, Better Lucy and Uncompromising Mode source files are not modified.
+- No smelting costs, output quantities or weapon damage values were changed by this build; station requirements and salvage are the new behavior.
+
+Verification scope
+- CI checks Lua 5.1 syntax, recipe/station guards, deconstruction calculations, robot automation contracts, book wiring, asset references, package contents and KTEX conversion.
+- This is not an in-game certification. Multiplayer, save migration, full Uncompromising Mode Beta behavior and the user's complete mod list still require one consolidated local test.
