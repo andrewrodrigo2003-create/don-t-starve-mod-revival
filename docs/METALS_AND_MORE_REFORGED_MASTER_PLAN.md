@@ -424,3 +424,16 @@ As integrações e alterações devem ser configuráveis pelo jogador no menor l
 - Criar testes combinatórios de configuração: desligar integração de receitas de terceiros não pode remover machado/cinzel obrigatórios; desligar integração de drops de terceiros não pode remover drops próprios do MAM; desligar uma fonte de drop não pode afetar outras fontes.
 
 Esta clarificação amplia a personalização e não cancela nenhum item anterior da atualização nem do mapa mestre de ideias.
+
+
+### 19.1 Implementação das configurações granulares (2026-11-12)
+
+Na branch 2.9.7, as configurações abaixo já foram ligadas ao código:
+
+- mam_third_party_recipe_integration: controla apenas a adaptação de receitas suportadas de terceiros; desligada, preserva a receita alterada por outro mod. Não controla mecânicas próprias do MAM.
+- mam_allow_third_party_drop_overrides: opt-in separado para substituir tabelas de loot compartilhadas no modo Rewrite. Desligada (padrão), o modo Rewrite recua para drops aditivos e preserva tabelas compartilhadas.
+- Chances independentes dos drops próprios do MAM: mam_drop_boulders_chance, mam_drop_stalagmites_chance, mam_drop_chess_chance, mam_drop_hounds_chance, mam_drop_marbletree_chance e mam_drop_shark_chance (25% a 150%).
+- Quantidade de minério de ferro do arbusto de mármore: mam_drop_marbleshrub_quantity (desligado, original, dobro ou triplo).
+- Interruptores por fonte de drop já existentes continuam separados; nenhuma dessas opções desliga as demais fontes.
+
+Os testes de configuração e de runtime foram ampliados para verificar isolamento entre as opções, preservação de receitas de terceiros, fallback aditivo e escalonamento de chances. Isso não significa que toda a atualização esteja pronta: machado/cinzel obrigatórios, integração verificada da Mesa de Serragem e cobertura completa de adaptadores ainda precisam ser concluídos antes do pacote 2.9.7.
