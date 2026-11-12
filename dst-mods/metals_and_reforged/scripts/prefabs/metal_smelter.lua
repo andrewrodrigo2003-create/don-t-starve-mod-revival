@@ -351,7 +351,11 @@ local function fn()
     if MAMConfig.on("mam_robot_smelting") then
         inst._mam_robot_smelting_task = inst:DoPeriodicTask(5, function()
             if inst:IsValid() and inst.components.smelter ~= nil then
-                inst.components.smelter:TryStartRobotBatch()
+                if inst.components.smelter.canharvest then
+                    inst.components.smelter:TryAutoHarvestToStorage()
+                else
+                    inst.components.smelter:TryStartRobotBatch()
+                end
             end
         end)
     end
