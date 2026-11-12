@@ -50,7 +50,6 @@ jobs:
           "$RUNNER_TEMP/ktools/build/ktech" \\
             "$ICON_DIR/metals_and_more_reforged_icon.png" \\
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
-          "$RUNNER_TEMP/ktools/build/ktech" --info "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
       - name: Install Lua 5.1
         run: |
