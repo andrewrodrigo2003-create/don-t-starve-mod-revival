@@ -12,9 +12,14 @@ local modmain = read("dst-mods/metals_and_reforged/modmain.lua")
 
 assert(modinfo:find('name = "mam_metalschest"', 1, true),
     "metal chest config option must be present")
-assert(modinfo:find('label = "Metal storage chest"', 1, true),
+local chest_option_start = assert(modinfo:find('name = "mam_metalschest"', 1, true),
+    "metal chest config option must be present")
+local chest_option_end = assert(modinfo:find("\n\t},", chest_option_start, true),
+    "metal chest config block must close")
+local chest_option = modinfo:sub(chest_option_start, chest_option_end)
+assert(chest_option:find('label = "Metal storage chest"', 1, true),
     "metal chest option label must be present")
-assert(modinfo:find("default = 1", 1, true),
+assert(chest_option:find("default = 1", 1, true),
     "metal chest should be enabled by default")
 assert(modmain:find('if MAMConfig.on("mam_metalschest") then', 1, true),
     "metal chest recipe must follow the config option")
