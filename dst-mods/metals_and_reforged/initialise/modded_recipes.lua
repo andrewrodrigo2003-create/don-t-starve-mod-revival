@@ -15,7 +15,7 @@ local MAMRecipeGuard = require("mam/recipe_guard")
 -- AddRecipe2 so existe no ambiente do modmain (modutil.lua:732 a poe em env, nao em
 -- GLOBAL), entao o guarda precisa que alguem a injete para o caminho de migracao de
 -- bancada. Idempotente: modded_craftbook.lua faz o mesmo.
-MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter)
+MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter, RemoveRecipeFromFilter)
 
 local IRON_ORE_ATLAS = "images/inventoryimages/iron_ore.xml"
 local IRON_INGOT_ATLAS = "images/inventoryimages/iron_ingot.xml"
