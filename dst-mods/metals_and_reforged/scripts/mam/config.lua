@@ -40,6 +40,14 @@ local DEFAULTS = {
     mam_drop_rocky = 1, -- wild Rockys only; player-following Rockies are excluded
     mam_drop_rubble = 1, -- cave rubble mined by players
     mam_drop_ancient_statues = 1, -- ancient Ruins statues mined by players
+    mam_drop_knight = 1, -- clockwork knights; mam_drop_chess remains family master
+    mam_drop_rook = 1, -- clockwork rooks
+    mam_drop_bishop = 1, -- clockwork bishops
+    mam_drop_chessjunk = 1, -- hammerable chess debris
+    mam_drop_firehound = 1, -- red gem shards
+    mam_drop_icehound = 1, -- blue gem shards
+    mam_drop_slurtle = 1, -- rare iron dust
+    mam_drop_snurtle = 1, -- rare iron dust
     mam_drop_boulders_chance = 100,
     mam_drop_stalagmites_chance = 100,
     mam_drop_chess_chance = 100,
@@ -49,6 +57,14 @@ local DEFAULTS = {
     mam_drop_rocky_chance = 100,
     mam_drop_rubble_chance = 100,
     mam_drop_ancient_statues_chance = 100,
+    mam_drop_knight_chance = 100,
+    mam_drop_rook_chance = 100,
+    mam_drop_bishop_chance = 100,
+    mam_drop_chessjunk_chance = 100,
+    mam_drop_firehound_chance = 100,
+    mam_drop_icehound_chance = 100,
+    mam_drop_slurtle_chance = 100,
+    mam_drop_snurtle_chance = 100,
     mam_drop_marbleshrub_quantity = 100,
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
     mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
@@ -81,6 +97,14 @@ local ALLOWED = {
     mam_drop_rocky        = { [0] = true, [1] = true },
     mam_drop_rubble       = { [0] = true, [1] = true },
     mam_drop_ancient_statues = { [0] = true, [1] = true },
+    mam_drop_knight = { [0] = true, [1] = true },
+    mam_drop_rook = { [0] = true, [1] = true },
+    mam_drop_bishop = { [0] = true, [1] = true },
+    mam_drop_chessjunk = { [0] = true, [1] = true },
+    mam_drop_firehound = { [0] = true, [1] = true },
+    mam_drop_icehound = { [0] = true, [1] = true },
+    mam_drop_slurtle = { [0] = true, [1] = true },
+    mam_drop_snurtle = { [0] = true, [1] = true },
     mam_drop_boulders_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_stalagmites_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_chess_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
@@ -90,6 +114,14 @@ local ALLOWED = {
     mam_drop_rocky_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_rubble_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_ancient_statues_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_knight_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rook_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_bishop_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_chessjunk_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_firehound_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_icehound_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_slurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_snurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_marbleshrub_quantity = { [0] = true, [100] = true, [200] = true, [300] = true },
     mam_robot_smelting    = { [0] = true, [1] = true },
     mam_language          = { ptbr = true, en = true },
