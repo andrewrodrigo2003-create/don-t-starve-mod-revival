@@ -850,15 +850,5 @@ configuration_options = {
         },
         default = 1,
 	},
-	{
-        name = "mam_metalschest",
-        label = "Metal storage chest",
-        hover = "Adds a 25-slot chest for registered metal-smelting inputs and outputs, including ores, dusts, shards, ingots and alloys. The filter follows the live smelting registries; it does not pull items from nearby containers.",
-        options =
-        {
-            {description = "Off", data = 0},
-            {description = "On", data = 1},
-        },
-        default = 1,
-	},
+
 }
