@@ -63,7 +63,7 @@ Only the explicit metal/War Bench allowlist is eligible. The action reads the li
 
 ### Recovery
 
-- Standard: 75% expected return per ingredient unit, using an independent recovery roll.
+- Standard: 75% expected return per ingredient unit. Whole expected units are guaranteed; only the fractional remainder is rolled once per ingredient type, reducing extreme variance.
 - Wilson: 100% for all listed components.
 - Winona: 100% for non-magical metal components; other recipe ingredients use the standard rate.
 - Maxwell: 100% for shadow components; other recipe ingredients use the standard rate.
