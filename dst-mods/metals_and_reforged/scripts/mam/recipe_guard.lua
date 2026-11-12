@@ -214,6 +214,12 @@ function M.apply(name, ingredients)
         end
     end
 
+    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
+        and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        return false, result.reason
+    end
+
     if m == 1 and not same_signature(BASELINE[name], describe(recipe)) then
         result.reason = "changed-by-others"
         MAMLog.WarnOnce("recipe_guard.clobber." .. name,
@@ -267,6 +273,13 @@ function M.regate(name, our_ingredients, tech, more_data, filters)
         return false, result.reason
     end
 
+    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
+        and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        MAMLog.Info("receita '%s' de terceiro preservada: integracao desativada", name)
+        return false, result.reason
+    end
+
     local ingredients = our_ingredients
     local kept_theirs = false
 
@@ -303,6 +316,13 @@ function M.set_station(name, tech, filter)
         result.reason = "invalid-tech"
         MAMLog.WarnOnce("recipe_station.tech." .. name,
             "Tecnologia invalida para '%s'; bancada nao foi alterada.", name)
+        return false, result.reason
+    end
+
+    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
+        and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        MAMLog.Info("receita '%s' de terceiro nao foi movida: integracao desativada", name)
         return false, result.reason
     end
 
