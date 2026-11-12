@@ -2,7 +2,7 @@
 
 **Target milestone:** 2.9.7 (after the 2.9.6 in-game test candidate)  
 **Branch:** `feature/full-crafting-rework-localization-2026-11-12`  
-**Status:** design baseline and implementation requirements; not yet gameplay-certified.
+**Status:** design baseline plus initial localization and material-only deconstruction changes; not yet gameplay-certified.
 
 ## Product direction
 
@@ -29,7 +29,7 @@ Required coverage includes every MAM material prefab, not only the current coppe
 - Use reverse provenance from the live smelting/material recipe registry where available; preserve source material identity and prevent upward conversion or profitable loops.
 - Handle tagged/alternative ingredients through the authoritative smelting planner, not a guessed fixed recipe.
 - Each character must have an explicit resolved profile. Character-specific recovery must be based on actual in-game abilities, crafting knowledge, lore/mechanics, or a documented design rule. Do not grant arbitrary bonuses merely to make every character different.
-- Known special cases (Wilson, Winona, Maxwell) are starting points to re-audit, not the complete roster. Cover every vanilla survivor and supported DLC/guest survivor. Unknown modded survivors receive a safe generic fallback, with optional integration through stable tags/components rather than fragile character-name checks.
+- Current branch now resolves explicit profiles for the 18 currently listed vanilla survivors; Wilson, Winona and Maxwell retain the already established material-specific rules, while other survivors use the safe standard rate until a justified specialty is documented. Unknown modded survivors receive a safe generic fallback. The roster must be rechecked against the active DST build before release.
 - Character profiles may affect recovery chance, eligible material classes, handling efficiency, or output form, but must never create materials from nothing or bypass recipe progression.
 - Server-authoritative atomic operation: validate station/range, item ownership, output capacity and all planned returns before consuming. No free rerolls; no equipment salvage; no partial material loss if output delivery fails.
 - UI/book must explain the active character's recovery rules and fallback behavior.
@@ -71,7 +71,7 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 
 ## 7. Implementation sequence and release gates
 
-1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes.
+1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale still need provenance-based decisions before claiming complete material coverage.
 2. Implement the localization registry and language selection; add complete string-coverage tests.
 3. Replace the narrow deconstruction allowlist with a material-only registry and explicit character profile resolver; add full survivor/material coverage tests.
 4. Implement non-consuming tool validation for chisel/axe and Sawing Table integration after verifying the real DST/UM APIs.
