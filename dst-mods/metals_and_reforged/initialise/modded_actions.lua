@@ -240,3 +240,13 @@ end)
 
 AddStategraphActionHandler("wilson", ActionHandler(ACTIONS.MAM_DECONSTRUCT_METAL, "doshortaction"))
 AddStategraphActionHandler("wilson_client", ActionHandler(ACTIONS.MAM_DECONSTRUCT_METAL, "doshortaction"))
+
+-- Read-only metallurgy guide popup. The server sends the popup event; the
+-- actual screen is created only on the local client.
+local MAM_METALLURGY_BOOK_POPUP = AddPopup("MAM_METALLURGY_BOOK")
+MAM_METALLURGY_BOOK_POPUP.fn = function(inst, show)
+    if show and GLOBAL.TheFrontEnd ~= nil and not inst._mam_metallurgy_book_open then
+        inst._mam_metallurgy_book_open = true
+        GLOBAL.TheFrontEnd:PushScreen(require("screens/metallurgybookscreen")(inst))
+    end
+end
