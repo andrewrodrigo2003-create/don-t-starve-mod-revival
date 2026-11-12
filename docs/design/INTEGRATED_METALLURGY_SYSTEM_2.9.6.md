@@ -93,6 +93,7 @@ The dedicated metal chest recipe and configuration option are removed. The prefa
 
 - Source: `images/branding/metals_and_more_reforged_icon.svg`. CI rasterizes it to a 256px PNG with `rsvg-convert` before packaging.
 - CI checks out the pinned KTools `ktech` source commit `a1d1362bdb2b9aa9146d7177fbf0e351eab414ba`, builds the open-source converter, and generates `modicon.tex`.
+- The pinned upstream source has a compile-time signature typo in `inverseOf(ProjectiveMatrix)`: it is declared `void` but returns a matrix. CI applies the one-line return-type correction only in its temporary checkout; no KTools source is vendored or changed upstream.
 - `modicon.xml` maps the full square texture.
 - The generated KTEX is included in the install ZIP; the source PNG/SVG remain for reproducibility.
 
