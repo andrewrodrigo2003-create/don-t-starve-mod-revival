@@ -47,8 +47,8 @@ jobs:
           PY
           cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
           cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
-          "$RUNNER_TEMP/ktools/build/ktech" \\
-            "$ICON_DIR/metals_and_more_reforged_icon.png" \\
+          "$RUNNER_TEMP/ktools/build/ktech" \
+            "$ICON_DIR/metals_and_more_reforged_icon.png" \
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
       - name: Install Lua 5.1
