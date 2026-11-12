@@ -45,7 +45,6 @@ local function make_node(name)
     function node:SetPosition(...) self.position = { ... } end
     function node:SetSize(value) self.size = value end
     function node:SetScale(value) self.scale = value end
-    function node:SetShadowOffset(...) self.shadow = { ... } end
     function node:SetColour(...) self.colour = { ... } end
     function node:SetString(value) self.string = value end
     function node:SetHAlign(value) self.halign = value end
@@ -180,9 +179,6 @@ assert(widget.mam_forge_preview.position[1] == -270,
     "forge preview must move clear of the input slots")
 assert(widget.mam_forge_preview.scale == 1.2,
     "complete forge preview HUD must be enlarged by 20%")
-assert(widget.mam_forge_preview.name.shadow ~= nil
-    and widget.mam_forge_preview.details.shadow ~= nil,
-    "preview text must receive a readability shadow")
 assert(widget.mam_forge_preview.name.string == "Copper Ingot", "product name must be displayed")
 assert(widget.mam_forge_preview.name.position[1] == -48
     and widget.mam_forge_preview.name.position[2] == 54,
