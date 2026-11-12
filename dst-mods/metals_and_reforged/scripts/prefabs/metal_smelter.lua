@@ -13,6 +13,7 @@ local prefabs =
 }
 
 local MAMContainerSettings = require("mam/container_settings")
+local MAMConfig = require("mam/config")
 
 local function onmamplandirty(inst)
     local container = inst.replica ~= nil and inst.replica.container or nil
@@ -344,6 +345,16 @@ local function fn()
 	inst.components.smelter.startsmeltingfn = smeltstart
 	inst.components.smelter.donesmeltingfn = smeltdone
 	inst.components.smelter.onharvest = harvest
+
+    -- Low-frequency server-side poll; disabled by default. The component
+    -- itself validates a fueled collector robot and compatible nearby storage.
+    if MAMConfig.on("mam_robot_smelting") then
+        inst._mam_robot_smelting_task = inst:DoPeriodicTask(5, function()
+            if inst:IsValid() and inst.components.smelter ~= nil then
+                inst.components.smelter:TryStartRobotBatch()
+            end
+        end)
+    end
 	
 	inst:AddComponent("harvestable")
 	
