@@ -163,7 +163,7 @@ assert_eq(#knight_scaled, 2, "knight retains its own two copper-ore rolls")
 assert_true(math.abs(knight_scaled[1].chance - 0.25) < 0.000001, "knight chance regulator scales its own loot")
 config_values.mam_drop_knight_chance = nil
 
-config_values.mam_drop_hounds = 1
+config_values.mam_drop_hounds = 2 -- Always isolates per-species toggles from the UM Auto policy.
 config_values.mam_drop_firehound = 0
 assert_eq(#run_prefab("firehound"), 0, "firehound can be disabled without disabling icehound")
 assert_eq(#run_prefab("icehound"), 4, "icehound remains enabled independently")
