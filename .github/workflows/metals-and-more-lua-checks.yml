@@ -110,18 +110,18 @@ jobs:
         run: |
           set -euo pipefail
           cd dst-mods
-          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
-          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" | grep -q '^metals_and_reforged/tests/'; then
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
+          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" | grep -q '^metals_and_reforged/tests/'; then
             echo "Test-only files leaked into the installable package"
             exit 1
           fi
       - name: Verify install package contents
-        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip"
+        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip"
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@v4
         with:
-          name: metals-and-more-reforged-2.9.5
-          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.5.zip
+          name: metals-and-more-reforged-2.9.6
+          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip
           if-no-files-found: error
           retention-days: 14
