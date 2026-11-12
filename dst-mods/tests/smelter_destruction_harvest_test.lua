@@ -19,6 +19,9 @@ end
 package.preload["mam/container_settings"] = function()
     return { needs_widget_refresh = function() return false end }
 end
+package.preload["mam/config"] = function()
+    return { on = function() return false end, int = function(_, fallback) return fallback end }
+end
 
 local current_smelter
 local function make_inst()
