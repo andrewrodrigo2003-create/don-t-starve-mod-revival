@@ -56,6 +56,16 @@
 - [x] Confirmar por harness runtime as gates de Rewrite, com a ressalva de que a substituição de loot tables é comportamento legado e ainda exige validação em mundo real.
 - [ ] Testar cada fonte com as opções geral e individuais desligadas/ligadas.
 
+### Expansao de fontes secundarias de minerio (2.9.7)
+
+- [x] Adicionar Rocky selvagem como fonte secundaria de poeira de cobre (20%) e poeira de ferro (5%); Rockys seguindo jogadores ficam excluidos para impedir farm de companheiros.
+- [x] Adicionar escombros naturais de cavernas (`rubble`) como interacao de mineracao: poeira de cobre (15%) e poeira de ferro (5%), preservando os drops vanilla.
+- [x] Adicionar as quatro variantes de estatuas antigas das Ruinas como interacao de mineracao: poeira de cobre (15%) e poeira de ferro (5%), sem alterar gemas ou Thulecite.
+- [x] Cada nova fonte tem interruptor independente e multiplicador de chance de 25% a 150%, validado no modulo central; modo aditivo por padrao e sem substituicao de loot compartilhado.
+- [x] As tres fontes sao secundarias: nao concedem lingotes garantidos nem substituem as fontes principais de cobre/ferro.
+- [ ] Executar harness atualizado e CI; confirmar os componentes reais no build ativo do DST e testar no mundo "mundo de testes de mod".
+- [ ] Medir expectativa de drops por hora/bioma e ajustar somente se a simulacao ou teste in-game revelar excesso ou escassez.
+
 ## 4. Forja em lotes e previsão
 
 - [x] Existe cálculo de lote, limite por operação, crescimento de tempo, previsão de produto/quantidade e comunicação do plano do servidor via netvar.
