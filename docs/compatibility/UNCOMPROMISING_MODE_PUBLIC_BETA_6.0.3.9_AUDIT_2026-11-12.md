@@ -61,12 +61,12 @@ Fontes UM:
 - `init/init_containers.lua` define vários containers exclusivos, incluindo `um_scrapper`, e registra parâmetros em `containers.params`.
 - `postinit/components/container.lua` acrescenta `DropOneItemWithTag` ao componente vanilla.
 
-Fonte MAM:
-- `metal_storage_chest` tem nome próprio, widget próprio, tag `mam_metal_storage`, tipo `chest` e filtro que consulta os registros de ingredientes/produtos de fundição.
-- A implementação não substitui `containers.params` global nem edita o `um_scrapper`.
-- O MAM usa APIs normais de container e não depende de componentes privados do UM.
+Estado MAM 2.9.6:
+- A receita e a opção do `metal_storage_chest` foram removidas a pedido do usuário. O prefab/widget/tag antigos permanecem apenas para carregar saves que já contenham o baú.
+- A nova automação usa containers compatíveis comuns (`chest`/`pack`) e APIs vanilla `Container:CanAcceptCount`, `GiveItem` e `RemoveItem`; não substitui `containers.params` nem edita `um_scrapper`.
+- O MAM não depende de componentes privados do UM.
 
-**Conclusão:** não foi encontrada colisão de nome ou de widget entre o baú MAM e os containers UM inspecionados. Ainda precisa testar inserção/retirada, martelo, save/load e baú cheio no jogo.
+**Conclusão:** não foi encontrada colisão de nome/widget nos containers UM inspecionados. A automação genérica ainda precisa ser testada in-game com o conjunto de containers do usuário.
 
 ## 6. Limites
 
@@ -81,7 +81,7 @@ Fonte MAM:
 1. MAM + UM Beta, sem outros mods de forja/armazenamento: confirmar carregamento sem erros.
 2. `mam_drop_hounds = Auto`: firehound/icehound e shark normal.
 3. `celestialitems_revert` ligado no UM e `mam_recipe_overrides = Safe` no MAM: glasscutter/moonglassaxe.
-4. Baú metalúrgico: ingredientes, produtos, item inválido, martelo e save/load.
+4. Baú antigo: apenas carregar save legado; depois testar automação em baús vanilla e containers externos.
 5. Forja: lote, preview, interrupção, devolução e save/load.
 6. Adicionar Improved Scaled Furnace/Scaled Stove e os mods de armazenamento usados pelo usuário, um grupo por vez.
 7. Só então repetir com o conjunto completo do mundo `mundo de testes de mod`.
