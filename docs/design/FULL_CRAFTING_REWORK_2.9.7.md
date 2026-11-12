@@ -119,4 +119,15 @@ The 2.9.7 branch now exposes independent settings for supported third-party reci
 
 The third-party recipe switch gates supported recipe migration/overrides when a recipe differs from its vanilla baseline; disabling it leaves that recipe's live ingredient table and metadata untouched. It is separate from the MAM vanilla-cost override setting. The legacy loot-table rewrite now requires a second explicit opt-in; without it, selecting Rewrite falls back to additive mode so shared tables are not replaced. The per-source drop switches remain independent.
 
+
+## Implementation note — expanded ore acquisition routes (2026-11-12)
+
+The branch now adds three independently configurable secondary sources, all using the existing additive loot guard and per-source chance scaling:
+
+- Wild Rocky: 20% copper dust and 5% iron dust. Rockys with a non-nil follower leader are excluded so player-following companions cannot be converted into an ore farm.
+- Natural cave rubble (`rubble`): 15% copper dust and 5% iron dust on the existing mining interaction; vanilla rubble loot is retained.
+- Ancient Ruins statues (`ruins_statue_mage`, `ruins_statue_mage_nogem`, `ruins_statue_head`, `ruins_statue_head_nogem`): 15% copper dust and 5% iron dust when mined; original gem and Thulecite rewards are not rewritten.
+
+Each source has its own On/Off setting and a separate 25–150% chance multiplier. These are deliberately low-yield secondary routes: no guaranteed ingots, no replacement of primary ore progression, and no shared loot-table edits in the default mode. Runtime harness coverage has been added for registration, chance scaling, independent disablement and follower exclusion; CI and in-game balance verification remain pending.
+
 These settings and harness assertions are implemented on the branch, but the full 2.9.7 package is not yet ready: mandatory axe/chisel crafting, verified Sawing Table integration, complete recipe/drop adapter coverage, and the remaining rework/localization work are still pending. Automated CI is running; in-game/multiplayer/save-load verification remains required.
