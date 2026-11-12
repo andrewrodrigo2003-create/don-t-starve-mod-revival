@@ -249,10 +249,13 @@ deconstruct_action.rmb = true
 deconstruct_action.mount_valid = true
 
 AddComponentAction("INVENTORY", "inventoryitem", function(inst, doer, actions, right)
+    local recipe = inst ~= nil and GLOBAL.AllRecipes ~= nil
+        and GLOBAL.AllRecipes[inst.prefab] or nil
+    local supported_material = inst ~= nil and MAMDeconstruction.GetReturns(inst.prefab) ~= nil
+    local supported_equipment = inst ~= nil and MAMDeconstruction.IsSupported(inst.prefab)
+        and recipe ~= nil and not recipe.no_deconstruction
     if right and inst ~= nil and inst:IsValid()
-        and MAMDeconstruction.IsSupported(inst.prefab)
-        and not (GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[inst.prefab] ~= nil
-            and GLOBAL.AllRecipes[inst.prefab].no_deconstruction)
+        and (supported_material or supported_equipment)
         and has_warworkbench(doer) then
         table.insert(actions, ACTIONS.MAM_DECONSTRUCT_METAL)
     end
