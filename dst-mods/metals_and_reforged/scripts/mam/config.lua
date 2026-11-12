@@ -60,6 +60,7 @@ local ALLOWED = {
     mam_drop_marbletree   = { [0] = true, [1] = true },
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
+    mam_robot_smelting    = { [0] = true, [1] = true },
 }
 
 local values = {}
