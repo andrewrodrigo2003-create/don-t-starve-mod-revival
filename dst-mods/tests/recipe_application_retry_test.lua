@@ -32,6 +32,10 @@ local function run_case(module_path, method_name, expected_minimum)
     local guard = {
         Init = function() end,
         dump = function() end,
+        set_station = function()
+            successful_calls = successful_calls + 1
+            return true, "applied"
+        end,
     }
     guard[method_name] = function()
         calls = calls + 1
