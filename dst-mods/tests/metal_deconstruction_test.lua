@@ -48,7 +48,12 @@ local crafted = assert(recovery.BuildPlan("halberd", "winona", always_fail, {
 }))
 assert(#crafted == 1 and crafted[1].prefab == "iron_ingot" and crafted[1].count == 3,
     "Winona should fully recover the nonmagical metal portion of equipment")
-local damaged = assert(recovery.BuildPlan("halberd", "wilson", always_success, {
+local damage_roll_index = 0
+local function damage_roll()
+    damage_roll_index = damage_roll_index + 1
+    return damage_roll_index % 2 == 1 and 0.25 or 0.75
+end
+local damaged = assert(recovery.BuildPlan("halberd", "wilson", damage_roll, {
     ingredients = { { type = "iron_ingot", amount = 4 } },
     numtogive = 1,
 }, 0.5))
