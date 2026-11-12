@@ -257,7 +257,7 @@ function MetallurgyBookScreen:SetPage(page)
 end
 
 function MetallurgyBookScreen:OnDestroy()
-    if self.owner ~= nil then
+    if self.owner ~= nil and self.owner:IsValid() then
         self.owner._mam_metallurgy_book_open = nil
         POPUPS.MAM_METALLURGY_BOOK:Close(self.owner)
     end
