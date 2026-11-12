@@ -29,7 +29,7 @@ local TECH = GLOBAL.TECH
 local MAMLog = require("mam/log")
 local MAMRecipeGuard = require("mam/recipe_guard")
 
-MAMRecipeGuard.Init(AddRecipe2)
+MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter)
 
 local BRONZE_INGOT_ATLAS = "images/inventoryimages/bronze_ingot.xml"
 local GOLD_INGOT_ATLAS = "images/inventoryimages/gold_ingot.xml"
