@@ -194,7 +194,8 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
 
     local inventory = doer.components.inventory
     local recipe = GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[item.prefab] or nil
-    if recipe ~= nil and recipe.no_deconstruction then
+    if MAMDeconstruction.GetReturns(item.prefab) == nil
+        and recipe ~= nil and recipe.no_deconstruction then
         return false
     end
 
