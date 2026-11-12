@@ -39,6 +39,9 @@ for name in (
     "moonglassaxe",
 ):
     assert f'"{name}"' in recipes, f"metal recipe not migrated to War Bench: {name}"
+# These are crafted products, equipment, tools or structures, not raw MAM
+# materials. Their recipes may be migrated to the War Bench, but they must
+# never become eligible for the material-only deconstruction action.
 for name in (
     "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
     "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
@@ -48,7 +51,7 @@ for name in (
     "glasscutter", "archive_resonator_item", "moondial", "moonrockcrater",
     "moonglassaxe",
 ):
-    assert f"{name} = true" in module, f"metal item missing deconstruction support: {name}"
+    assert f"    {name} = {{" not in module, f"non-material must remain unsupported: {name}"
 assert 'if plan == nil then' in actions
 assert 'if plan == nil or #plan == 0 then' not in actions, "zero-return roll must consume the input"
 
