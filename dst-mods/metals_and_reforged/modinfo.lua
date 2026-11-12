@@ -17,6 +17,16 @@ all_clients_require_mod = true
 client_only_mod = false
 
 configuration_options = {
+    {
+        name = "mam_language",
+        label = "Language / Idioma",
+        hover = "Choose Brazilian Portuguese or English for Metals and More Reforged.",
+        options = {
+            { description = "Português (Brasil)", data = "ptbr" },
+            { description = "English", data = "en" },
+        },
+        default = "ptbr",
+    },
 	{
         name = "craftingbook",
         label = "Crafting book",
