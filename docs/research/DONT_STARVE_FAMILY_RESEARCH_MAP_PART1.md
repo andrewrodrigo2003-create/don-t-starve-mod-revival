@@ -107,6 +107,41 @@ Os nomes acima são pontos de entrada para inspeção, não uma lista de APIs ap
 
 **Limitação importante:** não foi localizado, nesta etapa, um pacote dos scripts vanilla DS/RoG/SW/HAM e tampouco foi validada a versão instalada do DST. Portanto, não se declara concluída a inspeção de código desses jogos. O mapa organiza a pesquisa e corrige a metodologia; a confirmação técnica depende dos arquivos correspondentes.
 
+
+## 5. Inspeção inicial de scripts DST — snapshot comunitário
+
+Foi feita uma inspeção direta dos arquivos Lua disponíveis no espelho comunitário taichunmin/dont-starve-together-game-scripts (branch master). Isso é **evidência de código de um snapshot comunitário**, não prova de correspondência com a build instalada do usuário. SHAs observados:
+
+| Arquivo | Blob SHA | Evidência encontrada |
+|---|---|---|
+| scripts/components/builder.lua | 665bfadd58bec61762ad240bd3f42ac6bb259e9e | Métodos reais incluem EvaluateTechTrees, UsePrototyper, AddRecipe, RemoveRecipe, UnlockRecipe, GetIngredients, RemoveIngredients, MakeRecipe, DoBuild, HasIngredients e CanBuild (marcado deprecated no próprio arquivo). |
+| scripts/components/prototyper.lua | 2a93cb6e48e23f39a9ee5cc7fd06c0c0a354283f | Tag prototyper; TurnOn/TurnOff por doer; GetTechTrees; Activate(doer, recipe), que chama onactivate quando configurado. |
+| scripts/components/craftingstation.lua | f389e14127fc77a753896a7384a8b282a7684bc8 | LearnItem, KnowsItem, GetItems, GetRecipes, ForgetItem e persistência OnSave/OnLoad. |
+| scripts/components/container.lua | 074c3e65383d033ff939bdfd616826660936e37c | WidgetSetup, itemtestfn, GiveItem, RemoveItem/RemoveItemBySlot, Has, ConsumeByName, GetCraftingIngredient, Open/Close e OnSave/OnLoad. |
+| scripts/components/workable.lua | ba21f783aa895c715d953bd3284e4e5785818be4 | SetWorkAction, SetWorkLeft, SetMaxWork, SetOnWorkCallback, SetOnFinishCallback, WorkedBy e persistência OnSave/OnLoad. |
+| scripts/components/repairable.lua | e33e540840352f7c7cc6c2b9e565a9c85d8421d7 | SetHealthRepairable, SetWorkRepairable, SetFiniteUsesRepairable, NeedsRepairs e Repair(doer, repair_item). |
+| scripts/prefabs/storage_robot.lua | 08093fcff63dae7633803a462e1b9283c2c16b8a | Prefab do robô coletor encontrado; a inspeção do fluxo completo deve incluir storage_robot_common.lua e brain/actions, não apenas o prefab principal. |
+
+### Consequências técnicas confirmadas neste snapshot
+
+- O Builder tem um fluxo explícito para avaliar tech trees e prototipadores; a integração de uma bancada não deve ser reduzida a adicionar uma tag.
+- Prototyper mantém uma coleção de usuários/doers ativos e executa callbacks de ativação; não é por si só um sistema genérico de forja/combustível.
+- Container oferece operações de inventário e persistência; qualquer automação deve verificar os métodos e callbacks reais e executar consumo no servidor.
+- Workable expõe callbacks de trabalho e conclusão e possui persistência condicionada ao estado configurado; não equivale automaticamente a uma API de desmontagem.
+- Repairable tem métodos para marcar saúde/usos/trabalho como reparáveis e um método Repair; **não existe evidência aqui de MakeForgeRepairable**.
+- A busca por DeconstructRecipe não produziu definição confirmada. Sua existência permanece não comprovada.
+
+Links diretos para os arquivos do snapshot:
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/builder.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/prototyper.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/craftingstation.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/container.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/workable.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/components/repairable.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/scripts/prefabs/storage_robot.lua
+
+**Limite:** não foi identificado o commit/build do espelho como correspondente à versão instalada do usuário. Antes de usar uma assinatura ou comportamento em código de produção, comparar com os scripts extraídos da versão alvo do DST. O arquivo storage_robot_common.lua e o caminho completo de coleta/armazenamento ainda precisam ser examinados.
+
 ## 6. Critérios de conclusão da Parte 1
 
 - [x] Separação formal entre DS, RoG, SW, HAM e DST.
