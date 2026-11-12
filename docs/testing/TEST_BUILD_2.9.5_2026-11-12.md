@@ -34,13 +34,21 @@ Use o mundo **mundo de testes de mod**. Faça primeiro uma execução com o conj
 - Confirmar que não existe mais o antigo arremesso global da Lucy vindo do Metals and More.
 - Testar Willow/Bernie e habilidades relacionadas, sem atribuir ao MAM erros que apontem para outro mod.
 
-### C. Compatibilidade
+#### C. Baú metalúrgico
+- Confirmar que a opção Metal storage chest está ligada (default On).
+- Fabricar o baú na estação de alquimia e confirmar os 25 espaços.
+- Guardar minérios, poeiras, fragmentos, lingotes e ligas registrados.
+- Confirmar que itens comuns/estranhos são rejeitados.
+- Martelar a estrutura e verificar se o conteúdo é devolvido uma única vez.
+- Salvar/recarregar com itens dentro.
+
+## D. Compatibilidade
 - Repetir com Uncompromising Mode Public Beta habilitado.
 - Observar receitas, drops, tech trees, forja, UI, containers e erros de carregamento.
 - Repetir com Improved Scaled Furnace/Scaled Stove e mods de armazenamento/inventário usados no mundo.
 - Verificar se o antigo Metals and More da Oficina está desativado, evitando duas cópias do mesmo mod.
 
-### D. Logs
+### E. Logs
 Após o teste, guardar:
 - `client_log.txt`
 - `server_log.txt` (se host/servidor)
@@ -51,12 +59,12 @@ Após o teste, guardar:
 
 - Livro metalúrgico informativo multi-página.
 - Desconstrução reversível dos metais.
-- Baú metalúrgico reativado para fabricação em novos mundos / consulta próxima a depósitos.
+- Consulta próxima a depósitos e integração automática com a forja/robôs.
 - Automação de forja com W.O.B.O.T./W.I.N.bot.
 - Matriz completa de receitas individuais e estações.
 - Ícone convertido para KTEX.
 
-O prefab antigo `metal_storage_chest` e seu widget continuam registrados para compatibilidade com saves antigos, mas a receita/opção de criação foi retirada nesta build de teste. Não testar como se fosse um recurso novo craftável.
+O `metal_storage_chest` está novamente craftável por opção de configuração (default On) e usa o filtro metalúrgico. Consulta próxima a depósitos e automação W.O.B.O.T./W.I.N.bot ainda não estão implementadas.
 
 ## Limite de validação
 
