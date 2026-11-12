@@ -25,6 +25,9 @@ local config_values = {
     mam_drop_marbletree = 1,
     mam_drop_shark = 1,
     mam_drop_marbleshrub = 1,
+    mam_drop_rocky = 1,
+    mam_drop_rubble = 1,
+    mam_drop_ancient_statues = 1,
     mam_drop_marbleshrub_quantity = 100,
 }
 
@@ -88,18 +91,20 @@ local LootGuard = require("mam/loot_guard")
 -- Load the actual declarations used by the mod, not a copied decision function.
 dofile(MOD_ROOT .. "initialise/modded_drops.lua")
 
-local function make_inst()
+local function make_inst(extra_components)
     local dropper = { items = {} }
     function dropper:AddChanceLoot(prefab, chance)
         table.insert(self.items, { prefab = prefab, chance = chance })
     end
-    return { components = { lootdropper = dropper } }
+    local components = extra_components or {}
+    components.lootdropper = dropper
+    return { components = components }
 end
 
-local function run_prefab(name)
+local function run_prefab(name, extra_components)
     local callback = prefab_callbacks[name]
     assert_true(callback ~= nil, "missing AddPrefabPostInit callback for " .. name)
-    local inst = make_inst()
+    local inst = make_inst(extra_components)
     callback(inst)
     return inst.components.lootdropper.items
 end
@@ -137,6 +142,32 @@ local half_shark = run_prefab("shark")
 assert_eq(#half_shark, 2, "shark retains two independent MAM rolls")
 assert_true(math.abs(half_shark[1].chance - 0.5) < 0.000001, "shark chance is scaled")
 config_values.mam_drop_shark_chance = nil
+
+-- New secondary sources: wild Rockys, cave rubble and ancient Ruins statues.
+config_values.mam_drops_mode = 1
+local rocky_loot = run_prefab("rocky")
+assert_eq(#rocky_loot, 2, "wild Rocky has two low-probability mineral dust rolls")
+assert_eq(rocky_loot[1].prefab, "copper_dust", "Rocky copper dust")
+assert_eq(rocky_loot[2].prefab, "iron_dust", "Rocky iron dust")
+local followed_rocky_loot = run_prefab("rocky", { follower = { leader = {} } })
+assert_eq(#followed_rocky_loot, 0, "player-following Rocky must not become a mineral farm")
+
+local rubble_loot = run_prefab("rubble")
+assert_eq(#rubble_loot, 2, "mineable cave rubble gets rare mineral dust")
+for _, statue_name in ipairs({
+    "ruins_statue_mage", "ruins_statue_mage_nogem",
+    "ruins_statue_head", "ruins_statue_head_nogem",
+}) do
+    assert_eq(#run_prefab(statue_name), 2, "ancient statue source registered: " .. statue_name)
+end
+
+config_values.mam_drop_rubble = 0
+assert_eq(#run_prefab("rubble"), 0, "rubble source can be disabled independently")
+config_values.mam_drop_rubble = 1
+config_values.mam_drop_rocky_chance = 50
+local scaled_rocky = run_prefab("rocky")
+assert_true(math.abs(scaled_rocky[1].chance - 0.10) < 0.000001, "Rocky chance slider scales only its dust")
+config_values.mam_drop_rocky_chance = nil
 
 -- Marble-shrub quantity is independent of all other drops and works in additive mode.
 local function make_shrub(stage)
