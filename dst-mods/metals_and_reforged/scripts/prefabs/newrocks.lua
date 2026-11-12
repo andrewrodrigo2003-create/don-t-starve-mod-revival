@@ -67,7 +67,9 @@ local function set_rewrite_table(name, entries)
     SetSharedLootTable(name, MAMLootGuard.PrepareEntries(entries))
 end
 
-if MAMConfig.on("mam_extra_drops") and MAMConfig.int("mam_drops_mode", 1) == 2 then
+if MAMConfig.on("mam_extra_drops")
+    and MAMConfig.int("mam_drops_mode", 1) == 2
+    and MAMConfig.on("mam_allow_third_party_drop_overrides") then
     if MAMConfig.on("mam_drop_boulders") then
         set_rewrite_table( 'rock2',
         {
