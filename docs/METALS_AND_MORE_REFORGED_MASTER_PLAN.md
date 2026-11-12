@@ -310,3 +310,17 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação ainda precisa de confirmação do usuário antes da implementação.
 - Implementação deve ser transação atômica no servidor, falhar sem consumo quando não houver espaço para todos os retornos e impedir duplicação, retorno parcial ou bypass da progressão.
 - Estado: especificação/auditoria; nenhum código de gameplay foi alterado.
+
+
+## Registro de execução — 2026-11-12 (build de teste 2.9.5)
+
+- A branch de teste do PR #50 foi atualizada e revalidada no head `b26c078d31722dca770242aa974971ea169f7328`; `main` permanece inalterada.
+- Uma falha do CI em `forge_visual_preview_test.lua` era causada pelo stub do teste armazenar `Vector3` dentro de uma tabela numérica, ao contrário da semântica de `Widget:SetPosition(Vector3)` do DST. O stub foi corrigido para preservar o objeto Vector3; não foi necessário alterar a posição da prévia no código do mod.
+- CI do head exato: workflow principal **success**, stategraph wrapper **success**, minimap contract **success**.
+- Cobertura registrada: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; destruição/colheita 23/23; configuração de pilhas 16/16; migração de gold_ore 16/16; retry de receitas 10/10; simulador integrado da forja 15/15; contratos de habilidades 19/19; testes de wrappers de armas/combate, loot Rewrite, UI/containers, assets e pacote também passaram.
+- Pacote de teste produzido pelo workflow: `metals-and-more-reforged-2.9.5.zip`, 6.519.028 bytes. SHA-256: `e72e1e66d6a6f2a4c3e56126105d2ee267d2a2e4e598aa47156eea9dc24ce414`. Artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43274625559/artifacts/13969597340 (retenção de 14 dias).
+- O PR #50 continua aberto e em draft; não houve merge, publicação na Oficina nem alteração de outros mods.
+- Limite importante: os resultados são CI, Lua 5.1 e harnesses/simuladores determinísticos. Ainda não são testes no motor DST, multiplayer real, save migration real ou validação do Uncompromising Mode Public Beta.
+- A atualização 2.9.5 inclui segurança transacional da forja, retry de devoluções, proteção da migração de gold_ore, retry de aplicação de receitas, prévia visual de fundição, wrappers de combate/stategraph e otimização do minimapa. A mecânica global antiga de arremesso de Lucy continua removida; armas corpo a corpo/AOE e machado normal permanecem.
+- Funcionalidades essenciais ainda não concluídas no plano mestre: livro metalúrgico somente leitura; desconstrução reversível (a estação recomendada é warworkbench, mas ainda não confirmada); matriz final de receitas/estações; baú metalúrgico craftável para novos mundos e consulta segura de depósitos; automação W.O.B.O.T./W.I.N.bot; conversão KTEX do ícone; matriz de compatibilidade UM Beta + conjunto de mods do usuário. Não marcar o pedido inteiro como concluído.
+- Próxima validação local: instalar uma única cópia do build de teste, testar a forja e as armas no mundo `mundo de testes de mod`, depois testar com UM Beta e mods de armazenamento/fornalhas. Preservar Hydrated/Dehydrated e Better Lucy.
