@@ -23,6 +23,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Build KTools ktech and convert the mod icon to KTEX
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes cmake build-essential libmagick++-dev
+          git clone https://github.com/nsimplex/ktools.git "$RUNNER_TEMP/ktools"
+          git -C "$RUNNER_TEMP/ktools" checkout a1d1362bdb2b9aa9146d7177fbf0e351eab414ba
+          cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
+          cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
+          "$RUNNER_TEMP/ktools/build/ktech" \
+            "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.png" \
+            "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
+
       - name: Install Lua 5.1
         run: |
           sudo apt-get update
@@ -67,6 +80,7 @@ jobs:
             dst-mods/tests/metal_storage_chest_test.lua \
             dst-mods/tests/metal_storage_chest_deprecation_test.lua \
             dst-mods/tests/metal_deconstruction_test.lua \
+            dst-mods/tests/recipe_station_migration_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
             dst-mods/tests/weapon_compatibility_contract_test.lua \
@@ -85,6 +99,9 @@ jobs:
 
       - name: Verify metallurgy book wiring
         run: python3 dst-mods/tests/metallurgy_reference_book_contract_test.py
+
+      - name: Verify robot forge automation wiring
+        run: python3 dst-mods/tests/robot_forge_automation_contract_test.py
 
       - name: Verify registered custom asset paths
         run: python3 dst-mods/tests/mod_asset_reference_test.py
