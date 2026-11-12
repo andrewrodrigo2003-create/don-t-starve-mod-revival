@@ -9,11 +9,11 @@
 --   1. Se o recipe sumiu (outro mod o removeu), o index devolve nil e o mod crasha na
 --      carga -- nem chega ao jogo.
 --   2. Se outro mod reequilibrou o mesmo recipe, o ultimo mod carregado vence em
---      silencio e o trabalho do outro desaparece. Confirmado contra Uncompromising Mode
---      Beta 6.0.3.8: `init/init_recipes/recipe_changes.lua:80-93` escreve
---      `AllRecipes["glasscutter"].ingredients` exatamente quando a opcao
---      `celestialitems_revert` esta ligada -- o mesmo campo que tocamos em
---      `initialise/modded_recipes.lua`.
+--      silencio e o trabalho do outro desaparece. Confirmado novamente contra
+--      Uncompromising Mode Public Beta 6.0.3.9 (branch `utw-beta`):
+--      `init/init_recipes/recipe_changes.lua` escreve diretamente
+--      `AllRecipes["glasscutter"].ingredients` quando `celestialitems_revert`
+--      esta ligada -- o mesmo campo que tocamos em `initialise/modded_recipes.lua`.
 --
 -- O guarda resolve 1 sempre e 2 por deteccao: guardamos a assinatura vanilla de cada
 -- recipe que tocamos (transcrita de `.reference/vanilla/scripts/recipes.lua`, com
