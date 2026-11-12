@@ -170,7 +170,7 @@ local function build_pages()
         }, "\n"),
     })
 
-    local per_page = 4
+    local per_page = 3
     for first = 1, #names, per_page do
         local lines = {}
         local last = math.min(first + per_page - 1, #names)
