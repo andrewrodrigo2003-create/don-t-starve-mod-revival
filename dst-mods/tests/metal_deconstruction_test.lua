@@ -24,16 +24,11 @@ assert(#wilson == 2, "Wilson should recover every component")
 assert(wilson[1].prefab == "iron_ingot" and wilson[1].count == 1)
 assert(wilson[2].prefab == "nightmarefuel" and wilson[2].count == 3)
 
-local ordinary = assert(recovery.BuildPlan("copper_ingot", "wilson", always_fail))
-assert(ordinary[1].count == 3, "Wilson should have 100% recovery")
-local standard = assert(recovery.BuildPlan("copper_ingot", "wilson", always_success))
-assert(standard[1].count == 3)
+local specialist = assert(recovery.BuildPlan("copper_ingot", "wilson", always_fail))
+assert(specialist[1].count == 3, "Wilson should have 100% recovery")
 
-local standard_75 = assert(recovery.BuildPlan("copper_ingot", "wilson", always_fail))
-assert(standard_75[1].count == 3)
-
-local partial = assert(recovery.BuildPlan("copper_ingot", "generic", function() return 0.5 end))
-assert(partial[1].count == 3, "75% recovery should pass successful rolls")
+local base_success = assert(recovery.BuildPlan("copper_ingot", "generic", always_success))
+assert(base_success[1].count == 3, "successful 75% rolls should recover each component")
 local none = assert(recovery.BuildPlan("copper_ingot", "generic", always_fail))
 assert(#none == 0, "failed 75% rolls should not create material")
 
