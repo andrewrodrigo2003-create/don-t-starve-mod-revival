@@ -47,7 +47,7 @@ Required coverage includes every MAM material prefab, not only the current coppe
 - Board production requires a valid axe tool. Any valid vanilla axe tier must satisfy the requirement; do not restrict the recipe to one specific axe prefab.
 - Axe is a tool requirement and is not consumed. Preserve axe durability according to the game's normal tool-use conventions; do not make the new recipe consume an axe as an ingredient.
 - The old vanilla board crafting route is disabled/removed; boards must be produced through the new axe-gated route. The axe is required for every character.
-- Make Woodie's existing board-cost reduction/woodworking skill effect a native, shared crafting rule available to every survivor, not a Woodie-only perk. Apply the exact existing vanilla discount/value after source verification; do not invent a new discount or modify Woodie's external skill-tree mod.
+- Woodie's existing board-cost reduction/woodworking skill is an example for researching an existing vanilla mechanic and its implementation. It is not a requirement to copy, universalize, or reproduce that skill. Inspect the vanilla code to learn how tool-gated crafting and recipe-cost modifiers are implemented; choose the smallest safe native MAM mechanic that achieves the intended woodworking loop. Do not alter Woodie's skill tree or another mod.
 - Support compatible third-party axes through stable tags/components where possible. If a modded axe cannot be safely identified, it must not be accepted by an unsafe name heuristic.
 - Sawing Table integration remains a separately specified alternative only where an actual vanilla/UM table prefab and action API are verified from source. It must not silently restore the disabled vanilla route.
 - Audit logs, boards, living logs, driftwood, twig sources and UM-specific wood materials before rebalance. Preserve character and world-source differences.
@@ -59,7 +59,7 @@ Every changed recipe/material must be scored on three separate axes:
 2. **Processing difficulty:** station, tool, time, fuel, crafting tier, skill/character gate, and material conversion loss.
 3. **Usage pressure:** how often the material is required, quantity per recipe, progression importance, repair/maintenance demand, and whether it is consumed repeatedly.
 
-Balance decisions must compare equivalent progression tiers and expected playtime, not simply make all recipe quantities equal. Record the baseline vanilla/UM recipe, proposed recipe, rationale, expected bottleneck, and regression tests. Do not rebalance metal costs incidentally while the wood/stone matrix is under review.
+Balance decisions must compare equivalent progression tiers and expected playtime, not simply make all recipe quantities equal. Record the baseline vanilla/UM recipe, proposed recipe, rationale, expected bottleneck, and regression tests. Expand the audit beyond wood and stone to all relevant vanilla crafting chains that MAM intentionally changes: early tools, science progression, survival utilities, storage, cooking, armor, weapons, lunar/ruins progression and repair/maintenance. The mod should create a perceptible alternative crafting progression centered on metallurgy, but vanilla must remain a viable path where the MAM feature does not intentionally replace it. Avoid blanket metal taxes: add MAM materials only where the new progression has a clear gameplay purpose, preserve tier parity, and measure the cumulative impact of changed recipes on time-to-progression and resource pressure.
 
 ## 6. Dynamic integration and compatibility
 
@@ -81,6 +81,15 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 6. Add compatibility adapters and source-contract tests for vanilla, UM Beta and representative modded recipes.
 7. Run Lua 5.1 parsing, unit/contract tests, multiplayer/save-load checks where possible, and build a single consolidated package.
 8. Keep the branch/PR draft until the user performs the in-game test. Do not merge or publish to Workshop without explicit approval.
+
+
+## Clarification — vanilla examples and existing storage balance (2026-11-12)
+
+Woodie's board-cost mechanic is a reference example for studying existing vanilla implementation patterns, not a feature requirement. The goal is to implement tool-gated crafting cleanly using verified DST APIs and stable tool tags/components; do not clone or distribute Woodie's character skill.
+
+Do not add a new metallurgy chest. The mod already has two storage structures: `marble_chest` and `cold_safe` (the latter is the mod's fridge). Keep both identities and evaluate their actual widget capacity, preservation behavior, construction tier, material costs, and utility before changing recipes. Rebalance their crafting costs against what each structure provides; do not assume equal costs or capacities. `metal_storage_chest` may remain registered only for backward compatibility with existing saves, but it must not be presented as a new craftable feature. Do not add a storage automation/central-deposit system to this milestone unless a separate requirement is approved.
+
+The 2.9.7 balance pass must cover the full MAM-altered vanilla crafting ecosystem, not only wood/stone: produce a baseline/proposal matrix for each changed recipe, compare vanilla and UM Beta progression, and preserve meaningful vanilla alternatives where they do not conflict with the intended MAM progression. Make metallurgy noticeable through deliberate station placement, material processing, recipe tiering, and utility—not by indiscriminately replacing every vanilla ingredient with metal.
 
 ## Out of scope for this milestone
 
