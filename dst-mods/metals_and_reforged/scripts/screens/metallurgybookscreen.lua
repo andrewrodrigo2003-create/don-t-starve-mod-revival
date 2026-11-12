@@ -180,6 +180,9 @@ local function build_pages()
             table.insert(lines, display_name(name))
             table.insert(lines, "  Base time / Tempo base: " .. tostring(recipe.cooktime or 1) .. " s")
             table.insert(lines, "  Output / Saída: variable by batch / variável por lote")
+            if recipe.max_batch ~= nil then
+                table.insert(lines, "  Max input batch / Lote máximo de entrada: " .. tostring(recipe.max_batch))
+            end
             table.insert(lines, "  Requirements / Requisitos: " .. format_requirements(recipe))
             table.insert(lines, "")
         end
