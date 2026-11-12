@@ -30,6 +30,17 @@ jobs:
           sudo apt-get install --yes cmake build-essential libmagick++-dev
           git clone https://github.com/nsimplex/ktools.git "$RUNNER_TEMP/ktools"
           git -C "$RUNNER_TEMP/ktools" checkout a1d1362bdb2b9aa9146d7177fbf0e351eab414ba
+          # Upstream declares inverseOf(ProjectiveMatrix) as void but returns a matrix.
+          # Correct this obvious signature typo in the isolated CI checkout only.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("$RUNNER_TEMP/ktools/src/common/algebra.hpp")
+          source = path.read_text()
+          old = "inline void inverseOf(const ProjectiveMatrix<2, T>& M)"
+          new = "inline ProjectiveMatrix<2, T> inverseOf(const ProjectiveMatrix<2, T>& M)"
+          assert old in source, "pinned KTools source changed; re-audit before building"
+          path.write_text(source.replace(old, new, 1))
+          PY
           cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
           cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
           "$RUNNER_TEMP/ktools/build/ktech" \
