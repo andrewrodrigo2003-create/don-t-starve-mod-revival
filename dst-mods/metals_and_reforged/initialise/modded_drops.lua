@@ -236,6 +236,11 @@ MAMLootGuard.Declare("shark", "shark", {
 ----------------------------------------------------------------------
 local SHRUB_IRON_BY_STAGE = { [2] = 1, [3] = 2 }
 
+local function shrub_iron_amount(stage)
+    local multiplier = MAMConfig.int("mam_drop_marbleshrub_quantity", 100) / 100
+    return math.max(0, math.floor((SHRUB_IRON_BY_STAGE[stage] or 0) * multiplier + 0.5))
+end
+
 local function shrub_additive(inst)
     local lootdropper = inst.components.lootdropper
     if lootdropper == nil then
@@ -256,7 +261,7 @@ local function shrub_additive(inst)
         end
 
         local stage = inst.components.growable ~= nil and inst.components.growable.stage or 1
-        local wanted = SHRUB_IRON_BY_STAGE[stage] or 0
+        local wanted = shrub_iron_amount(stage)
         if wanted <= 0 then
             return
         end
@@ -303,7 +308,8 @@ local function marble_shrub(inst)
         return
     end
 
-    if MAMConfig.int("mam_drops_mode", 1) == 2 then
+    if MAMConfig.int("mam_drops_mode", 1) == 2
+        and MAMConfig.on("mam_allow_third_party_drop_overrides") then
         shrub_original(inst)
     else
         shrub_additive(inst)
