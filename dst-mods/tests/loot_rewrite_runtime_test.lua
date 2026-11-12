@@ -28,6 +28,14 @@ local config_values = {
     mam_drop_rocky = 1,
     mam_drop_rubble = 1,
     mam_drop_ancient_statues = 1,
+    mam_drop_knight = 1,
+    mam_drop_rook = 1,
+    mam_drop_bishop = 1,
+    mam_drop_chessjunk = 1,
+    mam_drop_firehound = 1,
+    mam_drop_icehound = 1,
+    mam_drop_slurtle = 1,
+    mam_drop_snurtle = 1,
     mam_drop_marbleshrub_quantity = 100,
 }
 
@@ -142,6 +150,31 @@ local half_shark = run_prefab("shark")
 assert_eq(#half_shark, 2, "shark retains two independent MAM rolls")
 assert_true(math.abs(half_shark[1].chance - 0.5) < 0.000001, "shark chance is scaled")
 config_values.mam_drop_shark_chance = nil
+
+-- Creature sources have independent switches and chance regulators.
+config_values.mam_drops_mode = 1
+config_values.mam_drop_chess = 1
+config_values.mam_drop_knight = 0
+assert_eq(#run_prefab("knight"), 0, "clockwork knight has its own independent switch")
+config_values.mam_drop_knight = 1
+config_values.mam_drop_knight_chance = 50
+local knight_scaled = run_prefab("knight")
+assert_eq(#knight_scaled, 2, "knight retains its own two copper-ore rolls")
+assert_true(math.abs(knight_scaled[1].chance - 0.25) < 0.000001, "knight chance regulator scales its own loot")
+config_values.mam_drop_knight_chance = nil
+
+config_values.mam_drop_hounds = 1
+config_values.mam_drop_firehound = 0
+assert_eq(#run_prefab("firehound"), 0, "firehound can be disabled without disabling icehound")
+assert_eq(#run_prefab("icehound"), 4, "icehound remains enabled independently")
+config_values.mam_drop_firehound = 1
+
+local slurtle_loot = run_prefab("slurtle")
+local snurtle_loot = run_prefab("snurtle")
+assert_eq(#slurtle_loot, 1, "slurtle has a rare iron dust source")
+assert_eq(slurtle_loot[1].prefab, "iron_dust", "slurtle iron dust material")
+assert_eq(#snurtle_loot, 1, "snurtle has a rare iron dust source")
+assert_true(snurtle_loot[1].chance > slurtle_loot[1].chance, "snurtle's reinforced shell yields a slightly higher chance")
 
 -- New secondary sources: wild Rockys, cave rubble and ancient Ruins statues.
 config_values.mam_drops_mode = 1
