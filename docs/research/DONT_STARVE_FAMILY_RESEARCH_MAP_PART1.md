@@ -142,6 +142,27 @@ Links diretos para os arquivos do snapshot:
 
 **Limite:** não foi identificado o commit/build do espelho como correspondente à versão instalada do usuário. Antes de usar uma assinatura ou comportamento em código de produção, comparar com os scripts extraídos da versão alvo do DST. O arquivo storage_robot_common.lua e o caminho completo de coleta/armazenamento ainda precisam ser examinados.
 
+
+### Complemento: W.O.B.O.T. / Storage Robot
+
+O espelho comunitário contém scripts separados para prefab, lógica comum e brain:
+- scripts/prefabs/storage_robot.lua
+- scripts/prefabs/storage_robot_common.lua (blob SHA 06224bca0ecd9c3fca7d3d7aee142f95a896a4d3)
+- scripts/brains/storage_robotbrain.lua (blob SHA 4ede4a7d70cf1d5a11ee1bd27800f5a038143b63)
+
+A lógica comum observada:
+- procura itens no raio configurado com FindEntities;
+- exige itens com inventoryitem, canbepickedup e cangoincontainer, não segurados, não presos em armadilhas e em ponto passável;
+- limita a coleta à mesma plataforma;
+- procura destino com tag _container e componente container;
+- aceita tipos de contêiner chest ou pack, com espaço e que já contenham pelo menos uma unidade do mesmo prefab;
+- verifica espaço por CanAcceptCount e usa o inventário do robô para controlar quantidades do mesmo prefab/skin;
+- o brain executa ações vanilla PICKUP e STORE.
+
+**Implicação para Metals and More:** o baú metalúrgico precisa manter compatibilidade real com as condições acima; para o robô recolher determinado item, o baú precisa conter previamente uma unidade daquele mesmo prefab/skin como semente. A automação da forja deve ser uma etapa separada: o W.O.B.O.T. não é, por essa evidência, um alimentador direto da forja. O fluxo seguro continua sendo coleta → baú metalúrgico → retirada/consumo autoritativo pela forja.
+
+**Limites:** o snapshot não identifica com segurança a versão/build instalada. A lógica completa de energia, modos e variantes do robô, além de qualquer integração com W.I.N.bot, precisa ser conferida no script alvo antes de implementação. Nenhum código vanilla foi alterado.
+
 ## 7. Critérios de conclusão da Parte 1
 
 - [x] Separação formal entre DS, RoG, SW, HAM e DST.
