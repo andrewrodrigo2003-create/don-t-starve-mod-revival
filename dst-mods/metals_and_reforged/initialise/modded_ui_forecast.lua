@@ -68,9 +68,8 @@ local function make_preview(self)
 
     local panel = self:AddChild(Widget("MAMForgePreview"))
     panel:SetPosition(GLOBAL.Vector3(-270, 0, 0))
-    -- Keep the preview clear of the smelter input slots; scale the complete HUD
-    -- (frame, icon, labels and quantity) by the requested 20%.
-    panel:SetScale(1.2)
+    -- The parent container widget is scaled for the forge, so this preview
+    -- inherits the same 20% enlargement without being scaled twice.
 
     panel.header = panel:AddChild(Text(FONT, 22, "FORGE PREVIEW"))
     panel.header:SetPosition(0, 91, 0)
@@ -255,6 +254,10 @@ AddClassPostConstruct("widgets/containerwidget", function(ContainerWidget)
     local oldOpen = ContainerWidget.Open
     function ContainerWidget:Open(container, doer, ...)
         local results = pack(oldOpen(self, container, doer, ...))
+
+        -- Enlarge only the smelter's native container HUD (slots and action
+        -- buttons). The preview is a child and inherits this 20% scale.
+        self:SetScale(container ~= nil and container.prefab == FORGE_PREFAB and 1.2 or 1)
 
         if container ~= nil and self.mam_plan_listener == nil then
             self.mam_plan_listener = function()
