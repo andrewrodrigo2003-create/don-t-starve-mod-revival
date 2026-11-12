@@ -253,6 +253,7 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
     consumed:Remove()
     return true
 end)
+STRINGS.ACTIONS.MAM_DECONSTRUCT_METAL = "Dismantle / Desmontar"
 deconstruct_action.rmb = true
 deconstruct_action.mount_valid = true
 
