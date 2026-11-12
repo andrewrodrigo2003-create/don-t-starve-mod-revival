@@ -86,7 +86,7 @@ local function has_warworkbench(doer)
         if entity.prefab == "warworkbench"
             and entity.components ~= nil
             and entity.components.prototyper ~= nil
-            and entity:GetDistanceSqToInst(doer) <= 64 then
+            then
             return true
         end
     end
@@ -251,6 +251,8 @@ deconstruct_action.mount_valid = true
 AddComponentAction("INVENTORY", "inventoryitem", function(inst, doer, actions, right)
     if right and inst ~= nil and inst:IsValid()
         and MAMDeconstruction.IsSupported(inst.prefab)
+        and not (GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[inst.prefab] ~= nil
+            and GLOBAL.AllRecipes[inst.prefab].no_deconstruction)
         and has_warworkbench(doer) then
         table.insert(actions, ACTIONS.MAM_DECONSTRUCT_METAL)
     end
