@@ -330,7 +330,11 @@ function M.set_station(name, tech, filter)
                 end
             end
         end
-        add_recipe_to_filter(name, filter)
+        local target_filter = GLOBAL.CRAFTING_FILTERS ~= nil and GLOBAL.CRAFTING_FILTERS[filter] or nil
+        if target_filter == nil or target_filter.default_sort_values == nil
+            or target_filter.default_sort_values[name] == nil then
+            add_recipe_to_filter(name, filter)
+        end
         recipe.filter = filter
     end
 
