@@ -363,3 +363,26 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - Testes novos: desmontagem (taxas, composição, durabilidade e receitas vivas), migração de estação, livro, automação, PNG/KTEX e conteúdo do pacote.
 - Versão do mod alterada para 2.9.6. O build ainda depende de CI para validar compilação do KTools e de testes in-game para validar tela, ações, robôs, save/load, multiplayer e UM Beta.
 - Nenhum merge, publicação na Oficina ou edição de Hydrated/Dehydrated/Better Lucy/UM foi feito.
+
+## 17. Registro consolidado — build 2.9.6 (2026-11-12)
+
+Este registro supersede as etapas antigas que ainda descreviam como pendentes o livro, a desmontagem, a migração de receitas e a automação. O status abaixo é o código presente na branch de teste 2.9.6; a certificação no motor DST continua pendente.
+
+### Implementado no código da build
+- Livro de Metalurgia de leitura, com tela própria multipágina; apresenta dados de fundição, cadeia de materiais, fontes, progressão, desmontagem, automação e compatibilidade. Ler o livro não desbloqueia nem fabrica receitas.
+- Desmontagem por ação de inventário perto da War Bench, limitada a prefabs explicitamente suportados. A operação valida estação, posse do item e capacidade de saída antes do consumo; equipamento usa ingredientes da receita viva e escala o retorno pela durabilidade.
+- Recuperação padrão de 75% por unidade de ingrediente em expectativa. Wilson recupera 100% dos ingredientes listados; Winona 100% de componentes metálicos não mágicos; Maxwell 100% de materiais de sombra. WX-78 e Wickerbottom permanecem na taxa padrão. Não há transmutação cruzada de Wilson nesta build.
+- Migração de receitas selecionadas para o filtro da War Bench preservando ingredientes e metadados atuais; receitas vanilla protegidas cedem quando detectam alteração prévia de outro mod.
+- Automação opcional da forja por W.O.B.O.T./W.I.N.bot, desativada por padrão. A automação usa apenas contêineres chest/pack compatíveis e ingredientes metalúrgicos registrados, com planejamento e retirada autoritativos no servidor; não varre inventários de jogadores nem armazenamento portátil.
+- Conversão do ícone original para KTEX no pipeline de build.
+
+### Baú metalúrgico
+- A receita de criação e a opção de configuração do baú dedicado foram removidas. Novos jogadores não podem fabricar esse baú.
+- O prefab, widget e filtro antigos permanecem apenas para carregar saves que já possuam a estrutura. Não desenvolver novas funções ou automação dependentes desse baú; a automação da forja usa contêineres compatíveis comuns.
+- A consulta manual de depósitos não é uma funcionalidade independente nesta build; a busca de armazenamento existe apenas como parte do abastecimento/depósito da automação.
+
+### Verificação e pendências
+- A suíte automatizada cobre sintaxe Lua 5.1, regressões da forja, livro, desmontagem, migração de receitas, automação, assets e integridade do pacote.
+- Os resultados de CI da build 2.9.6 devem ser conferidos pelo head mais recente da PR #50; execuções anteriores que falharam na conversão de imagem ou no teste de configuração não contam como aprovação.
+- Ainda dependem de teste real: leitura e navegação do livro no cliente, interação de desmontagem, energia/estados dos dois robôs, host/cliente, multiplayer, save migration, UM Public Beta 6.0.3.9 e coleção completa de mods do usuário.
+- O conjunto completo de 57 mods não está certificado. Não declarar compatibilidade total nem mover a PR para ready/merge antes do teste consolidado no mundo `mundo de testes de mod`.
