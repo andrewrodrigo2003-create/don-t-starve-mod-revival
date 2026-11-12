@@ -25,7 +25,7 @@ local allowed = {
     mam_drop_marbletree = { 0, 1 },
     mam_drop_marbleshrub = { 0, 1 },
     mam_drop_shark = { 0, 1 },
-    mam_metalschest = { 0, 1 },
+    mam_robot_smelting = { 0, 1 },
 }
 
 local defaults = {
@@ -34,7 +34,7 @@ local defaults = {
     mam_drops_mode = 1, mam_drops_normalise = 0, mam_drop_boulders = 1,
     mam_drop_stalagmites = 1, mam_drop_chess = 1, mam_drop_hounds = 1,
     mam_drop_marbletree = 1, mam_drop_marbleshrub = 1, mam_drop_shark = 1,
-    mam_metalschest = 1,
+    mam_robot_smelting = 0,
 }
 
 -- Todos os valores de configuracao publicados devem ser aceitos sem alteracao.
@@ -78,7 +78,8 @@ Config.set("mam_batch_cap", 4.5)
 equal(Config.get("mam_batch_cap"), 20, "set fracionario ignorado")
 
 -- Chaves reservadas sem implementacao nao devem aparentar ser configuracoes ativas.
-equal(Config.get("mam_storage_query"), nil, "consulta de deposito ainda nao configurada")
+equal(Config.get("mam_metalschest"), nil, "opcao do baú dedicado removida")
+equal(Config.get("mam_storage_query"), nil, "consulta manual de deposito nao configurada")
 equal(Config.get("mam_station_storage"), nil, "integracao com bancada ainda nao configurada")
 equal(Config.on("mam_batch"), false, "on respeita zero")
 Config.set("mam_batch", 1)
