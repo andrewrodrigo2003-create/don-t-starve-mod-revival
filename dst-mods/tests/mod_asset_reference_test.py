@@ -31,6 +31,7 @@ class ModAssetReferenceTests(unittest.TestCase):
         self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
         self.assertEqual(struct.unpack(">II", data[16:24]), (256, 256))
         self.assertTrue(texture.is_file())
+        self.assertGreater(texture.stat().st_size, 128, "generated KTEX texture should not be empty")
         self.assertIn('filename="modicon.tex"', atlas)
         self.assertIn('u1="0" u2="1" v1="0" v2="1"', atlas)
 
