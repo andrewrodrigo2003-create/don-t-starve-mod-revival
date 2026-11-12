@@ -9,6 +9,9 @@ required = {
     "metals_and_reforged/modmain.lua",
     "metals_and_reforged/scripts/prefabs/metal_smelter.lua",
     "metals_and_reforged/scripts/prefabs/metal_storage_chest.lua",
+    "metals_and_reforged/scripts/prefabs/metallurgy_reference_book.lua",
+    "metals_and_reforged/scripts/screens/metallurgybookscreen.lua",
+    "metals_and_reforged/scripts/mam/deconstruction.lua",
     "metals_and_reforged/initialise/modded_ui_forecast.lua",
 }
 with zipfile.ZipFile(archive) as package:
@@ -21,5 +24,6 @@ with zipfile.ZipFile(archive) as package:
     assert 'version = "2.9.5"' in modinfo, "unexpected package version"
     modmain = package.read("metals_and_reforged/modmain.lua").decode("utf-8")
     assert '"metal_storage_chest"' in modmain, "legacy metal chest prefab registration missing"
+    assert '"metallurgy_reference_book"' in modmain, "metallurgy guide prefab missing"
     assert 'AddRecipe2("metal_storage_chest"' not in modmain, "retired chest recipe leaked into package"
 print("PASS: install package contains required runtime files and excludes test-only sources")
