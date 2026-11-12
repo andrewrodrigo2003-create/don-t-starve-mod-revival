@@ -10,6 +10,11 @@ local function always_fail()
     return 0.99
 end
 
+local standard_bronze = assert(recovery.BuildPlan("bronze_ingot", "generic", always_fail))
+assert(#standard_bronze == 1 and standard_bronze[1].prefab == "copper_ore"
+    and standard_bronze[1].count == 2,
+    "75 percent salvage should guarantee whole expected units and roll only the fraction")
+
 local bronze = assert(recovery.BuildPlan("bronze_ingot", "winona", always_fail))
 assert(#bronze == 2, "Winona should recover both bronze components")
 assert(bronze[1].prefab == "copper_ore" and bronze[1].count == 3)
