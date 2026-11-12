@@ -88,7 +88,13 @@ end
 
 -- Compartilhado com newrocks.lua para que o modo Rewrite respeite a mesma
 -- opcao de normalizacao do modo aditivo.
-M.PrepareEntries = prepare
+function M.PrepareEntries(entries, source_key)
+    local scale = 1
+    if source_key ~= nil then
+        scale = MAMConfig.int("mam_drop_" .. source_key .. "_chance", 100) / 100
+    end
+    return prepare(entries, scale)
+end
 
 local function state(source)
     if not MAMConfig.on("mam_extra_drops") then
