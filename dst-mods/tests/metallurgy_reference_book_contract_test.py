@@ -34,6 +34,16 @@ for name in (
     "moonglassaxe",
 ):
     assert f'"{name}"' in recipes, f"metal recipe not migrated to War Bench: {name}"
+for name in (
+    "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
+    "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
+    "armormarble", "armordragonfly", "ruinshat", "armorruins",
+    "multitool_axe_pickaxe", "winterometer", "rainometer", "nightlight",
+    "portablecookpot_item", "portableblender_item", "portablespicer_item",
+    "glasscutter", "archive_resonator_item", "moondial", "moonrockcrater",
+    "moonglassaxe",
+):
+    assert f"{name} = true" in module, f"metal item missing deconstruction support: {name}"
 assert 'if plan == nil then' in actions
 assert 'if plan == nil or #plan == 0 then' not in actions, "zero-return roll must consume the input"
 
