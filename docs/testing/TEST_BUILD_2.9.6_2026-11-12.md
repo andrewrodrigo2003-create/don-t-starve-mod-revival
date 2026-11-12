@@ -1,6 +1,7 @@
 # Metals and More Reforged 2.9.6 — consolidated in-game test
 
 **Build:** 2.9.6 integrated test build  
+**Runtime/test head:** `ea57c9489c26113d807f63f60934f16b0172571a` (subsequent commits are documentation-only).  
 **Target:** Don't Starve Together, dedicated test world `mundo de testes de mod`  
 **Uncompromising Mode:** Public Beta 6.0.3.9 (`utw-beta`)  
 **Important:** CI/static checks are not a substitute for an in-game multiplayer test.
