@@ -414,6 +414,82 @@ function Smelter:TryStartRobotBatch()
     return self:StartSmelting(nil, local_plan)
 end
 
+-- When the same fueled collector robot is active, deposit completed metal
+-- products into a nearby compatible chest/pack. A full or incompatible store
+-- leaves the ready entitlement untouched for manual collection.
+function Smelter:TryAutoHarvestToStorage()
+    if not MAMConfig.on("mam_robot_smelting") or not self.canharvest
+        or self.product == nil or not has_active_collector_robot(self.inst) then
+        return false
+    end
+
+    local remaining = math.max(1, tonumber(self.batch) or 1)
+    local template = SpawnPrefab(self.product)
+    if template == nil then
+        return false
+    end
+
+    local destination = nil
+    for _, candidate in ipairs(get_nearby_metal_containers(self.inst)) do
+        if candidate:CanAcceptCount(template, remaining) >= remaining then
+            destination = candidate
+            break
+        end
+    end
+    template:Remove()
+
+    if destination == nil then
+        return false
+    end
+
+    while remaining > 0 do
+        local loot = SpawnPrefab(self.product)
+        if loot == nil then
+            self.batch = remaining
+            self:PublishPlan()
+            MAMLog.Warn("produto %s aguardando espaco/retentativa automatica: %d unidade(s)",
+                tostring(self.product), remaining)
+            return false
+        end
+
+        local amount = remaining
+        if loot.components.stackable ~= nil then
+            local maxsize = math.max(1, loot.components.stackable.maxsize or 20)
+            amount = math.min(remaining, maxsize)
+            if amount > 1 then
+                loot.components.stackable:SetStackSize(amount)
+            end
+        else
+            amount = 1
+        end
+
+        loot.targetMoisture = 0
+        loot:DoTaskInTime(2 * FRAMES, function()
+            if loot:IsValid() and loot.components.moisturelistener then
+                loot.components.moisturelistener.moisture = loot.targetMoisture
+                loot.targetMoisture = nil
+                loot.components.moisturelistener:DoUpdate()
+            end
+        end)
+
+        local accepted = destination:GiveItem(loot, nil, self.inst:GetPosition())
+        if not accepted and loot:IsValid() then
+            -- Preflight normally prevents this. Drop the undelivered remainder
+            -- beside the smelter instead of losing or duplicating the product.
+            local x, y, z = self.inst.Transform:GetWorldPosition()
+            loot.Transform:SetPosition(x, y, z)
+            loot.components.inventoryitem:OnDropped(true)
+        end
+        remaining = remaining - amount
+    end
+
+    if self.onharvest then
+        MAMLog.Try("smelter:onharvest:robot", self.onharvest, self.inst)
+    end
+    self:ResetSmelter()
+    return true
+end
+
 function Smelter:ResumeSmelting()
     self.issmelting = true
 
