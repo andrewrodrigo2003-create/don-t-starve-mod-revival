@@ -336,3 +336,14 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - Containers: UM tem `um_scrapper` e amplia o componente vanilla; o baú MAM usa prefab/widget/tags próprios e não substitui os parâmetros globais de containers.
 - Criado relatório detalhado em `docs/compatibility/UNCOMPROMISING_MODE_PUBLIC_BETA_6.0.3.9_AUDIT_2026-11-12.md`. A referência no comentário de `recipe_guard.lua` foi atualizada de 6.0.3.8 para 6.0.3.9.
 - Isto é auditoria de código, não teste de integração in-game. Testar no mundo local: recipes (celestialitems_revert), hounds em Auto, shark, baú, forja, depois mods de fornalha/armazenamento e conjunto completo.
+
+
+### Validação final do build de teste 2.9.5 — 2026-11-12
+
+- Head testado: `594c6ace575e9bc9b0c45026b9fb01b326eeb9c1`; workflow principal, StateGraph wrapper e minimap contract concluíram **success**.
+- Suítes: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de `gold_ore` 16 contracts; retry de receitas 10 contracts; baú (opção, receita, prefab, widget e filtro) passou; loot runtime (Rewrite, UM Auto/Always, normalização e 18 gates) passou; habilidades de personagens 19/19; simulador integrado da forja 15/15; asset references e package content passaram; wrappers de armas, stategraph, UI e minimap passaram.
+- A suíte de armas agora também proíbe regressão de `SetSpellFn` no arquivo de extensão de armas. O código mantém ataques melee/AOE, parry e habilidades das quatro armas da Forja, sem reintroduzir o antigo hook de projétil global.
+- O primeiro teste do pacote após restaurar o baú falhou porque o contrato de empacotamento ainda exigia a remoção da opção antiga. O contrato foi corrigido para exigir a opção/receita; o head `594c6ace` passou e o ZIP foi gerado.
+- Artefato instalável: [Metals and More Reforged 2.9.5 — teste](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43275633835/artifacts/13971540102). Tamanho externo: 6.520.736 bytes. SHA-256 do artefato externo: `a8ef5513533ab41b119b1383d4ba85b926d15c61fc8b9450949f41436b45f377`. Expira em 2026-11-26.
+- O pacote externo contém o ZIP instalável interno. A nota de teste local foi atualizada em `docs/testing/TEST_BUILD_2.9.5_2026-11-12.md`.
+- O PR #50 permanece draft e sem merge. Os commits posteriores de documentação não alteram os arquivos runtime do pacote; a validação exata do código/testes foi feita no head indicado.
