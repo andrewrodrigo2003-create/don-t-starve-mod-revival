@@ -84,7 +84,7 @@ local function build_pages()
             "",
             "The guide reflects the active smelting data; mixed loads and batch settings can change the number produced.",
             "O guia reflete os dados de fundição ativos; cargas mistas e configurações de lote alteram a quantidade produzida.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     table.insert(pages, {
@@ -98,7 +98,7 @@ local function build_pages()
             "",
             "Drop chances remain controlled by the mod configuration. Disabling a source does not remove its vanilla drops.",
             "As chances continuam controladas pelas opções do mod. Desativar uma fonte não remove os drops vanilla.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     table.insert(pages, {
@@ -112,7 +112,7 @@ local function build_pages()
             "",
             "Recipe station migration changes only the required technology and crafting filter. It preserves live ingredient lists and recipe metadata from other mods.",
             "A migração altera apenas a tecnologia e o filtro da bancada. Ingredientes e metadados de receitas de outros mods são preservados.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     table.insert(pages, {
@@ -132,7 +132,7 @@ local function build_pages()
             "",
             "The operation consumes one item even if the random recovery roll returns nothing. No retry exploit, upward conversion or free material loop is intended.",
             "A operação consome um item mesmo se o sorteio não devolver materiais. Não há tentativa gratuita, conversão para cima ou ciclo de materiais infinitos.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     table.insert(pages, {
@@ -149,7 +149,7 @@ local function build_pages()
             "",
             "Player inventories and portable storage are never scanned or drained.",
             "Inventários de jogadores e armazenamentos portáteis nunca são vasculhados ou esvaziados.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     table.insert(pages, {
@@ -163,7 +163,7 @@ local function build_pages()
             "",
             "Always test new changes in a separate world before using a main save.",
             "Sempre teste atualizações em um mundo separado antes de usar um save principal.",
-        }, "\\n"),
+        }, "\n"),
     })
 
     local per_page = 4
