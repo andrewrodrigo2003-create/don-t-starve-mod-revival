@@ -223,6 +223,35 @@ MAMLootGuard.Declare("shark", "shark", {
 }, { apply_in_rewrite = true })
 
 ----------------------------------------------------------------------
+-- Novas fontes de minerio: criaturas e interacoes com ruinas/cavernas.
+-- Sao deliberadamente fontes secundarias: poeiras em chances baixas, sem
+-- lingotes garantidos. O rocky domesticado/seguindo jogador nao gera drops MAM,
+-- evitando transformar um companheiro em farm de minerio.
+MAMLootGuard.Declare("rocky", "rocky", {
+    { "copper_dust", 0.20 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true, skip_if_followed = true })
+
+-- Escombros de cavernas: minerar rubble pode revelar particulas metalicas.
+-- O drop base de pedras continua intacto; apenas acrescentamos poeira rara.
+MAMLootGuard.Declare("rubble", "rubble", {
+    { "copper_dust", 0.15 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true })
+
+-- Estatuas antigas: a extracao exige mineracao nas Ruinas e compete com o
+-- valor ja existente de gemas/Thulecite; por isso, somente poeira rara.
+MAMLootGuard.Declare({
+    "ruins_statue_mage",
+    "ruins_statue_mage_nogem",
+    "ruins_statue_head",
+    "ruins_statue_head_nogem",
+}, "ancient_statues", {
+    { "copper_dust", 0.15 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true })
+
+----------------------------------------------------------------------
 -- Arbusto de marmore
 -- v2.9.3: modmain.lua:408-434 trocava o lootsetupfn inteiro por listas fixas.
 -- vanilla: prefabs/marbleshrub.lua:107-109 sorteia o loot por estagio
