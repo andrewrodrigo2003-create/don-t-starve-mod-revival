@@ -1,3 +1,5 @@
+> **SUPERSEDED:** Do not use this 2.9.5 package for the next test. The integrated 2.9.6 build removes the dedicated metal chest and adds the metallurgy guide, deconstruction, War Bench recipe migration, collector-robot automation and SVG-to-KTEX icon pipeline. Use [TEST_BUILD_2.9.6_2026-11-12.md](TEST_BUILD_2.9.6_2026-11-12.md).
+
 # Metals and More Reforged 2.9.5 — teste local
 
 **Build:** PR #50, branch `fix/smelter-refund-retry-2026-11-11`  
