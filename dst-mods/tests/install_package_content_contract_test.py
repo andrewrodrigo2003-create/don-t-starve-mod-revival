@@ -7,6 +7,9 @@ archive = Path(sys.argv[1])
 required = {
     "metals_and_reforged/modinfo.lua",
     "metals_and_reforged/modmain.lua",
+    "metals_and_reforged/modicon.tex",
+    "metals_and_reforged/modicon.xml",
+    "metals_and_reforged/images/branding/metals_and_more_reforged_icon.png",
     "metals_and_reforged/scripts/prefabs/metal_smelter.lua",
     "metals_and_reforged/scripts/prefabs/metal_storage_chest.lua",
     "metals_and_reforged/scripts/prefabs/metallurgy_reference_book.lua",
@@ -25,5 +28,8 @@ with zipfile.ZipFile(archive) as package:
     modmain = package.read("metals_and_reforged/modmain.lua").decode("utf-8")
     assert '"metal_storage_chest"' in modmain, "legacy metal chest prefab registration missing"
     assert '"metallurgy_reference_book"' in modmain, "metallurgy guide prefab missing"
+    assert 'name = "mam_robot_smelting"' in modinfo, "robot forge automation option missing"
+    assert 'name = "mam_metalschest"' not in modinfo, "retired chest option leaked into package"
+    assert 'AddRecipe2("metallurgy_reference_book"' in modmain, "metallurgy guide recipe missing"
     assert 'AddRecipe2("metal_storage_chest"' not in modmain, "retired chest recipe leaked into package"
 print("PASS: install package contains required runtime files and excludes test-only sources")
