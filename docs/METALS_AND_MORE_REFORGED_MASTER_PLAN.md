@@ -408,3 +408,19 @@ Esta decisão complementa a lista mestre e o mapa de atualizações/ideias; não
 - **Validação:** servidor valida ferramenta real e funcional; usar componentes/tags estáveis, rejeitar ferramenta quebrada/inválida e falhar com segurança para ferramentas de terceiros não identificadas. Não aceitar pelo nome do prefab isoladamente.
 - **Mesa de Serragem:** a alternativa já prevista no documento 2.9.7 permanece condicionada à verificação de um prefab e API reais de vanilla/UM. Ela não pode reativar o método vanilla desativado.
 - **Escopo preservado:** permanecem ativos todos os demais itens do pedido anterior e do mapa de ideias: localização completa, desmontagem de todos os materiais, livro, bancadas, matriz de balanceamento madeira/pedra, adaptadores de compatibilidade, testes e demais tarefas do plano mestre. Esta clarificação corrige somente a interpretação da fabricação de tábuas e pedra.
+
+
+## 19. Clarificação do usuário — configurações granulares e independentes (2026-11-12)
+
+As integrações e alterações devem ser configuráveis pelo jogador no menor limite funcional coerente. Não usar um interruptor geral que desligue mecânicas sem relação entre si.
+
+- **Receitas de outros mods:** a modificação/adaptação é permitida, mas possui opção própria para desativar somente essa integração. Desativada, o MAM não altera a receita ativa nem seus metadados.
+- **Drops de outros mods:** possuem opção(ões) próprias, independentes das receitas. Desativadas, preservar os drops originais de terceiros, sem substituir suas loot tables.
+- **Drops do Metals and More:** permitir regular separadamente fontes/categorias relevantes e parâmetros seguros, como chance e quantidade/faixa de quantidade. Definir padrão, limites e validação; impedir valores inválidos, duplicação de rolagens e farms/exploits não intencionais.
+- **Fabricação própria do MAM:** regras de tábuas com machado, pedra trabalhada com cinzel reutilizável e eventual Mesa de Serragem verificada não podem depender da opção de integração com receitas de terceiros. São mecânicas próprias e independentes.
+- **Separação mínima das áreas de configuração:** receitas próprias e substituições vanilla; requisitos de ferramenta; Mesa de Serragem; adaptadores de receitas de terceiros; adaptadores de drops de terceiros; drops próprios do MAM. Cada opção deve explicar exatamente o que altera e o que deixa intacto.
+- Seguir a filosofia granular do Uncompromising Mode: permitir que o jogador mantenha apenas as integrações e mudanças de que gosta, sem desligar sistemas inteiros por acidente.
+- Configuração autoritativa do servidor em multiplayer, estado consistente nos clientes, migração segura em saves existentes e comportamento previsível quando dependências/mods estiverem ausentes ou carregarem em ordem diferente.
+- Criar testes combinatórios de configuração: desligar integração de receitas de terceiros não pode remover machado/cinzel obrigatórios; desligar integração de drops de terceiros não pode remover drops próprios do MAM; desligar uma fonte de drop não pode afetar outras fontes.
+
+Esta clarificação amplia a personalização e não cancela nenhum item anterior da atualização nem do mapa mestre de ideias.
