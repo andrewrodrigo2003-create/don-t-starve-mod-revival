@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes cmake build-essential libmagick++-dev librsvg2-bin librsvg2-bin imagemagick
+          sudo apt-get install --yes cmake build-essential libmagick++-dev librsvg2-bin
           git clone https://github.com/nsimplex/ktools.git "$RUNNER_TEMP/ktools"
           git -C "$RUNNER_TEMP/ktools" checkout a1d1362bdb2b9aa9146d7177fbf0e351eab414ba
           ICON_DIR="$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding"
@@ -47,11 +47,8 @@ jobs:
           PY
           cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
           cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
-          convert "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding/metals_and_more_reforged_icon.svg" \\
-            -background none -resize 256x256 \\
-            "$RUNNER_TEMP/metals_and_more_reforged_icon.png"
           "$RUNNER_TEMP/ktools/build/ktech" \\
-            "$RUNNER_TEMP/metals_and_more_reforged_icon.png" \\
+            "$ICON_DIR/metals_and_more_reforged_icon.png" \\
             "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
           "$RUNNER_TEMP/ktools/build/ktech" --info "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
