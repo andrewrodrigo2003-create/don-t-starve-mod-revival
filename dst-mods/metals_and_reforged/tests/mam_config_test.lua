@@ -57,6 +57,7 @@ local allowed = {
     mam_drop_snurtle_chance = { 25, 50, 75, 100, 125, 150 },
     mam_drop_marbleshrub_quantity = { 0, 100, 200, 300 },
     mam_robot_smelting = { 0, 1 },
+    mam_language = { "ptbr", "en" },
 }
 
 local defaults = {
@@ -77,6 +78,7 @@ local defaults = {
     mam_drop_chessjunk_chance = 100, mam_drop_firehound_chance = 100, mam_drop_icehound_chance = 100,
     mam_drop_slurtle_chance = 100, mam_drop_snurtle_chance = 100,
     mam_drop_marbleshrub_quantity = 100, mam_robot_smelting = 0,
+    mam_language = "ptbr",
 }
 
 -- Todos os valores de configuracao publicados devem ser aceitos sem alteracao.
