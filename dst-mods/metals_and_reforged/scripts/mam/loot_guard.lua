@@ -148,13 +148,16 @@ local function apply(name, inst)
 
     for _, source in ipairs(sources[name] or {}) do
         local enabled, reason = state(source)
-        if enabled then
+        local follower = inst.components.follower
+        local followed = source.skip_if_followed and follower ~= nil and follower.leader ~= nil
+        if enabled and not followed then
             for _, entry in ipairs(source.entries) do
                 lootdropper:AddChanceLoot(entry[1], entry[2])
                 M.stats.applied = M.stats.applied + 1
             end
         else
-            M.stats.skipped[reason] = (M.stats.skipped[reason] or 0) + 1
+            local skipped_reason = followed and "player-following-creature" or reason
+            M.stats.skipped[skipped_reason] = (M.stats.skipped[skipped_reason] or 0) + 1
         end
     end
 end
@@ -181,6 +184,7 @@ function M.Declare(prefabs, key, entries, opts)
         entries = prepare(entries, chance_scale),
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
         apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
+        skip_if_followed = opts ~= nil and opts.skip_if_followed == true,
     }
 
     local record = M.declared[key]
