@@ -733,7 +733,7 @@ configuration_options = {
 	{
         name = "mam_recipe_overrides",
         label = "Recipe overrides",
-		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. War Bench station migration is separate and still moves the listed metal recipes without changing their ingredients. Recipes added by this mod are unaffected.",
+		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. The separate third-party recipe integration switch controls whether supported recipes changed by other mods may be moved to our progression. Neither option controls MAM-owned axe, chisel or Sawing Table mechanics. Recipes added by this mod are unaffected.",
         options =
         {
 			{description = "Never - leave vanilla recipes to other mods", data = 0},
