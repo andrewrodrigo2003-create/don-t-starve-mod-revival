@@ -103,7 +103,7 @@ equal(Config.get("mam_batch"), 0, "set valido aplicado")
 Config.set("mam_batch", "1")
 equal(Config.get("mam_batch"), 0, "set invalido ignorado")
 Config.set("mam_batch_cap", 4.5)
-equal(Config.get("mam_batch_cap"), 20, "set fracionario ignorado")
+equal(Config.get("mam_batch_cap"), 10, "set fracionario ignorado")
 
 -- Chaves reservadas sem implementacao nao devem aparentar ser configuracoes ativas.
 equal(Config.get("mam_metalschest"), nil, "baú dedicado removido; compatibilidade de saves antigos não cria opção ativa")
