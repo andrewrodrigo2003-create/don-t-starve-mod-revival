@@ -43,7 +43,7 @@ Use o mundo **mundo de testes de mod**. Faça primeiro uma execução com o conj
 - Salvar/recarregar com itens dentro.
 
 ## D. Compatibilidade
-- Repetir com Uncompromising Mode Public Beta habilitado.
+- Repetir com Uncompromising Mode Public Beta **6.0.3.9** (branch `utw-beta`) habilitado. Para a primeira passagem, manter `mam_drop_hounds = Auto` e `mam_recipe_overrides = Safe`; testar também `celestialitems_revert` do UM ligado para confirmar que o MAM cede em glasscutter/moonglassaxe.
 - Observar receitas, drops, tech trees, forja, UI, containers e erros de carregamento.
 - Repetir com Improved Scaled Furnace/Scaled Stove e mods de armazenamento/inventário usados no mundo.
 - Verificar se o antigo Metals and More da Oficina está desativado, evitando duas cópias do mesmo mod.
@@ -54,6 +54,8 @@ Após o teste, guardar:
 - `server_log.txt` (se host/servidor)
 - lista de mods habilitados e configuração do MAM
 - descrição curta do passo exato que causou o problema
+
+Relatório de compatibilidade estático: [UM Public Beta 6.0.3.9](../compatibility/UNCOMPROMISING_MODE_PUBLIC_BETA_6.0.3.9_AUDIT_2026-11-12.md). A auditoria de código não substitui o teste conjunto dentro do DST.
 
 ## O que esta build não contém ainda
 
