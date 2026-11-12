@@ -75,7 +75,6 @@ local function make_preview(self)
     panel.header = panel:AddChild(Text(FONT, 22, "FORGE PREVIEW"))
     panel.header:SetPosition(0, 91, 0)
     panel.header:SetColour(1, 0.9, 0.72, 1)
-    panel.header:SetShadowOffset(1, -1)
 
     panel.slotbg = panel:AddChild(Image("images/hud.xml", "inv_slot.tex"))
     panel.slotbg:SetPosition(-48, 22, 0)
@@ -94,7 +93,6 @@ local function make_preview(self)
     panel.name:SetRegionSize(104, 30)
     panel.name:EnableWordWrap(true)
     panel.name:SetColour(1, 0.96, 0.84, 1)
-    panel.name:SetShadowOffset(1, -1)
 
     -- Mesmo padrao visual do ItemTile vanilla: NUMBERFONT, tamanho 42 e
     -- limite 999+. O contador fica dentro do canto inferior direito do icone.
@@ -104,7 +102,6 @@ local function make_preview(self)
     panel.quantity:SetHAlign(GLOBAL.ANCHOR_RIGHT)
     panel.quantity:SetRegionSize(48, 48)
     panel.quantity:SetColour(1, 1, 1, 1)
-    panel.quantity:SetShadowOffset(1, -1)
 
     panel.details = panel:AddChild(Text(FONT, 18, "The forge result will appear here."))
     panel.details:SetPosition(0, -55, 0)
@@ -113,7 +110,6 @@ local function make_preview(self)
     panel.details:SetHAlign(GLOBAL.ANCHOR_MIDDLE)
     panel.details:SetVAlign(GLOBAL.ANCHOR_MIDDLE)
     panel.details:SetColour(1, 0.94, 0.8, 1)
-    panel.details:SetShadowOffset(1, -1)
 
     self.mam_forge_preview = panel
 end
