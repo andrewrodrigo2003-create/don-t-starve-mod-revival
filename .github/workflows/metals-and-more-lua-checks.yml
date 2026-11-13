@@ -44,17 +44,23 @@ jobs:
             dst-mods/tests/forecast_ambiguous_start_test.lua \
             dst-mods/tests/legacy_recipe_default_weight_test.lua \
             dst-mods/tests/smelter_component_lifecycle_test.lua \
+            dst-mods/tests/smelter_destruction_harvest_test.lua \
             dst-mods/tests/smelter_stack_settings_test.lua \
             dst-mods/tests/metal_storage_chest_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
-            dst-mods/tests/weapon_compatibility_contract_test.lua
+            dst-mods/tests/weapon_compatibility_contract_test.lua \
+            dst-mods/tests/combat_wrapper_contract_test.lua \
+            dst-mods/tests/forge_visual_preview_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
               lua5.1 "$test"
             fi
           done
+
+      - name: Verify registered custom asset paths
+        run: python3 dst-mods/tests/mod_asset_reference_test.py
 
       - name: Package installable mod
         run: |
