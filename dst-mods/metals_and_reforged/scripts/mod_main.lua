@@ -1,3 +1,4 @@
+local MAMCombatWrapperHelpers = _G.require("mam/combat_wrapper_helpers")
 local a = _G.json
 local b = _G.FRAMES
 local c = _G.EQUIPSLOTS
@@ -164,7 +165,7 @@ AddComponentPostInit(
             if A:HasTag("alwaysblock") then
                 return 0
             end
-            local C = old_calc_damage(self, A, z, B)
+            local C, spdamage = old_calc_damage(self, A, z, B)
             local D = z ~= nil and z.components.weapon.damage or self.defaultdamage
             if z and z.components.weapon:CanAltAttack() or not z and self.damage_override then
                 local E = 0
@@ -177,10 +178,9 @@ AddComponentPostInit(
                         type(self.damage_override) == "function" and self.damage_override(self.inst, A) or
                         self.damage_override
                 end
-                C = (C - (self.damagebonus or 0)) / D
-                C = C * E + (self.damagebonus or 0)
+                C = MAMCombatWrapperHelpers.ApplyAltDamage(C, D, self.damagebonus, E)
             end
-            return C
+            return C, spdamage
         end
         local function F(r, G, H, z, x)
             local I = 1
@@ -240,39 +240,66 @@ AddComponentPostInit(
             return F(r, G, H, z, x)
         end
         local old_do_attack = self.DoAttack
-        function self:DoAttack(T, z, U, x, V)
+        function self:DoAttack(T, z, U, x, V, ...)
             local I, J = F(false, self.inst, T or self.target, z, x)
             local W = (V or 1) * J * I
-            old_do_attack(self, T, z, U, x, W)
+            return old_do_attack(self, T, z, U, x, W, ...)
         end
         local old_get_attacked = self.GetAttacked
-        function self:GetAttacked(G, X, z, x)
+        function self:GetAttacked(G, X, z, x, spdamage, ...)
             local I, J = F(true, G, self.inst, z, x)
             X = X * J * I
-            return old_get_attacked(self, G, X, z, x)
+            return old_get_attacked(self, G, X, z, x, spdamage, ...)
         end
-        function self:DoAreaAttack(A, Y, z, Z, x, _)
-            local a0 = 0
+        local old_do_area_attack = self.DoAreaAttack
+        function self:DoAreaAttack(A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            if select("#", ...) > 0 then
+                return old_do_area_attack(self, A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            end
+            local hitcount = 0
+
+            if onlyontarget then
+                local target = A
+                if target ~= nil and self:IsValidTarget(target) and
+                    (Z == nil or Z(target, self.inst)) and target.components.combat ~= nil then
+                    self.inst:PushEvent("onareaattackother", {target = target, weapon = z, stimuli = x})
+                    local I, J = F(false, self.inst, target, z, x)
+                    local multiplier = MAMCombatWrapperHelpers.AreaDamageMultiplier(
+                        self.areahitdamagepercent, I, J)
+                    local damage, spdamage = self:CalcDamage(target, z, multiplier)
+                    target.components.combat:GetAttacked(self.inst, damage, z, x, spdamage)
+                    return 1
+                end
+                return 0
+            end
+
+            if A == nil or A.Transform == nil then
+                return 0
+            end
+
             local a1, a2, a3 = A.Transform:GetWorldPosition()
-            local a4 = _G.TheSim:FindEntities(a1, a2, a3, Y, {"_combat"}, _)
-            for P, y in ipairs(a4) do
-                if y ~= A and y ~= self.inst and self:IsValidTarget(y) and (Z == nil or Z(y, self.inst)) then
-                    self.inst:PushEvent("onareaattackother", {target = y, weapon = z, stimuli = x})
-                    local J = (self.areahitdamagepercent or 1) + F(false, self.inst, y, z, x)
-                    y.components.combat:GetAttacked(self.inst, self:CalcDamage(y, z, J), z, x)
-                    a0 = a0 + 1
+            local a4 = _G.TheSim:FindEntities(a1, a2, a3, Y, {"_combat"}, excludetags)
+            for _, target in ipairs(a4) do
+                if target ~= A and target ~= self.inst and self:IsValidTarget(target) and
+                    (Z == nil or Z(target, self.inst)) and target.components.combat ~= nil then
+                    self.inst:PushEvent("onareaattackother", {target = target, weapon = z, stimuli = x})
+                    local I, J = F(false, self.inst, target, z, x)
+                    local multiplier = MAMCombatWrapperHelpers.AreaDamageMultiplier(
+                        self.areahitdamagepercent, I, J)
+                    local damage, spdamage = self:CalcDamage(target, z, multiplier)
+                    target.components.combat:GetAttacked(self.inst, damage, z, x, spdamage)
+                    hitcount = hitcount + 1
                 end
             end
-            return a0
+            return hitcount
         end
         function self:DoSpecialAttack(C, T, x, V, a5)
-            self.damage_override = C
-            if a5 then
-                self:DoAreaAttack(a5.target, a5.range, nil, a5.validfn, x, a5.excludetags)
-            else
-                self:DoAttack(T, nil, nil, x, V)
-            end
-            self.damage_override = nil
+            return MAMCombatWrapperHelpers.WithDamageOverride(self, C, function(combat)
+                if a5 then
+                    return combat:DoAreaAttack(a5.target, a5.range, nil, a5.validfn, x, a5.excludetags)
+                end
+                return combat:DoAttack(T, nil, nil, x, V)
+            end)
         end
     end
 )
