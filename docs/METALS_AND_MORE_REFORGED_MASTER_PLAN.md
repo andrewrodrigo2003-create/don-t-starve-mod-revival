@@ -480,3 +480,8 @@ Os testes de configuração e de runtime foram ampliados para verificar isolamen
 2. Prosseguir com a auditoria da API de crafting cliente/servidor para requisitos de machado e cinzel; não ativar receitas até provar disponibilidade correta no menu e validação autoritativa.
 3. Continuar a localização do restante do mod e a matriz de balanceamento por cadeia, sem alterar custos sem evidência.
 4. Manter a PR em draft até o teste do usuário no mundo 'mundo de testes de mod'. Não gerar/publicar build 2.9.7 nem mesclar antes da validação in-game.
+### CI final do HEAD 7eba31b — 2026-11-13
+- Os seis checks do HEAD 7eba31b9c9f2c74c38d5dcedbe6ea6afdf66b857 concluíram success: localization-contract, stategraph-wrapper-contract, metals-and-more, minimap-contract, config-validation e segunda execução localization-contract.
+- Workflow principal: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43470401496. KTools/KTEX, parser Lua 5.1, harnesses disponíveis, wiring do livro/robôs, assets, conteúdo do pacote e upload passaram.
+- Artefato automático: metals-and-more-reforged-2.9.6, 6.591.877 bytes, ID 14060670957, expira em 27/11/2026. Apesar de a branch mirar 2.9.7, o artefato ainda está rotulado 2.9.6; não tratar como release/candidato final 2.9.7.
+- CI aprovada não substitui teste in-game. A PR #51 permanece draft e não mesclada; sem publicação na Oficina.
