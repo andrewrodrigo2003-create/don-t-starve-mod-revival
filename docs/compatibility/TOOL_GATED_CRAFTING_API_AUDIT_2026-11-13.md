@@ -52,7 +52,6 @@ Before implementing the board and cut-stone changes:
 
 Inspect the exact game-version scripts and the client replica/UI implementation, then build a focused test harness before changing production crafting recipes. This note is research, not proof of runtime compatibility.
 
-
 ## Additional cross-check — client crafting replica documentation (2026-11-13)
 
 The API documentation generated from game build 722832 (Builder Replica page last updated 2026-04-28) independently describes `BuilderReplica:HasIngredients(recipe)` as checking inventory, character and tech ingredients, with an early true result in free-build mode. It does not list or evaluate `recipe.canbuild`.
@@ -71,3 +70,37 @@ Implementation direction (not yet approved for runtime):
 - Test freebuild mode, inventory and overflow containers, multiplayer, tool dropped/transferred between menu and build, invalid/broken tools, and modded axes with explicit supported tags.
 
 **Evidence limit:** the API documentation's declared base is build 722832, and the community mirror is not the user's installed game files. This is strong design evidence, not proof of current-build compatibility. No production crafting recipe was changed by this audit.
+
+## Cross-check 2 — vanilla axe tag and tool action contract (2026-11-13)
+
+The vanilla API reference for the `axe` prefab (build 714014, last updated 2026-03-04) lists the axe family as using the `tool`, `finiteuses`, `weapon` and `equippable` components, and explicitly lists `possessable_axe` among its tags. Its overview covers standard, golden and moonglass axe variants.
+
+The `Tool` component reference states:
+- `SetAction(action, effectiveness)` registers a supported action and adds the action-specific `<action.id>_tool` tag.
+- `CanDoAction(action)` reports whether the tool supports that action.
+- Tool durability changes can emit `toolbroke`; the crafting requirement must not consume durability.
+
+The `InventoryReplica` reference exposes `HasItemWithTag(tag, amount)`, which delegates to the authoritative inventory on master and to the classified inventory data on clients. It is a plausible client-side availability primitive for a replicated, stable axe-family tag. The same API reference also exposes `EquipHasTag(tag)` for equipped tools.
+
+References:
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/axe
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/tool
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/builder_replica
+
+### Revised narrow implementation hypothesis (still not runtime-approved)
+
+- For vanilla axes, prefer the explicit `possessable_axe` tag for client menu availability rather than relying on the dynamically generated action tag. Do not assume the action-specific tag is replicated merely because the server Tool component adds it.
+- On the server, enumerate candidate items in the player's inventory/equipment and require a real `components.tool:CanDoAction(ACTIONS.CHOP)` check. The stable tag can narrow the candidate set, but must not replace the component check.
+- For modded axes, support explicit opt-in through the vanilla `possessable_axe` tag or a MAM registration API; never infer support from prefab-name fragments.
+- A reusable Stone-Carving Chisel needs its own explicit MAM tag present before network pristine, plus a server-side item-presence check. It should have no finite-use consumption path. Its prefab, inventory behavior and client tag visibility still need a dedicated test.
+- A final server gate must cover buffered builds as well as ordinary builds. A client `HasIngredients` wrapper is only a menu-availability aid and is not a security boundary.
+- Freebuild mode needs an explicit product decision: either waive the tool requirement consistently or preserve it consistently in both menu and server paths. Do not let the client and server disagree.
+
+### Remaining evidence gaps
+
+1. The cited axe prefab page is based on build 714014, while the Builder Replica and Inventory Replica pages are based on build 722832. They are community-generated API references, not the user's installed game files.
+2. The docs establish that `possessable_axe` is a vanilla axe tag, but do not prove its live network visibility in the exact current DST build or UM Beta.
+3. The inventory replica docs describe `HasItemWithTag`, but do not fully specify every nested-container/overflow edge case for tool lookup.
+4. The chisel has no verified vanilla equivalent; it must be treated as a MAM-owned reusable item, not guessed from an unrelated prefab.
+5. No production code, recipe, or third-party mod was changed by this cross-check.
