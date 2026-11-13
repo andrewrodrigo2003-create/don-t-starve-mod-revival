@@ -36,10 +36,6 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertLess(config_init, strings_import)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
     def test_metallurgy_guide_uses_selected_language_without_mixed_paragraphs(self):
         screen = (
             MOD / "scripts" / "screens" / "metallurgybookscreen.lua"
@@ -65,3 +61,8 @@ if __name__ == "__main__":
         self.assertNotIn("supported_equipment", actions)
         self.assertIn("armaduras, ferramentas, equipamentos e estruturas não podem ser desmontados", screen)
         self.assertNotIn("Item durability scales equipment salvage", screen)
+
+
+
+if __name__ == "__main__":
+    unittest.main()
