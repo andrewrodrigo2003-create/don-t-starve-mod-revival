@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/allow-ambiguous-smelting
+      - fix/smelter-refund-retry-2026-11-11
   pull_request:
     branches:
       - main
@@ -18,10 +19,37 @@ permissions:
 
 jobs:
   metals-and-more:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Build KTools ktech and convert the mod icon to KTEX
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes cmake build-essential libmagick++-dev librsvg2-bin
+          git clone https://github.com/nsimplex/ktools.git "$RUNNER_TEMP/ktools"
+          git -C "$RUNNER_TEMP/ktools" checkout a1d1362bdb2b9aa9146d7177fbf0e351eab414ba
+          ICON_DIR="$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/images/branding"
+          rsvg-convert -w 256 -h 256 -o "$ICON_DIR/metals_and_more_reforged_icon.png" "$ICON_DIR/metals_and_more_reforged_icon.svg"
+          # Upstream declares inverseOf(ProjectiveMatrix) as void but returns a matrix.
+          # Correct this obvious signature typo in the isolated CI checkout only.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path(os.environ["RUNNER_TEMP"]) / "ktools/src/common/algebra.hpp"
+          source = path.read_text()
+          old = "inline void inverseOf(const ProjectiveMatrix<2, T>& M)"
+          new = "inline ProjectiveMatrix<2, T> inverseOf(const ProjectiveMatrix<2, T>& M)"
+          assert old in source, "pinned KTools source changed; re-audit before building"
+          path.write_text(source.replace(old, new, 1))
+          PY
+          cmake -S "$RUNNER_TEMP/ktools" -B "$RUNNER_TEMP/ktools/build" -DDISABLE_CPU_EXTENSIONS=ON
+          cmake --build "$RUNNER_TEMP/ktools/build" --target ktech --parallel 2
+          "$RUNNER_TEMP/ktools/build/ktech" \
+            "$ICON_DIR/metals_and_more_reforged_icon.png" \
+            "$GITHUB_WORKSPACE/dst-mods/metals_and_reforged/modicon.tex"
 
       - name: Install Lua 5.1
         run: |
@@ -36,6 +64,22 @@ jobs:
               luac5.1 -p "$file"
             done
 
+      - name: Parse DST behavioral simulator Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/tests/simulator -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+          for file in \
+            dst-mods/tests/smelter_simulator_integration_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua
+          do
+            luac5.1 -p "$file"
+          done
+
       - name: Run available Metals and More regression harnesses
         run: |
           set -euo pipefail
@@ -43,12 +87,24 @@ jobs:
             dst-mods/tests/smelting_module_harness.lua \
             dst-mods/tests/forecast_ambiguous_start_test.lua \
             dst-mods/tests/legacy_recipe_default_weight_test.lua \
+            dst-mods/tests/gold_ore_migration_test.lua \
+            dst-mods/tests/recipe_application_retry_test.lua \
             dst-mods/tests/smelter_component_lifecycle_test.lua \
+            dst-mods/tests/smelter_destruction_harvest_test.lua \
             dst-mods/tests/smelter_stack_settings_test.lua \
             dst-mods/tests/metal_storage_chest_test.lua \
+            dst-mods/tests/metal_storage_chest_deprecation_test.lua \
+            dst-mods/tests/metal_deconstruction_test.lua \
+            dst-mods/tests/recipe_station_migration_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
-            dst-mods/tests/weapon_compatibility_contract_test.lua
+            dst-mods/tests/weapon_compatibility_contract_test.lua \
+            dst-mods/tests/combat_wrapper_contract_test.lua \
+            dst-mods/tests/forge_visual_preview_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua \
+            dst-mods/tests/smelter_simulator_integration_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
@@ -56,16 +112,31 @@ jobs:
             fi
           done
 
+      - name: Verify metallurgy book wiring
+        run: python3 dst-mods/tests/metallurgy_reference_book_contract_test.py
+
+      - name: Verify robot forge automation wiring
+        run: python3 dst-mods/tests/robot_forge_automation_contract_test.py
+
+      - name: Verify registered custom asset paths
+        run: python3 dst-mods/tests/mod_asset_reference_test.py
+
       - name: Package installable mod
         run: |
           set -euo pipefail
           cd dst-mods
-          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" metals_and_reforged
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
+          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" | grep -q '^metals_and_reforged/tests/'; then
+            echo "Test-only files leaked into the installable package"
+            exit 1
+          fi
+      - name: Verify install package contents
+        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip"
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@v4
         with:
-          name: metals-and-more-reforged-2.9.5
-          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.5.zip
+          name: metals-and-more-reforged-2.9.6
+          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip
           if-no-files-found: error
           retention-days: 14

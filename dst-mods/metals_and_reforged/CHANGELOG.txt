@@ -1,0 +1,51 @@
+Metals and More Reforged — Changelog
+=====================================
+
+Version 2.9.6 — integrated test build (2026-11-12)
+--------------------------------------------------
+
+Forge and smelting
+- Preserve transactional ingredient receipts, pending-refund recovery, ready output and save/load state.
+- Keep the forge preview client-side while the server validates the final plan.
+- Preserve product name over its image and predicted quantity in the lower-right of the preview.
+- Add opt-in collector robot automation: an active fueled W.O.B.O.T. or deployed W.I.N.bot can trigger nearby smelters to pull registered ingredients from compatible chests/packs and deposit completed products into compatible nearby storage.
+- Automation is Off by default and never scans player inventories or portable storage.
+
+Crafting progression
+- Move metal equipment, tools and selected metal structures to the War Bench crafting filter using ALCHEMY_ONE.
+- Preserve live ingredient lists and recipe metadata from other mods; only the station technology and filter are changed.
+- Keep the Science Machine / Alchemy Engine progression components and transistor on the science path to avoid a crafting dependency loop.
+- Existing MAM forge weapons and equipment remain individually craftable at their existing War Bench recipes.
+
+Metallurgy reference book
+- Add a craftable read-only guide at the War Bench.
+- The in-game pages cover the live smelting recipe table, materials, sources, War Bench progression, salvage rules, robot automation and compatibility settings.
+- The guide does not unlock recipes or craft items remotely.
+
+Deconstruction and salvage
+- Add right-click deconstruction near the War Bench for supported metal materials and metal equipment.
+- Material ingots return their canonical lower-stage components; crafted equipment uses its live AllRecipes ingredient list.
+- Standard recovery is 75% expected return per ingredient unit; item durability scales equipment salvage.
+- Wilson recovers 100% of listed ingredients; Winona recovers non-magical metal components at 100%; Maxwell recovers shadow materials at 100%.
+- WX-78 and Wickerbottom remain at the standard rate pending a user-approved specialty.
+- An unsuccessful recovery roll still consumes the dismantled item, preventing reroll exploits.
+- Wilson's separate cross-material transmutation table is not included because no exact conversion matrix has been defined.
+
+Storage
+- The dedicated metal chest recipe and configuration option are removed as requested.
+- Its old prefab/widget remain registered only to preserve existing saves; no new chest can be crafted.
+
+Icon and packaging
+- Keep the SVG icon source; rasterize a 256px PNG during CI.
+- Build the open-source KTools `ktech` converter in CI and generate the final `modicon.tex` during package creation.
+- Update the atlas to the full square texture coordinates.
+
+Compatibility
+- Recipe guards yield when another mod changes a protected vanilla ingredient list.
+- UM Public Beta 6.0.3.9 source audit covers recipe overrides, hound drops, shark loot and container integration.
+- Hydrated/Dehydrated, Better Lucy and Uncompromising Mode source files are not modified.
+- No smelting costs, output quantities or weapon damage values were changed by this build; station requirements and salvage are the new behavior.
+
+Verification scope
+- CI checks Lua 5.1 syntax, recipe/station guards, deconstruction calculations, robot automation contracts, book wiring, asset references, package contents and KTEX conversion.
+- This is not an in-game certification. Multiplayer, save migration, full Uncompromising Mode Beta behavior and the user's complete mod list still require one consolidated local test.

@@ -117,53 +117,53 @@ MAMLootGuard.Declare("stalagmite_tall_low", "stalagmites", {
 -- Criatura perigosa da ruina da' material melhor que a rocha da superficie:
 -- knight/rook/bishop soltam lingote, a sucata da' po e fragmento de gema.
 ----------------------------------------------------------------------
-MAMLootGuard.Declare({ "chessjunk", "chessjunk1", "chessjunk2", "chessjunk3" }, "chess", {
+MAMLootGuard.Declare({ "chessjunk", "chessjunk1", "chessjunk2", "chessjunk3" }, "chessjunk", {
     { "redgem_shard",   0.50 },
     { "greengem_shard", 0.25 },
     { "bluegem_shard",  0.50 },
     { "copper_dust",    0.50 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("knight", "chess", {
+MAMLootGuard.Declare("knight", "knight", {
     { "copper_ore", 0.50 },
     { "copper_ore", 1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("knight_nightmare", "chess", {
+MAMLootGuard.Declare("knight_nightmare", "knight", {
     { "copper_ore", 0.50 },
     { "copper_ore", 0.50 },
     { "copper_ore", 1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("rook", "chess", {
+MAMLootGuard.Declare("rook", "rook", {
     { "copper_ingot", 0.75 },
     { "copper_ingot", 0.75 },
     { "iron_ingot",   1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("rook_nightmare", "chess", {
+MAMLootGuard.Declare("rook_nightmare", "rook", {
     { "copper_ingot", 0.75 },
     { "copper_ingot", 0.75 },
     { "iron_ingot",   1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("bishop", "chess", {
+MAMLootGuard.Declare("bishop", "bishop", {
     { "bluegem_shard", 1.00 },
     { "redgem_shard",  1.00 },
     { "bluegem_shard", 0.50 },
     { "redgem_shard",  0.50 },
     { "copper_ingot",  0.75 },
     { "iron_ingot",    1.00 },
-})
+}, { parent_key = "chess" })
 
-MAMLootGuard.Declare("bishop_nightmare", "chess", {
+MAMLootGuard.Declare("bishop_nightmare", "bishop", {
     { "copper_ingot",    0.50 },
     { "iron_ingot",      1.00 },
     { "purplegem_shard", 1.00 },
     { "purplegem_shard", 0.75 },
     { "purplegem_shard", 0.50 },
     { "purplegem_shard", 0.25 },
-})
+}, { parent_key = "chess" })
 
 ----------------------------------------------------------------------
 -- Caes elementais -- CEDE ao Uncompromising Mode
@@ -175,19 +175,19 @@ MAMLootGuard.Declare("bishop_nightmare", "chess", {
 -- que desliga esta fonte quando o UM esta' ativo. "Always" forca; sem UM, "Auto"
 -- se comporta exatamente como o original.
 ----------------------------------------------------------------------
-MAMLootGuard.Declare("firehound", "hounds", {
+MAMLootGuard.Declare("firehound", "firehound", {
     { "redgem_shard", 1.00 },
     { "redgem_shard", 0.75 },
     { "redgem_shard", 0.50 },
     { "redgem_shard", 0.25 },
-}, { skip_if_um = true })
+}, { skip_if_um = true, parent_key = "hounds" })
 
-MAMLootGuard.Declare("icehound", "hounds", {
+MAMLootGuard.Declare("icehound", "icehound", {
     { "bluegem_shard", 1.00 },
     { "bluegem_shard", 0.75 },
     { "bluegem_shard", 0.50 },
     { "bluegem_shard", 0.25 },
-}, { skip_if_um = true })
+}, { skip_if_um = true, parent_key = "hounds" })
 
 ----------------------------------------------------------------------
 -- Arvore de marmore NATURAL
@@ -223,6 +223,45 @@ MAMLootGuard.Declare("shark", "shark", {
 }, { apply_in_rewrite = true })
 
 ----------------------------------------------------------------------
+-- Novas fontes de minerio: criaturas e interacoes com ruinas/cavernas.
+-- Sao deliberadamente fontes secundarias: poeiras em chances baixas, sem
+-- lingotes garantidos. O rocky domesticado/seguindo jogador nao gera drops MAM,
+-- evitando transformar um companheiro em farm de minerio.
+MAMLootGuard.Declare("rocky", "rocky", {
+    { "copper_dust", 0.20 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true, skip_if_followed = true })
+
+-- Criaturas blindadas das cavernas: o casco pode conter residuos ferrosos.
+-- Quantidades baixas e poeira apenas; nao substitui a progressao de minerio.
+MAMLootGuard.Declare("slurtle", "slurtle", {
+    { "iron_dust", 0.08 },
+})
+
+MAMLootGuard.Declare("snurtle", "snurtle", {
+    { "iron_dust", 0.12 },
+})
+
+-- Escombros de cavernas: minerar rubble pode revelar particulas metalicas.
+-- O drop base de pedras continua intacto; apenas acrescentamos poeira rara.
+MAMLootGuard.Declare("rubble", "rubble", {
+    { "copper_dust", 0.15 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true })
+
+-- Estatuas antigas: a extracao exige mineracao nas Ruinas e compete com o
+-- valor ja existente de gemas/Thulecite; por isso, somente poeira rara.
+MAMLootGuard.Declare({
+    "ruins_statue_mage",
+    "ruins_statue_mage_nogem",
+    "ruins_statue_head",
+    "ruins_statue_head_nogem",
+}, "ancient_statues", {
+    { "copper_dust", 0.15 },
+    { "iron_dust",   0.05 },
+}, { apply_in_rewrite = true })
+
+----------------------------------------------------------------------
 -- Arbusto de marmore
 -- v2.9.3: modmain.lua:408-434 trocava o lootsetupfn inteiro por listas fixas.
 -- vanilla: prefabs/marbleshrub.lua:107-109 sorteia o loot por estagio
@@ -235,6 +274,11 @@ MAMLootGuard.Declare("shark", "shark", {
 -- iron_ore posto por outro mod nao e' duplicado.
 ----------------------------------------------------------------------
 local SHRUB_IRON_BY_STAGE = { [2] = 1, [3] = 2 }
+
+local function shrub_iron_amount(stage)
+    local multiplier = MAMConfig.int("mam_drop_marbleshrub_quantity", 100) / 100
+    return math.max(0, math.floor((SHRUB_IRON_BY_STAGE[stage] or 0) * multiplier + 0.5))
+end
 
 local function shrub_additive(inst)
     local lootdropper = inst.components.lootdropper
@@ -256,7 +300,7 @@ local function shrub_additive(inst)
         end
 
         local stage = inst.components.growable ~= nil and inst.components.growable.stage or 1
-        local wanted = SHRUB_IRON_BY_STAGE[stage] or 0
+        local wanted = shrub_iron_amount(stage)
         if wanted <= 0 then
             return
         end
@@ -275,23 +319,20 @@ end
 
 -- Listas do v2.9.3, usadas apenas no modo "Rewrite" (comportamento original).
 local function shrub_original(inst)
-    local shrubshort = { "rocks", "marblebean" }
-    local shrubnormal = { "marble", "iron_ore", "rocks", "rocks", "marblebean" }
-    local shrubtall = { "marble", "marble", "iron_ore", "iron_ore", "rocks", "rocks", "rocks", "marblebean" }
-
     if inst.components.lootdropper == nil then
         inst:AddComponent("lootdropper")
     end
 
     inst.components.lootdropper:SetLootSetupFn(function(lootdropper)
         local stage = inst.components.growable ~= nil and inst.components.growable.stage or 1
-        if stage == 1 then
-            lootdropper:SetLoot(shrubshort)
-        elseif stage == 2 then
-            lootdropper:SetLoot(shrubnormal)
-        else
-            lootdropper:SetLoot(shrubtall)
+        local loot = stage == 1 and { "rocks", "marblebean" }
+            or stage == 2 and { "marble", "rocks", "rocks", "marblebean" }
+            or { "marble", "marble", "rocks", "rocks", "rocks", "marblebean" }
+        local wanted = shrub_iron_amount(stage)
+        for _ = 1, wanted do
+            table.insert(loot, "iron_ore")
         end
+        lootdropper:SetLoot(loot)
     end)
 end
 
@@ -303,7 +344,8 @@ local function marble_shrub(inst)
         return
     end
 
-    if MAMConfig.int("mam_drops_mode", 1) == 2 then
+    if MAMConfig.int("mam_drops_mode", 1) == 2
+        and MAMConfig.on("mam_allow_third_party_drop_overrides") then
         shrub_original(inst)
     else
         shrub_additive(inst)

@@ -1,72 +1,61 @@
+-- Centralized MAM localization. Default language: Brazilian Portuguese.
+-- Keep keys owned by this mod; never replace another mod's localization table.
 local STRINGS = GLOBAL.STRINGS
+local MAMConfig = GLOBAL.require("mam/config")
+local language = MAMConfig.get("mam_language", "ptbr")
+local use_english = language == "en"
 
-	-- Items 
-	
-	STRINGS.NAMES.COPPER_DUST = "Copper Dust"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.COPPER_DUST = "A reddish metalic dust."
+local function L(ptbr, english)
+    return use_english and english or ptbr
+end
 
-	STRINGS.NAMES.COPPER_ORE = "Copper Ore"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.COPPER_ORE = "A soft metal."
-	
-	STRINGS.NAMES.COPPER_INGOT = "Copper Ingot"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.COPPER_INGOT = "I should make some copperware with this."
+local ITEMS =
+{
+    COPPER_DUST = { "Pó de cobre", "Copper Dust", "Um pó metálico avermelhado.", "A reddish metallic dust." },
+    COPPER_ORE = { "Minério de cobre", "Copper Ore", "Um metal relativamente macio.", "A relatively soft metal." },
+    COPPER_INGOT = { "Lingote de cobre", "Copper Ingot", "Pode ser usado para fabricar peças de cobre.", "Useful for crafting copper components." },
+    IRON_DUST = { "Pó de ferro", "Iron Dust", "Parece limalha de ferro.", "Looks like iron filings." },
+    IRON_ORE = { "Minério de ferro", "Iron Ore", "Um minério resistente e versátil.", "A sturdy and versatile ore." },
+    IRON_INGOT = { "Lingote de ferro", "Iron Ingot", "Um lingote de metal muito útil.", "A useful metal ingot." },
+    GOLD_DUST = { "Pó de ouro", "Gold Dust", "Pequenas partículas de ouro.", "Tiny particles of gold." },
+    GOLD_ORE = { "Minério de ouro", "Gold Ore", "Contém pequenas quantidades de ouro.", "Contains traces of gold." },
+    GOLD_INGOT = { "Barra de ouro", "Gold Bar", "Uma barra de ouro puro.", "A bar of refined gold." },
+    JUNK_DUST = { "Pó metálico impuro", "Impure Metal Dust", "Resultado de uma fundição mal executada.", "The result of poor smelting." },
+    BRONZE_INGOT = { "Lingote de bronze", "Bronze Ingot", "Uma liga resistente de cobre e ferro.", "A durable copper and iron alloy." },
+    ADAMANTIUM_INGOT = { "Lingote de adamantium", "Adamantium Ingot", "Um metal raro para trabalhos avançados.", "A rare metal for advanced crafting." },
+    MOONGLASS_INGOT = { "Lingote de vidro lunar", "Moonglass Ingot", "Brilha com uma luz lunar misteriosa.", "Shimmers with mysterious lunar light." },
+    REDGEM_SHARD = { "Fragmento de gema vermelha", "Red Gem Shard", "Um fragmento quente e avermelhado.", "A warm, reddish gem fragment." },
+    BLUEGEM_SHARD = { "Fragmento de gema azul", "Blue Gem Shard", "Um fragmento frio e azulado.", "A cool, blue gem fragment." },
+    GREENGEM_SHARD = { "Fragmento de gema verde", "Green Gem Shard", "Um fragmento cheio de energia.", "A lively gem fragment." },
+    YELLOWGEM_SHARD = { "Fragmento de gema amarela", "Yellow Gem Shard", "Um fragmento de brilho intenso.", "A brightly glowing fragment." },
+    ORANGEGEM_SHARD = { "Fragmento de gema laranja", "Orange Gem Shard", "Um fragmento de energia peculiar.", "A peculiar fragment of energy." },
+    PURPLEGEM_SHARD = { "Fragmento de gema roxa", "Purple Gem Shard", "Um fragmento de aparência sinistra.", "An eerie-looking fragment." },
+}
 
-	STRINGS.NAMES.IRON_DUST = "Iron Dust"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.IRON_DUST = "Looks like some old nail filings."
+for key, entry in pairs(ITEMS) do
+    STRINGS.NAMES[key] = L(entry[1], entry[2])
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE[key] = L(entry[3], entry[4])
+end
 
-	STRINGS.NAMES.IRON_ORE = "Iron Ore"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.IRON_ORE = "A sturdy metal."
-	
-	STRINGS.NAMES.IRON_INGOT = "Iron Ingot"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.IRON_INGOT = "A useful metal ingot."
+local CRAFTABLES =
+{
+    METAL_SMELTER = {
+        name = { "Fundição de metais", "Metal Smelter" },
+        description = { "Uma estrutura para fundir e refinar metais.", "A station for smelting and refining metals." },
+        recipe = { "Derreta e refine diferentes metais.", "Smelt and refine different metals." },
+    },
+    METALLURGY_REFERENCE_BOOK = {
+        name = { "Guia de Metalurgia", "Metallurgy Guide" },
+        description = { "Conhecimento sobre minérios, ligas e fundição.", "A field guide to ores, alloys and smelting." },
+        recipe = { "Um guia de campo sobre minérios, ligas e fundição.", "A field guide to ores, alloys and smelting." },
+    },
+}
 
-	STRINGS.NAMES.GOLD_DUST = "Gold Dust"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.GOLD_DUST = "Not worth as much."
+for key, entry in pairs(CRAFTABLES) do
+    STRINGS.NAMES[key] = L(entry.name[1], entry.name[2])
+    STRINGS.RECIPE_DESC[key] = L(entry.recipe[1], entry.recipe[2])
+    STRINGS.CHARACTERS.GENERIC.DESCRIBE[key] = L(entry.description[1], entry.description[2])
+end
 
-	STRINGS.NAMES.GOLD_ORE = "Gold Ore"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.GOLD_ORE = "A nugget of gold."
-	
-	STRINGS.NAMES.GOLD_INGOT = "Gold Bar"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.GOLD_INGOT = "A bar of gold!"
-
-	STRINGS.NAMES.JUNK_DUST = "Metalic Dust"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.JUNK_DUST = "Poor smelting practices led to this."
-
-	STRINGS.NAMES.BRONZE_INGOT = "Bronze Ingot"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.BRONZE_INGOT = "I could make some nice decoretive items with this."
-	
-	STRINGS.NAMES.ADAMANTIUM_INGOT = "Adamantium Ingot"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.ADAMANTIUM_INGOT = "Great weapons can be forged with this."
-	
-	STRINGS.NAMES.MOONGLASS_INGOT = "Moonglass Ingot"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.MOONGLASS_INGOT = "It sparkles with the mysterious light of the moon."
-	
-	STRINGS.NAMES.REDGEM_SHARD = "Red Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.REDGEM_SHARD = "A warm gem shard."
-		
-	STRINGS.NAMES.BLUEGEM_SHARD = "Blue Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.BLUEGEM_SHARD = "A cool gem shard."
-	
-	STRINGS.NAMES.GREENGEM_SHARD = "Green Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.GREENGEM_SHARD = "A lively gem shard."
-		
-	STRINGS.NAMES.YELLOWGEM_SHARD = "Yellow Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.YELLOWGEM_SHARD = "A luminescent gem shard."
-	
-	STRINGS.NAMES.ORANGEGEM_SHARD = "Orange Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.ORANGEGEM_SHARD = "A lazy gem shard."
-	
-	STRINGS.NAMES.PURPLEGEM_SHARD = "Purple Gem Shard"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.PURPLEGEM_SHARD = "An eerie gem shard."
-
-	-- Craftables
-
-	STRINGS.NAMES.METAL_SMELTER = "Smelter"
-	STRINGS.CHARACTERS.GENERIC.DESCRIBE.METAL_SMELTER = "I can cast metals with this."
-	STRINGS.RECIPE_DESC.METAL_SMELTER = "Melt all the metals!"
-
-	-- Pet rocks rock
-
-	STRINGS.NAMES.IRONROCK = "Iron Deposit"
-	STRINGS.NAMES.SPIKYROCK = "Copper Deposit"
-	
+STRINGS.NAMES.IRONROCK = L("Depósito de ferro", "Iron Deposit")
+STRINGS.NAMES.SPIKYROCK = L("Depósito de cobre", "Copper Deposit")

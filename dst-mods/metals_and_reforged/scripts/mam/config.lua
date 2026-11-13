@@ -22,7 +22,9 @@ local DEFAULTS = {
     mam_batch_cap      = 10,   -- teto de unidades por operacao
 
     -- Receitas e drops (Etapa 2)
-    mam_recipe_overrides = 1,  -- 0 = nao reescreve receitas vanilla, 1 = so' intactas, 2 = sempre
+    mam_recipe_overrides = 1,  -- vanilla ingredient overrides
+    mam_third_party_recipe_integration = 1,
+    mam_allow_third_party_drop_overrides = 0,
     mam_extra_drops      = 1,  -- 0 = nenhum drop extra de rochas/criaturas
     mam_drops_mode       = 1,  -- 1 = aditivo por entidade, 2 = reescreve as tables (original)
     -- 0 = chances do v2.9.3, inclusive rolls repetidos que somam mais de 1.
@@ -34,10 +36,39 @@ local DEFAULTS = {
     mam_drop_hounds      = 1,  -- 1 = auto (cede ao UM), 2 = sempre, 0 = nunca
     mam_drop_marbletree  = 1,  -- arvore de marmore natural (nao a plantada)
     mam_drop_marbleshrub = 1,  -- iron_ore do arbusto, por estagio
-    mam_drop_shark       = 1,  -- sharkscale
+    mam_drop_shark = 1,  -- sharkscale
+    mam_drop_rocky = 1, -- wild Rockys only; player-following Rockies are excluded
+    mam_drop_rubble = 1, -- cave rubble mined by players
+    mam_drop_ancient_statues = 1, -- ancient Ruins statues mined by players
+    mam_drop_knight = 1, -- clockwork knights; mam_drop_chess remains family master
+    mam_drop_rook = 1, -- clockwork rooks
+    mam_drop_bishop = 1, -- clockwork bishops
+    mam_drop_chessjunk = 1, -- hammerable chess debris
+    mam_drop_firehound = 1, -- red gem shards
+    mam_drop_icehound = 1, -- blue gem shards
+    mam_drop_slurtle = 1, -- rare iron dust
+    mam_drop_snurtle = 1, -- rare iron dust
+    mam_drop_boulders_chance = 100,
+    mam_drop_stalagmites_chance = 100,
+    mam_drop_chess_chance = 100,
+    mam_drop_hounds_chance = 100,
+    mam_drop_marbletree_chance = 100,
+    mam_drop_shark_chance = 100,
+    mam_drop_rocky_chance = 100,
+    mam_drop_rubble_chance = 100,
+    mam_drop_ancient_statues_chance = 100,
+    mam_drop_knight_chance = 100,
+    mam_drop_rook_chance = 100,
+    mam_drop_bishop_chance = 100,
+    mam_drop_chessjunk_chance = 100,
+    mam_drop_firehound_chance = 100,
+    mam_drop_icehound_chance = 100,
+    mam_drop_slurtle_chance = 100,
+    mam_drop_snurtle_chance = 100,
+    mam_drop_marbleshrub_quantity = 100,
+    mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
+    mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
 
-    -- Armazenamento (Etapa 3)
-    mam_metalschest      = 1,
 }
 
 -- Apenas valores que existem nas configuration_options do modinfo.lua.
@@ -51,6 +82,8 @@ local ALLOWED = {
     mam_leftovers         = { [0] = true, [1] = true },
     mam_batch_cap         = { [4] = true, [10] = true, [20] = true },
     mam_recipe_overrides  = { [0] = true, [1] = true, [2] = true },
+    mam_third_party_recipe_integration = { [0] = true, [1] = true },
+    mam_allow_third_party_drop_overrides = { [0] = true, [1] = true },
     mam_extra_drops       = { [0] = true, [1] = true },
     mam_drops_mode        = { [1] = true, [2] = true },
     mam_drops_normalise   = { [0] = true, [1] = true },
@@ -61,7 +94,37 @@ local ALLOWED = {
     mam_drop_marbletree   = { [0] = true, [1] = true },
     mam_drop_marbleshrub  = { [0] = true, [1] = true },
     mam_drop_shark        = { [0] = true, [1] = true },
-    mam_metalschest       = { [0] = true, [1] = true },
+    mam_drop_rocky        = { [0] = true, [1] = true },
+    mam_drop_rubble       = { [0] = true, [1] = true },
+    mam_drop_ancient_statues = { [0] = true, [1] = true },
+    mam_drop_knight = { [0] = true, [1] = true },
+    mam_drop_rook = { [0] = true, [1] = true },
+    mam_drop_bishop = { [0] = true, [1] = true },
+    mam_drop_chessjunk = { [0] = true, [1] = true },
+    mam_drop_firehound = { [0] = true, [1] = true },
+    mam_drop_icehound = { [0] = true, [1] = true },
+    mam_drop_slurtle = { [0] = true, [1] = true },
+    mam_drop_snurtle = { [0] = true, [1] = true },
+    mam_drop_boulders_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_stalagmites_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_chess_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_hounds_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_marbletree_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_shark_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rocky_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rubble_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_ancient_statues_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_knight_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_rook_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_bishop_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_chessjunk_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_firehound_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_icehound_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_slurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_snurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
+    mam_drop_marbleshrub_quantity = { [0] = true, [100] = true, [200] = true, [300] = true },
+    mam_robot_smelting    = { [0] = true, [1] = true },
+    mam_language          = { ptbr = true, en = true },
 }
 
 local values = {}

@@ -3,7 +3,7 @@ require "prefabutil"
 local assets =
 {
 	Asset("ANIM", "anim/workbench_obsidian.zip"),
-	Asset("MINIMAP_IMAGE", "workbench_obsidian"),
+	Asset("MINIMAP_IMAGE", "obsidian_workbench"),
 }
 
 local function onhammered(inst, worker)

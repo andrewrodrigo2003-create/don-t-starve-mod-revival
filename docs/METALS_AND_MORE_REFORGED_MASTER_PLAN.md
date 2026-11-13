@@ -56,6 +56,26 @@
 - [x] Confirmar por harness runtime as gates de Rewrite, com a ressalva de que a substituição de loot tables é comportamento legado e ainda exige validação em mundo real.
 - [ ] Testar cada fonte com as opções geral e individuais desligadas/ligadas.
 
+### Reguladores independentes de criaturas e integrações de mods
+
+- [x] Separar os reguladores de Cavaleiro, Torre, Bispo e sucata de xadrez; o controle geral das Ruínas continua como interruptor mestre opcional.
+- [x] Separar Cão de Fogo e Cão de Gelo; cada espécie possui interruptor e multiplicador próprios, preservando o modo Auto/Sempre do Uncompromising Mode como controle de compatibilidade geral.
+- [x] Adicionar Slurtle e Snurtle como fontes raras e independentes de poeira de ferro (8% e 12% de chance base, respectivamente), sem lingotes e sem substituir loot vanilla.
+- [x] Aplicar os multiplicadores de chance no nascimento da entidade, após leitura da configuração do servidor; cada fonte usa seu próprio regulador.
+- [x] Declarar as opções estaticamente no modinfo. A presença/ausência de outro mod não remove opções do menu; somente a execução do adaptador depende da presença do mod/prefab.
+- [ ] Para cada integração externa futura, exigir uma chave de ativação e regulador de chance/quantidade exclusivos, mesmo quando o mod correspondente não estiver instalado.
+- [ ] Confirmar prefabs e componentes de Slurtle/Snurtle no build ativo do DST e testar em servidor dedicado/multiplayer.
+
+### Expansao de fontes secundarias de minerio (2.9.7)
+
+- [x] Adicionar Rocky selvagem como fonte secundaria de poeira de cobre (20%) e poeira de ferro (5%); Rockys seguindo jogadores ficam excluidos para impedir farm de companheiros.
+- [x] Adicionar escombros naturais de cavernas (`rubble`) como interacao de mineracao: poeira de cobre (15%) e poeira de ferro (5%), preservando os drops vanilla.
+- [x] Adicionar as quatro variantes de estatuas antigas das Ruinas como interacao de mineracao: poeira de cobre (15%) e poeira de ferro (5%), sem alterar gemas ou Thulecite.
+- [x] Cada nova fonte tem interruptor independente e multiplicador de chance de 25% a 150%, validado no modulo central; modo aditivo por padrao e sem substituicao de loot compartilhado.
+- [x] As tres fontes sao secundarias: nao concedem lingotes garantidos nem substituem as fontes principais de cobre/ferro.
+- [ ] Executar harness atualizado e CI; confirmar os componentes reais no build ativo do DST e testar no mundo "mundo de testes de mod".
+- [ ] Medir expectativa de drops por hora/bioma e ajustar somente se a simulacao ou teste in-game revelar excesso ou escassez.
+
 ## 4. Forja em lotes e previsão
 
 - [x] Existe cálculo de lote, limite por operação, crescimento de tempo, previsão de produto/quantidade e comunicação do plano do servidor via netvar.
@@ -91,31 +111,25 @@
 - [ ] Confirmar custos e requisitos originais das receitas e o comportamento com receitas removidas/alteradas por outros mods.
 - [ ] Testar construção, colocação, funcionamento, animações, destruição e drops das estações.
 
-## 7. Armazenamento metalúrgico
+## 7. Armazenamento existente e balanceamento
 
-- [x] Primeiro contêiner dedicado integrado via PR #13 (que incorporou a implementação do PR #5): 25 slots, tags `chest` + `mam_metal_storage`, destruição com martelo devolvendo conteúdo e filtro ligado ao registro real da metalurgia. O filtro aceita ingredientes e produtos registrados (minérios, poeiras, fragmentos, lingotes e ligas). CI completo aprovado; testes in-game/save-load/multiplayer ainda pendentes.
-- [x] Harness isolado do prefab passou com LuaTeX: registro, assets, placer, tags, widget, callbacks, hit sem derramar, martelo devolvendo conteúdo e separação servidor/cliente. Não valida o motor DST nem a aceitação real de itens.
-- [ ] Criar/validar o contêiner próprio para metais, minérios, poeiras, fragmentos, lingotes, ligas e materiais metalúrgicos definidos pelo mod.
-- [ ] Definir filtros explícitos por prefab/tag; não aceitar itens arbitrários nem bloquear materiais legítimos.
-- [ ] Preservar inventário ao martelar, fechar, desconectar, salvar e carregar.
-- [ ] Garantir que itens não sejam perdidos se a estrutura for destruída ou se um slot não puder aceitar o item.
-- [ ] Fazer a integração com containers externos de forma passiva e compatível; nunca editar os outros mods.
-- [ ] Priorizar compatibilidade com o armazenamento do Uncompromising Mode Beta, sem presumir APIs internas estáveis.
-- [ ] Implementar consulta centralizada opcional apenas para depósitos próximos e acessíveis.
-- [ ] Mostrar quantidade e localização; retirada deve respeitar distância, propriedade, permissões, slots e multiplayer.
-- [ ] Não permitir acesso global, retirada através de paredes, acesso a depósitos de outros jogadores ou duplicação por corrida de requests.
-- [ ] Integrar consulta com fabricação somente se for possível reservar/consumir itens atomicamente no servidor; sem retirada fantasma.
-- [ ] Adicionar opções para contêiner, consulta e integração com estações, todas desligáveis e com defaults seguros.
+- [x] O mod já possui duas estruturas de armazenamento próprias: `marble_chest` e `cold_safe` (geladeira).
+- [x] `metal_storage_chest` permanece registrado somente para compatibilidade com saves antigos; não deve receber receita nova nem ser apresentado como recurso novo.
+- [ ] Auditar a capacidade real, comportamento de preservação, widget, tags, custo de construção, tier de tecnologia e utilidade de `marble_chest` e `cold_safe`.
+- [ ] Reequilibrar os custos de fabricação dessas duas estruturas de acordo com o que cada uma oferece, comparando com baú e geladeira vanilla e com o acesso aos materiais na progressão.
+- [ ] Testar construção, colocação, funcionamento, animações, destruição, devolução de conteúdo e save/load.
+- [ ] Não criar outro baú metalúrgico, não duplicar funções de armazenamento e não implementar consulta global/depósitos centralizados nesta atualização.
+- [ ] Integrações passivas com containers de outros mods continuam permitidas somente quando necessárias à compatibilidade; nunca editar os outros mods.
 
-**Estado encontrado na auditoria:** existem `marble_chest` e `cold_safe` como contêineres genéricos do mod. O primeiro baú metalúrgico dedicado foi adicionado em código no PR #5; consulta centralizada e integração com estações continuam sem implementação. As chaves internas `mam_storage_query` e `mam_station_storage` foram removidas em PR #8 até que a consulta/integração exista; não expor essas opções como se funcionassem.
+**Decisão do usuário (2026-11-12):** descartar a criação de um baú metalúrgico novo. O trabalho de armazenamento limita-se ao balanceamento do baú e da geladeira que já existem no mod. A estrutura legada `metal_storage_chest` não deve ganhar receita nova.
 
 ## 8. Configurações
 
 - [x] Existe módulo central `mam/config.lua` e opções para lote, limite, tempo, sobras, previsão, overrides de receitas e drops.
 - [ ] Auditar todos os consumidores de cada opção exposta; a validação de valores do módulo central foi concluída em PR #8, mas a auditoria de uso funcional ainda está em aberto.
 - [ ] Remover ou não expor opções sem implementação; nunca deixar controles placebo.
-- [~] Opção `mam_metalschest` adicionada ao `modinfo.lua` no PR #5 (default on); teste no jogo pendente.
-- [ ] Adicionar configurações de armazenamento/consulta somente quando os recursos estiverem implementados.
+- [x] Não existe opção para um baú metalúrgico novo; esse recurso foi descartado por decisão do usuário. O foco é balancear `marble_chest` e `cold_safe`.
+- [x] Não adicionar configurações para baú novo, consulta centralizada ou automação de depósitos nesta atualização.
 - [ ] Garantir que defaults preservem a experiência original quando a opção estiver desligada.
 - [x] Validar no módulo central os tipos, enums permitidos, limites e fallback para valores ausentes/inválidos; harness direto com 103 verificações em PR #8.
 - [~] Validar transmissão real das configurações entre servidor e cliente e mensagens de configuração; overrides foram testados isoladamente, mas host/cliente real continua pendente.
@@ -172,10 +186,12 @@
 1. Concluir auditoria da fundição e da previsão, incluindo ciclo de vida e save/load.
 2. Validar em jogo a auditoria de mineração/drops e registrar matriz por fonte/configuração, incluindo UM Beta.
 3. Validar craftbook, bancada de guerra e progressão.
-4. Projetar e implementar o armazenamento metalúrgico em etapas pequenas, começando pelo contêiner próprio e seus filtros.
-5. Implementar consulta próxima somente depois que o armazenamento básico estiver seguro.
-6. Completar testes de compatibilidade, multiplayer e mundo de testes.
-7. Finalizar documentação, changelog e entrega.
+4. Implementar as rotas de fabricação com ferramenta obrigatória (machado e cinzel) e validar autoridade do servidor.
+5. Completar desmontagem de materiais, livro informativo e matriz de bancadas sem desbloqueio/fabricação remota.
+6. Auditar e reequilibrar as receitas vanilla alteradas e os custos do `marble_chest`/`cold_safe`, comparando progressão vanilla e UM Beta.
+7. Fazer somente integrações externas que acrescentem valor real, com adaptadores isolados e testes de load order.
+8. Completar localização, testes automatizados, multiplayer/save-load e validação no mundo de testes.
+9. Finalizar documentação, changelog e pacote de teste; manter PR em draft até o usuário testar.
 
 ## Histórico de mudanças já integradas
 
@@ -309,6 +325,165 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - A auditoria de `smelting.lua`, `smelting_products.lua`, `metal_dusts.lua` e `metals.lua` identificou cadeias candidatas para cobre, ferro e ouro e receitas compostas de bronze, vidro lunar e adamantium.
 - O documento `docs/design/METAL_MATERIAL_DECONSTRUCTION.md` registra os valores de tags atuais e retornos canônicos candidatos. As quantidades são derivadas das receitas atuais, não estão implementadas.
 - Como a forja aceita entradas por tags, não é possível reconstruir o prefab exato originalmente consumido. A proposta usa componentes canônicos por produto e exige regra explícita por prefab.
-- Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação ainda precisa de confirmação do usuário antes da implementação.
+- Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação recomendada foi implementada como War Bench (`ALCHEMY_ONE`) no build 2.9.6; a ação exige proximidade da bancada.
 - Implementação deve ser transação atômica no servidor, falhar sem consumo quando não houver espaço para todos os retornos e impedir duplicação, retorno parcial ou bypass da progressão.
-- Estado: especificação/auditoria; nenhum código de gameplay foi alterado.
+- Estado: implementação no build 2.9.6, aguardando validação in-game.
+
+
+## Registro de execução — 2026-11-12 (build de teste 2.9.5)
+
+- A branch de teste do PR #50 foi atualizada e revalidada no head `b26c078d31722dca770242aa974971ea169f7328`; `main` permanece inalterada.
+- Uma falha do CI em `forge_visual_preview_test.lua` era causada pelo stub do teste armazenar `Vector3` dentro de uma tabela numérica, ao contrário da semântica de `Widget:SetPosition(Vector3)` do DST. O stub foi corrigido para preservar o objeto Vector3; não foi necessário alterar a posição da prévia no código do mod.
+- CI do head exato: workflow principal **success**, stategraph wrapper **success**, minimap contract **success**.
+- Cobertura registrada: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; destruição/colheita 23/23; configuração de pilhas 16/16; migração de gold_ore 16/16; retry de receitas 10/10; simulador integrado da forja 15/15; contratos de habilidades 19/19; testes de wrappers de armas/combate, loot Rewrite, UI/containers, assets e pacote também passaram.
+- Pacote de teste produzido pelo workflow: `metals-and-more-reforged-2.9.5.zip`, 6.519.028 bytes. SHA-256: `e72e1e66d6a6f2a4c3e56126105d2ee267d2a2e4e598aa47156eea9dc24ce414`. Artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43274625559/artifacts/13969597340 (retenção de 14 dias).
+- O PR #50 continua aberto e em draft; não houve merge, publicação na Oficina nem alteração de outros mods.
+- Durante a etapa intermediária 2.9.5, a receita do `metal_storage_chest` foi reativada temporariamente; na atualização 2.9.6, por decisão do usuário, a receita/opção foram removidas. O prefab/widget permanecem apenas para saves antigos.
+- Limite importante: os resultados são CI, Lua 5.1 e harnesses/simuladores determinísticos. Ainda não são testes no motor DST, multiplayer real, save migration real ou validação do Uncompromising Mode Public Beta.
+- A atualização 2.9.5 inclui segurança transacional da forja, retry de devoluções, proteção da migração de gold_ore, retry de aplicação de receitas, prévia visual de fundição, wrappers de combate/stategraph e otimização do minimapa. A mecânica global antiga de arremesso de Lucy continua removida; armas corpo a corpo/AOE e machado normal permanecem.
+- Funcionalidades essenciais ainda não concluídas no plano mestre: livro metalúrgico somente leitura; desconstrução reversível (a estação recomendada é warworkbench, mas ainda não confirmada); matriz final de receitas/estações; consulta segura de depósitos; automação W.O.B.O.T./W.I.N.bot; conversão KTEX do ícone; matriz de compatibilidade UM Beta + conjunto de mods do usuário. Não marcar o pedido inteiro como concluído.
+- Próxima validação local: instalar uma única cópia do build de teste, testar a forja e as armas no mundo `mundo de testes de mod`, depois testar com UM Beta e mods de armazenamento/fornalhas. Preservar Hydrated/Dehydrated e Better Lucy.
+
+
+### Auditoria adicional — Uncompromising Mode Public Beta 6.0.3.9 (2026-11-12)
+
+- A branch correta para o beta público foi identificada como `utw-beta`, versão `6.0.3.9`, commit observado `fc09a5924fbb096a4dcb3582e22907b9c94a73ca`. Não confundir com a branch `live` (1.5.4.6).
+- Revalidados os conflitos conhecidos: UM escreve diretamente `AllRecipes.glasscutter.ingredients` quando `celestialitems_revert` está ativo; MAM usa assinatura vanilla e guarda de receita para ceder quando outro mod alterou o conteúdo.
+- Hounds elementais: UM define `hound_fire`/`hound_cold` em `AddSimPostInit` com gemas a 0.3; MAM `Auto` detecta `GLOBAL.UMCommonFns` e pula os fragmentos próprios. `Always` é uma escolha explícita que pode somar materiais.
+- Shark: UM adiciona `rockjawleather`; MAM adiciona `sharkscale` por `AddChanceLoot`, sem substituir o wrapper `DropLoot` do UM.
+- Containers: UM tem `um_scrapper` e amplia o componente vanilla; o baú MAM usa prefab/widget/tags próprios e não substitui os parâmetros globais de containers.
+- Criado relatório detalhado em `docs/compatibility/UNCOMPROMISING_MODE_PUBLIC_BETA_6.0.3.9_AUDIT_2026-11-12.md`. A referência no comentário de `recipe_guard.lua` foi atualizada de 6.0.3.8 para 6.0.3.9.
+- Isto é auditoria de código, não teste de integração in-game. Testar no mundo local: recipes (celestialitems_revert), hounds em Auto, shark, baú, forja, depois mods de fornalha/armazenamento e conjunto completo.
+
+
+### Validação final do build de teste 2.9.5 — 2026-11-12
+
+- Head testado: `594c6ace575e9bc9b0c45026b9fb01b326eeb9c1`; workflow principal, StateGraph wrapper e minimap contract concluíram **success**.
+- Suítes: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de `gold_ore` 16 contracts; retry de receitas 10 contracts; baú (opção, receita, prefab, widget e filtro) passou; loot runtime (Rewrite, UM Auto/Always, normalização e 18 gates) passou; habilidades de personagens 19/19; simulador integrado da forja 15/15; asset references e package content passaram; wrappers de armas, stategraph, UI e minimap passaram.
+- A suíte de armas agora também proíbe regressão de `SetSpellFn` no arquivo de extensão de armas. O código mantém ataques melee/AOE, parry e habilidades das quatro armas da Forja, sem reintroduzir o antigo hook de projétil global.
+- O primeiro teste do pacote após restaurar o baú falhou porque o contrato de empacotamento ainda exigia a remoção da opção antiga. O contrato foi corrigido para exigir a opção/receita; o head `594c6ace` passou e o ZIP foi gerado.
+- Artefato instalável: [Metals and More Reforged 2.9.5 — teste](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43275633835/artifacts/13971540102). Tamanho externo: 6.520.736 bytes. SHA-256 do artefato externo: `a8ef5513533ab41b119b1383d4ba85b926d15c61fc8b9450949f41436b45f377`. Expira em 2026-11-26.
+- O pacote externo contém o ZIP instalável interno. A nota de teste local foi atualizada em `docs/testing/TEST_BUILD_2.9.5_2026-11-12.md`.
+- O PR #50 permanece draft e sem merge. Os commits posteriores de documentação não alteram os arquivos runtime do pacote; a validação exata do código/testes foi feita no head indicado.
+
+
+## 17. Atualização integrada 2.9.6 — 2026-11-12
+
+- O usuário pediu remover o baú metalúrgico dedicado e implementar o restante do pedido de atualização do Qoder antes de um único teste local.
+- Baú dedicado: opção `mam_metalschest` e receita removidas; prefab/widget mantidos exclusivamente para compatibilidade de saves antigos. A automação passa a usar containers comuns compatíveis.
+- War Bench: migração de 25 receitas vanilla de ferramentas, equipamentos e estruturas metálicas para `ALCHEMY_ONE` + filtro `CRAFTING_STATION`, sem recriar Recipe e sem alterar ingredientes/metadata. Science progression mantém `researchlab`, `researchlab2` e `transistor` para evitar dependência circular. O guard reexecuta a migração após os post-inits dos outros mods.
+- Livro de Metalurgia: prefab craftável na War Bench, usando `simplebook` e tela de consulta bilíngue. Páginas incluem a tabela ativa de fundição, cadeia de materiais, fontes, War Bench, desmontagem, automação e compatibilidade. Não é prototyper nem desbloqueia receitas.
+- Desmontagem: ação contextual à direita perto da War Bench. Materiais usam retornos canônicos que correspondem às receitas de fundição; equipamentos usam `AllRecipes` ativo e `numtogive`, com escala pela durabilidade. Retorno padrão 75% por unidade esperada; Wilson 100% de todos os componentes, Winona 100% de metais não mágicos, Maxwell 100% de materiais sombrios. WX-78/Wickerbottom seguem 75% até haver especialidade aprovada. Inventário é pré-validado; um sorteio sem retorno ainda consome o item para impedir reroll exploit.
+- Wilson: recuperação exata de 100% implementada. A transmutação separada entre materiais continua pendente, pois não existe matriz/ratio definido; não inventar conversões que possam gerar lucro.
+- Robôs: nova opção `mam_robot_smelting`, default Off. Com W.O.B.O.T. abastecido ou W.I.N.bot implantado/ativo, a forja puxa ingredientes registrados de containers compatíveis próximos, usando o planejador normal, e deposita o produto no armazenamento compatível mais próximo. Se não houver espaço, mantém o produto pronto para retirada manual. Não varre inventários de jogadores nem storage portátil.
+- Ícone: source SVG; workflow rasteriza PNG 256px via `rsvg-convert`, constrói KTools `ktech` em commit fixo e gera `modicon.tex` no pacote. Atlas usa coordenadas de textura completas.
+- Documentação: `docs/design/INTEGRATED_METALLURGY_SYSTEM_2.9.6.md` e `docs/testing/TEST_BUILD_2.9.6_2026-11-12.md`.
+- Testes novos: desmontagem (taxas, composição, durabilidade e receitas vivas), migração de estação, livro, automação, PNG/KTEX e conteúdo do pacote.
+- Versão do mod alterada para 2.9.6. O build ainda depende de CI para validar compilação do KTools e de testes in-game para validar tela, ações, robôs, save/load, multiplayer e UM Beta.
+- Nenhum merge, publicação na Oficina ou edição de Hydrated/Dehydrated/Better Lucy/UM foi feito.
+
+## 17. Registro consolidado — build 2.9.6 (2026-11-12)
+
+Este registro supersede as etapas antigas que ainda descreviam como pendentes o livro, a desmontagem, a migração de receitas e a automação. O status abaixo é o código presente na branch de teste 2.9.6; a certificação no motor DST continua pendente.
+
+### Implementado no código da build
+- Livro de Metalurgia de leitura, com tela própria multipágina; apresenta dados de fundição, cadeia de materiais, fontes, progressão, desmontagem, automação e compatibilidade. Ler o livro não desbloqueia nem fabrica receitas.
+- Desmontagem por ação de inventário perto da War Bench, limitada a prefabs explicitamente suportados. A operação valida estação, posse do item e capacidade de saída antes do consumo; equipamento usa ingredientes da receita viva e escala o retorno pela durabilidade.
+- Recuperação padrão de 75% por unidade de ingrediente em expectativa. Wilson recupera 100% dos ingredientes listados; Winona 100% de componentes metálicos não mágicos; Maxwell 100% de materiais de sombra. WX-78 e Wickerbottom permanecem na taxa padrão. Não há transmutação cruzada de Wilson nesta build.
+- Migração de receitas selecionadas para o filtro da War Bench preservando ingredientes e metadados atuais; receitas vanilla protegidas cedem quando detectam alteração prévia de outro mod.
+- Automação opcional da forja por W.O.B.O.T./W.I.N.bot, desativada por padrão. A automação usa apenas contêineres chest/pack compatíveis e ingredientes metalúrgicos registrados, com planejamento e retirada autoritativos no servidor; não varre inventários de jogadores nem armazenamento portátil.
+- Conversão do ícone original para KTEX no pipeline de build.
+
+### Baú metalúrgico
+- A receita de criação e a opção de configuração do baú dedicado foram removidas. Novos jogadores não podem fabricar esse baú.
+- O prefab, widget e filtro antigos permanecem apenas para carregar saves que já possuam a estrutura. Não desenvolver novas funções ou automação dependentes desse baú; a automação da forja usa contêineres compatíveis comuns.
+- A consulta manual de depósitos não é uma funcionalidade independente nesta build; a busca de armazenamento existe apenas como parte do abastecimento/depósito da automação.
+
+### Verificação e pendências
+- A suíte automatizada cobre sintaxe Lua 5.1, regressões da forja, livro, desmontagem, migração de receitas, automação, assets e integridade do pacote.
+- Os resultados de CI da build 2.9.6 devem ser conferidos pelo head mais recente da PR #50; execuções anteriores que falharam na conversão de imagem ou no teste de configuração não contam como aprovação.
+- Ainda dependem de teste real: leitura e navegação do livro no cliente, interação de desmontagem, energia/estados dos dois robôs, host/cliente, multiplayer, save migration, UM Public Beta 6.0.3.9 e coleção completa de mods do usuário.
+- O conjunto completo de 57 mods não está certificado. Não declarar compatibilidade total nem mover a PR para ready/merge antes do teste consolidado no mundo `mundo de testes de mod`.
+
+
+### Validação CI e artefato 2.9.6 — 2026-11-12
+
+- GitHub Actions: [run 43283223936](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936), conclusão `success`, head exato `ea57c9489c26113d807f63f60934f16b0172571a`.
+- KTools `ktech` build + SVG rasterization + KTEX conversion: passou.
+- Lua 5.1 parse dos arquivos MAM e do simulador: passou.
+- Regressões: fundição 270/270; preview 14/14; ciclo de vida 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de gold_ore 16 contratos; retry de receitas 10 contratos; deconstruction; migração da War Bench; loot runtime; habilidades 19/19; integração da forja 15/15.
+- Wiring do livro, automação de robôs, referências de assets e conteúdo do pacote instalável: passaram.
+- Artefato: [metals-and-more-reforged-2.9.6](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936/artifacts/13974480896), 6.587.858 bytes, SHA-256 `9a0baedff6b894e80913cce9e88390896d08d1e92b8018a72acd64178a42c091`, expira em 26/11/2026.
+- A validação in-game, multiplayer, save migration e a coleção completa de mods do usuário continuam pendentes. O PR #50 permanece draft, sem merge.
+
+
+## 18. Clarificação do usuário — fabricação obrigatória com ferramenta (2026-11-12)
+
+Esta decisão complementa a lista mestre e o mapa de atualizações/ideias; não substitui nenhum item anterior da atualização 2.9.7.
+
+- **Tábuas:** desativar a receita/método vanilla padrão que está sendo substituído. Todos os personagens passam a fabricar tábuas pelo novo método com requisito de ferramenta. Qualquer machado válido do DST serve; o machado não é consumido como ingrediente e mantém o desgaste normal da ferramenta. A redução de custo já existente na habilidade vanilla de Woodie será verificada na fonte da versão ativa do DST e convertida em regra compartilhada por todos os sobreviventes. Não inventar valor e não editar Woodie - Better Skill Tree nem qualquer outro mod.
+- **Pedra trabalhada / cutstone:** desativar o método vanilla padrão que está sendo substituído. Criar o novo item **Cinzel de Entalhe em Pedra**, reutilizável, sem consumo de durabilidade nem de pilha. O cinzel é requisito de ferramenta, não ingrediente consumido, e a regra vale para todos os personagens.
+- **Validação:** servidor valida ferramenta real e funcional; usar componentes/tags estáveis, rejeitar ferramenta quebrada/inválida e falhar com segurança para ferramentas de terceiros não identificadas. Não aceitar pelo nome do prefab isoladamente.
+- **Mesa de Serragem:** a alternativa já prevista no documento 2.9.7 permanece condicionada à verificação de um prefab e API reais de vanilla/UM. Ela não pode reativar o método vanilla desativado.
+- **Escopo preservado:** permanecem ativos todos os demais itens do pedido anterior e do mapa de ideias: localização completa, desmontagem de todos os materiais, livro, bancadas, matriz de balanceamento madeira/pedra, adaptadores de compatibilidade, testes e demais tarefas do plano mestre. Esta clarificação corrige somente a interpretação da fabricação de tábuas e pedra.
+
+
+## 19. Clarificação do usuário — configurações granulares e independentes (2026-11-12)
+
+As integrações e alterações devem ser configuráveis pelo jogador no menor limite funcional coerente. Não usar um interruptor geral que desligue mecânicas sem relação entre si.
+
+- **Receitas de outros mods:** a modificação/adaptação é permitida, mas possui opção própria para desativar somente essa integração. Desativada, o MAM não altera a receita ativa nem seus metadados.
+- **Drops de outros mods:** possuem opção(ões) próprias, independentes das receitas. Desativadas, preservar os drops originais de terceiros, sem substituir suas loot tables.
+- **Drops do Metals and More:** permitir regular separadamente fontes/categorias relevantes e parâmetros seguros, como chance e quantidade/faixa de quantidade. Definir padrão, limites e validação; impedir valores inválidos, duplicação de rolagens e farms/exploits não intencionais.
+- **Fabricação própria do MAM:** regras de tábuas com machado, pedra trabalhada com cinzel reutilizável e eventual Mesa de Serragem verificada não podem depender da opção de integração com receitas de terceiros. São mecânicas próprias e independentes.
+- **Separação mínima das áreas de configuração:** receitas próprias e substituições vanilla; requisitos de ferramenta; Mesa de Serragem; adaptadores de receitas de terceiros; adaptadores de drops de terceiros; drops próprios do MAM. Cada opção deve explicar exatamente o que altera e o que deixa intacto.
+- Seguir a filosofia granular do Uncompromising Mode: permitir que o jogador mantenha apenas as integrações e mudanças de que gosta, sem desligar sistemas inteiros por acidente.
+- Configuração autoritativa do servidor em multiplayer, estado consistente nos clientes, migração segura em saves existentes e comportamento previsível quando dependências/mods estiverem ausentes ou carregarem em ordem diferente.
+- Criar testes combinatórios de configuração: desligar integração de receitas de terceiros não pode remover machado/cinzel obrigatórios; desligar integração de drops de terceiros não pode remover drops próprios do MAM; desligar uma fonte de drop não pode afetar outras fontes.
+
+Esta clarificação amplia a personalização e não cancela nenhum item anterior da atualização nem do mapa mestre de ideias.
+
+
+### 19.1 Implementação das configurações granulares (2026-11-12)
+
+Na branch 2.9.7, as configurações abaixo já foram ligadas ao código:
+
+- mam_third_party_recipe_integration: controla apenas a adaptação de receitas suportadas de terceiros; desligada, preserva a receita alterada por outro mod. Não controla mecânicas próprias do MAM.
+- mam_allow_third_party_drop_overrides: opt-in separado para substituir tabelas de loot compartilhadas no modo Rewrite. Desligada (padrão), o modo Rewrite recua para drops aditivos e preserva tabelas compartilhadas.
+- Chances independentes dos drops próprios do MAM: mam_drop_boulders_chance, mam_drop_stalagmites_chance, mam_drop_chess_chance, mam_drop_hounds_chance, mam_drop_marbletree_chance e mam_drop_shark_chance (25% a 150%).
+- Quantidade de minério de ferro do arbusto de mármore: mam_drop_marbleshrub_quantity (desligado, original, dobro ou triplo).
+- Interruptores por fonte de drop já existentes continuam separados; nenhuma dessas opções desliga as demais fontes.
+
+Os testes de configuração e de runtime foram ampliados para verificar isolamento entre as opções, preservação de receitas de terceiros, fallback aditivo e escalonamento de chances. Isso não significa que toda a atualização esteja pronta: machado/cinzel obrigatórios, integração verificada da Mesa de Serragem e cobertura completa de adaptadores ainda precisam ser concluídos antes do pacote 2.9.7.
+
+## 20. Continuidade da implementação 2.9.7 — 2026-11-13
+
+### Estado remoto e CI
+- PR #51 continua draft e aberta, sem merge ou publicação. HEAD de trabalho desta etapa: a2122113fc9dfc0c3e9f89a64d2f4f24083871af.
+- No HEAD anterior a esta etapa, todos os seis checks consultados estavam success. As alterações novas de localização e desmontagem acionaram nova CI; a conclusão do HEAD acima deve ser consultada antes de considerar a etapa validada.
+- Nenhum arquivo de Uncompromising Mode, Hydrated/Dehydrated, Better Lucy ou outro mod foi alterado.
+
+### Livro e localização
+- A tela do Guia de Metalurgia agora escolhe um único idioma por configuração: pt-BR ou inglês; títulos, páginas, requisitos, botões e paginação deixam de concatenar os dois idiomas.
+- A página de desmontagem foi corrigida para refletir o comportamento real da branch 2.9.7: somente materiais explicitamente registrados, sem salvage de equipamentos.
+- O texto da ação e o aviso de inventário cheio também seguem o idioma selecionado.
+- Contratos Python adicionados para proteger a localização do guia e impedir que a descrição volte a prometer desmontagem de equipamentos.
+- Isto cobre o guia e a ação de desmontagem, não conclui a localização de todos os textos, receitas, opções, notificações e itens do MAM.
+
+### Desmontagem material-only
+- A ação foi simplificada para consultar exclusivamente a allowlist de mam/deconstruction.lua; receitas de equipamento e durabilidade não podem ampliar a elegibilidade.
+- A allowlist atual contém nove materiais: copper_ore, copper_ingot, iron_ore, iron_ingot, goldnugget, gold_ingot, bronze_ingot, moonglass_ingot e adamantium_ingot.
+- O teste Lua agora confirma também a rejeição de poeiras-base, junk_dust, fragmentos de gemas e sharkscale enquanto não houver proveniência reversa segura.
+- Esses itens não foram omitidos por esquecimento: poeiras são estágio-base; junk_dust é subproduto genérico sem composição única; gem shards e sharkscale são entradas/drops brutos sem uma etapa anterior demonstrada. Inventar retornos criaria conversões arbitrárias ou progressão para cima.
+- A operação continua dependente de teste real de inventário, containers de overflow, multiplayer, save/load e interação com a War Bench. CI/harness não certificam o motor DST.
+
+### Próxima sequência
+1. Aguardar e conferir todos os checks do HEAD atual da PR #51.
+2. Prosseguir com a auditoria da API de crafting cliente/servidor para requisitos de machado e cinzel; não ativar receitas até provar disponibilidade correta no menu e validação autoritativa.
+3. Continuar a localização do restante do mod e a matriz de balanceamento por cadeia, sem alterar custos sem evidência.
+4. Manter a PR em draft até o teste do usuário no mundo 'mundo de testes de mod'. Não gerar/publicar build 2.9.7 nem mesclar antes da validação in-game.
+### CI final do HEAD 7eba31b — 2026-11-13
+- Os seis checks do HEAD 7eba31b9c9f2c74c38d5dcedbe6ea6afdf66b857 concluíram success: localization-contract, stategraph-wrapper-contract, metals-and-more, minimap-contract, config-validation e segunda execução localization-contract.
+- Workflow principal: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43470401496. KTools/KTEX, parser Lua 5.1, harnesses disponíveis, wiring do livro/robôs, assets, conteúdo do pacote e upload passaram.
+- Artefato automático: metals-and-more-reforged-2.9.6, 6.591.877 bytes, ID 14060670957, expira em 27/11/2026. Apesar de a branch mirar 2.9.7, o artefato ainda está rotulado 2.9.6; não tratar como release/candidato final 2.9.7.
+- CI aprovada não substitui teste in-game. A PR #51 permanece draft e não mesclada; sem publicação na Oficina.

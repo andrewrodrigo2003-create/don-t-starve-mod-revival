@@ -1,7 +1,7 @@
 name = "Metals and More Reforged"
-description = "Create armor and weapons at your new craftable workbench."
+description = "Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
-version = "2.9.5"
+version = "2.9.6"
 forumthread = ""
 
 api_version = 10
@@ -17,6 +17,16 @@ all_clients_require_mod = true
 client_only_mod = false
 
 configuration_options = {
+    {
+        name = "mam_language",
+        label = "Language / Idioma",
+        hover = "Choose Brazilian Portuguese or English for Metals and More Reforged.",
+        options = {
+            { description = "Português (Brasil)", data = "ptbr" },
+            { description = "English", data = "en" },
+        },
+        default = "ptbr",
+    },
 	{
         name = "craftingbook",
         label = "Crafting book",
@@ -723,7 +733,7 @@ configuration_options = {
 	{
         name = "mam_recipe_overrides",
         label = "Recipe overrides",
-		hover = "How far this mod may rewrite VANILLA recipes (science machine costs, gold tools, the craft book's station). Uncompromising Mode Beta and other balance mods write the same recipe fields, and whoever writes last wins in silence. Safe checks each recipe first: if another mod already rebalanced it we keep those numbers and only apply our own station gating. Full always applies our numbers, which is the original 2.9.3 behaviour. Recipes this mod adds on its own are never affected.",
+		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. The separate third-party recipe integration switch controls whether supported recipes changed by other mods may be moved to our progression. Neither option controls MAM-owned axe, chisel or Sawing Table mechanics. Recipes added by this mod are unaffected.",
         options =
         {
 			{description = "Never - leave vanilla recipes to other mods", data = 0},
@@ -850,15 +860,225 @@ configuration_options = {
         },
         default = 1,
 	},
+    {
+        name = "mam_drop_rocky",
+        label = "Rocky: poeira mineral / Rock Lobsters: mineral dust",
+        hover = "Rocky selvagens podem soltar pequenas quantidades de poeira de cobre e, raramente, ferro. Rockies seguindo um jogador nao geram esses drops. / Wild Rockys may drop small amounts of copper dust and rarely iron dust. Player-following Rockies are excluded.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_rubble",
+        label = "Escombros de cavernas / Cave rubble",
+        hover = "Minerar escombros naturais de cavernas pode revelar poeira de cobre e, raramente, ferro. Os drops originais de pedra sao preservados. / Mining natural cave rubble may reveal copper dust and rarely iron dust. Original rock drops are preserved.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_ancient_statues",
+        label = "Estatuas antigas das Ruinas / Ancient Ruins statues",
+        hover = "Minerar estatuas antigas pode revelar poeira metalica em pequenas quantidades. Gemas e Thulecite originais nao sao alteradas. / Mining ancient statues may reveal small amounts of metal dust. Original gems and Thulecite are unchanged.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_rocky_chance", label = "Chance: Rocky / Rocky chance",
+        hover = "Multiplicador apenas dos drops MAM de Rockys selvagens. / Scales only MAM drops from wild Rockys.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_rubble_chance", label = "Chance: escombros / Rubble chance",
+        hover = "Multiplicador apenas dos drops MAM de escombros naturais de cavernas. / Scales only MAM drops from natural cave rubble.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_ancient_statues_chance", label = "Chance: estatuas antigas / Ancient statues chance",
+        hover = "Multiplicador apenas dos drops MAM de estatuas das Ruinas. / Scales only MAM drops from ancient Ruins statues.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_knight",
+        label = "Cavaleiro mecânico / Clockwork Knight",
+        hover = "Minério de cobre. Também respeita o controle geral de criaturas das Ruínas. / Copper ore. Also obeys the Ruins family master switch.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_knight_chance",
+        label = "Chance: Cavaleiro mecânico / Clockwork Knight",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_rook",
+        label = "Torre mecânica / Clockwork Rook",
+        hover = "Lingotes de cobre e ferro. / Copper and iron ingots.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_rook_chance",
+        label = "Chance: Torre mecânica / Clockwork Rook",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_bishop",
+        label = "Bispo mecânico / Clockwork Bishop",
+        hover = "Fragmentos de gemas e lingotes raros. / Gem shards and rare ingots.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_bishop_chance",
+        label = "Chance: Bispo mecânico / Clockwork Bishop",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_chessjunk",
+        label = "Sucata de xadrez / Chess junk",
+        hover = "Poeira de cobre e fragmentos de gemas. / Copper dust and gem shards.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_chessjunk_chance",
+        label = "Chance: Sucata de xadrez / Chess junk",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_firehound",
+        label = "Cão de fogo / Fire Hound",
+        hover = "Fragmentos de rubi; a regra Auto do Uncompromising Mode continua valendo. / Red gem shards; Uncompromising Mode Auto behavior is preserved.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_firehound_chance",
+        label = "Chance: Cão de fogo / Fire Hound",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_icehound",
+        label = "Cão de gelo / Ice Hound",
+        hover = "Fragmentos de safira; a regra Auto do Uncompromising Mode continua valendo. / Blue gem shards; Uncompromising Mode Auto behavior is preserved.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_icehound_chance",
+        label = "Chance: Cão de gelo / Ice Hound",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_slurtle",
+        label = "Slurtle",
+        hover = "Poeira de ferro rara, como resíduo mineral do casco. / Rare iron dust from mineral traces in its shell.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_slurtle_chance",
+        label = "Chance: Slurtle",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_snurtle",
+        label = "Snurtle",
+        hover = "Poeira de ferro rara, um pouco mais provável que em Slurtles. / Rare iron dust, slightly more likely than from Slurtles.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_drop_snurtle_chance",
+        label = "Chance: Snurtle",
+        hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
 	{
-        name = "mam_metalschest",
-        label = "Metal storage chest",
-        hover = "Adds a 25-slot chest for registered metal-smelting inputs and outputs, including ores, dusts, shards, ingots and alloys. The filter follows the live smelting registries; it does not pull items from nearby containers.",
+        name = "mam_robot_smelting",
+        label = "Collector robot forge automation",
+        hover = "When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
         options =
         {
             {description = "Off", data = 0},
             {description = "On", data = 1},
         },
-        default = 1,
+        default = 0,
 	},
+
+
+    {
+        name = "mam_third_party_recipe_integration",
+        label = "Receitas de outros mods / Other-mod recipes",
+        hover = "Ativado: adapta receitas compatíveis preservando ingredientes e metadados. Desativado: deixa receitas de terceiros intactas. Não desativa machado, cinzel ou Mesa de Serragem próprios do MAM. / On adapts supported recipes while preserving ingredients and metadata. Off leaves third-party recipes untouched. Does not disable MAM-owned axe, chisel or Sawing Table mechanics.",
+        options = {{description = "Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_allow_third_party_drop_overrides",
+        label = "Substituir drops de outros mods / Replace other-mod loot",
+        hover = "Aplica-se somente ao modo Rewrite antigo. Ativado permite substituir tabelas de loot compartilhadas. Desativado força drops aditivos e preserva as tabelas existentes. / Only applies to legacy Rewrite mode. On permits replacing shared loot tables. Off forces additive drops and preserves live tables.",
+        options = {{description = "Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
+        default = 0,
+    },
+    {
+        name = "mam_drop_boulders_chance", label = "Chance de drops em rochas / Boulder drop chance",
+        hover = "Ajusta somente os materiais do Metals and More obtidos de rochas de ouro e lunares. / Scales only Metals and More materials from gold and moon boulders.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_stalagmites_chance", label = "Chance em estalagmites / Cave formation drop chance",
+        hover = "Ajusta somente os materiais do Metals and More obtidos de estalagmites e estalactites. / Scales only Metals and More materials from cave stalagmites and stalactites.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_chess_chance", label = "Chance em criaturas das ruínas / Ruins creature drop chance",
+        hover = "Ajusta somente os materiais do Metals and More obtidos de mecanismos e peças de xadrez. / Scales only Metals and More materials from clockworks and chess junk.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_hounds_chance", label = "Chance de fragmentos em cães elementais / Hound gem-shard chance",
+        hover = "Ajusta somente os fragmentos de gemas do Metals and More. A opção Auto/Sempre continua controlando a interação com Uncompromising Mode. / Scales only Metals and More gem-shard rolls. The separate Auto/Always option still controls Uncompromising Mode interaction.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_marbletree_chance", label = "Chance em árvores de mármore / Marble-tree drop chance",
+        hover = "Ajusta somente os materiais do Metals and More obtidos de árvores de mármore naturais. / Scales only Metals and More material rolls from naturally generated marble trees.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_shark_chance", label = "Chance de escama de tubarão / Sharkscale drop chance",
+        hover = "Ajusta somente as chances de escama de tubarão adicionadas pelo Metals and More. / Scales only the sharkscale rolls added by Metals and More.",
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        default = 100,
+    },
+    {
+        name = "mam_drop_marbleshrub_quantity", label = "Minério dos arbustos de mármore / Marble-shrub iron ore",
+        hover = "Controla somente a quantidade de minério de ferro do Metals and More. Os demais drops do arbusto e de outros mods não mudam. / Controls only Metals and More iron ore quantity. Other shrub loot and other mods' drops are unchanged.",
+        options = {{description = "Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
+        default = 100,
+    },
+
 }
