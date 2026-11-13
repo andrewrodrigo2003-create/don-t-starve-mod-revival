@@ -4,21 +4,26 @@ local Image = require("widgets/image")
 local ImageButton = require("widgets/imagebutton")
 local Text = require("widgets/text")
 local products = require("smelting_products")
+local MAMConfig = require("mam/config")
+
+local function L(ptbr, english)
+    return MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
+end
 
 local TAG_LABELS =
 {
-    copper = "Copper / Cobre",
-    iron = "Iron / Ferro",
-    gold = "Gold / Ouro",
+    copper = L("Cobre", "Copper"),
+    iron = L("Ferro", "Iron"),
+    gold = L("Ouro", "Gold"),
     metal = "Metal",
-    moonglass = "Moonglass / Vidro lunar",
-    moon = "Moon / Lunar",
+    moonglass = L("Vidro lunar", "Moonglass"),
+    moon = L("Lunar", "Moon"),
     mineral = "Mineral",
-    steel = "Steel / Aço sombrio",
-    red = "Red / Vermelho",
-    blue = "Blue / Azul",
-    yellow = "Yellow / Amarelo",
-    gem = "Gem / Gema",
+    steel = L("Aço sombrio", "Shadow steel"),
+    red = L("Vermelho", "Red"),
+    blue = L("Azul", "Blue"),
+    yellow = L("Amarelo", "Yellow"),
+    gem = L("Gema", "Gem"),
 }
 
 local function display_name(prefab)
@@ -30,7 +35,7 @@ local function format_requirements(recipe)
     local parts = {}
     local cost = recipe.cost
     if cost == nil then
-        return "Mixed load / Carga mista (legacy recipe)"
+        return L("Carga mista (receita legada)", "Mixed load (legacy recipe)")
     end
     for tag, amount in pairs(cost.tags or {}) do
         table.insert(parts, (TAG_LABELS[tag] or tag) .. " × " .. tostring(amount))
@@ -39,7 +44,7 @@ local function format_requirements(recipe)
         table.insert(parts, display_name(prefab) .. " × " .. tostring(amount))
     end
     table.sort(parts)
-    return #parts > 0 and table.concat(parts, ", ") or "Recipe-specific load / Carga específica"
+    return #parts > 0 and table.concat(parts, ", ") or L("Carga específica", "Recipe-specific load")
 end
 
 local function build_pages()
@@ -52,123 +57,120 @@ local function build_pages()
     local pages =
     {
         {
-            title = "Metalworking / Metalurgia",
+            title = L("Metalurgia", "Metalworking"),
             body = table.concat({
-                "READ-ONLY GUIDE / GUIA DE CONSULTA",
+                L("GUIA DE CONSULTA", "READ-ONLY GUIDE"),
                 "",
-                "The forge is still required to process materials. This book does not unlock recipes or craft items remotely.",
-                "A forja continua necessária para processar materiais. Este livro não desbloqueia receitas nem fabrica itens à distância.",
+                L("A forja continua necessária para processar materiais. Este livro não desbloqueia receitas nem fabrica itens à distância.",
+                    "The forge is still required to process materials. This book does not unlock recipes or craft items remotely."),
                 "",
-                "Ingredient tags allow different registered materials to satisfy the same requirement. Mixed loads may have weighted alternative outcomes.",
-                "Tags permitem que materiais registrados diferentes satisfaçam o mesmo requisito. Cargas mistas podem ter resultados alternativos com probabilidades.",
+                L("Tags de ingredientes permitem que diferentes materiais registrados satisfaçam o mesmo requisito. Cargas mistas podem gerar resultados alternativos com probabilidades.",
+                    "Ingredient tags allow different registered materials to satisfy the same requirement. Mixed loads may have weighted alternative outcomes."),
                 "",
-                "Batch quantity depends on the materials loaded and the server's batch settings. Use the live forge preview for the current load.",
-                "A quantidade do lote depende dos materiais e das configurações do servidor. Consulte a prévia da forja para a carga atual.",
-            }, "\n"),
+                L("A quantidade do lote depende dos materiais carregados e das configurações do servidor. Consulte a prévia da forja para a carga atual.",
+                    "Batch quantity depends on the loaded materials and server settings. Use the live forge preview for the current load."),
+            }, "\\n"),
+        },
+        {
+            title = L("Materiais e progressão", "Materials & progression"),
+            body = table.concat({
+                L("Cobre: pó de cobre → minério de cobre → lingote de cobre.",
+                    "Copper: copper dust → copper ore → copper ingot."),
+                L("Ferro: pó de ferro → minério de ferro → lingote de ferro.",
+                    "Iron: iron dust → iron ore → iron ingot."),
+                L("Ouro: pó de ouro → pepita de ouro → lingote de ouro.",
+                    "Gold: gold dust → gold nugget → gold ingot."),
+                L("Bronze: 3 unidades de cobre + 1 unidade de ferro, conforme o custo da receita.",
+                    "Bronze: 3 copper-value units + 1 iron-value unit, according to the recipe cost."),
+                L("Vidro lunar: 2 unidades de vidro lunar + 1 unidade de material lunar.",
+                    "Moonglass: 2 moonglass-value units + 1 moon-value unit."),
+                L("Adamantium: 3 unidades de aço sombrio + 1 lingote de ferro nomeado.",
+                    "Adamantium: 3 shadow-steel units + 1 named iron ingot."),
+                "",
+                L("A desmontagem recupera componentes canônicos registrados; não reproduz necessariamente os mesmos itens usados originalmente em cargas mistas.",
+                    "Deconstruction recovers registered canonical components; it does not necessarily reproduce the exact items originally used in mixed loads."),
+            }, "\\n"),
+        },
+        {
+            title = L("Mineração e fontes", "Mining & sources"),
+            body = table.concat({
+                L("Rochas: rochas de ouro podem fornecer pó de ouro; rochas lunares e suas conchas podem fornecer materiais de ferro.",
+                    "Boulders: gold boulders can yield gold dust; moon rocks and moon-rock shells can provide iron materials."),
+                L("Cavernas: estalagmites e estalactites podem fornecer cobre, pó de ouro e, ocasionalmente, materiais de gema.",
+                    "Caves: stalagmites and stalactites can provide copper, gold dust and occasional gem materials."),
+                L("Ruínas: mecanismos de xadrez e sucata podem fornecer materiais de cobre, ferro e fragmentos de gemas.",
+                    "Ruins: clockworks and chess junk can provide copper/iron materials and gem shards."),
+                L("Mármore: árvores naturais e arbustos de mármore fornecem drops metalúrgicos; árvores plantadas não recebem o bônus de árvore natural.",
+                    "Marble: natural marble trees and shrubs provide metallurgy drops; planted trees do not receive the natural-tree bonus."),
+                L("Criaturas: cães de fogo e gelo podem fornecer fragmentos de gemas; tubarões fornecem escamas de tubarão.",
+                    "Creatures: fire and ice hounds can provide gem shards; sharks provide sharkscale."),
+                "",
+                L("As chances são controladas pelas configurações do mod. Desativar uma fonte não remove os drops vanilla.",
+                    "Drop chances are controlled by the mod settings. Disabling a source does not remove vanilla drops."),
+            }, "\\n"),
+        },
+        {
+            title = L("Bancada de Guerra", "War Bench"),
+            body = table.concat({
+                L("Equipamentos, ferramentas e estruturas metálicas selecionadas ficam disponíveis na Bancada de Guerra (ALCHEMY_ONE).",
+                    "Metal equipment, tools and selected metal structures are available at the War Bench (ALCHEMY_ONE)."),
+                "",
+                L("Itens da progressão da Máquina de Ciência, do Motor de Alquimia e o transistor permanecem no caminho científico para evitar ciclos de pré-requisitos.",
+                    "Science Machine and Alchemy Engine progression items, plus the transistor, remain on the science path to avoid prerequisite loops."),
+                "",
+                L("A migração de bancada altera apenas a tecnologia exigida e o filtro de criação. Ingredientes e metadados ativos de outros mods são preservados.",
+                    "Station migration changes only the required technology and crafting filter. Live ingredients and metadata from other mods are preserved."),
+            }, "\\n"),
+        },
+        {
+            title = L("Desmontagem", "Deconstruction"),
+            body = table.concat({
+                L("Clique com o botão direito em um material metalúrgico recuperável perto da Bancada de Guerra.",
+                    "Right-click a recoverable metallurgical material near the War Bench."),
+                "",
+                L("A recuperação padrão tem média de 75% por unidade de componente. A operação aceita somente materiais com regra explícita de retorno.",
+                    "Standard recovery averages 75% per component unit. The action accepts only materials with an explicit return rule."),
+                "",
+                L("Wilson recupera 100% dos componentes listados. Winona recupera 100% dos metais não mágicos. Maxwell recupera 100% dos materiais sombrios; outros componentes seguem a taxa padrão.",
+                    "Wilson recovers 100% of listed components. Winona recovers 100% of non-magical metals. Maxwell recovers 100% of shadow materials; other components use the standard rate."),
+                "",
+                L("Armas, armaduras, ferramentas, equipamentos e estruturas não podem ser desmontados. Materiais sem proveniência segura também não são aceitos.",
+                    "Weapons, armor, tools, equipment and structures cannot be dismantled. Materials without safe provenance are also rejected."),
+                "",
+                L("A operação consome uma unidade mesmo quando o sorteio não retorna componentes. Não há nova tentativa gratuita nem conversão para um estágio superior.",
+                    "The action consumes one unit even when the recovery roll returns no components. There are no free retries or upward conversions."),
+            }, "\\n"),
+        },
+        {
+            title = L("Automação por robô", "Collector robot automation"),
+            body = table.concat({
+                L("A opção de automação da forja por robô coletor vem desativada por padrão.",
+                    "Collector robot forge automation is Off by default."),
+                "",
+                L("Com W.O.B.O.T. abastecido ou W.I.N.bot implantado e ativo por perto, a forja pode retirar apenas ingredientes registrados de baús e mochilas compatíveis próximos.",
+                    "With a fueled W.O.B.O.T. or deployed, active W.I.N.bot nearby, the smelter can pull only registered ingredients from nearby compatible chests and packs."),
+                "",
+                L("Quando o lote termina, o produto vai para o armazenamento compatível mais próximo com espaço. Se não houver espaço, permanece pronto na forja para retirada manual.",
+                    "When the batch finishes, the product goes to the nearest compatible storage with room. Otherwise it remains ready in the smelter for manual collection."),
+                "",
+                L("Inventários de jogadores e armazenamentos portáteis nunca são vasculhados nem esvaziados.",
+                    "Player inventories and portable storage are never scanned or drained."),
+            }, "\\n"),
+        },
+        {
+            title = L("Compatibilidade e segurança", "Compatibility & safety"),
+            body = table.concat({
+                L("Overrides de receitas usam assinaturas vanilla protegidas. Se outro mod alterar uma receita protegida, Metals and More cede em vez de sobrescrever silenciosamente seus ingredientes.",
+                    "Recipe overrides use guarded vanilla signatures. If another mod changes a protected recipe, Metals and More yields instead of silently replacing its ingredients."),
+                "",
+                L("Drops de cães do Uncompromising Mode usam Auto por padrão. Drops de escamas de tubarão são aditivos. Este mod não altera arquivos de outros mods.",
+                    "Uncompromising Mode hound drops default to Auto. Sharkscale drops are additive. This mod does not edit other mods' files."),
+                "",
+                L("Sempre teste atualizações em um mundo separado antes de usar um save principal.",
+                    "Always test updates in a separate world before using a main save."),
+            }, "\\n"),
         },
     }
-
-    table.insert(pages, {
-        title = "Materials & progression / Materiais e progressão",
-        body = table.concat({
-            "Smelting / Fundição: dust → ore → ingot. Deconstruction reverses this: ingot → ore → dust.",
-            "Fundição: poeira → minério → lingote. Desmontagem inverte o caminho: lingote → minério → poeira.",
-            "Alloys consume their exact component recipe; the forge planner is the authority for batch costs.",
-            "Ligas consomem seus componentes exatos; a prévia da forja mostra o custo do lote.",
-            "",
-            "Copper / Cobre: copper dust → copper ore → copper ingot.",
-            "Iron / Ferro: iron dust → iron ore → iron ingot.",
-            "Gold / Ouro: gold dust → gold nugget → gold ingot.",
-            "Bronze: 3 copper ore + 1 iron ore.",
-            "Moonglass: 2 moonglass + 1 moonrocknugget.",
-            "Adamantium: 3 nightmare fuel + 1 iron ingot.",
-            "",
-            "The guide reflects the active smelting data; mixed loads and batch settings can change the number produced.",
-            "O guia reflete os dados de fundição ativos; cargas mistas e configurações de lote alteram a quantidade produzida.",
-        }, "\n"),
-    })
-
-    table.insert(pages, {
-        title = "Mining & sources / Mineração e fontes",
-        body = table.concat({
-            "Boulders / Rochas: gold boulders can yield gold dust; moon rocks and moon-rock shells provide iron materials.",
-            "Cave formations / Formações de caverna: stalagmites and stalactites provide copper materials, gold dust and occasional gem materials.",
-            "Ruins / Ruínas: clockworks and chess junk can yield copper/iron materials and gem shards.",
-            "Marble / Mármore: natural marble trees and marble shrubs provide metal-related drops; planted marble trees are excluded from the natural-tree bonus.",
-            "Creatures / Criaturas: fire and ice hound gem shards use Auto mode to yield to Uncompromising Mode; sharks provide sharkscale.",
-            "",
-            "Drop chances remain controlled by the mod configuration. Disabling a source does not remove its vanilla drops.",
-            "As chances continuam controladas pelas opções do mod. Desativar uma fonte não remove os drops vanilla.",
-        }, "\n"),
-    })
-
-    table.insert(pages, {
-        title = "War Bench / Bancada de Guerra",
-        body = table.concat({
-            "Metal equipment, tools and selected metal structures are available at the War Bench (ALCHEMY_ONE).",
-            "Equipamentos, ferramentas e estruturas metálicas selecionadas ficam na Bancada de Guerra (ALCHEMY_ONE).",
-            "",
-            "The Science Machine / Alchemy Engine progression items and transistor remain on the science path so the War Bench does not become a prerequisite loop.",
-            "Itens de progressão da Máquina de Ciência / Motor de Alquimia e o transistor permanecem na progressão científica para evitar um ciclo de pré-requisitos.",
-            "",
-            "Recipe station migration changes only the required technology and crafting filter. It preserves live ingredient lists and recipe metadata from other mods.",
-            "A migração altera apenas a tecnologia e o filtro da bancada. Ingredientes e metadados de receitas de outros mods são preservados.",
-        }, "\n"),
-    })
-
-    table.insert(pages, {
-        title = "Deconstruction / Desmontagem",
-        body = table.concat({
-            "Right-click a supported metal material or crafted metal item while near the War Bench.",
-            "Clique com o botão direito em um material metálico ou equipamento compatível perto da Bancada de Guerra.",
-            "",
-            "Standard recovery: 75% average per ingredient unit. Item durability scales equipment salvage; a fully depleted item has no remaining salvage.",
-            "Retorno padrão: média de 75% por unidade de ingrediente. A durabilidade reduz o retorno de equipamentos; um item totalmente gasto não tem sucata restante.",
-            "",
-            "Wilson: 100% of listed components. Winona: 100% for non-magical metals. Maxwell: 100% for shadow materials; other components keep the standard rate.",
-            "Wilson: 100% dos componentes listados. Winona: 100% dos metais não mágicos. Maxwell: 100% dos materiais sombrios; os demais seguem a taxa padrão.",
-            "",
-            "WX-78 and Wickerbottom have no special recovery bonus assigned yet. The live recipe is used for crafted equipment, so other mods' ingredient changes are respected.",
-            "WX-78 e Wickerbottom ainda não têm bônus especial. Equipamentos usam a receita ativa, respeitando mudanças de ingredientes feitas por outros mods.",
-            "",
-            "Wilson's separate cross-material transmutation table is not part of this build; only exact ingredient recovery is active.",
-            "A tabela separada de transmutação entre materiais de Wilson não está nesta versão; apenas a recuperação exata dos ingredientes está ativa.",
-            "",
-            "The operation consumes one item even if the random recovery roll returns nothing. No retry exploit, upward conversion or free material loop is intended.",
-            "A operação consome um item mesmo se o sorteio não devolver materiais. Não há tentativa gratuita, conversão para cima ou ciclo de materiais infinitos.",
-        }, "\n"),
-    })
-
-    table.insert(pages, {
-        title = "Collector robot automation / Automação",
-        body = table.concat({
-            "Optional setting: Collector robot forge automation (default Off).",
-            "Opção: Automação da forja por robô coletor (desativada por padrão).",
-            "",
-            "With a fueled, active W.O.B.O.T. or deployed W.I.N.bot nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs.",
-            "Com W.O.B.O.T. abastecido ou W.I.N.bot implantado e ativo por perto, a forja puxa apenas ingredientes registrados de baús e mochilas compatíveis próximos.",
-            "",
-            "When the batch is ready, the output is deposited into the nearest compatible storage with enough room. If none has space, the output remains ready in the smelter for manual collection.",
-            "Quando o lote termina, o produto vai para o armazenamento compatível mais próximo com espaço. Se nenhum tiver espaço, o produto fica pronto na forja para retirada manual.",
-            "",
-            "Player inventories and portable storage are never scanned or drained.",
-            "Inventários de jogadores e armazenamentos portáteis nunca são vasculhados ou esvaziados.",
-        }, "\n"),
-    })
-
-    table.insert(pages, {
-        title = "Compatibility & safety / Compatibilidade e segurança",
-        body = table.concat({
-            "Recipe overrides use a guarded vanilla signature. When another mod changes a protected recipe, Metals and More yields instead of silently replacing its ingredients.",
-            "Overrides usam assinaturas vanilla protegidas. Quando outro mod altera uma receita protegida, Metals and More cede em vez de sobrescrever os ingredientes.",
-            "",
-            "Uncompromising Mode hound drops default to Auto. Shark materials are additive. The guide and forge do not modify Uncompromising Mode files.",
-            "Drops de hounds do Uncompromising Mode usam Auto por padrão. Materiais de tubarão são aditivos. O guia e a forja não alteram arquivos do Uncompromising Mode.",
-            "",
-            "Always test new changes in a separate world before using a main save.",
-            "Sempre teste atualizações em um mundo separado antes de usar um save principal.",
-        }, "\n"),
-    })
 
     local per_page = 3
     for first = 1, #names, per_page do
@@ -178,17 +180,17 @@ local function build_pages()
             local name = names[index]
             local recipe = products[name]
             table.insert(lines, display_name(name))
-            table.insert(lines, "  Base time / Tempo base: " .. tostring(recipe.cooktime or 1) .. " s")
-            table.insert(lines, "  Output / Saída: variable by batch / variável por lote")
+            table.insert(lines, L("  Tempo base: ", "  Base time: ") .. tostring(recipe.cooktime or 1) .. " s")
+            table.insert(lines, L("  Saída: variável conforme o lote", "  Output: varies by batch"))
             if recipe.max_batch ~= nil then
-                table.insert(lines, "  Max input batch / Lote máximo de entrada: " .. tostring(recipe.max_batch))
+                table.insert(lines, L("  Lote máximo de entrada: ", "  Max input batch: ") .. tostring(recipe.max_batch))
             end
-            table.insert(lines, "  Requirements / Requisitos: " .. format_requirements(recipe))
+            table.insert(lines, L("  Requisitos: ", "  Requirements: ") .. format_requirements(recipe))
             table.insert(lines, "")
         end
         table.insert(pages, {
-            title = "Recipes / Receitas",
-            body = table.concat(lines, "\n"),
+            title = L("Receitas", "Recipes"),
+            body = table.concat(lines, "\\n"),
         })
     end
     return pages
@@ -229,14 +231,14 @@ local MetallurgyBookScreen = Class(Screen, function(self, owner)
     self.previous = self.root:AddChild(ImageButton("images/global.xml", "square.tex"))
     self.previous:SetScale(0.35)
     self.previous:SetPosition(-300, -235)
-    self.previous:SetText("Previous / Anterior")
+    self.previous:SetText(L("Anterior", "Previous"))
     self.previous:SetTextSize(18)
     self.previous:SetOnClick(function() self:SetPage(self.page - 1) end)
 
     self.next = self.root:AddChild(ImageButton("images/global.xml", "square.tex"))
     self.next:SetScale(0.35)
     self.next:SetPosition(300, -235)
-    self.next:SetText("Next / Próxima")
+    self.next:SetText(L("Próxima", "Next"))
     self.next:SetTextSize(18)
     self.next:SetOnClick(function() self:SetPage(self.page + 1) end)
 
@@ -256,7 +258,7 @@ function MetallurgyBookScreen:SetPage(page)
     local data = self.pages[self.page]
     self.title:SetString(data.title)
     self.body:SetString(data.body)
-    self.page_text:SetString(string.format("Page %d / %d", self.page, #self.pages))
+    self.page_text:SetString(string.format(L("Página %d / %d", "Page %d / %d"), self.page, #self.pages))
 end
 
 function MetallurgyBookScreen:OnDestroy()
