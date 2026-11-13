@@ -81,6 +81,43 @@ local function make_item(prefab, count, slot)
     return { prefab = prefab, count = count or 1, slot = slot or 1 }
 end
 
+-- Every ready plan must account for every input item exactly once:
+-- consumed + leftovers = original count, in the original slot and prefab.
+local function assert_material_conservation(label, items, plan)
+    if plan.state ~= "ready" then
+        return
+    end
+
+    local original = {}
+    for _, item in ipairs(items) do
+        original[item.slot] = { prefab = item.prefab, count = item.count or 1 }
+    end
+
+    local consumed, leftovers = {}, {}
+    local function accumulate(entries, totals, kind)
+        for _, entry in ipairs(entries or {}) do
+            local source = original[entry.slot]
+            check(label .. " " .. kind .. " slot exists",
+                source ~= nil, "unexpected slot " .. tostring(entry.slot))
+            if source ~= nil then
+                check(label .. " " .. kind .. " prefab matches slot",
+                    source.prefab == entry.prefab,
+                    "slot " .. tostring(entry.slot) .. " expected " .. source.prefab
+                        .. ", got " .. tostring(entry.prefab))
+            end
+            totals[entry.slot] = (totals[entry.slot] or 0) + entry.count
+        end
+    end
+
+    accumulate(plan.consumed, consumed, "consumed")
+    accumulate(plan.leftovers, leftovers, "leftover")
+
+    for slot, source in pairs(original) do
+        equal(label .. " conservation slot " .. tostring(slot),
+            (consumed[slot] or 0) + (leftovers[slot] or 0), source.count)
+    end
+end
+
 local function set_config(batch, cap, growth, forecast)
     config_values.mam_batch = batch and 1 or 0
     config_values.mam_batch_cap = cap or 10
@@ -100,6 +137,7 @@ local function plan_for(items)
     if not ok then
         error(result)
     end
+    assert_material_conservation("smelting plan", items, result)
     return result
 end
 
@@ -222,6 +260,32 @@ near("forecast time uses supplied server growth", forecast.smelttime, 18.75)
 equal("forecast does not mutate input", forecast_items[1].count, 6)
 equal("forecast reports deterministic outcome", forecast.deterministic, true)
 
+-- Forecast is a pure calculation and must not depend on the random generator.
+local old_random_for_forecast = math.random
+math.random = function()
+    error("forecast must not call math.random")
+end
+local forecast_ok, forecast_without_random = pcall(
+    smelting.ForecastSmelterPlan,
+    "metal_smelter",
+    forecast_items,
+    { batch = true, cap = 10, batch_time = 25 }
+)
+math.random = old_random_for_forecast
+check("forecast does not call math.random",
+    forecast_ok and forecast_without_random.product == "copper_ingot")
+
+-- Split stacks in separate slots must conserve each slot independently.
+-- Restore batch mode after the preceding forecast test disabled local config.
+set_config(true, 10, 25, 2)
+local split_copper_items = {
+    make_item("copper_ore", 3, 1),
+    make_item("copper_ore", 3, 2),
+}
+local split_copper = plan_for(split_copper_items)
+equal("split-stack copper output count", split_copper.count, 2)
+assert_consumption("split-stack copper", split_copper, { copper_ore = 6 }, {})
+
 -- A client configured for batch mode must still forecast a server with it off.
 local server_off_forecast = smelting.ForecastSmelterPlan(
     "metal_smelter",
@@ -331,6 +395,26 @@ for product, recipe in pairs(smelting.recipes.metal_smelter) do
     end
 end
 check("built-in smelting recipe registry is non-empty", recipe_contracts > 0)
+
+-- External recipes without explicit cost metadata preserve the legacy
+-- consume-all contract, so leftover mode cannot turn them into free output.
+AddSmelterSmelterRecipe("metal_smelter", {
+    name = "test_external_no_cost",
+    priority = 999,
+    cooktime = 1,
+    test = function(_, names, tags)
+        return tags.metal ~= nil and tags.metal >= 1
+    end,
+})
+local external_items = {
+    make_item("copper_ore", 5, 1),
+    make_item("twigs", 1, 2),
+}
+local external = plan_for(external_items)
+equal("external no-cost recipe product", external.product, "test_external_no_cost")
+equal("external no-cost recipe output count", external.count, 1)
+assert_consumption("external no-cost recipe", external,
+    { copper_ore = 5, twigs = 1 }, {})
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
