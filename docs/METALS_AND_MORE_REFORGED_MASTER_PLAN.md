@@ -453,3 +453,30 @@ Na branch 2.9.7, as configurações abaixo já foram ligadas ao código:
 - Interruptores por fonte de drop já existentes continuam separados; nenhuma dessas opções desliga as demais fontes.
 
 Os testes de configuração e de runtime foram ampliados para verificar isolamento entre as opções, preservação de receitas de terceiros, fallback aditivo e escalonamento de chances. Isso não significa que toda a atualização esteja pronta: machado/cinzel obrigatórios, integração verificada da Mesa de Serragem e cobertura completa de adaptadores ainda precisam ser concluídos antes do pacote 2.9.7.
+
+## 20. Continuidade da implementação 2.9.7 — 2026-11-13
+
+### Estado remoto e CI
+- PR #51 continua draft e aberta, sem merge ou publicação. HEAD de trabalho desta etapa: a2122113fc9dfc0c3e9f89a64d2f4f24083871af.
+- No HEAD anterior a esta etapa, todos os seis checks consultados estavam success. As alterações novas de localização e desmontagem acionaram nova CI; a conclusão do HEAD acima deve ser consultada antes de considerar a etapa validada.
+- Nenhum arquivo de Uncompromising Mode, Hydrated/Dehydrated, Better Lucy ou outro mod foi alterado.
+
+### Livro e localização
+- A tela do Guia de Metalurgia agora escolhe um único idioma por configuração: pt-BR ou inglês; títulos, páginas, requisitos, botões e paginação deixam de concatenar os dois idiomas.
+- A página de desmontagem foi corrigida para refletir o comportamento real da branch 2.9.7: somente materiais explicitamente registrados, sem salvage de equipamentos.
+- O texto da ação e o aviso de inventário cheio também seguem o idioma selecionado.
+- Contratos Python adicionados para proteger a localização do guia e impedir que a descrição volte a prometer desmontagem de equipamentos.
+- Isto cobre o guia e a ação de desmontagem, não conclui a localização de todos os textos, receitas, opções, notificações e itens do MAM.
+
+### Desmontagem material-only
+- A ação foi simplificada para consultar exclusivamente a allowlist de mam/deconstruction.lua; receitas de equipamento e durabilidade não podem ampliar a elegibilidade.
+- A allowlist atual contém nove materiais: copper_ore, copper_ingot, iron_ore, iron_ingot, goldnugget, gold_ingot, bronze_ingot, moonglass_ingot e adamantium_ingot.
+- O teste Lua agora confirma também a rejeição de poeiras-base, junk_dust, fragmentos de gemas e sharkscale enquanto não houver proveniência reversa segura.
+- Esses itens não foram omitidos por esquecimento: poeiras são estágio-base; junk_dust é subproduto genérico sem composição única; gem shards e sharkscale são entradas/drops brutos sem uma etapa anterior demonstrada. Inventar retornos criaria conversões arbitrárias ou progressão para cima.
+- A operação continua dependente de teste real de inventário, containers de overflow, multiplayer, save/load e interação com a War Bench. CI/harness não certificam o motor DST.
+
+### Próxima sequência
+1. Aguardar e conferir todos os checks do HEAD atual da PR #51.
+2. Prosseguir com a auditoria da API de crafting cliente/servidor para requisitos de machado e cinzel; não ativar receitas até provar disponibilidade correta no menu e validação autoritativa.
+3. Continuar a localização do restante do mod e a matriz de balanceamento por cadeia, sem alterar custos sem evidência.
+4. Manter a PR em draft até o teste do usuário no mundo 'mundo de testes de mod'. Não gerar/publicar build 2.9.7 nem mesclar antes da validação in-game.
