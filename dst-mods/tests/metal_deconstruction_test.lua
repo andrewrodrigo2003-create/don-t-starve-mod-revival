@@ -62,6 +62,19 @@ assert(recovery.IsSupported("iron_ingot"))
 assert(recovery.IsSupported("bronze_ingot"))
 assert(recovery.IsSupported("moonglass_ingot"))
 assert(recovery.IsSupported("adamantium_ingot"))
+assert(recovery.IsSupported("goldnugget"))
+
+-- Raw inputs and generic by-products have no safe reverse provenance. They
+-- must stay out of the action until an explicit, non-upward conversion exists.
+for _, prefab in ipairs({
+    "copper_dust", "iron_dust", "gold_dust", "junk_dust",
+    "redgem_shard", "bluegem_shard", "yellowgem_shard",
+    "greengem_shard", "orangegem_shard", "purplegem_shard",
+    "sharkscale",
+}) do
+    assert(not recovery.IsSupported(prefab),
+        "material without a safe reverse rule must remain unsupported: " .. prefab)
+end
 assert(recovery.BuildPlan("unknown_metal", "wilson", always_success) == nil)
 
 print("PASS: material-only deconstruction, survivor profile resolution and unsupported equipment")
