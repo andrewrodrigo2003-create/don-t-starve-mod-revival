@@ -69,7 +69,7 @@ local function build_pages()
                 "",
                 L("A quantidade do lote depende dos materiais carregados e das configurações do servidor. Consulte a prévia da forja para a carga atual.",
                     "Batch quantity depends on the loaded materials and server settings. Use the live forge preview for the current load."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Materiais e progressão", "Materials & progression"),
@@ -89,7 +89,7 @@ local function build_pages()
                 "",
                 L("A desmontagem recupera componentes canônicos registrados; não reproduz necessariamente os mesmos itens usados originalmente em cargas mistas.",
                     "Deconstruction recovers registered canonical components; it does not necessarily reproduce the exact items originally used in mixed loads."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Mineração e fontes", "Mining & sources"),
@@ -107,7 +107,7 @@ local function build_pages()
                 "",
                 L("As chances são controladas pelas configurações do mod. Desativar uma fonte não remove os drops vanilla.",
                     "Drop chances are controlled by the mod settings. Disabling a source does not remove vanilla drops."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Bancada de Guerra", "War Bench"),
@@ -120,7 +120,7 @@ local function build_pages()
                 "",
                 L("A migração de bancada altera apenas a tecnologia exigida e o filtro de criação. Ingredientes e metadados ativos de outros mods são preservados.",
                     "Station migration changes only the required technology and crafting filter. Live ingredients and metadata from other mods are preserved."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Desmontagem", "Deconstruction"),
@@ -139,7 +139,7 @@ local function build_pages()
                 "",
                 L("A operação consome uma unidade mesmo quando o sorteio não retorna componentes. Não há nova tentativa gratuita nem conversão para um estágio superior.",
                     "The action consumes one unit even when the recovery roll returns no components. There are no free retries or upward conversions."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Automação por robô", "Collector robot automation"),
@@ -155,7 +155,7 @@ local function build_pages()
                 "",
                 L("Inventários de jogadores e armazenamentos portáteis nunca são vasculhados nem esvaziados.",
                     "Player inventories and portable storage are never scanned or drained."),
-            }, "\\n"),
+            }, "\n"),
         },
         {
             title = L("Compatibilidade e segurança", "Compatibility & safety"),
@@ -168,7 +168,7 @@ local function build_pages()
                 "",
                 L("Sempre teste atualizações em um mundo separado antes de usar um save principal.",
                     "Always test updates in a separate world before using a main save."),
-            }, "\\n"),
+            }, "\n"),
         },
     }
 
@@ -190,7 +190,7 @@ local function build_pages()
         end
         table.insert(pages, {
             title = L("Receitas", "Recipes"),
-            body = table.concat(lines, "\\n"),
+            body = table.concat(lines, "\n"),
         })
     end
     return pages
