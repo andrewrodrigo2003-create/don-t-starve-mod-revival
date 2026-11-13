@@ -157,8 +157,14 @@ planned = {
     },
 }
 local plan_callback = false
+local start_callback_saw_consumed_inputs = false
 smelter.onplanfn = function() plan_callback = true end
+smelter.startsmeltingfn = function()
+    start_callback_saw_consumed_inputs =
+        first.components.stackable.stacksize == 2 and second.removed
+end
 check("StartSmelting accepts a valid plan", smelter:StartSmelting())
+check("start callback runs only after exact inputs are consumed", start_callback_saw_consumed_inputs)
 check("partial stack keeps exact remainder", first.components.stackable.stacksize == 2)
 check("fully consumed stack leaves its slot", container.slots[2] == nil and second.removed)
 check("start closes and locks the container", container.closed and container.canbeopened == false)
@@ -174,6 +180,59 @@ planned = { state = "invalid", reason = "unknown" }
 check("invalid plan cannot start", invalid_smelter:StartSmelting() == false)
 check("invalid plan preserves input", invalid_container.slots[1] == untouched and not untouched.removed)
 check("invalid plan leaves container open", invalid_container.canbeopened == true and not invalid_container.closed)
+
+-- A stale plan must not consume a different prefab that replaced its slot.
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 5,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 2 } },
+}
+local replacement_item = make_item("iron_ore", 3)
+local replacement_container = make_container({ [1] = replacement_item })
+local replacement_smelter = new_smelter(replacement_container)
+local replacement_callback = false
+replacement_smelter.startsmeltingfn = function() replacement_callback = true end
+check("stale prefab plan is rejected", replacement_smelter:StartSmelting() == false)
+check("stale prefab input remains untouched",
+    replacement_container.slots[1] == replacement_item
+        and replacement_item.components.stackable.stacksize == 3)
+check("stale prefab rejection does not run start callback", not replacement_callback)
+check("stale prefab rejection leaves container open", replacement_container.canbeopened == true)
+
+-- A plan that asks for more than the actual stack must not partially consume it.
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 5,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 3 } },
+}
+local short_item = make_item("copper_ore", 2)
+local short_container = make_container({ [1] = short_item })
+local short_smelter = new_smelter(short_container)
+check("insufficient stack plan is rejected", short_smelter:StartSmelting() == false)
+check("insufficient stack remains untouched",
+    short_container.slots[1] == short_item and short_item.components.stackable.stacksize == 2)
+
+-- Duplicate requirements for one slot are aggregated before validation.
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 5,
+    consumed = {
+        { slot = 1, prefab = "copper_ore", count = 2 },
+        { slot = 1, prefab = "copper_ore", count = 2 },
+    },
+}
+local duplicate_item = make_item("copper_ore", 3)
+local duplicate_container = make_container({ [1] = duplicate_item })
+local duplicate_smelter = new_smelter(duplicate_container)
+check("duplicate slot requirements are aggregated", duplicate_smelter:StartSmelting() == false)
+check("duplicate slot rejection preserves stack",
+    duplicate_item.components.stackable.stacksize == 3 and duplicate_container.slots[1] == duplicate_item)
 
 -- Interruption follows the leftovers setting in both directions.
 config.mam_leftovers = 1
