@@ -38,3 +38,30 @@ class LocalizationContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_metallurgy_guide_uses_selected_language_without_mixed_paragraphs(self):
+        screen = (
+            MOD / "scripts" / "screens" / "metallurgybookscreen.lua"
+        ).read_text(encoding="utf-8")
+        self.assertIn('local MAMConfig = require("mam/config")', screen)
+        self.assertIn('L("Metalurgia", "Metalworking")', screen)
+        self.assertIn('L("Desmontagem", "Deconstruction")', screen)
+        self.assertIn('L("Anterior", "Previous")', screen)
+        self.assertIn('L("Próxima", "Next")', screen)
+        self.assertNotIn("Right-click a supported metal material or crafted metal item", screen)
+        self.assertNotIn("Previous / Anterior", screen)
+        self.assertNotIn("Next / Próxima", screen)
+
+    def test_deconstruction_copy_matches_material_only_implementation(self):
+        actions = (
+            MOD / "initialise" / "modded_actions.lua"
+        ).read_text(encoding="utf-8")
+        screen = (
+            MOD / "scripts" / "screens" / "metallurgybookscreen.lua"
+        ).read_text(encoding="utf-8")
+        self.assertIn('and "Dismantle" or "Desmontar"', actions)
+        self.assertIn("MAMDeconstruction.IsSupported(inst.prefab)", actions)
+        self.assertNotIn("supported_equipment", actions)
+        self.assertIn("armaduras, ferramentas, equipamentos e estruturas não podem ser desmontados", screen)
+        self.assertNotIn("Item durability scales equipment salvage", screen)
