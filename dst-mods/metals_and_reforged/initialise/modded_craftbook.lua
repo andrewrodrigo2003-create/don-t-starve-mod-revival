@@ -29,7 +29,7 @@ local TECH = GLOBAL.TECH
 local MAMLog = require("mam/log")
 local MAMRecipeGuard = require("mam/recipe_guard")
 
-MAMRecipeGuard.Init(AddRecipe2)
+MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter, RemoveRecipeFromFilter)
 
 local BRONZE_INGOT_ATLAS = "images/inventoryimages/bronze_ingot.xml"
 local GOLD_INGOT_ATLAS = "images/inventoryimages/gold_ingot.xml"
@@ -90,7 +90,6 @@ local function apply_craftbook(where)
     if has_been_applied then
         return
     end
-    has_been_applied = true
 
     local moved, kept = 0, 0
     for _, entry in ipairs(CRAFTBOOK_RECIPES) do
@@ -103,6 +102,10 @@ local function apply_craftbook(where)
             end
         end
     end
+
+    -- Only mark the pass complete after every entry has been processed.
+    -- MAMLog.Try catches failures; leaving this false lets the world-task fallback retry.
+    has_been_applied = true
 
     MAMLog.Info("craftbook (%s): %d/%d receitas migradas, %d preservando balanceamento de outro mod",
         where, moved, #CRAFTBOOK_RECIPES, kept)

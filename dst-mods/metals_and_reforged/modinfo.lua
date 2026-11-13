@@ -1,7 +1,7 @@
 name = "Metals and More Reforged"
-description = "Create armor and weapons at your new craftable workbench."
+description = "Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
-version = "2.9.5"
+version = "2.9.6"
 forumthread = ""
 
 api_version = 10
@@ -723,7 +723,7 @@ configuration_options = {
 	{
         name = "mam_recipe_overrides",
         label = "Recipe overrides",
-		hover = "How far this mod may rewrite VANILLA recipes (science machine costs, gold tools, the craft book's station). Uncompromising Mode Beta and other balance mods write the same recipe fields, and whoever writes last wins in silence. Safe checks each recipe first: if another mod already rebalanced it we keep those numbers and only apply our own station gating. Full always applies our numbers, which is the original 2.9.3 behaviour. Recipes this mod adds on its own are never affected.",
+		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. War Bench station migration is separate and still moves the listed metal recipes without changing their ingredients. Recipes added by this mod are unaffected.",
         options =
         {
 			{description = "Never - leave vanilla recipes to other mods", data = 0},
@@ -851,14 +851,15 @@ configuration_options = {
         default = 1,
 	},
 	{
-        name = "mam_metalschest",
-        label = "Metal storage chest",
-        hover = "Adds a 25-slot chest for registered metal-smelting inputs and outputs, including ores, dusts, shards, ingots and alloys. The filter follows the live smelting registries; it does not pull items from nearby containers.",
+        name = "mam_robot_smelting",
+        label = "Collector robot forge automation",
+        hover = "When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
         options =
         {
             {description = "Off", data = 0},
             {description = "On", data = 1},
         },
-        default = 1,
+        default = 0,
 	},
+
 }

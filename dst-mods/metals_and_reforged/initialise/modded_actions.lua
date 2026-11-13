@@ -68,3 +68,219 @@ ACTIONS.HARVEST.fn = function(act, ...)
 	end
 	return OldHarvestfn(act, ...)
 end
+
+-- Material deconstruction is an inventory action available only beside the
+-- existing War Bench. The server validates the station, input ownership and
+-- complete output capacity before consuming a single item.
+local MAMDeconstruction = require("mam/deconstruction")
+local FindEntities = GLOBAL.TheSim.FindEntities
+local SpawnPrefab = GLOBAL.SpawnPrefab
+
+local function has_warworkbench(doer)
+    if doer == nil or doer.Transform == nil then
+        return false
+    end
+    local x, y, z = doer.Transform:GetWorldPosition()
+    local entities = FindEntities(GLOBAL.TheSim, x, y, z, 8, { "prototyper" }, { "INLIMBO", "burnt" })
+    for _, entity in ipairs(entities) do
+        if entity.prefab == "warworkbench"
+            and entity.components ~= nil
+            and entity.components.prototyper ~= nil
+            then
+            return true
+        end
+    end
+    return false
+end
+
+local function stage_output_items(plan)
+    local staged = {}
+    for _, entry in ipairs(plan) do
+        local remaining = entry.count
+        while remaining > 0 do
+            local item = SpawnPrefab(entry.prefab)
+            if item == nil then
+                for _, previous in ipairs(staged) do
+                    if previous:IsValid() then previous:Remove() end
+                end
+                return nil
+            end
+            local amount = 1
+            if item.components ~= nil and item.components.stackable ~= nil then
+                local maxsize = math.max(1, item.components.stackable.maxsize or 1)
+                amount = math.min(remaining, maxsize)
+                if amount > 1 then
+                    item.components.stackable:SetStackSize(amount)
+                end
+            end
+            table.insert(staged, item)
+            remaining = remaining - amount
+        end
+    end
+    return staged
+end
+
+local function can_fit_staged_outputs(inventory, staged)
+    local slots = {}
+    local free_slots = 0
+
+    local function scan(slots_table, count)
+        if slots_table == nil then
+            return
+        end
+        for index = 1, count or #slots_table do
+            local item = slots_table[index]
+            if item == nil then
+                free_slots = free_slots + 1
+            else
+                local room = item.components ~= nil and item.components.stackable ~= nil
+                    and item.components.stackable:RoomLeft() or 0
+                table.insert(slots, { item = item, room = room })
+            end
+        end
+    end
+
+    scan(inventory.itemslots, inventory.maxslots)
+    local overflow = inventory:GetOverflowContainer()
+    if overflow ~= nil then
+        scan(overflow.slots, overflow.numslots)
+    end
+
+    for _, output in ipairs(staged) do
+        local stackable = output.components.stackable
+        local remaining = stackable ~= nil and stackable:StackSize() or 1
+        local maxsize = stackable ~= nil
+            and math.max(1, stackable.maxsize or 1) or 1
+
+        for _, slot in ipairs(slots) do
+            if remaining > 0 and slot.room > 0
+                and slot.item.components ~= nil
+                and slot.item.components.stackable ~= nil
+                and stackable ~= nil
+                and slot.item.components.stackable:CanStackWith(output) then
+                local used = math.min(remaining, slot.room)
+                slot.room = slot.room - used
+                remaining = remaining - used
+            end
+        end
+
+        while remaining > 0 do
+            free_slots = free_slots - 1
+            if free_slots < 0 then
+                return false
+            end
+            local placed = math.min(remaining, maxsize)
+            remaining = remaining - placed
+            table.insert(slots, {
+                item = output,
+                room = stackable ~= nil and (maxsize - placed) or 0,
+            })
+        end
+    end
+
+    return true
+end
+
+local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", function(act)
+    local doer = act.doer
+    local item = act.invobject or act.target
+    if doer == nil or item == nil or not item:IsValid()
+        or doer.components == nil or doer.components.inventory == nil
+        or item.components == nil or item.components.inventoryitem == nil
+        or item.components.inventoryitem.owner ~= doer
+        or not has_warworkbench(doer) then
+        return false
+    end
+
+    local inventory = doer.components.inventory
+    local recipe = GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[item.prefab] or nil
+    if MAMDeconstruction.GetReturns(item.prefab) == nil
+        and recipe ~= nil and recipe.no_deconstruction then
+        return false
+    end
+
+    local durability = 1
+    local finiteuses = item.components.finiteuses
+    local armor = item.components.armor
+    local fueled = item.components.fueled
+    local durability_component = finiteuses or armor or fueled
+    if durability_component ~= nil and type(durability_component.GetPercent) == "function" then
+        local ok, percent = pcall(durability_component.GetPercent, durability_component)
+        if ok and type(percent) == "number" then
+            durability = math.max(0, math.min(1, percent))
+        end
+    end
+
+    local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab,
+        math.random, recipe, durability)
+    if plan == nil then
+        return false
+    end
+
+    local staged = stage_output_items(plan)
+    if staged == nil then
+        return false
+    end
+    if not can_fit_staged_outputs(inventory, staged) then
+        for _, output in ipairs(staged) do
+            if output:IsValid() then output:Remove() end
+        end
+        if doer.components.talker ~= nil then
+            doer.components.talker:Say("Make room for the recovered materials first.")
+        end
+        return false
+    end
+
+    -- Remove exactly one input unit. Stackable:Get through RemoveItem(false)
+    -- preserves the rest of the stack in its original slot.
+    local consumed = inventory:RemoveItem(item, false)
+    if consumed == nil then
+        for _, output in ipairs(staged) do
+            if output:IsValid() then output:Remove() end
+        end
+        return false
+    end
+
+    for _, output in ipairs(staged) do
+        local accepted = inventory:GiveItem(output)
+        if not accepted and output:IsValid() then
+            -- The preflight should make this unreachable; preserve materials
+            -- on the ground rather than deleting an output after input commit.
+            local x, y, z = doer.Transform:GetWorldPosition()
+            output.Transform:SetPosition(x, y, z)
+            output.components.inventoryitem:OnDropped(true)
+        end
+    end
+    consumed:Remove()
+    return true
+end)
+STRINGS.ACTIONS.MAM_DECONSTRUCT_METAL = "Dismantle / Desmontar"
+deconstruct_action.rmb = true
+deconstruct_action.mount_valid = true
+
+AddComponentAction("INVENTORY", "inventoryitem", function(inst, doer, actions, right)
+    local recipe = inst ~= nil and GLOBAL.AllRecipes ~= nil
+        and GLOBAL.AllRecipes[inst.prefab] or nil
+    local supported_material = inst ~= nil and MAMDeconstruction.GetReturns(inst.prefab) ~= nil
+    local supported_equipment = inst ~= nil and MAMDeconstruction.IsSupported(inst.prefab)
+        and recipe ~= nil and not recipe.no_deconstruction
+    if right and inst ~= nil and inst:IsValid()
+        and (supported_material or supported_equipment)
+        and has_warworkbench(doer) then
+        table.insert(actions, ACTIONS.MAM_DECONSTRUCT_METAL)
+    end
+end)
+
+AddStategraphActionHandler("wilson", ActionHandler(ACTIONS.MAM_DECONSTRUCT_METAL, "doshortaction"))
+AddStategraphActionHandler("wilson_client", ActionHandler(ACTIONS.MAM_DECONSTRUCT_METAL, "doshortaction"))
+
+-- Read-only metallurgy guide popup. The server sends the popup event; the
+-- actual screen is created only on the local client.
+local MAM_METALLURGY_BOOK_POPUP = AddPopup("MAM_METALLURGY_BOOK")
+MAM_METALLURGY_BOOK_POPUP.fn = function(inst, show)
+    if show and inst ~= nil and inst:IsValid()
+        and GLOBAL.TheFrontEnd ~= nil and not inst._mam_metallurgy_book_open then
+        inst._mam_metallurgy_book_open = true
+        GLOBAL.TheFrontEnd:PushScreen(require("screens/metallurgybookscreen")(inst))
+    end
+end

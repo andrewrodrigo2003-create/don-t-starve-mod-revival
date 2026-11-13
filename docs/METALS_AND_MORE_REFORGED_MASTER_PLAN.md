@@ -309,6 +309,93 @@ Essa adição complementa o plano original; não autoriza pular as etapas de est
 - A auditoria de `smelting.lua`, `smelting_products.lua`, `metal_dusts.lua` e `metals.lua` identificou cadeias candidatas para cobre, ferro e ouro e receitas compostas de bronze, vidro lunar e adamantium.
 - O documento `docs/design/METAL_MATERIAL_DECONSTRUCTION.md` registra os valores de tags atuais e retornos canônicos candidatos. As quantidades são derivadas das receitas atuais, não estão implementadas.
 - Como a forja aceita entradas por tags, não é possível reconstruir o prefab exato originalmente consumido. A proposta usa componentes canônicos por produto e exige regra explícita por prefab.
-- Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação ainda precisa de confirmação do usuário antes da implementação.
+- Recomendação: desconstrução na `warworkbench` (`ALCHEMY_ONE`), mantendo a forja como única rota de avanço. A estação recomendada foi implementada como War Bench (`ALCHEMY_ONE`) no build 2.9.6; a ação exige proximidade da bancada.
 - Implementação deve ser transação atômica no servidor, falhar sem consumo quando não houver espaço para todos os retornos e impedir duplicação, retorno parcial ou bypass da progressão.
-- Estado: especificação/auditoria; nenhum código de gameplay foi alterado.
+- Estado: implementação no build 2.9.6, aguardando validação in-game.
+
+
+## Registro de execução — 2026-11-12 (build de teste 2.9.5)
+
+- A branch de teste do PR #50 foi atualizada e revalidada no head `b26c078d31722dca770242aa974971ea169f7328`; `main` permanece inalterada.
+- Uma falha do CI em `forge_visual_preview_test.lua` era causada pelo stub do teste armazenar `Vector3` dentro de uma tabela numérica, ao contrário da semântica de `Widget:SetPosition(Vector3)` do DST. O stub foi corrigido para preservar o objeto Vector3; não foi necessário alterar a posição da prévia no código do mod.
+- CI do head exato: workflow principal **success**, stategraph wrapper **success**, minimap contract **success**.
+- Cobertura registrada: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; destruição/colheita 23/23; configuração de pilhas 16/16; migração de gold_ore 16/16; retry de receitas 10/10; simulador integrado da forja 15/15; contratos de habilidades 19/19; testes de wrappers de armas/combate, loot Rewrite, UI/containers, assets e pacote também passaram.
+- Pacote de teste produzido pelo workflow: `metals-and-more-reforged-2.9.5.zip`, 6.519.028 bytes. SHA-256: `e72e1e66d6a6f2a4c3e56126105d2ee267d2a2e4e598aa47156eea9dc24ce414`. Artefato do workflow: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43274625559/artifacts/13969597340 (retenção de 14 dias).
+- O PR #50 continua aberto e em draft; não houve merge, publicação na Oficina nem alteração de outros mods.
+- Durante a etapa intermediária 2.9.5, a receita do `metal_storage_chest` foi reativada temporariamente; na atualização 2.9.6, por decisão do usuário, a receita/opção foram removidas. O prefab/widget permanecem apenas para saves antigos.
+- Limite importante: os resultados são CI, Lua 5.1 e harnesses/simuladores determinísticos. Ainda não são testes no motor DST, multiplayer real, save migration real ou validação do Uncompromising Mode Public Beta.
+- A atualização 2.9.5 inclui segurança transacional da forja, retry de devoluções, proteção da migração de gold_ore, retry de aplicação de receitas, prévia visual de fundição, wrappers de combate/stategraph e otimização do minimapa. A mecânica global antiga de arremesso de Lucy continua removida; armas corpo a corpo/AOE e machado normal permanecem.
+- Funcionalidades essenciais ainda não concluídas no plano mestre: livro metalúrgico somente leitura; desconstrução reversível (a estação recomendada é warworkbench, mas ainda não confirmada); matriz final de receitas/estações; consulta segura de depósitos; automação W.O.B.O.T./W.I.N.bot; conversão KTEX do ícone; matriz de compatibilidade UM Beta + conjunto de mods do usuário. Não marcar o pedido inteiro como concluído.
+- Próxima validação local: instalar uma única cópia do build de teste, testar a forja e as armas no mundo `mundo de testes de mod`, depois testar com UM Beta e mods de armazenamento/fornalhas. Preservar Hydrated/Dehydrated e Better Lucy.
+
+
+### Auditoria adicional — Uncompromising Mode Public Beta 6.0.3.9 (2026-11-12)
+
+- A branch correta para o beta público foi identificada como `utw-beta`, versão `6.0.3.9`, commit observado `fc09a5924fbb096a4dcb3582e22907b9c94a73ca`. Não confundir com a branch `live` (1.5.4.6).
+- Revalidados os conflitos conhecidos: UM escreve diretamente `AllRecipes.glasscutter.ingredients` quando `celestialitems_revert` está ativo; MAM usa assinatura vanilla e guarda de receita para ceder quando outro mod alterou o conteúdo.
+- Hounds elementais: UM define `hound_fire`/`hound_cold` em `AddSimPostInit` com gemas a 0.3; MAM `Auto` detecta `GLOBAL.UMCommonFns` e pula os fragmentos próprios. `Always` é uma escolha explícita que pode somar materiais.
+- Shark: UM adiciona `rockjawleather`; MAM adiciona `sharkscale` por `AddChanceLoot`, sem substituir o wrapper `DropLoot` do UM.
+- Containers: UM tem `um_scrapper` e amplia o componente vanilla; o baú MAM usa prefab/widget/tags próprios e não substitui os parâmetros globais de containers.
+- Criado relatório detalhado em `docs/compatibility/UNCOMPROMISING_MODE_PUBLIC_BETA_6.0.3.9_AUDIT_2026-11-12.md`. A referência no comentário de `recipe_guard.lua` foi atualizada de 6.0.3.8 para 6.0.3.9.
+- Isto é auditoria de código, não teste de integração in-game. Testar no mundo local: recipes (celestialitems_revert), hounds em Auto, shark, baú, forja, depois mods de fornalha/armazenamento e conjunto completo.
+
+
+### Validação final do build de teste 2.9.5 — 2026-11-12
+
+- Head testado: `594c6ace575e9bc9b0c45026b9fb01b326eeb9c1`; workflow principal, StateGraph wrapper e minimap contract concluíram **success**.
+- Suítes: planejador de fundição 270/270; previsão 14/14; ciclo de vida da forja 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de `gold_ore` 16 contracts; retry de receitas 10 contracts; baú (opção, receita, prefab, widget e filtro) passou; loot runtime (Rewrite, UM Auto/Always, normalização e 18 gates) passou; habilidades de personagens 19/19; simulador integrado da forja 15/15; asset references e package content passaram; wrappers de armas, stategraph, UI e minimap passaram.
+- A suíte de armas agora também proíbe regressão de `SetSpellFn` no arquivo de extensão de armas. O código mantém ataques melee/AOE, parry e habilidades das quatro armas da Forja, sem reintroduzir o antigo hook de projétil global.
+- O primeiro teste do pacote após restaurar o baú falhou porque o contrato de empacotamento ainda exigia a remoção da opção antiga. O contrato foi corrigido para exigir a opção/receita; o head `594c6ace` passou e o ZIP foi gerado.
+- Artefato instalável: [Metals and More Reforged 2.9.5 — teste](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43275633835/artifacts/13971540102). Tamanho externo: 6.520.736 bytes. SHA-256 do artefato externo: `a8ef5513533ab41b119b1383d4ba85b926d15c61fc8b9450949f41436b45f377`. Expira em 2026-11-26.
+- O pacote externo contém o ZIP instalável interno. A nota de teste local foi atualizada em `docs/testing/TEST_BUILD_2.9.5_2026-11-12.md`.
+- O PR #50 permanece draft e sem merge. Os commits posteriores de documentação não alteram os arquivos runtime do pacote; a validação exata do código/testes foi feita no head indicado.
+
+
+## 17. Atualização integrada 2.9.6 — 2026-11-12
+
+- O usuário pediu remover o baú metalúrgico dedicado e implementar o restante do pedido de atualização do Qoder antes de um único teste local.
+- Baú dedicado: opção `mam_metalschest` e receita removidas; prefab/widget mantidos exclusivamente para compatibilidade de saves antigos. A automação passa a usar containers comuns compatíveis.
+- War Bench: migração de 25 receitas vanilla de ferramentas, equipamentos e estruturas metálicas para `ALCHEMY_ONE` + filtro `CRAFTING_STATION`, sem recriar Recipe e sem alterar ingredientes/metadata. Science progression mantém `researchlab`, `researchlab2` e `transistor` para evitar dependência circular. O guard reexecuta a migração após os post-inits dos outros mods.
+- Livro de Metalurgia: prefab craftável na War Bench, usando `simplebook` e tela de consulta bilíngue. Páginas incluem a tabela ativa de fundição, cadeia de materiais, fontes, War Bench, desmontagem, automação e compatibilidade. Não é prototyper nem desbloqueia receitas.
+- Desmontagem: ação contextual à direita perto da War Bench. Materiais usam retornos canônicos que correspondem às receitas de fundição; equipamentos usam `AllRecipes` ativo e `numtogive`, com escala pela durabilidade. Retorno padrão 75% por unidade esperada; Wilson 100% de todos os componentes, Winona 100% de metais não mágicos, Maxwell 100% de materiais sombrios. WX-78/Wickerbottom seguem 75% até haver especialidade aprovada. Inventário é pré-validado; um sorteio sem retorno ainda consome o item para impedir reroll exploit.
+- Wilson: recuperação exata de 100% implementada. A transmutação separada entre materiais continua pendente, pois não existe matriz/ratio definido; não inventar conversões que possam gerar lucro.
+- Robôs: nova opção `mam_robot_smelting`, default Off. Com W.O.B.O.T. abastecido ou W.I.N.bot implantado/ativo, a forja puxa ingredientes registrados de containers compatíveis próximos, usando o planejador normal, e deposita o produto no armazenamento compatível mais próximo. Se não houver espaço, mantém o produto pronto para retirada manual. Não varre inventários de jogadores nem storage portátil.
+- Ícone: source SVG; workflow rasteriza PNG 256px via `rsvg-convert`, constrói KTools `ktech` em commit fixo e gera `modicon.tex` no pacote. Atlas usa coordenadas de textura completas.
+- Documentação: `docs/design/INTEGRATED_METALLURGY_SYSTEM_2.9.6.md` e `docs/testing/TEST_BUILD_2.9.6_2026-11-12.md`.
+- Testes novos: desmontagem (taxas, composição, durabilidade e receitas vivas), migração de estação, livro, automação, PNG/KTEX e conteúdo do pacote.
+- Versão do mod alterada para 2.9.6. O build ainda depende de CI para validar compilação do KTools e de testes in-game para validar tela, ações, robôs, save/load, multiplayer e UM Beta.
+- Nenhum merge, publicação na Oficina ou edição de Hydrated/Dehydrated/Better Lucy/UM foi feito.
+
+## 17. Registro consolidado — build 2.9.6 (2026-11-12)
+
+Este registro supersede as etapas antigas que ainda descreviam como pendentes o livro, a desmontagem, a migração de receitas e a automação. O status abaixo é o código presente na branch de teste 2.9.6; a certificação no motor DST continua pendente.
+
+### Implementado no código da build
+- Livro de Metalurgia de leitura, com tela própria multipágina; apresenta dados de fundição, cadeia de materiais, fontes, progressão, desmontagem, automação e compatibilidade. Ler o livro não desbloqueia nem fabrica receitas.
+- Desmontagem por ação de inventário perto da War Bench, limitada a prefabs explicitamente suportados. A operação valida estação, posse do item e capacidade de saída antes do consumo; equipamento usa ingredientes da receita viva e escala o retorno pela durabilidade.
+- Recuperação padrão de 75% por unidade de ingrediente em expectativa. Wilson recupera 100% dos ingredientes listados; Winona 100% de componentes metálicos não mágicos; Maxwell 100% de materiais de sombra. WX-78 e Wickerbottom permanecem na taxa padrão. Não há transmutação cruzada de Wilson nesta build.
+- Migração de receitas selecionadas para o filtro da War Bench preservando ingredientes e metadados atuais; receitas vanilla protegidas cedem quando detectam alteração prévia de outro mod.
+- Automação opcional da forja por W.O.B.O.T./W.I.N.bot, desativada por padrão. A automação usa apenas contêineres chest/pack compatíveis e ingredientes metalúrgicos registrados, com planejamento e retirada autoritativos no servidor; não varre inventários de jogadores nem armazenamento portátil.
+- Conversão do ícone original para KTEX no pipeline de build.
+
+### Baú metalúrgico
+- A receita de criação e a opção de configuração do baú dedicado foram removidas. Novos jogadores não podem fabricar esse baú.
+- O prefab, widget e filtro antigos permanecem apenas para carregar saves que já possuam a estrutura. Não desenvolver novas funções ou automação dependentes desse baú; a automação da forja usa contêineres compatíveis comuns.
+- A consulta manual de depósitos não é uma funcionalidade independente nesta build; a busca de armazenamento existe apenas como parte do abastecimento/depósito da automação.
+
+### Verificação e pendências
+- A suíte automatizada cobre sintaxe Lua 5.1, regressões da forja, livro, desmontagem, migração de receitas, automação, assets e integridade do pacote.
+- Os resultados de CI da build 2.9.6 devem ser conferidos pelo head mais recente da PR #50; execuções anteriores que falharam na conversão de imagem ou no teste de configuração não contam como aprovação.
+- Ainda dependem de teste real: leitura e navegação do livro no cliente, interação de desmontagem, energia/estados dos dois robôs, host/cliente, multiplayer, save migration, UM Public Beta 6.0.3.9 e coleção completa de mods do usuário.
+- O conjunto completo de 57 mods não está certificado. Não declarar compatibilidade total nem mover a PR para ready/merge antes do teste consolidado no mundo `mundo de testes de mod`.
+
+
+### Validação CI e artefato 2.9.6 — 2026-11-12
+
+- GitHub Actions: [run 43283223936](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936), conclusão `success`, head exato `ea57c9489c26113d807f63f60934f16b0172571a`.
+- KTools `ktech` build + SVG rasterization + KTEX conversion: passou.
+- Lua 5.1 parse dos arquivos MAM e do simulador: passou.
+- Regressões: fundição 270/270; preview 14/14; ciclo de vida 77/77; configurações de pilha 16/16; destruição/colheita 23 checks; migração de gold_ore 16 contratos; retry de receitas 10 contratos; deconstruction; migração da War Bench; loot runtime; habilidades 19/19; integração da forja 15/15.
+- Wiring do livro, automação de robôs, referências de assets e conteúdo do pacote instalável: passaram.
+- Artefato: [metals-and-more-reforged-2.9.6](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43283223936/artifacts/13974480896), 6.587.858 bytes, SHA-256 `9a0baedff6b894e80913cce9e88390896d08d1e92b8018a72acd64178a42c091`, expira em 26/11/2026.
+- A validação in-game, multiplayer, save migration e a coleção completa de mods do usuário continuam pendentes. O PR #50 permanece draft, sem merge.

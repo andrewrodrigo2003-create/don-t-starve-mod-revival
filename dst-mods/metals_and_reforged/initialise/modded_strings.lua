@@ -70,3 +70,8 @@ local STRINGS = GLOBAL.STRINGS
 	STRINGS.NAMES.IRONROCK = "Iron Deposit"
 	STRINGS.NAMES.SPIKYROCK = "Copper Deposit"
 	
+
+-- Read-only metallurgy reference book
+STRINGS.NAMES.METALLURGY_REFERENCE_BOOK = "Metallurgy Guide / Guia de Metalurgia"
+STRINGS.RECIPE_DESC.METALLURGY_REFERENCE_BOOK = "A field guide to ores, alloys and smelting. / Guia de minérios, ligas e fundição."
+STRINGS.CHARACTERS.GENERIC.DESCRIBE.METALLURGY_REFERENCE_BOOK = "Knowledge is useful. The forge still does the work. / Conhecimento é útil. A forja ainda faz o trabalho."

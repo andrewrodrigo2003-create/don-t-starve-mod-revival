@@ -9,11 +9,11 @@
 --   1. Se o recipe sumiu (outro mod o removeu), o index devolve nil e o mod crasha na
 --      carga -- nem chega ao jogo.
 --   2. Se outro mod reequilibrou o mesmo recipe, o ultimo mod carregado vence em
---      silencio e o trabalho do outro desaparece. Confirmado contra Uncompromising Mode
---      Beta 6.0.3.8: `init/init_recipes/recipe_changes.lua:80-93` escreve
---      `AllRecipes["glasscutter"].ingredients` exatamente quando a opcao
---      `celestialitems_revert` esta ligada -- o mesmo campo que tocamos em
---      `initialise/modded_recipes.lua`.
+--      silencio e o trabalho do outro desaparece. Confirmado novamente contra
+--      Uncompromising Mode Public Beta 6.0.3.9 (branch `utw-beta`):
+--      `init/init_recipes/recipe_changes.lua` escreve diretamente
+--      `AllRecipes["glasscutter"].ingredients` quando `celestialitems_revert`
+--      esta ligada -- o mesmo campo que tocamos em `initialise/modded_recipes.lua`.
 --
 -- O guarda resolve 1 sempre e 2 por deteccao: guardamos a assinatura vanilla de cada
 -- recipe que tocamos (transcrita de `.reference/vanilla/scripts/recipes.lua`, com
@@ -28,6 +28,7 @@
 local GLOBAL = rawget(_G, "GLOBAL") or _G
 local MAMConfig = require("mam/config")
 local MAMLog = require("mam/log")
+local TechTree = GLOBAL.require("techtree")
 
 local AllRecipes = GLOBAL.AllRecipes
 
@@ -108,8 +109,12 @@ M.results = {}
 -- (modutil.lua:732 define env.AddRecipe2). Um arquivo require() nao ve esse
 -- ambiente, entao quem roda no modmain precisa injetar a funcao aqui.
 local add_recipe_2 = nil
-function M.Init(addrecipe2)
+local add_recipe_to_filter = nil
+local remove_recipe_from_filter = nil
+function M.Init(addrecipe2, addrecipetofilter, removerecipefromfilter)
     add_recipe_2 = addrecipe2
+    add_recipe_to_filter = addrecipetofilter or add_recipe_to_filter
+    remove_recipe_from_filter = removerecipefromfilter or remove_recipe_from_filter
 end
 
 local function describe(recipe)
@@ -277,6 +282,66 @@ function M.regate(name, our_ingredients, tech, more_data, filters)
 
     result.applied = true
     result.reason = kept_theirs and "kept-others-ingredients" or "applied"
+    return true, result.reason
+end
+
+--- Move uma receita existente para o filtro/tecnologia da War Bench sem
+--- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
+function M.set_station(name, tech, filter)
+    local result = { name = name, applied = false, reason = "unknown" }
+    M.results["station:" .. name] = result
+
+    local recipe = AllRecipes[name]
+    if recipe == nil then
+        result.reason = "missing"
+        MAMLog.WarnOnce("recipe_station.missing." .. name,
+            "Receita '%s' ausente; migracao para a War Bench ignorada.", name)
+        return false, result.reason
+    end
+
+    if type(tech) ~= "table" then
+        result.reason = "invalid-tech"
+        MAMLog.WarnOnce("recipe_station.tech." .. name,
+            "Tecnologia invalida para '%s'; bancada nao foi alterada.", name)
+        return false, result.reason
+    end
+
+    -- Recipe.level e a unica parte de tecnologia que muda. Os ingredientes,
+    -- atlas, imagem, flags, builder tags e callbacks do outro mod permanecem.
+    recipe.level = TechTree.Create(tech)
+
+    if filter ~= nil then
+        if add_recipe_to_filter == nil then
+            result.reason = "filter-api-unavailable"
+            MAMLog.WarnOnce("recipe_station.filter." .. name,
+                "AddRecipeToFilter indisponivel para '%s'; tecnologia alterada, filtro nao.", name)
+            return false, result.reason
+        end
+
+        -- Remove the recipe from its former vanilla/mod filters so it appears
+        -- in the War Bench station filter only.
+        if remove_recipe_from_filter ~= nil and GLOBAL.CRAFTING_FILTERS ~= nil then
+            for filter_name, filter_def in pairs(GLOBAL.CRAFTING_FILTERS) do
+                if filter_name ~= filter and filter_name ~= "FAVORITES"
+                    and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
+                    and filter_def.default_sort_values ~= nil
+                    and filter_def.default_sort_values[name] ~= nil then
+                    remove_recipe_from_filter(name, filter_name)
+                end
+            end
+        end
+        local target_filter = GLOBAL.CRAFTING_FILTERS ~= nil and GLOBAL.CRAFTING_FILTERS[filter] or nil
+        if target_filter == nil or target_filter.default_sort_values == nil
+            or target_filter.default_sort_values[name] == nil then
+            add_recipe_to_filter(name, filter)
+        end
+        recipe.filter = filter
+    end
+
+    result.applied = true
+    result.reason = "applied"
+    MAMLog.Info("receita '%s' movida para tecnologia %s / filtro %s sem reescrever ingredientes",
+        name, tostring(tech), tostring(filter))
     return true, result.reason
 end
 

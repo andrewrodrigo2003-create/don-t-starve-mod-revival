@@ -70,6 +70,21 @@ Assets = {
 	Asset("IMAGE", "images/tabimages/theforge_tab.tex"),
 }
 
+-- Make every custom metal ingredient discoverable by vanilla GetInventoryItemAtlas.
+-- This is used by crafting ingredient widgets, inventory previews and other UI.
+if RegisterInventoryItemAtlas ~= nil then
+    for _, item in ipairs({
+        "copper_ore", "iron_ore",
+        "copper_dust", "iron_dust", "gold_dust",
+        "copper_ingot", "iron_ingot", "bronze_ingot",
+        "gold_ingot", "moonglass_ingot", "adamantium_ingot", "junk_dust",
+        "redgem_shard", "yellowgem_shard", "bluegem_shard",
+        "purplegem_shard", "greengem_shard", "orangegem_shard",
+    }) do
+        RegisterInventoryItemAtlas("images/inventoryimages/" .. item .. ".xml", item .. ".tex")
+    end
+end
+
 PrefabFiles = {
 	"warworkbench",
 
@@ -95,6 +110,7 @@ PrefabFiles = {
 	"forkstick",
 	"shears",
 	"craftbook",
+	"metallurgy_reference_book",
 	--"cursed_phantom",
 	"cursed_piggy",
 	"cursed_piggy_mask",
@@ -211,6 +227,12 @@ AddPrototyperDef("craftbook", {
 
 AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("charcoal", 5)}, TECH.SCIENCE_TWO, { placer = "warworkbench_placer", min_spacing = 1, atlas = "images/inventoryimages/obsidian_workbench.xml", image = "obsidian_workbench.tex", }, {"PROTOTYPERS"})
 
+-- Informational reference only: no prototyper, unlock, or remote crafting.
+AddRecipe2("metallurgy_reference_book", {
+    Ingredient("papyrus", 2), Ingredient("charcoal", 2),
+    Ingredient("iron_ingot", 1, "images/inventoryimages/iron_ingot.xml"),
+}, TECH.ALCHEMY_ONE, { image = "waxwelljournal.tex" }, { "CRAFTING_STATION" })
+
 AddRecipe2("armor_sanity", {Ingredient("adamantium_ingot", 2, "images/inventoryimages/adamantium_ingot.xml"),Ingredient("papyrus", 3)}, TECH.ALCHEMY_ONE, {"CRAFTING_STATION"})
 
 AddRecipe2("nightsword", {Ingredient("adamantium_ingot", 2, "images/inventoryimages/adamantium_ingot.xml"),Ingredient("livinglog", 1)}, TECH.ALCHEMY_ONE, {"CRAFTING_STATION"})
@@ -219,14 +241,8 @@ AddRecipe2("marble_chest", {Ingredient("marble", 5), Ingredient("gold_ingot", 2,
 
 AddRecipe2("cold_safe", {Ingredient("gears", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("bluegem", 1)}, TECH.ALCHEMY_ONE, {placer = "cold_safe_placer", min_spacing=0.5, image="icebox_victorian.tex"}, {"CRAFTING_STATION", "COOKING"})
 
--- Armazenamento dedicado aos ingredientes aceitos pela metalurgia.
-if MAMConfig.on("mam_metalschest") then
-    AddRecipe2("metal_storage_chest", {
-        Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"),
-        Ingredient("cutstone", 2),
-        Ingredient("gears", 1),
-    }, TECH.ALCHEMY_ONE, { placer = "metal_storage_chest_placer", min_spacing = 0.5, image = "icebox_victorian.tex" }, { "CRAFTING_STATION", "CONTAINERS" })
-end
+-- metal_storage_chest permanece registrado apenas para compatibilidade com saves antigos;
+-- não há receita para construí-lo em mundos novos.
 
 AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
 
