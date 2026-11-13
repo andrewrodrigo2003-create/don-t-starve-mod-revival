@@ -104,3 +104,35 @@ References:
 3. The inventory replica docs describe `HasItemWithTag`, but do not fully specify every nested-container/overflow edge case for tool lookup.
 4. The chisel has no verified vanilla equivalent; it must be treated as a MAM-owned reusable item, not guessed from an unrelated prefab.
 5. No production code, recipe, or third-party mod was changed by this cross-check.
+
+
+## Cross-check 3 — client replica behavior and inventory/equipment coverage (2026-11-13)
+
+A direct read of the public community mirror's `builder_replica.lua` clarifies the exact client behavior:
+
+- `BuilderReplica:HasIngredients(recipe)` delegates to the master builder when `inst.components.builder` exists; on a remote client it resolves string recipes with `GetValidRecipe`, returns `true` immediately in free-build mode, then checks only `recipe.ingredients`, `recipe.character_ingredients` and `recipe.tech_ingredients`.
+- There is no `recipe.canbuild` invocation in that method.
+- `InventoryReplica` exposes `GetItems()` and `GetEquips()` separately, and documents `HasItemWithTag(tag, amount)` and `EquipHasTag(tag)`. Therefore, a client-side check must account for both carried and equipped tools; relying on `HasItemWithTag` alone is not enough to prove equipped-tool handling.
+- The mirror's master `Builder:DoBuild` checks `recipe.canbuild` before it consumes ingredients. It also handles buffered builds, so the server gate is reached for buffered builds even when the normal ingredient check is bypassed.
+
+Exact source inspected:
+- https://raw.githubusercontent.com/taichunmin/dont-starve-together-game-scripts/master/scripts/components/builder_replica.lua
+- https://raw.githubusercontent.com/taichunmin/dont-starve-together-game-scripts/master/scripts/components/builder.lua
+
+### Product decision for freebuild
+
+Tool requirements are waived in freebuild mode, matching the vanilla crafting model. This exception must be applied identically in the client menu predicate and the server-side `canbuild` predicate. The normal material ingredients are already waived by the replica's freebuild early return; a MAM tool predicate must not create a client/server mismatch.
+
+### Safer implementation shape
+
+1. Register only the MAM-owned recipes `boards` and `cutstone` (or the final replacement recipe IDs after recipe audit) in a narrow requirement registry.
+2. Client availability: preserve the original `HasIngredients` result and return values; only after it succeeds, check the required tag in carried inventory and equipped slots. Treat missing replica/classified state as unavailable rather than guessing.
+3. Server final gate: in `recipe.canbuild`, waive only for freebuild; otherwise inspect authoritative carried/equipped items and require a live `tool:CanDoAction(ACTIONS.CHOP)` for an axe. A tag alone is not sufficient.
+4. Chisel: require a dedicated MAM prefab/tag and an explicit registration entry. Do not add a durability component or call finite-use consumption for this crafting requirement.
+5. Any candidate tool moved, dropped, broken or transferred after the menu opens must fail at final server validation.
+6. The inventory replica docs do not establish whether `HasItemWithTag` includes open/nested/overflow containers in every case. Prefer direct `GetItems` + `GetEquips` for exact candidate checks if those lists expose replicated item entities in the tested build; otherwise explicitly document and test the supported inventory scope.
+7. Before wiring any global method wrapper, verify the actual modutil registration hook and load order for both master Builder and Builder Replica in the target build. The current branch's `modmain.lua` already imports `components/builder`, but that alone does not establish safe client replica registration.
+
+### Implementation status after this cross-check
+
+No runtime code has been changed. This research narrows the design and identifies a viable client API surface, but the following gates remain open: target-build source parity, the exact registration hook/load order, replicated equipped-item visibility, inventory/overflow behavior, and the chisel prefab's pre-pristine tag setup. Do not claim the axe/chisel requirement is implemented until those are covered by focused harnesses and an in-game client/server test.
