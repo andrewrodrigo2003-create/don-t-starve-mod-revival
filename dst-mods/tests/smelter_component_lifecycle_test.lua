@@ -38,6 +38,7 @@ package.preload["mam/log"] = function()
             return ok, result
         end,
         Warn = function() end,
+        WarnOnce = function() end,
     }
 end
 
@@ -104,6 +105,8 @@ local function make_container(slots)
     function container:Close() self.closed = true end
     function container:DropEverything()
         self.drop_everything = true
+        self.dropped = self.dropped or {}
+        for _, item in pairs(self.slots) do table.insert(self.dropped, item) end
         self.slots = {}
     end
     function container:DestroyContents()
@@ -116,7 +119,7 @@ end
 local function make_instance(container)
     local inst = {
         prefab = "metal_smelter",
-        components = { container = container },
+        components = { container = container, lootdropper = { flung = {} } },
         deferred = {},
         tags = {},
         mam_plan = {
@@ -124,7 +127,11 @@ local function make_instance(container)
         },
     }
     function inst:DoPeriodicTask()
-        return { Cancel = function(self) self.cancelled = true end }
+        self.periodic_calls = (self.periodic_calls or 0) + 1
+        local task = { cancelled = false }
+        function task:Cancel() self.cancelled = true end
+        self.last_periodic_task = task
+        return task
     end
     function inst:DoTaskInTime(delay, fn)
         table.insert(self.deferred, { delay = delay, fn = fn })
@@ -133,6 +140,13 @@ local function make_instance(container)
     function inst:AddTag(tag) self.tags[tag] = true end
     function inst:RemoveTag(tag) self.tags[tag] = nil end
     function inst:GetPosition() return {} end
+    function inst.components.lootdropper:FlingItem(item)
+        if self.fail_fling then
+            return false
+        end
+        table.insert(self.flung, item)
+        return true
+    end
     return inst
 end
 
@@ -175,6 +189,87 @@ check("invalid plan cannot start", invalid_smelter:StartSmelting() == false)
 check("invalid plan preserves input", invalid_container.slots[1] == untouched and not untouched.removed)
 check("invalid plan leaves container open", invalid_container.canbeopened == true and not invalid_container.closed)
 
+-- A stale plan must be rejected before any input is consumed.
+local stale_item = make_item("iron_ore", 4)
+local stale_container = make_container({ [1] = stale_item })
+local stale_smelter = new_smelter(stale_container)
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 1,
+    smelttime = 10,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 2 } },
+}
+check("stale receipt cannot start", stale_smelter:StartSmelting() == false)
+check("stale receipt preserves all input", stale_container.slots[1] == stale_item
+    and stale_item.components.stackable.stacksize == 4)
+check("stale receipt leaves machine idle", not stale_smelter.issmelting
+    and stale_container.canbeopened == true)
+
+-- A plan cannot overdraw a stack through duplicate slot requirements.
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 5,
+    consumed = {
+        { slot = 1, prefab = "copper_ore", count = 2 },
+        { slot = 1, prefab = "copper_ore", count = 2 },
+    },
+}
+local duplicate_item = make_item("copper_ore", 3)
+local duplicate_container = make_container({ [1] = duplicate_item })
+local duplicate_smelter = new_smelter(duplicate_container)
+check("duplicate slot requirements exceeding stack are rejected",
+    duplicate_smelter:StartSmelting() == false)
+check("duplicate slot rejection preserves original stack",
+    duplicate_container.slots[1] == duplicate_item
+        and duplicate_item.components.stackable.stacksize == 3)
+
+-- Failed output creation preserves only the undelivered remainder for retry.
+local output_container = make_container({})
+local output_smelter = new_smelter(output_container)
+output_smelter.canharvest = true
+output_smelter.product = "copper_ingot"
+output_smelter.batch = 3
+local harvest_callbacks = 0
+output_smelter.onharvest = function() harvest_callbacks = harvest_callbacks + 1 end
+local delivered = 0
+local harvester = {
+    components = {
+        inventory = {
+            GiveItem = function(_, item)
+                delivered = delivered + 1
+                item.removed = true
+            end,
+        },
+    },
+}
+SpawnPrefab = function() return nil end
+check("failed output spawn keeps harvest pending", output_smelter:Harvest(harvester) == false)
+check("failed output spawn preserves full remainder", output_smelter.canharvest
+    and output_smelter.product == "copper_ingot" and output_smelter.batch == 3)
+check("failed output spawn delivers nothing", delivered == 0)
+check("failed output spawn keeps ready animation callback untouched", harvest_callbacks == 0)
+
+SpawnPrefab = function(prefab)
+    return {
+        prefab = prefab,
+        components = {},
+        DoTaskInTime = function() end,
+    }
+end
+check("retry harvest succeeds", output_smelter:Harvest(harvester) == true)
+check("retry delivers each remaining unit once", delivered == 3)
+check("successful retry invokes harvest animation callback", harvest_callbacks == 1)
+check("successful retry clears output entitlement", output_smelter.product == nil
+    and not output_smelter.canharvest)
+
+-- A missing recipient must not clear a ready output entitlement.
+output_smelter.canharvest = true
+output_smelter.product = "copper_ingot"
+output_smelter.batch = 2
+check("harvest without inventory is rejected", output_smelter:Harvest(nil) == false)
+check("harvest without inventory preserves output", output_smelter.canharvest
+    and output_smelter.product == "copper_ingot" and output_smelter.batch == 2)
+
 -- Interruption follows the leftovers setting in both directions.
 config.mam_leftovers = 1
 local returned_container = make_container({ [1] = make_item("copper_ore", 2) })
@@ -189,7 +284,150 @@ local destroyed_container = make_container({ [1] = make_item("copper_ore", 2) })
 local destroyed_smelter = new_smelter(destroyed_container)
 destroyed_smelter.issmelting = true
 destroyed_smelter:ResetSmelter()
-check("interruption destroys leftovers when disabled", destroyed_container.destroy_contents == true)
+check("active interruption returns leftovers even when disabled", destroyed_container.drop_everything == true and destroyed_container.destroy_contents ~= true)
+
+-- An active batch is a transaction: consumed ingredients and unconsumed
+-- leftovers are both returned when the player cancels it with a hammer.
+config.mam_leftovers = 0
+local rollback_copper = make_item("copper_ore", 5)
+local rollback_iron = make_item("iron_ore", 2)
+local rollback_container = make_container({ [1] = rollback_copper, [2] = rollback_iron })
+local rollback_smelter, rollback_inst = new_smelter(rollback_container)
+planned = {
+    state = "ready",
+    product = "copper_ingot",
+    count = 2,
+    smelttime = 30,
+    consumed = {
+        { slot = 1, prefab = "copper_ore", count = 3 },
+        { slot = 2, prefab = "iron_ore", count = 2 },
+    },
+}
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+check("rollback scenario starts active batch", rollback_smelter:StartSmelting() == true)
+check("active receipt records exact consumed inputs",
+    #rollback_smelter.active_receipt == 2
+        and rollback_smelter.active_receipt[1].prefab == "iron_ore"
+        and rollback_smelter.active_receipt[1].count == 2)
+local rollback_save = rollback_smelter:OnSave()
+check("active receipt is persisted in save data",
+    rollback_save.active_receipt ~= nil and #rollback_save.active_receipt == 2)
+
+-- Fail during staging after one prefab was created: nothing may be delivered
+-- and the original receipt must remain intact for retry.
+local spawn_calls, staged_item = 0, nil
+SpawnPrefab = function(prefab)
+    spawn_calls = spawn_calls + 1
+    if spawn_calls == 1 then
+        staged_item = make_item(prefab, 1)
+        return staged_item
+    end
+    return nil
+end
+check("failed rollback staging does not reset active batch",
+    rollback_smelter:ResetSmelter() == false and rollback_smelter.issmelting == true)
+check("failed rollback staging removes temporary item",
+    staged_item ~= nil and staged_item.removed and #rollback_inst.components.lootdropper.flung == 0)
+check("failed rollback staging preserves full receipt",
+    #rollback_smelter.active_receipt == 2 and rollback_smelter.active_receipt[1].count == 2)
+
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+check("hammer cancellation completes rollback", rollback_smelter:ResetSmelter() == true)
+local returned = {}
+for _, item in ipairs(rollback_inst.components.lootdropper.flung) do
+    local count = item.components.stackable ~= nil and item.components.stackable.stacksize or 1
+    returned[item.prefab] = (returned[item.prefab] or 0) + count
+end
+for _, item in ipairs(rollback_container.dropped or {}) do
+    local count = item.components.stackable ~= nil and item.components.stackable.stacksize or 1
+    returned[item.prefab] = (returned[item.prefab] or 0) + count
+end
+check("rollback restores all copper including leftover", returned.copper_ore == 5)
+check("rollback restores all iron consumed by batch", returned.iron_ore == 2)
+check("active cancellation returns leftovers even when option is disabled",
+    rollback_container.drop_everything == true and rollback_container.destroy_contents ~= true)
+check("successful rollback clears receipt", rollback_smelter.active_receipt == nil)
+
+-- A non-throwing FlingItem rejection must not consume the refund receipt.
+local rejected_container = make_container({})
+local rejected_smelter, rejected_inst = new_smelter(rejected_container)
+rejected_smelter.issmelting = true
+rejected_smelter.active_receipt = { { prefab = "iron_ore", count = 3 } }
+rejected_inst.components.lootdropper.fail_fling = true
+local rejected_spawn
+SpawnPrefab = function(prefab)
+    rejected_spawn = make_item(prefab, 1)
+    return rejected_spawn
+end
+check("FlingItem false return keeps rollback active",
+    rejected_smelter:ResetSmelter() == false and rejected_smelter.issmelting == true)
+check("FlingItem false return preserves full receipt",
+    rejected_smelter.active_receipt ~= nil
+        and rejected_smelter.active_receipt[1].count == 3)
+check("FlingItem false return removes undelivered staged item",
+    rejected_spawn ~= nil and rejected_spawn.removed)
+check("FlingItem false return does not record delivery",
+    #rejected_inst.components.lootdropper.flung == 0)
+
+-- Extension callbacks must not interrupt authoritative state transitions.
+local callback_container = make_container({ [1] = make_item("copper_ore", 2) })
+local callback_smelter = new_smelter(callback_container)
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 3,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 1 } },
+}
+callback_smelter.startsmeltingfn = function() error("simulated visual callback failure") end
+callback_smelter.onplanfn = function() error("simulated plan callback failure") end
+check("callback errors do not abort a valid smelting transaction",
+    callback_smelter:StartSmelting() == true and callback_smelter.issmelting == true)
+callback_smelter.donesmeltingfn = function() error("simulated completion callback failure") end
+callback_smelter:DoneSmelting()
+check("completion callback error does not block ready state",
+    callback_smelter.canharvest == true and callback_smelter.issmelting == nil)
+callback_smelter.onharvest = function() error("simulated harvest callback failure") end
+SpawnPrefab = function(prefab)
+    return { prefab = prefab, components = {}, DoTaskInTime = function() end }
+end
+local callback_delivered = 0
+local callback_harvester = { components = { inventory = {
+    GiveItem = function(_, item) callback_delivered = callback_delivered + 1; item.removed = true end,
+} } }
+check("harvest callback error does not prevent output reset",
+    callback_smelter:Harvest(callback_harvester) == true
+        and callback_smelter.product == nil and callback_smelter.canharvest == nil)
+check("harvest callback error still delivers output", callback_delivered == 1)
+
+-- Restore stack-capable prefabs for the save/load receipt tests below.
+SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+
+-- A completed batch commits its receipt; later reset/harvest must not refund it.
+local committed_container = make_container({})
+local committed_smelter, committed_inst = new_smelter(committed_container)
+committed_smelter.issmelting = true
+committed_smelter.active_receipt = { { prefab = "iron_ore", count = 4 } }
+committed_smelter:DoneSmelting()
+check("completion commits and clears active receipt", committed_smelter.active_receipt == nil)
+committed_smelter:ResetSmelter()
+check("committed batch is never refunded", #committed_inst.components.lootdropper.flung == 0)
+
+-- Receipt saved during smelting is restored and can still be refunded.
+local loaded_container = make_container({})
+local loaded_smelter, loaded_inst = new_smelter(loaded_container)
+loaded_smelter:OnLoad({
+    issmelting = true,
+    product = "copper_ingot",
+    batch = 1,
+    smelttime = 10,
+    active_receipt = { { prefab = "gold_ore", count = 3 } },
+})
+check("active receipt is restored from save", loaded_smelter.active_receipt ~= nil
+    and loaded_smelter.active_receipt[1].prefab == "gold_ore"
+    and loaded_smelter.active_receipt[1].count == 3)
+check("loaded active receipt can be refunded", loaded_smelter:ResetSmelter() == true)
+local loaded_returned = loaded_inst.components.lootdropper.flung[1]
+check("loaded rollback returns exact saved quantity",
+    loaded_returned ~= nil and loaded_returned.prefab == "gold_ore"
+        and loaded_returned.components.stackable.stacksize == 3)
 
 -- Positive-time saves resume; zero-time saves defer completion until the task.
 local active_container = make_container({})
@@ -220,6 +458,38 @@ local missing_smelter = new_smelter(missing_container)
 missing_smelter:OnLoad({ issmelting = true, product = nil, smelttime = 10 })
 check("active save without product resets safely", not missing_smelter.issmelting and missing_smelter.product == nil)
 check("missing-product reset applies leftovers-off policy", missing_container.destroy_contents == true)
+
+-- Idle lifecycle: no permanent timer per furnace. Poll only while smelting.
+local idle_container = make_container({})
+local idle_smelter, idle_inst = new_smelter(idle_container)
+check("new idle smelter creates no periodic task", idle_smelter.task == nil)
+check("new idle smelter performs no polling", (idle_inst.periodic_calls or 0) == 0)
+
+local running_container = make_container({})
+local running_smelter, running_inst = new_smelter(running_container)
+running_smelter.issmelting = true
+running_smelter.product = "copper_ingot"
+running_smelter.smelttime = 5
+running_smelter:ResumeSmelting()
+check("resumed active smelter starts one periodic task",
+    running_smelter.task ~= nil and running_inst.periodic_calls == 1)
+local running_task = running_smelter.task
+running_smelter:DoneSmelting()
+check("completed smelter cancels periodic task",
+    running_task.cancelled == true and running_smelter.task == nil)
+
+local reset_container = make_container({})
+local reset_smelter, reset_inst = new_smelter(reset_container)
+reset_smelter.issmelting = true
+reset_smelter.product = "copper_ingot"
+reset_smelter.smelttime = 10
+reset_smelter:ResumeSmelting()
+local reset_task = reset_smelter.task
+reset_smelter:ResetSmelter()
+check("reset smelter cancels periodic task",
+    reset_task.cancelled == true and reset_smelter.task == nil)
+check("reset smelter does not leave a polling task",
+    (reset_inst.periodic_calls or 0) == 1)
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then

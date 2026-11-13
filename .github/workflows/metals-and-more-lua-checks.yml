@@ -36,6 +36,22 @@ jobs:
               luac5.1 -p "$file"
             done
 
+      - name: Parse DST behavioral simulator Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/tests/simulator -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+          for file in \
+            dst-mods/tests/smelter_simulator_integration_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua
+          do
+            luac5.1 -p "$file"
+          done
+
       - name: Run available Metals and More regression harnesses
         run: |
           set -euo pipefail
@@ -44,11 +60,19 @@ jobs:
             dst-mods/tests/forecast_ambiguous_start_test.lua \
             dst-mods/tests/legacy_recipe_default_weight_test.lua \
             dst-mods/tests/smelter_component_lifecycle_test.lua \
+            dst-mods/tests/smelter_destruction_harvest_test.lua \
             dst-mods/tests/smelter_stack_settings_test.lua \
             dst-mods/tests/metal_storage_chest_test.lua \
+            dst-mods/tests/metal_storage_chest_deprecation_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
-            dst-mods/tests/weapon_compatibility_contract_test.lua
+            dst-mods/tests/weapon_compatibility_contract_test.lua \
+            dst-mods/tests/combat_wrapper_contract_test.lua \
+            dst-mods/tests/forge_visual_preview_test.lua \
+            dst-mods/tests/stategraph_compatibility_test.lua \
+            dst-mods/tests/container_widget_compatibility_test.lua \
+            dst-mods/tests/character_ability_compatibility_test.lua \
+            dst-mods/tests/smelter_simulator_integration_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
@@ -56,11 +80,20 @@ jobs:
             fi
           done
 
+      - name: Verify registered custom asset paths
+        run: python3 dst-mods/tests/mod_asset_reference_test.py
+
       - name: Package installable mod
         run: |
           set -euo pipefail
           cd dst-mods
-          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" metals_and_reforged
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
+          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip" | grep -q '^metals_and_reforged/tests/'; then
+            echo "Test-only files leaked into the installable package"
+            exit 1
+          fi
+      - name: Verify install package contents
+        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.5.zip"
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@v4
