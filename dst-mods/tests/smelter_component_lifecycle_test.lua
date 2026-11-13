@@ -221,6 +221,69 @@ missing_smelter:OnLoad({ issmelting = true, product = nil, smelttime = 10 })
 check("active save without product resets safely", not missing_smelter.issmelting and missing_smelter.product == nil)
 check("missing-product reset applies leftovers-off policy", missing_container.destroy_contents == true)
 
+
+-- Harvest must be retry-safe if any output prefab cannot be created.
+local harvest_container = make_container({})
+local harvest_smelter = new_smelter(harvest_container)
+harvest_smelter.canharvest = true
+harvest_smelter.product = "iron_ingot"
+harvest_smelter.batch = 25
+local received = {}
+local harvester = {
+    components = {
+        inventory = {
+            GiveItem = function(_, item)
+                received[#received + 1] = item
+                return true
+            end,
+        },
+    },
+}
+local spawned = {}
+local spawn_calls = 0
+local fail_second_spawn = true
+SpawnPrefab = function(prefab)
+    spawn_calls = spawn_calls + 1
+    if fail_second_spawn and spawn_calls == 2 then
+        return nil
+    end
+    local loot = make_item(prefab, 1)
+    loot.components.stackable.maxsize = 20
+    loot.components.stackable:SetStackSize(1)
+    function loot:DoTaskInTime() return {} end
+    spawned[#spawned + 1] = loot
+    return loot
+end
+
+check("harvest refuses to clear a ready batch without a valid harvester",
+    harvest_smelter:Harvest(nil) == false
+        and harvest_smelter.canharvest == true
+        and harvest_smelter.product == "iron_ingot")
+
+check("failed partial output creation returns false",
+    harvest_smelter:Harvest(harvester) == false)
+check("failed output creation preserves ready state for retry",
+    harvest_smelter.canharvest == true
+        and harvest_smelter.product == "iron_ingot"
+        and harvest_smelter.batch == 25)
+check("failed output creation does not deliver a partial batch",
+    #received == 0)
+check("staged output prefabs are rolled back after later spawn failure",
+    #spawned == 1 and spawned[1].removed == true)
+
+fail_second_spawn = false
+spawn_calls = 0
+check("retry delivers the complete batch",
+    harvest_smelter:Harvest(harvester) == true)
+check("batch output is split into valid stack sizes",
+    #received == 2
+        and received[1].components.stackable.stacksize == 20
+        and received[2].components.stackable.stacksize == 5)
+check("successful retry resets the smelter only after delivery",
+    harvest_smelter.canharvest == nil
+        and harvest_smelter.product == nil
+        and harvest_smelter.batch == 1)
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
