@@ -51,3 +51,23 @@ Before implementing the board and cut-stone changes:
 ## Next action
 
 Inspect the exact game-version scripts and the client replica/UI implementation, then build a focused test harness before changing production crafting recipes. This note is research, not proof of runtime compatibility.
+
+
+## Additional cross-check — client crafting replica documentation (2026-11-13)
+
+The API documentation generated from game build 722832 (Builder Replica page last updated 2026-04-28) independently describes `BuilderReplica:HasIngredients(recipe)` as checking inventory, character and tech ingredients, with an early true result in free-build mode. It does not list or evaluate `recipe.canbuild`.
+
+Reference:
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/builder_replica
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/builder
+
+This confirms the key UX limitation in the inspected script mirror: a recipe-scoped `canbuild` check is a final server gate, not a complete client-side crafting-menu availability rule. A player can still see the recipe as craftable without the required axe/chisel, then be rejected only at the final build call.
+
+Implementation direction (not yet approved for runtime):
+- Keep tool requirements out of consumed recipe ingredients.
+- A complete solution must check tool possession in both master Builder and client Builder Replica availability paths, and revalidate server-side at the final build.
+- If this requires method wrappers, preserve the original return values, support both normal and buffered builds, and scope the extra predicate only to explicitly registered MAM recipes.
+- Do not infer an axe from prefab-name substrings. Confirm exact vanilla tags/components and what the client replica can observe; if client-side verification cannot be made reliable, defer the feature rather than ship a misleading menu.
+- Test freebuild mode, inventory and overflow containers, multiplayer, tool dropped/transferred between menu and build, invalid/broken tools, and modded axes with explicit supported tags.
+
+**Evidence limit:** the API documentation's declared base is build 722832, and the community mirror is not the user's installed game files. This is strong design evidence, not proof of current-build compatibility. No production crafting recipe was changed by this audit.
