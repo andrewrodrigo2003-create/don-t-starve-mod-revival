@@ -73,6 +73,7 @@ end
 -- existing War Bench. The server validates the station, input ownership and
 -- complete output capacity before consuming a single item.
 local MAMDeconstruction = require("mam/deconstruction")
+local MAMConfig = require("mam/config")
 local FindEntities = GLOBAL.TheSim.FindEntities
 local SpawnPrefab = GLOBAL.SpawnPrefab
 
@@ -193,26 +194,8 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
     end
 
     local inventory = doer.components.inventory
-    local recipe = GLOBAL.AllRecipes ~= nil and GLOBAL.AllRecipes[item.prefab] or nil
-    if MAMDeconstruction.GetReturns(item.prefab) == nil
-        and recipe ~= nil and recipe.no_deconstruction then
-        return false
-    end
-
-    local durability = 1
-    local finiteuses = item.components.finiteuses
-    local armor = item.components.armor
-    local fueled = item.components.fueled
-    local durability_component = finiteuses or armor or fueled
-    if durability_component ~= nil and type(durability_component.GetPercent) == "function" then
-        local ok, percent = pcall(durability_component.GetPercent, durability_component)
-        if ok and type(percent) == "number" then
-            durability = math.max(0, math.min(1, percent))
-        end
-    end
-
-    local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab,
-        math.random, recipe, durability)
+    -- Material-only policy: no live recipe or equipment durability can expand this allowlist.
+    local plan = MAMDeconstruction.BuildPlan(item.prefab, doer.prefab, math.random)
     if plan == nil then
         return false
     end
@@ -226,7 +209,9 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
             if output:IsValid() then output:Remove() end
         end
         if doer.components.talker ~= nil then
-            doer.components.talker:Say("Make room for the recovered materials first.")
+            doer.components.talker:Say(MAMConfig.get("mam_language", "ptbr") == "en"
+                and "Make room for the recovered materials first."
+                or "Libere espaço para os materiais recuperados.")
         end
         return false
     end
@@ -254,18 +239,15 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
     consumed:Remove()
     return true
 end)
-STRINGS.ACTIONS.MAM_DECONSTRUCT_METAL = "Dismantle / Desmontar"
+STRINGS.ACTIONS.MAM_DECONSTRUCT_METAL = MAMConfig.get("mam_language", "ptbr") == "en"
+    and "Dismantle" or "Desmontar"
 deconstruct_action.rmb = true
 deconstruct_action.mount_valid = true
 
 AddComponentAction("INVENTORY", "inventoryitem", function(inst, doer, actions, right)
-    local recipe = inst ~= nil and GLOBAL.AllRecipes ~= nil
-        and GLOBAL.AllRecipes[inst.prefab] or nil
-    local supported_material = inst ~= nil and MAMDeconstruction.GetReturns(inst.prefab) ~= nil
-    local supported_equipment = inst ~= nil and MAMDeconstruction.IsSupported(inst.prefab)
-        and recipe ~= nil and not recipe.no_deconstruction
+    local supported_material = inst ~= nil and MAMDeconstruction.IsSupported(inst.prefab)
     if right and inst ~= nil and inst:IsValid()
-        and (supported_material or supported_equipment)
+        and supported_material
         and has_warworkbench(doer) then
         table.insert(actions, ACTIONS.MAM_DECONSTRUCT_METAL)
     end
