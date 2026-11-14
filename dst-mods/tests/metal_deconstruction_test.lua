@@ -77,4 +77,38 @@ for _, prefab in ipairs({
 end
 assert(recovery.BuildPlan("unknown_metal", "wilson", always_success) == nil)
 
+
+-- The War Bench prefab replicates the "prototyper" tag before SetPristine,
+-- while its components.prototyper is server-only. Client RMB discovery must
+-- use the replicated tag; the authoritative server check must require the component.
+local client_station = {
+    prefab = "warworkbench",
+    HasTag = function(_, tag) return tag == "prototyper" end,
+}
+assert(recovery.HasWarWorkbench({ client_station }, false),
+    "client should recognize the replicated War Bench prototyper tag without server components")
+assert(not recovery.HasWarWorkbench({ client_station }, true),
+    "server must reject a War Bench without the authoritative prototyper component")
+local server_station = {
+    prefab = "warworkbench",
+    components = { prototyper = {} },
+    HasTag = function(_, tag) return tag == "prototyper" end,
+}
+assert(recovery.HasWarWorkbench({ server_station }, true),
+    "server should accept the real War Bench with its prototyper component")
+local wrong_station = {
+    prefab = "science_machine",
+    components = { prototyper = {} },
+    HasTag = function(_, tag) return tag == "prototyper" end,
+}
+assert(not recovery.HasWarWorkbench({ wrong_station }, false),
+    "other prototypers must not count as the War Bench")
+local untagged_station = {
+    prefab = "warworkbench",
+    components = { prototyper = {} },
+    HasTag = function() return false end,
+}
+assert(not recovery.HasWarWorkbench({ untagged_station }, false),
+    "client must reject a War Bench without the replicated prototyper tag")
+
 print("PASS: material-only deconstruction, survivor profile resolution and unsupported equipment")
