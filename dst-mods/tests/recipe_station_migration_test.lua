@@ -101,6 +101,24 @@ assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
 assert(CRAFTING_FILTERS.MODS.default_sort_values.goldenaxe == nil,
     "missing remove API must not add duplicate destination entry")
 
+-- If removal itself throws after destination insertion, rollback removes the new entry.
+guard.Init(function() end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = 99
+end, function(name, filter)
+    if filter == "CRAFTING_STATION" then
+        error("simulated RemoveRecipeFromFilter failure")
+    end
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
+local remove_fail_ok, remove_fail_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MODS")
+assert(not remove_fail_ok and remove_fail_reason == "filter-remove-failed")
+assert(AllRecipes.goldenaxe.level == old_level, "failed old-filter removal must preserve recipe level")
+assert(AllRecipes.goldenaxe.filter == stable_filter, "failed old-filter removal must preserve recipe.filter")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "failed old-filter removal must preserve old filter entry")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.goldenaxe == nil,
+    "failed old-filter removal must roll back destination entry")
+
 guard.Init(function() end, function(name, filter)
     CRAFTING_FILTERS[filter].default_sort_values[name] = 99
 end, function(name, filter)
