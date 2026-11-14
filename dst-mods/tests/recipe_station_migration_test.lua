@@ -62,8 +62,8 @@ assert(AllRecipes.goldenaxe.image == image, "recipe image must be preserved")
 assert(AllRecipes.goldenaxe.filter == "CRAFTING_STATION", "recipe filter property must be updated")
 assert(CRAFTING_FILTERS.TOOLS.default_sort_values.goldenaxe == nil, "old filter must not retain the recipe")
 assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil, "War Bench filter must receive the recipe")
-assert(#filter_calls == 2 and filter_calls[1].filter == "removed:TOOLS")
-assert(filter_calls[2].filter == "CRAFTING_STATION" and filter_calls[2].name == "goldenaxe")
+assert(#filter_calls == 2 and filter_calls[1].filter == "CRAFTING_STATION")
+assert(filter_calls[2].filter == "removed:TOOLS" and filter_calls[2].name == "goldenaxe")
 
 local calls_after_first_pass = #filter_calls
 assert(guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
