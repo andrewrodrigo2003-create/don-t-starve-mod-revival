@@ -366,6 +366,15 @@ function M.set_station(name, tech, filter)
             end
         end
 
+        -- If old filters exist, we must be able to remove them. Do not silently
+        -- report success while leaving the recipe visible in multiple categories.
+        if #old_filters > 0 and type(remove_recipe_from_filter) ~= "function" then
+            result.reason = "filter-api-unavailable"
+            MAMLog.WarnOnce("recipe_station.remove_api." .. name,
+                "RemoveRecipeFromFilter indisponivel para '%s'; receita nao foi alterada.", name)
+            return false, result.reason
+        end
+
         -- Add the destination first. If the API errors, the original recipe and
         -- all former filters remain untouched. Roll back a partial target insert.
         if target_needs_add then
