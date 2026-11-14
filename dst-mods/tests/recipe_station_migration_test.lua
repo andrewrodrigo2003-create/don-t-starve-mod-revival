@@ -89,6 +89,18 @@ assert(AllRecipes.goldenaxe.filter == stable_filter, "failed filter add must pre
 assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
     "failed filter add must preserve the previous filter entry")
 
+-- Without RemoveRecipeFromFilter, a migration with an existing old filter must fail closed.
+guard.Init(function() end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = 99
+end, nil)
+local remove_api_ok, remove_api_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MODS")
+assert(not remove_api_ok and remove_api_reason == "filter-api-unavailable")
+assert(AllRecipes.goldenaxe.level == old_level, "missing remove API must preserve recipe level")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "missing remove API must preserve old filter entry")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.goldenaxe == nil,
+    "missing remove API must not add duplicate destination entry")
+
 guard.Init(function() end, function(name, filter)
     CRAFTING_FILTERS[filter].default_sort_values[name] = 99
 end, function(name, filter)
