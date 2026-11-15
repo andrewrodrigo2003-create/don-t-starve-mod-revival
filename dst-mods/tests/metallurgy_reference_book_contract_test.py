@@ -5,6 +5,7 @@ actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
 prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
+smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
 modmain = (root / "modmain.lua").read_text(encoding="utf-8")
 recipes = (root / "initialise/modded_recipes.lua").read_text(encoding="utf-8")
@@ -63,3 +64,11 @@ assert 'bookcabinet_item' in prefab
 assert 'imagename = "cookbook"' in prefab
 assert "book_maxwell" not in prefab and "waxwelljournal" not in prefab
 assert 'image = "cookbook.tex"' in modmain
+
+assert 'mam_recent_results' in prefab or 'mam_recent_results' in smelter
+assert 'function Smelter:RecordSuccessfulResult()' in smelter
+assert 'recent_results = self.recent_results' in smelter
+assert 'while #self.recent_results > 3 do' in smelter
+assert 'build_recent_results_page(owner)' in screen
+assert 'Últimos resultados' in screen
+assert 'FindEntities(x, y, z, 25, { "mam_smelter" })' in screen
