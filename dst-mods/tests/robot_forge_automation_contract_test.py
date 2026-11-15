@@ -23,3 +23,10 @@ assert 'self:StartSmelting(nil, local_plan)' in component
 assert 'GetNearby' not in component
 assert 'TryAutoHarvestToStorage()' in prefab
 print("PASS: opt-in robot-fed smelting and output storage contracts")
+
+assert 'container.type == "chest" or container.type == "pack"' in component
+assert '"metal_storage_chest"' not in component
+assert '"marble_chest"' not in component
+assert '"dragonflychest"' not in component
+assert '"portablestorage"' in component
+assert 'TheSim:FindEntities(x, y, z, 8' in component
