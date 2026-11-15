@@ -55,6 +55,8 @@ function Class(ctor)
 end
 
 FRAMES = 1 / 30
+TheWorld = { ismastersim = true }
+json = { encode = function(value) return tostring(#value) end }
 
 local Smelter = dofile(ROOT .. "components/smelter.lua")
 local passed, failed = 0, 0
@@ -123,6 +125,9 @@ local function make_instance(container)
         deferred = {},
         tags = {},
         mam_plan = {
+            set = function(self, value) self.value = value end,
+        },
+        mam_recent_results = {
             set = function(self, value) self.value = value end,
         },
     }
@@ -550,6 +555,40 @@ check("reset smelter cancels periodic task",
     reset_task.cancelled == true and reset_smelter.task == nil)
 check("reset smelter does not leave a polling task",
     (reset_inst.periodic_calls or 0) == 1)
+
+
+
+-- The guide keeps only the three latest successfully completed smelting results.
+local history_smelter, history_inst = new_smelter(make_container({}))
+history_smelter.product = "copper_ingot"
+history_smelter.batch = 2
+history_smelter.issmelting = true
+history_smelter:DoneSmelting()
+history_smelter.product = "iron_ingot"
+history_smelter.batch = 1
+history_smelter.issmelting = true
+history_smelter:DoneSmelting()
+history_smelter.product = "gold_ingot"
+history_smelter.batch = 3
+history_smelter.issmelting = true
+history_smelter:DoneSmelting()
+history_smelter.product = "bronze_ingot"
+history_smelter.batch = 4
+history_smelter.issmelting = true
+history_smelter:DoneSmelting()
+check("forge history keeps the latest three results",
+    #history_smelter.recent_results == 3
+        and history_smelter.recent_results[1].product == "bronze_ingot"
+        and history_smelter.recent_results[2].product == "gold_ingot"
+        and history_smelter.recent_results[3].product == "iron_ingot")
+check("forge history is replicated to the book UI", history_inst.mam_recent_results.value == "3")
+local history_save = history_smelter:OnSave()
+local history_loaded, history_loaded_inst = new_smelter(make_container({}))
+history_loaded:OnLoad(history_save)
+check("forge history survives save/load",
+    #history_loaded.recent_results == 3
+        and history_loaded.recent_results[1].product == "bronze_ingot")
+check("loaded forge history is republished", history_loaded_inst.mam_recent_results.value == "3")
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
