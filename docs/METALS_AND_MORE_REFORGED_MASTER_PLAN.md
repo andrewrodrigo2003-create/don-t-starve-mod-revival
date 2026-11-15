@@ -485,3 +485,23 @@ Os testes de configuração e de runtime foram ampliados para verificar isolamen
 - Workflow principal: https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/43470401496. KTools/KTEX, parser Lua 5.1, harnesses disponíveis, wiring do livro/robôs, assets, conteúdo do pacote e upload passaram.
 - Artefato automático: metals-and-more-reforged-2.9.6, 6.591.877 bytes, ID 14060670957, expira em 27/11/2026. Apesar de a branch mirar 2.9.7, o artefato ainda está rotulado 2.9.6; não tratar como release/candidato final 2.9.7.
 - CI aprovada não substitui teste in-game. A PR #51 permanece draft e não mesclada; sem publicação na Oficina.
+
+## Atualização de implementação — 2026-11-15
+
+Esta seção descreve a proposta atual da PR #51; não substitui o histórico anterior nem declara release.
+
+- Livro de Metalurgia: visual e ícone migrados de Maxwell para Cookbook; tag `bookcabinet_item`; continua informativo e sem desbloqueios.
+- Histórico do livro: página com os três últimos resultados concluídos da forja mais próxima. O componente salva até três registros, replica via net string e evita duplicação em callbacks repetidos. Saves antigos carregam com histórico vazio. Se não houver forja próxima, a página informa que o jogador deve se aproximar.
+- Prévia da forja: cabeçalho, placeholders, estados, detalhes e botão de ação usam `mam_language` (pt-BR/English). Nomes de itens continuam usando as strings localizadas do DST.
+- Feedback de personagem: o jogador mais próximo fala ao concluir a fundição; o jogador que tenta iniciar um lote inválido ou quando há resultado pendente recebe mensagem localizada.
+- Automação: opção desligada por padrão; usa W.O.B.O.T./W.I.N.bot ativos como habilitador e aceita qualquer container próximo compatível do tipo chest/pack, sem baú dedicado. O robô vanilla não é alterado. O antigo `metal_storage_chest` fica apenas para saves existentes.
+- O fluxo de automação transfere ingredientes registrados de containers para a forja e devolve o produto ao container compatível mais próximo; sem espaço, mantém o produto na saída da forja.
+- Testes de contrato/ciclo de vida/localização foram ampliados para livro, histórico, speech e containers genéricos. CI e validação in-game devem confirmar esta atualização antes de qualquer release.
+- `modinfo.lua` permanece 2.9.6 enquanto a 2.9.7 é uma fundação de rework ainda não certificada. Não avançar versão antes de build final e teste no DST real.
+
+### Limites ainda abertos
+
+- Histórico é por forja e a página lê a forja mais próxima num raio de 25; não é um histórico global agregado de todas as forjas.
+- A busca de armazenamento é por proximidade de 8 unidades e mesma plataforma; não existe seletor de baú preferido.
+- Falta validar no DST real o comportamento dos netvars, o livro no cliente, fala do personagem, W.O.B.O.T., W.I.N.bot, baús modded, host/cliente, multiplayer e saves.
+- Testes de harness/contrato não substituem testes no motor do jogo.
