@@ -79,3 +79,8 @@ assert 'components.talker:Say' in prefab
 assert 'say_smelter_failure' in actions
 assert 'Essa combinação não pode ser fundida.' in actions
 assert 'The load could not be processed; check the materials.' in actions
+
+assert "baús e contêineres compatíveis" in screen
+assert "compatible chests and containers" in screen
+assert "baús e mochilas compatíveis" not in screen
+assert "compatible chests and packs" not in screen
