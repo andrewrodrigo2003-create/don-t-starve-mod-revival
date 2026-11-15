@@ -144,9 +144,13 @@ modimport("initialise/modded_marbletrees.lua")
 -- Depois de modded_marbletrees: o postinit de "marbletree" la' garante o
 -- lootdropper, e os rolls de minerio precisam encontrar o componente criado.
 modimport("initialise/modded_drops.lua")
-modimport("initialise/modded_pithpikemove.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_pithpikemove.lua")
+end
 modimport("initialise/modded_shearsharvest.lua")
-modimport("initialise/modded_mace.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_mace.lua")
+end
 modimport("initialise/modded_playerpost.lua")
 
 if GetModConfigData("disablemapchanges") then
@@ -154,7 +158,9 @@ modimport("initialise/modded_map.lua")
 end
 
 modimport("post_initialise/post_inits.lua")
-modimport("initialise/modded_stronger_bernie.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_stronger_bernie.lua")
+end
 modimport("initialise/modded_forgepack.lua")
 
 AddMinimapAtlas("images/inventoryimages/metal_smelter.xml")
@@ -319,7 +325,7 @@ STRINGS.CHARACTERS.GENERIC.DESCRIBE.CRAFTBOOK = "A scientific notebook!"
 
 
 
-if GetModConfigData("forge_weapons") then
+if GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons") then
 
 AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
 
