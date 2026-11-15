@@ -202,7 +202,7 @@ function MAMForecast.button_text(inst)
 
     local plan = MAMForecast.plan(inst)
     if plan == nil then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     end
 
     if plan.phase == "smelting" then
@@ -213,7 +213,7 @@ function MAMForecast.button_text(inst)
         end
         return L("Coletar", "Harvest")
     elseif plan.phase == "empty" then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     elseif plan.state == "invalid" or plan.phase == "invalid" then
         return L("Sem receita", "No match")
     elseif plan.phase == "ambiguous" then
@@ -226,7 +226,7 @@ function MAMForecast.button_text(inst)
 
     local name = product_name(plan.product)
     if name == nil then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     end
     if (plan.count or 1) > 1 then
         return L("Produz ", "Makes ") .. tostring(plan.count) .. " " .. name
