@@ -1,4 +1,7 @@
-local assets = {}
+local assets =
+{
+    Asset("ANIM", "anim/cookbook.zip"),
+}
 
 local function OnReadBook(inst, reader)
     if reader ~= nil and reader.ShowPopUp ~= nil then
@@ -15,12 +18,14 @@ local function fn()
     inst.entity:AddNetwork()
 
     MakeInventoryPhysics(inst)
-    inst.AnimState:SetBank("book_maxwell")
-    inst.AnimState:SetBuild("book_maxwell")
+    inst.AnimState:SetBank("cookbook")
+    inst.AnimState:SetBuild("cookbook")
     inst.AnimState:PlayAnimation("idle")
+    inst.Transform:SetScale(1.2, 1.2, 1.2)
 
     inst:AddTag("simplebook")
     inst:AddTag("book")
+    inst:AddTag("bookcabinet_item")
 
     MakeInventoryFloatable(inst, "med", nil, 0.75)
     inst.entity:SetPristine()
@@ -31,7 +36,7 @@ local function fn()
 
     inst:AddComponent("inspectable")
     inst:AddComponent("inventoryitem")
-    inst.components.inventoryitem.imagename = "waxwelljournal"
+    inst.components.inventoryitem.imagename = "cookbook"
     inst.components.inventoryitem.atlasname = "images/inventoryimages.xml"
 
     inst:AddComponent("simplebook")
