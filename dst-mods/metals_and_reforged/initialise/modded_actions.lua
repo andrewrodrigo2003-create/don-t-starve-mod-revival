@@ -9,6 +9,15 @@ local SpawnPrefab = GLOBAL.SpawnPrefab
 local TOOLACTIONS = GLOBAL.TOOLACTIONS
 local EventHandler = GLOBAL.EventHandler
 local ActionHandler = GLOBAL.ActionHandler
+local MAMConfig = require("mam/config")
+
+local function say_smelter_failure(doer, ptbr, english)
+    if doer ~= nil and doer.components ~= nil and doer.components.talker ~= nil then
+        doer.components.talker:Say(
+            MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
+        )
+    end
+end
 local CONTROL_ACTION = GLOBAL.CONTROL_ACTION
 local CONTROL_CONTROLLER_ACTION = GLOBAL.CONTROL_CONTROLLER_ACTION
 
@@ -26,10 +35,23 @@ AddAction(
 
 			if smelter.canharvest then
 				-- Tem produto aguardando: precisa colher antes de recarregar.
+				say_smelter_failure(act.doer,
+					"Recolha o resultado atual antes de iniciar outro lote.",
+					"Collect the current result before starting another batch.")
 				return false
 			end
 
-			return smelter:StartSmelting(act.doer) and true or false
+			local started = smelter:StartSmelting(act.doer)
+			if not started then
+				local plan = smelter:Forecast()
+				local invalid = plan ~= nil and (plan.state == "invalid" or plan.phase == "invalid")
+				say_smelter_failure(act.doer,
+					invalid and "Essa combinação não pode ser fundida."
+						or "A carga não pôde ser processada; confira os materiais.",
+					invalid and "This combination cannot be smelted."
+						or "The load could not be processed; check the materials.")
+			end
+			return started and true or false
 		end
 	end)
 
