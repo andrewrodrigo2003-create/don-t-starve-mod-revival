@@ -102,7 +102,7 @@ configuration_options = {
 	{
         name = "forge_weapons",
         label = "Old vs New Forge weapons",
-		hover = "If enabled, you'll have Forge weapons and their abilities from the Event.",
+		hover = "Selects the recipe variant only when Legacy Forge weapon abilities are enabled.",
         options = 
         {
 			{description = "Off - Give me old weapons.", data = false},
