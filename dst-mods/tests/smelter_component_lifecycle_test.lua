@@ -582,6 +582,8 @@ check("forge history keeps the latest three results",
         and history_smelter.recent_results[2].product == "gold_ingot"
         and history_smelter.recent_results[3].product == "iron_ingot")
 check("forge history is replicated to the book UI", history_inst.mam_recent_results.value == "3")
+check("repeated completion cannot duplicate the same result", history_smelter:DoneSmelting() == false
+    and #history_smelter.recent_results == 3)
 local history_save = history_smelter:OnSave()
 local history_loaded, history_loaded_inst = new_smelter(make_container({}))
 history_loaded:OnLoad(history_save)
