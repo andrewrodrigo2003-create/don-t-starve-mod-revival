@@ -72,16 +72,17 @@ local only_target_honored = query == nil
     and #secondary.components.combat.hits == 0
 
 -- Vanilla passes caller-provided exclusion tags through to FindEntities.
+query = nil
+secondary.components.combat.hits = {}
+bernie.components.combat:DoAreaAttack(primary, 4, weapon,
+    function() return false end, "electric", { "shadow" })
 local passed_excludes = query ~= nil and query.excludetags or {}
 local caller_exclusion_preserved = false
 for _, tag in ipairs(passed_excludes) do
     if tag == "shadow" then caller_exclusion_preserved = true end
 end
 
--- The override still honors validfn and forwards weapon/stimuli to GetAttacked.
-secondary.components.combat.hits = {}
-bernie.components.combat:DoAreaAttack(primary, 4, weapon,
-    function() return false end, "electric", { "shadow" })
+-- The override still honors validfn.
 local validfn_preserved = #secondary.components.combat.hits == 0
 
 secondary.components.combat.hits = {}
