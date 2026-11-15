@@ -1,0 +1,54 @@
+name: Metals and More stacked PR contracts
+
+on:
+  pull_request:
+    branches:
+      - feature/full-crafting-rework-localization-2026-11-12
+    paths:
+      - 'dst-mods/metals_and_reforged/**'
+      - 'dst-mods/tests/**'
+      - '.github/workflows/mam-stacked-pr-contracts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mam-stacked-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  targeted-contracts:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends lua5.1
+
+      - name: Parse mod and test Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/metals_and_reforged dst-mods/tests -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+
+      - name: Run recipe-station and deconstruction regression contracts
+        run: |
+          set -euo pipefail
+          for test in \
+            dst-mods/tests/recipe_station_migration_test.lua \
+            dst-mods/tests/recipe_application_retry_test.lua \
+            dst-mods/tests/metal_deconstruction_test.lua
+          do
+            test -f "$test"
+            echo "Running $test"
+            lua5.1 "$test"
+          done
