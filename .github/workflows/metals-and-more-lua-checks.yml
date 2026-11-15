@@ -75,7 +75,10 @@ jobs:
             dst-mods/tests/smelter_simulator_integration_test.lua \
             dst-mods/tests/stategraph_compatibility_test.lua \
             dst-mods/tests/container_widget_compatibility_test.lua \
-            dst-mods/tests/character_ability_compatibility_test.lua
+            dst-mods/tests/character_ability_compatibility_test.lua \
+            dst-mods/tests/simulator_bootstrap_test.lua \
+            dst-mods/tests/simulator_container_test.lua \
+            dst-mods/tests/simulator_network_test.lua
           do
             luac5.1 -p "$file"
           done
@@ -104,7 +107,10 @@ jobs:
             dst-mods/tests/stategraph_compatibility_test.lua \
             dst-mods/tests/container_widget_compatibility_test.lua \
             dst-mods/tests/character_ability_compatibility_test.lua \
-            dst-mods/tests/smelter_simulator_integration_test.lua
+            dst-mods/tests/smelter_simulator_integration_test.lua \
+            dst-mods/tests/simulator_bootstrap_test.lua \
+            dst-mods/tests/simulator_container_test.lua \
+            dst-mods/tests/simulator_network_test.lua
           do
             if [ -f "$test" ]; then
               echo "Running $test"
