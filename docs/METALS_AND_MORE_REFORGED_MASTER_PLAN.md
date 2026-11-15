@@ -505,3 +505,17 @@ Esta seção descreve a proposta atual da PR #51; não substitui o histórico an
 - A busca de armazenamento é por proximidade de 8 unidades e mesma plataforma; não existe seletor de baú preferido.
 - Falta validar no DST real o comportamento dos netvars, o livro no cliente, fala do personagem, W.O.B.O.T., W.I.N.bot, baús modded, host/cliente, multiplayer e saves.
 - Testes de harness/contrato não substituem testes no motor do jogo.
+
+
+## Compatibilidade do sistema legado de armas — 2026-11-15
+
+A auditoria encontrou que o antigo Forge Item Pack importava `scripts/mod_main.lua` incondicionalmente, instalando wrappers globais de combate e hooks de StateGraph mesmo com a opção de armas desativada. Esses wrappers têm divergências conhecidas com contratos vanilla (argumentos opcionais, retornos de dano especial e parâmetros de ataques em área).
+
+A PR #51 introduz `legacy_forge_weapon_abilities`, desligado por padrão:
+- desativa por padrão a importação de `scripts/mod_main.lua` e os wrappers globais de combate;
+- deixa opt-in as alterações de StateGraph de `modded_mace.lua`, `modded_pithpikemove.lua` e o override de Bernie;
+- só permite as receitas do Forge Item Pack quando a opção legada e `forge_weapons` estiverem habilitadas;
+- mantém a metalurgia, a forja, os minérios, o livro e a automação independentes desse sistema;
+- preserva os prefabs/configuração base do pacote para evitar quebrar saves que contenham itens antigos.
+
+Esta é uma mitigação de compatibilidade baseada na auditoria estática, **não prova de que o conflito com Woodie Better Skill Tree foi causado por esses hooks**. O teste in-game com o mod de Woodie habilitado e o sistema legado desligado continua obrigatório. O usuário pode reativar as habilidades legadas manualmente se desejar.
