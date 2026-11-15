@@ -553,7 +553,7 @@ function Smelter:RecordSuccessfulResult()
 end
 
 function Smelter:DoneSmelting()
-    if self.refund_pending then
+    if self.refund_pending or self.canharvest then
         return false
     end
 
