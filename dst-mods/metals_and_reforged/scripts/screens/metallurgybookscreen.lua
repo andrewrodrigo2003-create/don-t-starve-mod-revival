@@ -5,6 +5,8 @@ local ImageButton = require("widgets/imagebutton")
 local Text = require("widgets/text")
 local products = require("smelting_products")
 local MAMConfig = require("mam/config")
+local GLOBAL = rawget(_G, "GLOBAL") or _G
+local JSON = GLOBAL.json or rawget(_G, "json")
 
 local function L(ptbr, english)
     return MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
@@ -47,7 +49,60 @@ local function format_requirements(recipe)
     return #parts > 0 and table.concat(parts, ", ") or L("Carga específica", "Recipe-specific load")
 end
 
-local function build_pages()
+local function build_recent_results_page(owner)
+    local entries = {}
+    if owner ~= nil and owner.Transform ~= nil and TheSim ~= nil and JSON ~= nil and JSON.decode ~= nil then
+        local x, y, z = owner.Transform:GetWorldPosition()
+        local candidates = TheSim:FindEntities(x, y, z, 25, { "mam_smelter" }) or {}
+        local nearest, nearest_distance
+        for _, candidate in ipairs(candidates) do
+            if candidate ~= nil and candidate:IsValid() and candidate.Transform ~= nil
+                and candidate.mam_recent_results ~= nil then
+                local sx, sy, sz = candidate.Transform:GetWorldPosition()
+                local dx, dz = sx - x, sz - z
+                local distance = dx * dx + dz * dz
+                if nearest_distance == nil or distance < nearest_distance then
+                    nearest, nearest_distance = candidate, distance
+                end
+            end
+        end
+        if nearest ~= nil then
+            local encoded = nearest.mam_recent_results:value()
+            if type(encoded) == "string" and encoded ~= "" then
+                local ok, decoded = pcall(JSON.decode, encoded)
+                if ok and type(decoded) == "table" then
+                    for _, entry in ipairs(decoded) do
+                        if type(entry) == "table" and type(entry.product) == "string"
+                            and type(entry.quantity) == "number" and entry.quantity >= 1 then
+                            table.insert(entries, entry)
+                            if #entries >= 3 then
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local lines = {
+        L("Os três últimos resultados concluídos da forja mais próxima.",
+            "The three latest completed results from the nearest forge."),
+        "",
+    }
+    if #entries == 0 then
+        table.insert(lines, L("Nenhum resultado registrado. Aproxime-se de uma forja para consultar o histórico.",
+            "No results recorded. Move closer to a forge to view its history."))
+    else
+        for index, entry in ipairs(entries) do
+            table.insert(lines, tostring(index) .. ". " .. display_name(entry.product)
+                .. " × " .. tostring(entry.quantity))
+        end
+    end
+    return { title = L("Últimos resultados", "Recent results"), body = table.concat(lines, "\n") }
+end
+
+local function build_pages(owner)
     local names = {}
     for name in pairs(products) do
         table.insert(names, name)
@@ -193,13 +248,14 @@ local function build_pages()
             body = table.concat(lines, "\n"),
         })
     end
+    table.insert(pages, build_recent_results_page(owner))
     return pages
 end
 
 local MetallurgyBookScreen = Class(Screen, function(self, owner)
     Screen._ctor(self, "MetallurgyBookScreen")
     self.owner = owner
-    self.pages = build_pages()
+    self.pages = build_pages(owner)
     self.page = 1
 
     local shade = self:AddChild(Image("images/global.xml", "square.tex"))
