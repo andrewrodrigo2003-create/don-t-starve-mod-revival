@@ -1,6 +1,6 @@
 -- Static characterization of the optional legacy Forge item-pack combat extensions.
 -- Known divergences remain dormant by default behind legacy_forge_weapon_abilities=false.
--- This file is imported by MAM via modimport("scripts/mod_main.lua").
+-- Test-only source audit; the optional legacy Forge pack is not loaded by default.
 -- L0 source audit only: no Klei components or runtime callbacks are executed.
 local function read(path)
     local file = assert(io.open(path, "r"), "cannot read " .. path)
