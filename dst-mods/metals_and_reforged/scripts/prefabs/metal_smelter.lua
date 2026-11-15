@@ -306,6 +306,7 @@ local function fn()
     inst.AnimState:PlayAnimation("idle_empty")
 
     inst:AddTag("structure")
+    inst:AddTag("mam_smelter")
 
     MakeSnowCoveredPristine(inst)
 
@@ -313,6 +314,7 @@ local function fn()
     -- "produto|quantidade|fase". Declarado antes de SetPristine, como exige
     -- o sistema de rede do DST.
     inst.mam_plan = net_string(inst.GUID, "mam.smelter.plan", "mamplandirty")
+    inst.mam_recent_results = net_string(inst.GUID, "mam.smelter.recent_results", "mamrecentresultsdirty")
 
     inst.entity:SetPristine()
 
