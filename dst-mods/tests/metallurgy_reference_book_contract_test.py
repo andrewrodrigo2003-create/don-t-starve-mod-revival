@@ -56,3 +56,10 @@ assert 'if plan == nil then' in actions
 assert 'if plan == nil or #plan == 0 then' not in actions, "zero-return roll must consume the input"
 
 print("PASS: deconstruction action and read-only guide wiring")
+
+assert 'Asset("ANIM", "anim/cookbook.zip")' in prefab
+assert 'SetBank("cookbook")' in prefab and 'SetBuild("cookbook")' in prefab
+assert 'bookcabinet_item' in prefab
+assert 'imagename = "cookbook"' in prefab
+assert "book_maxwell" not in prefab and "waxwelljournal" not in prefab
+assert 'image = "cookbook.tex"' in modmain
