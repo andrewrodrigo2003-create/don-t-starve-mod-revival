@@ -61,6 +61,7 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertIn('L("Coletar", "Harvest")', forecast)
         self.assertIn('L("Carga mista", "Mixed load")', forecast)
         self.assertIn('L("Produzirá: ", "Will produce: ")', forecast)
+        self.assertNotIn('return "Smelt"', forecast)
 
     def test_deconstruction_copy_matches_material_only_implementation(self):
         actions = (
