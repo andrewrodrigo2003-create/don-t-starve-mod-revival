@@ -28,25 +28,26 @@ local function check(name, condition, is_known_divergence)
     end
 end
 
--- Vanilla Combat:CalcDamage returns damage and special damage. The imported
--- wrapper captures only one return value and returns only that value.
-check("CalcDamage wrapper captures only the first return value",
-    source:find("local C = old_calc_damage(self, A, z, B)", 1, true) ~= nil
-        and source:find("return C", 1, true) ~= nil, true)
+-- Vanilla Combat:CalcDamage returns damage and special damage; preserve both.
+check("CalcDamage wrapper preserves special damage return",
+    source:find("local C, spdamage = old_calc_damage(self, A, z, B)", 1, true) ~= nil
+        and source:find("return C, spdamage", 1, true) ~= nil)
 
--- Vanilla DoAttack also accepts instrangeoverride and instpos after instancemult.
-check("DoAttack wrapper omits optional range and position arguments",
-    source:find("function self:DoAttack(T, z, U, x, V)", 1, true) ~= nil
-        and source:find("old_do_attack(self, T, z, U, x, W)", 1, true) ~= nil, true)
+-- Vanilla DoAttack accepts optional range and position arguments after instancemult.
+check("DoAttack wrapper forwards optional range and position arguments",
+    source:find("function self:DoAttack(T, z, U, x, V, ...)", 1, true) ~= nil
+        and source:find("old_do_attack(self, T, z, U, x, W, ...)", 1, true) ~= nil)
 
--- Vanilla GetAttacked accepts a fifth spdamage argument.
-check("GetAttacked wrapper omits the spdamage argument",
-    source:find("function self:GetAttacked(G, X, z, x)", 1, true) ~= nil
-        and source:find("old_get_attacked(self, G, X, z, x)", 1, true) ~= nil, true)
+-- Vanilla GetAttacked accepts a fifth spdamage argument and optional extensions.
+check("GetAttacked wrapper forwards spdamage and optional arguments",
+    source:find("function self:GetAttacked(G, X, z, x, spdamage, ...)", 1, true) ~= nil
+        and source:find("old_get_attacked(self, G, X, z, x, spdamage, ...)", 1, true) ~= nil)
 
--- Vanilla DoAreaAttack accepts the seventh onlyontarget argument.
-check("DoAreaAttack wrapper omits onlyontarget",
-    source:find("function self:DoAreaAttack(A, Y, z, Z, x, _)", 1, true) ~= nil, true)
+-- Vanilla DoAreaAttack accepts excludetags and onlyontarget; forward both.
+check("DoAreaAttack wrapper forwards excludetags and onlyontarget",
+    source:find("function self:DoAreaAttack(A, Y, z, Z, x, excludetags, onlyontarget, ...)", 1, true) ~= nil
+        and source:find("old_do_area_attack(self, A, Y, z, Z, x, excludetags, onlyontarget, ...)", 1, true) ~= nil
+        and source:find("if onlyontarget then", 1, true) ~= nil)
 
 -- These hooks make the Forge pack's influence global, not limited to its weapons.
 check("combat extension is installed through global AddComponentPostInit",
@@ -71,7 +72,7 @@ check("EntityScript.GetDisplayName is replaced globally",
     source:find("_G.EntityScript:GetDisplayName()", 1, true) ~= nil, true)
 
 local report = string.format(
-    "Forge pack combat API characterization: %d source checks passed, %d known API divergences recorded, %d failed",
+    "Forge pack combat API contract: %d source checks passed, %d known global overrides recorded, %d failed",
     passed, known, failed
 )
 print(report)
