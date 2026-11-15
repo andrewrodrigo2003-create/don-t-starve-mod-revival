@@ -10,9 +10,14 @@ local require = GLOBAL.require
 
 local MAMLog = require("mam/log")
 local MAMForecast = require("mam/forecast")
+local MAMConfig = require("mam/config")
 local Widget = require("widgets/widget")
 local Image = require("widgets/image")
 local Text = require("widgets/text")
+
+local function L(ptbr, english)
+    return MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
+end
 
 local DIRTY_EVENT = "mamplandirty"
 local FORGE_PREFAB = "metal_smelter"
@@ -71,7 +76,7 @@ local function make_preview(self)
     -- The parent container widget is scaled for the forge, so this preview
     -- inherits the same 20% enlargement without being scaled twice.
 
-    panel.header = panel:AddChild(Text(FONT, 22, "FORGE PREVIEW"))
+    panel.header = panel:AddChild(Text(FONT, 22, L("PRÉVIA DA FORJA", "FORGE PREVIEW")))
     panel.header:SetPosition(0, 91, 0)
     panel.header:SetColour(1, 0.9, 0.72, 1)
 
@@ -85,7 +90,7 @@ local function make_preview(self)
     panel.icon:Hide()
 
     -- O nome faz parte da imagem: fica sobreposto no topo do proprio icone.
-    panel.name = panel:AddChild(Text(FONT, 17, "Add materials"))
+    panel.name = panel:AddChild(Text(FONT, 17, L("Adicione materiais", "Add materials")))
     panel.name:SetPosition(-48, 54, 0)
     panel.name:SetHAlign(GLOBAL.ANCHOR_MIDDLE)
     panel.name:SetVAlign(GLOBAL.ANCHOR_MIDDLE)
@@ -102,7 +107,7 @@ local function make_preview(self)
     panel.quantity:SetRegionSize(48, 48)
     panel.quantity:SetColour(1, 1, 1, 1)
 
-    panel.details = panel:AddChild(Text(FONT, 18, "The forge result will appear here."))
+    panel.details = panel:AddChild(Text(FONT, 18, L("O resultado da forja aparecerá aqui.", "The forge result will appear here.")))
     panel.details:SetPosition(0, -55, 0)
     panel.details:SetRegionSize(230, 76)
     panel.details:EnableWordWrap(true)
@@ -115,16 +120,16 @@ end
 
 local function preview_data(plan)
     if plan == nil then
-        return nil, nil, "Preview unavailable", "The recipe forecast could not be calculated."
+        return nil, nil, L("Prévia indisponível", "Preview unavailable"), L("Não foi possível calcular a previsão da receita.", "The recipe forecast could not be calculated.")
     end
 
     local phase = plan.phase or plan.state
     if phase == "empty" then
-        return nil, nil, "Add materials", "Insert metal ingredients to preview the result."
+        return nil, nil, L("Adicione materiais", "Add materials"), L("Insira ingredientes metálicos para prever o resultado.", "Insert metal ingredients to preview the result.")
     elseif phase == "invalid" or plan.state == "invalid" then
-        return nil, nil, "No valid result", "This combination has no registered smelting recipe."
+        return nil, nil, L("Nenhum resultado válido", "No valid result"), L("Esta combinação não possui receita de fundição registrada.", "This combination has no registered smelting recipe.")
     elseif phase == "error" then
-        return nil, nil, "Preview unavailable", "The recipe forecast failed; check the log."
+        return nil, nil, L("Prévia indisponível", "Preview unavailable"), L("A previsão falhou; consulte o registro.", "The recipe forecast failed; check the log.")
     elseif phase == "ambiguous" then
         local names = {}
         for i, prefab in ipairs(plan.possibilities or {}) do
@@ -134,7 +139,7 @@ local function preview_data(plan)
             end
             names[#names + 1] = MAMForecast.product_name(prefab) or prefab
         end
-        return nil, nil, "Possible results", table.concat(names, " / ")
+        return nil, nil, L("Resultados possíveis", "Possible results"), table.concat(names, " / ")
     elseif plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
         local outcomes = {}
         for i, outcome in ipairs(plan.outcomes) do
@@ -143,14 +148,14 @@ local function preview_data(plan)
                 break
             end
             local outcome_name = MAMForecast.product_name(outcome.product) or outcome.product
-            outcomes[#outcomes + 1] = tostring(outcome.count or 1) .. " x " .. outcome_name
+            outcomes[#outcomes + 1] = tostring(outcome.count or 1) .. L(" × ", " x ") .. outcome_name
         end
-        return nil, nil, "Possible results", table.concat(outcomes, " / ")
+        return nil, nil, L("Resultados possíveis", "Possible results"), table.concat(outcomes, " / ")
     end
 
     local product = plan.product
     if product == nil then
-        return nil, nil, "No result", "The forge has not selected a product."
+        return nil, nil, L("Sem resultado", "No result"), L("A forja ainda não selecionou um produto.", "The forge has not selected a product.")
     end
 
     local name = MAMForecast.product_name(product) or product
@@ -158,11 +163,11 @@ local function preview_data(plan)
     local details
 
     if phase == "smelting" then
-        details = "Currently smelting"
+        details = L("Fundindo", "Currently smelting")
     elseif phase == "harvest" then
-        details = "Ready to collect"
+        details = L("Pronto para coletar", "Ready to collect")
     else
-        details = "Predicted output"
+        details = L("Resultado previsto", "Predicted output")
     end
 
     return product, count, name, details
@@ -211,7 +216,7 @@ local function update_preview(self)
     end
     self.mam_forge_preview_fingerprint = fingerprint
 
-    panel.name:SetString(name or "Preview unavailable")
+    panel.name:SetString(name or L("Prévia indisponível", "Preview unavailable"))
     panel.quantity:SetString(quantity)
     panel.quantity:SetSize(count ~= nil and count > 999 and 36 or 42)
     panel.quantity:SetPosition(-20, -5, 0)
