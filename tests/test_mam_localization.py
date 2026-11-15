@@ -49,6 +49,19 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertNotIn("Previous / Anterior", screen)
         self.assertNotIn("Next / Próxima", screen)
 
+
+    def test_forge_preview_and_forecast_button_have_two_locales(self):
+        preview = (MOD / "initialise" / "modded_ui_forecast.lua").read_text(encoding="utf-8")
+        forecast = (MOD / "scripts" / "mam" / "forecast.lua").read_text(encoding="utf-8")
+        self.assertIn('local MAMConfig = require("mam/config")', preview)
+        self.assertIn('L("PRÉVIA DA FORJA", "FORGE PREVIEW")', preview)
+        self.assertIn('L("Nenhum resultado válido", "No valid result")', preview)
+        self.assertIn('L("Pronto para coletar", "Ready to collect")', preview)
+        self.assertIn('L("Fundir", "Smelt")', forecast)
+        self.assertIn('L("Coletar", "Harvest")', forecast)
+        self.assertIn('L("Carga mista", "Mixed load")', forecast)
+        self.assertIn('L("Produzirá: ", "Will produce: ")', forecast)
+
     def test_deconstruction_copy_matches_material_only_implementation(self):
         actions = (
             MOD / "initialise" / "modded_actions.lua"
