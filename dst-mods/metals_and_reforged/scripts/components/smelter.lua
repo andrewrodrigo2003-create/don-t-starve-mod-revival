@@ -1,6 +1,8 @@
 local smelting = require "smelting"
 local MAMConfig = require("mam/config")
 local MAMLog = require("mam/log")
+local GLOBAL = rawget(_G, "GLOBAL") or _G
+local JSON = GLOBAL.json or rawget(_G, "json")
 
 -- Tag propria, em vez de "harvestable": o componente vanilla harvestable tambem
 -- escreve essa tag no entity, e reusa-la aqui faria o farm system enxergar a
@@ -30,6 +32,7 @@ local Smelter = Class(function(self, inst)
     self.onplanfn = nil
     -- Recibo das entradas debitadas do lote ativo; so e confirmado ao concluir.
     self.active_receipt = nil
+    self.recent_results = {}
 
     -- O componente permanece ocioso sem polling; o timer so nasce ao iniciar/resumir um lote.
 end)
@@ -510,6 +513,45 @@ function Smelter:ResumeSmelting()
     end
 end
 
+function Smelter:PublishRecentResults()
+    local net_history = self.inst.mam_recent_results
+    if net_history == nil or JSON == nil or JSON.encode == nil then
+        return false
+    end
+
+    local ok, encoded = pcall(JSON.encode, self.recent_results or {})
+    if not ok or type(encoded) ~= "string" then
+        MAMLog.Warn("nao foi possivel publicar o historico recente da fundicao")
+        return false
+    end
+
+    net_history:set(encoded)
+    return true
+end
+
+function Smelter:RecordSuccessfulResult()
+    if type(self.product) ~= "string" or self.product == "" then
+        return false
+    end
+
+    local quantity = tonumber(self.batch) or 1
+    if quantity < 1 or quantity % 1 ~= 0 then
+        return false
+    end
+
+    self.recent_results = self.recent_results or {}
+    table.insert(self.recent_results, 1, {
+        product = self.product,
+        quantity = quantity,
+    })
+    while #self.recent_results > 3 do
+        table.remove(self.recent_results)
+    end
+
+    self:PublishRecentResults()
+    return true
+end
+
 function Smelter:DoneSmelting()
     if self.refund_pending then
         return false
@@ -520,6 +562,7 @@ function Smelter:DoneSmelting()
     self.active_receipt = nil
     self.issmelting = nil
     self.canharvest = true
+    self:RecordSuccessfulResult()
 
     if self.donesmeltingfn then
         MAMLog.Try("smelter:donesmeltingfn", self.donesmeltingfn, self.inst)
@@ -835,6 +878,7 @@ function Smelter:OnSave()
         issmelting = self.issmelting,
         active_receipt = self.active_receipt,
         refund_pending = self.refund_pending,
+        recent_results = self.recent_results,
     }
 end
 
@@ -846,6 +890,22 @@ function Smelter:OnLoad(data)
         self.batch = data.batch or 1
         self.active_receipt = nil
         self.refund_pending = data.refund_pending == true
+        self.recent_results = {}
+        if type(data.recent_results) == "table" then
+            for _, entry in ipairs(data.recent_results) do
+                if type(entry) == "table" and type(entry.product) == "string"
+                    and entry.product ~= "" and type(entry.quantity) == "number"
+                    and entry.quantity >= 1 and entry.quantity % 1 == 0 then
+                    table.insert(self.recent_results, {
+                        product = entry.product,
+                        quantity = entry.quantity,
+                    })
+                    if #self.recent_results >= 3 then
+                        break
+                    end
+                end
+            end
+        end
         if type(data.active_receipt) == "table" then
             local receipt = {}
             for _, entry in ipairs(data.active_receipt) do
@@ -925,6 +985,7 @@ function Smelter:OnLoad(data)
     end
 
     self:PublishPlan()
+    self:PublishRecentResults()
     -- Evita que Update(0) conclua antes da tarefa deferida e da restauracao
     -- do container em saves cujo tempo restante era zero/ausente.
     if not defer_expired_completion then
