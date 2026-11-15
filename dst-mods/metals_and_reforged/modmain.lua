@@ -231,7 +231,7 @@ AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 
 AddRecipe2("metallurgy_reference_book", {
     Ingredient("papyrus", 2), Ingredient("charcoal", 2),
     Ingredient("iron_ingot", 1, "images/inventoryimages/iron_ingot.xml"),
-}, TECH.ALCHEMY_ONE, { image = "waxwelljournal.tex" }, { "CRAFTING_STATION" })
+}, TECH.ALCHEMY_ONE, { image = "cookbook.tex" }, { "CRAFTING_STATION" })
 
 AddRecipe2("armor_sanity", {Ingredient("adamantium_ingot", 2, "images/inventoryimages/adamantium_ingot.xml"),Ingredient("papyrus", 3)}, TECH.ALCHEMY_ONE, {"CRAFTING_STATION"})
 
