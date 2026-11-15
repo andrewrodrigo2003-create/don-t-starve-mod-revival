@@ -186,6 +186,33 @@ local function onbuilt(inst)
     end
 end
 
+local function say_to_nearest_player(inst, ptbr, english)
+    if not TheWorld.ismastersim then
+        return
+    end
+
+    local x, y, z = inst.Transform:GetWorldPosition()
+    local players = TheSim:FindEntities(x, y, z, 8, { "player" }, { "playerghost", "INLIMBO" }) or {}
+    local nearest, nearest_distance
+    for _, player in ipairs(players) do
+        if player ~= nil and player:IsValid() and player.components ~= nil
+            and player.components.talker ~= nil and player.Transform ~= nil then
+            local px, py, pz = player.Transform:GetWorldPosition()
+            local dx, dz = px - x, pz - z
+            local distance = dx * dx + dz * dz
+            if nearest_distance == nil or distance < nearest_distance then
+                nearest, nearest_distance = player, distance
+            end
+        end
+    end
+
+    if nearest ~= nil then
+        nearest.components.talker:Say(
+            MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
+        )
+    end
+end
+
 local function smeltdone(inst)
 	local product = inst.components.smelter.product
 
