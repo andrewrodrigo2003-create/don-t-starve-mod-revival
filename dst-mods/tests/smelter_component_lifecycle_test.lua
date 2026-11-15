@@ -564,14 +564,17 @@ history_smelter.product = "copper_ingot"
 history_smelter.batch = 2
 history_smelter.issmelting = true
 history_smelter:DoneSmelting()
+history_smelter.canharvest = nil
 history_smelter.product = "iron_ingot"
 history_smelter.batch = 1
 history_smelter.issmelting = true
 history_smelter:DoneSmelting()
+history_smelter.canharvest = nil
 history_smelter.product = "gold_ingot"
 history_smelter.batch = 3
 history_smelter.issmelting = true
 history_smelter:DoneSmelting()
+history_smelter.canharvest = nil
 history_smelter.product = "bronze_ingot"
 history_smelter.batch = 4
 history_smelter.issmelting = true
