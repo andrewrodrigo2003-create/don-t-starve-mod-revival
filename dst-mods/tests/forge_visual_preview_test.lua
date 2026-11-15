@@ -84,6 +84,9 @@ local GLOBAL = {
 _G.GLOBAL = GLOBAL
 
 package.preload["mam/log"] = function() return log end
+package.preload["mam/config"] = function()
+    return { get = function(name, fallback) return fallback end }
+end
 package.preload["mam/forecast"] = function() return forecast end
 package.preload["widgets/widget"] = function()
     return function(name) return make_node(name) end
