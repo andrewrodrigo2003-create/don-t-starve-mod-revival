@@ -118,6 +118,9 @@ jobs:
             fi
           done
 
+      - name: Verify legacy Forge weapon compatibility gate
+        run: python3 dst-mods/tests/legacy_forge_weapon_gate_test.py
+
       - name: Verify metallurgy book wiring
         run: python3 dst-mods/tests/metallurgy_reference_book_contract_test.py
 
