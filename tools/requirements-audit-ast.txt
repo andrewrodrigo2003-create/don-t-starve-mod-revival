@@ -1,0 +1,4 @@
+# Optional AST-only audit dependencies; isolated from the core regex scanner.
+luaparser==4.2.0
+antlr4-python3-runtime==4.13.2
+multimethod==2.1
