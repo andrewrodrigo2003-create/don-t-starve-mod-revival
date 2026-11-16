@@ -295,14 +295,20 @@ SpawnPrefab = function(prefab)
     if partial_spawn_attempts == 2 then
         error("simulated SpawnPrefab constructor failure")
     end
-    return make_item(prefab, 1)
+    local item = make_item(prefab, 1)
+    item.DoTaskInTime = function() end
+    return item
 end
 check("thrown output spawn preserves pending harvest", partial_smelter:Harvest(partial_harvester) == false)
 check("thrown output spawn stores only undelivered remainder",
     partial_smelter.canharvest and partial_smelter.batch == 5)
 check("thrown output spawn does not duplicate delivered stack", partial_delivered == 40)
 check("thrown output spawn does not call harvest callback", partial_callbacks == 0)
-SpawnPrefab = function(prefab) return make_item(prefab, 1) end
+SpawnPrefab = function(prefab)
+    local item = make_item(prefab, 1)
+    item.DoTaskInTime = function() end
+    return item
+end
 check("retry after thrown spawn error completes pending remainder",
     partial_smelter:Harvest(partial_harvester) == true)
 check("retry after thrown spawn error delivers exact total once", partial_delivered == 45)
