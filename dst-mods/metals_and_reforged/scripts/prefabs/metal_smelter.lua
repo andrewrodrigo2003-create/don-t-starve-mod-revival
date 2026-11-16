@@ -217,6 +217,7 @@ local function smeltdone(inst)
 	local product = inst.components.smelter.product
 
 	if not inst:HasTag("burnt") then
+        say_to_nearest_player(inst, "A fundição terminou!", "Smelting is complete!")
 		inst.AnimState:PlayAnimation("smelting_pst")
 		inst.AnimState:PushAnimation("idle_full")
 		inst.SoundEmitter:KillSound("snd")
