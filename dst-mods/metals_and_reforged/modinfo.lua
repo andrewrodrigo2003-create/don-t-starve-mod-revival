@@ -72,16 +72,6 @@ configuration_options = {
         default = false,
 	},
 ----------------------------------------------
-	{
-		name = "Legacy Forge weapon abilities",
-        label = "Legacy Forge weapon abilities",
-        hover = "Enables the old Forge Event weapon abilities and global combat/StateGraph hooks. Disabled by default for compatibility; does not affect metallurgy.",
-        options = {
-            { description = "Off - Compatibility mode", data = false },
-            { description = "On - Enable legacy abilities", data = true },
-        },
-        default = false,
-    },
     {
         name = "legacy_forge_weapon_abilities",
         label = "Legacy Forge weapon abilities",
