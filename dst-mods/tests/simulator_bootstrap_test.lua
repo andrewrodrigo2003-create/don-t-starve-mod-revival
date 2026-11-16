@@ -2,7 +2,7 @@
 package.path = "dst-mods/tests/?.lua;dst-mods/tests/?/init.lua;" .. package.path
 local Simulator = require("simulator.bootstrap")
 local result = Simulator.HealthCheck()
-assert(result.version == "0.1.0")
+assert(result.version == Simulator.version, "health check must report the loaded simulator version")
 assert(result.checks == 4)
 
 local Scheduler = Simulator.Scheduler
