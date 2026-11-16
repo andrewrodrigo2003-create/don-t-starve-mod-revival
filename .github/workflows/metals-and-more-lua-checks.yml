@@ -23,7 +23,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Build KTools ktech and convert the mod icon to KTEX
         run: |
@@ -148,7 +150,7 @@ jobs:
         run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip"
 
       - name: Upload installable mod package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: metals-and-more-reforged-2.9.6
           path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip

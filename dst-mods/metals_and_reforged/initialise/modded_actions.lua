@@ -105,15 +105,8 @@ local function has_warworkbench(doer)
     end
     local x, y, z = doer.Transform:GetWorldPosition()
     local entities = FindEntities(GLOBAL.TheSim, x, y, z, 8, { "prototyper" }, { "INLIMBO", "burnt" })
-    for _, entity in ipairs(entities) do
-        if entity.prefab == "warworkbench"
-            and entity.components ~= nil
-            and entity.components.prototyper ~= nil
-            then
-            return true
-        end
-    end
-    return false
+    return MAMDeconstruction.HasWarWorkbench(entities,
+        GLOBAL.TheWorld ~= nil and GLOBAL.TheWorld.ismastersim == true)
 end
 
 local function stage_output_items(plan)

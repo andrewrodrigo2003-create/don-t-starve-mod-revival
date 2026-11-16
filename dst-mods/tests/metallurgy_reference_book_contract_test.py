@@ -13,7 +13,8 @@ recipes = (root / "initialise/modded_recipes.lua").read_text(encoding="utf-8")
 actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 
 assert 'AddAction("MAM_DECONSTRUCT_METAL"' in actions
-assert 'entity.prefab == "warworkbench"' in actions
+assert 'MAMDeconstruction.HasWarWorkbench(entities' in actions
+assert 'entity.prefab == "warworkbench"' in module
 assert "recipe.max_batch" in screen
 assert "Max input batch" in screen
 assert "can_fit_staged_outputs" in actions

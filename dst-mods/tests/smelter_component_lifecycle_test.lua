@@ -269,6 +269,51 @@ check("successful retry invokes harvest animation callback", harvest_callbacks =
 check("successful retry clears output entitlement", output_smelter.product == nil
     and not output_smelter.canharvest)
 
+-- A thrown SpawnPrefab error after a partial delivery must preserve only
+-- the undelivered remainder; retry must not duplicate the first stack.
+local partial_smelter = new_smelter(make_container({}))
+partial_smelter.canharvest = true
+partial_smelter.product = "copper_ingot"
+partial_smelter.batch = 45
+local partial_delivered = 0
+local partial_callbacks = 0
+partial_smelter.onharvest = function() partial_callbacks = partial_callbacks + 1 end
+local partial_harvester = {
+    components = {
+        inventory = {
+            GiveItem = function(_, item)
+                local stackable = item.components ~= nil and item.components.stackable or nil
+                partial_delivered = partial_delivered + (stackable ~= nil and stackable.stacksize or 1)
+                item.removed = true
+            end,
+        },
+    },
+}
+local partial_spawn_attempts = 0
+SpawnPrefab = function(prefab)
+    partial_spawn_attempts = partial_spawn_attempts + 1
+    if partial_spawn_attempts == 2 then
+        error("simulated SpawnPrefab constructor failure")
+    end
+    local item = make_item(prefab, 1)
+    item.DoTaskInTime = function() end
+    return item
+end
+check("thrown output spawn preserves pending harvest", partial_smelter:Harvest(partial_harvester) == false)
+check("thrown output spawn stores only undelivered remainder",
+    partial_smelter.canharvest and partial_smelter.batch == 5)
+check("thrown output spawn does not duplicate delivered stack", partial_delivered == 40)
+check("thrown output spawn does not call harvest callback", partial_callbacks == 0)
+SpawnPrefab = function(prefab)
+    local item = make_item(prefab, 1)
+    item.DoTaskInTime = function() end
+    return item
+end
+check("retry after thrown spawn error completes pending remainder",
+    partial_smelter:Harvest(partial_harvester) == true)
+check("retry after thrown spawn error delivers exact total once", partial_delivered == 45)
+check("retry after thrown spawn error invokes callback once", partial_callbacks == 1)
+
 -- A missing recipient must not clear a ready output entitlement.
 output_smelter.canharvest = true
 output_smelter.product = "copper_ingot"

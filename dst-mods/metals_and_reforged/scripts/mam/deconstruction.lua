@@ -75,6 +75,26 @@ local function add_recovered(totals, prefab, amount, material, character, roll)
     end
 end
 
+-- The War Bench adds its replicated "prototyper" tag before SetPristine,
+-- but its server-only component is created only after the client early return.
+-- Client action discovery must therefore use the networked tag; the server
+-- action handler additionally requires the authoritative component.
+function MAMDeconstruction.HasWarWorkbench(entities, ismastersim)
+    for _, entity in ipairs(entities or {}) do
+        if entity ~= nil and entity.prefab == "warworkbench"
+            and type(entity.HasTag) == "function"
+            and entity:HasTag("prototyper") then
+            if not ismastersim then
+                return true
+            end
+            if entity.components ~= nil and entity.components.prototyper ~= nil then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function MAMDeconstruction.GetReturns(prefab)
     return RETURNS[prefab]
 end

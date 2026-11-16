@@ -747,13 +747,15 @@ function Smelter:Harvest(harvester)
         end
 
         while remaining > 0 do
-            local loot = SpawnPrefab(self.product)
-            if loot == nil then
-                -- Preserve the undelivered remainder. Earlier stacks may
-                -- already have been delivered; retrying must not duplicate them.
+            -- SpawnPrefab may return nil or throw (for example, when a prefab
+            -- constructor fails). Treat both as a retryable output failure.
+            -- Earlier stacks may already have been delivered, so persist only
+            -- the undelivered remainder before returning.
+            local spawn_ok, loot = pcall(SpawnPrefab, self.product)
+            if not spawn_ok or loot == nil then
                 self.batch = remaining
-                MAMLog.Warn("produto %s nao pode ser gerado; %d unidade(s) pendentes",
-                    tostring(self.product), remaining)
+                MAMLog.Warn("produto %s nao pode ser gerado; %d unidade(s) pendentes (%s)",
+                    tostring(self.product), remaining, tostring(loot))
                 self:PublishPlan()
                 return false
             end
