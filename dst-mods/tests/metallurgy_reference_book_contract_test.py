@@ -6,6 +6,7 @@ module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
 prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
 smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
+smelter_prefab = (root / "scripts/prefabs/metal_smelter.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
 modmain = (root / "modmain.lua").read_text(encoding="utf-8")
 recipes = (root / "initialise/modded_recipes.lua").read_text(encoding="utf-8")
@@ -73,9 +74,9 @@ assert 'build_recent_results_page(owner)' in screen
 assert 'Últimos resultados' in screen
 assert 'FindEntities(x, y, z, 25, { "mam_smelter" })' in screen
 
-assert 'say_to_nearest_player' in prefab
-assert 'A fundição terminou!' in prefab
-assert 'components.talker:Say' in prefab
+assert 'say_to_nearest_player' in smelter_prefab
+assert 'A fundição terminou!' in smelter_prefab
+assert 'components.talker:Say' in smelter_prefab
 assert 'say_smelter_failure' in actions
 assert 'Essa combinação não pode ser fundida.' in actions
 assert 'The load could not be processed; check the materials.' in actions
