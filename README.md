@@ -1,28 +1,46 @@
-# Não deixe o Mod Revival passar fome
+# Don't Starve Together — Mod Revival
 
-eu quero atuslizar uns mods não passam alguns juntos q foram abandonados e traduzem um mod do jogo tambem.
+Repositório de engenharia e manutenção de mods para **Don't Starve Together (PC)**. O projeto começou com a intenção de recuperar mods abandonados, corrigir incompatibilidades e melhorar traduções; atualmente a principal linha de produto é **Metals and More Reforged**, dentro do ecossistema modular Beyond the Forge.
 
-# Mod traduzido: (https://steamcommunity.com/sharedfiles/filedetails/?id=3814815896)
+## Fonte de verdade
 
-# Mod revivido: (https://steamcommunity.com/sharedfiles/filedetails/?)
+- `dst-mods/metals_and_reforged/` — código-fonte do mod Metals and More Reforged.
+- `dst-mods/tests/` — harnesses Lua 5.1, contratos e testes de regressão do mod.
+- `tests/` — testes auxiliares do repositório.
+- `docs/` — arquitetura, decisões, compatibilidade, balanceamento, histórico de builds e procedimentos.
+- `.github/workflows/` — parsing, harnesses, gates de compatibilidade e empacotamento automatizado.
+- `AGENTS.md` — regras técnicas e limites para alterações.
 
-Este projeto foi construído com [Adorável](https://lovable.dev).
+## Projetos e escopo
 
-## Construa com Lovable
+- **Metals and More Reforged:** módulo independente; não é renomeado para Beyond the Forge.
+- **Beyond the Forge:** ecossistema guarda-chuva de módulos DST independentes e distribuição unificada planejada.
+- **Alvo:** DST para PC. Compatibilidade com Uncompromising Mode Public Beta é prioridade; preservar Hydrated e evitar alterações em mods de terceiros.
+- **Laboratório:** separar análise estática, harness/simulador, CI, runtime automatizado e teste manual no jogo. Um teste simulado não comprova funcionamento dentro do DST.
 
-Continue desenvolvendo este projeto no [Editor adorável](https://lovable.dev/projects/a9d67a2a-e558-491a-8924-38130fdf9da9).
+## Estado de desenvolvimento
 
-- **Envie mais rápido**: descreva o que você deseja construir e Lovable vida com o código.
-- **Fique em sincronia**: cada alteração feita no Lovable é viviada diretamente para este repositório.
-- **Propriedade total**: este código é seu. Empurre para `principal` no GitHub e suas alterações são sincronizadas recentemente no Lovable, fontes para seu próximo prompt.
+- A branch `main` é a referência integrada; PRs abertas em draft são propostas, não releases.
+- A PR #51 contém a fundação do rework de crafting/metalurgia. Seu título mira 2.9.7, mas o `modinfo.lua` e o pacote continuam em 2.9.6 deliberadamente até build final e validação in-game.
+- A PR #57 reconcilia correções da War Bench, ações cliente/servidor e segurança dos workflows sobre a base da #51.
+- Nenhuma dessas PRs foi mesclada ou publicada na Oficina Steam.
+- O último build de jogo observado nos registros recuperados foi 762172 (x64), em 2026-11-14; confirmar o build atual antes de atribuir compatibilidade.
 
-## Desenvolvimento
+## Validação
 
-Prefere trabalhar localmente? Você precisa de Node.js e npm — [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+1. Parsing Lua 5.1 e verificações estáticas.
+2. Harnesses e contratos isolados.
+3. Simulador determinístico para subconjuntos explicitamente modelados.
+4. CI e verificação do pacote instalável.
+5. Teste real no DST, incluindo cliente/master, mundo novo/save existente, multiplayer e combinações de mods.
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+Os níveis 1–4 não substituem o nível 5. Não declarar compatibilidade ampla apenas porque o CI passou.
+
+## Histórico de origem
+
+A intenção original do projeto foi recuperar mods abandonados, corrigir incompatibilidades e trabalhar em traduções. Um dos mods de referência informado no início foi [o mod da Oficina Steam](https://steamcommunity.com/sharedfiles/filedetails/?id=3814815896). O placeholder antigo de URL para “mod revivido” foi removido porque não apontava para uma página válida.
+
+## Licenças e proveniência
+
+Não copiar código, arte, animações, textos ou assets de terceiros sem licença ou permissão explícita. Abandono, disponibilidade pública ou ausência de atualização não concedem direitos de reutilização. Registrar fonte, autor, licença e permissão antes de qualquer incorporação.
+
