@@ -7,6 +7,8 @@ modmain = (MOD / "modmain.lua").read_text(encoding="utf-8")
 forgepack = (MOD / "initialise" / "modded_forgepack.lua").read_text(encoding="utf-8")
 
 assert 'name = "legacy_forge_weapon_abilities"' in modinfo
+assert 'name = "Legacy Forge weapon abilities"' not in modinfo
+assert modinfo.count('label = "Legacy Forge weapon abilities"') == 1
 assert 'default = false' in modinfo[modinfo.index('name = "legacy_forge_weapon_abilities"'):]
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in modmain
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in forgepack
