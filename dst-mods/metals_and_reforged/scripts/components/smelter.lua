@@ -248,53 +248,68 @@ function Smelter:Harvest(harvester)
         return false
     end
 
+    -- A colheita so pode limpar o estado depois que todos os prefabs do lote
+    -- foram criados. Se SpawnPrefab falhar no meio, removemos os prefabs
+    -- temporarios e mantemos o lote pronto para uma nova tentativa.
+    local pending = {}
+    if self.product ~= nil then
+        if harvester == nil or harvester.components == nil
+            or harvester.components.inventory == nil then
+            return false
+        end
+
+        local remaining = math.max(1, self.batch or 1)
+        while remaining > 0 do
+            local loot = SpawnPrefab(self.product)
+            if loot == nil then
+                for _, entry in ipairs(pending) do
+                    if entry.item ~= nil and entry.item:IsValid() then
+                        entry.item:Remove()
+                    end
+                end
+                MAMLog.Warn("produto %s nao pode ser gerado; lote preservado para nova tentativa",
+                    tostring(self.product))
+                return false
+            end
+
+            local amount = 1
+            if loot.components ~= nil and loot.components.stackable ~= nil then
+                local maxsize = loot.components.stackable.maxsize or 20
+                if maxsize > 0 then
+                    amount = math.min(remaining, maxsize)
+                end
+                if amount > 1 then
+                    loot.components.stackable:SetStackSize(amount)
+                end
+            end
+
+            table.insert(pending, { item = loot, count = amount })
+            remaining = remaining - amount
+        end
+    end
+
     if self.onharvest then
         self.onharvest(self.inst)
     end
 
-    if self.product ~= nil and harvester ~= nil and harvester.components.inventory ~= nil then
-        local remaining = self.batch or 1
-        if remaining < 1 then
-            remaining = 1
-        end
-
-        while remaining > 0 do
-            local loot = SpawnPrefab(self.product)
-            if loot == nil then
-                MAMLog.Warn("produto %s nao pode ser gerado", tostring(self.product))
-                break
+    for _, entry in ipairs(pending) do
+        local loot = entry.item
+        loot.targetMoisture = 0
+        loot:DoTaskInTime(2 * FRAMES, function()
+            if loot.components.moisturelistener then
+                loot.components.moisturelistener.moisture = loot.targetMoisture
+                loot.targetMoisture = nil
+                loot.components.moisturelistener:DoUpdate()
             end
+        end)
 
-            local n = remaining
-            if loot.components.stackable ~= nil then
-                local maxsize = loot.components.stackable.maxsize or 20
-                if maxsize > 0 and n > maxsize then
-                    n = maxsize
-                end
-                if n > 1 then
-                    loot.components.stackable:SetStackSize(n)
-                end
-            else
-                n = 1
-            end
-
-            loot.targetMoisture = 0
-            loot:DoTaskInTime(2 * FRAMES, function()
-                if loot.components.moisturelistener then
-                    loot.components.moisturelistener.moisture = loot.targetMoisture
-                    loot.targetMoisture = nil
-                    loot.components.moisturelistener:DoUpdate()
-                end
-            end)
-
-            harvester.components.inventory:GiveItem(loot, nil, self.inst:GetPosition())
-
-            remaining = remaining - n
-        end
+        -- Inventory:GiveItem pode retornar false quando o inventario nao
+        -- aceita o item; no DST esse caminho pode solta-lo no mundo. Nao
+        -- tentamos gerar outro lote aqui, para nao duplicar a entrega.
+        harvester.components.inventory:GiveItem(loot, nil, self.inst:GetPosition())
     end
 
     self:ResetSmelter()
-
     return true
 end
 
