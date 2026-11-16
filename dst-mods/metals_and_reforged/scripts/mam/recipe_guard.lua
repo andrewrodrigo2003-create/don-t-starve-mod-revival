@@ -112,9 +112,12 @@ local add_recipe_2 = nil
 local add_recipe_to_filter = nil
 local remove_recipe_from_filter = nil
 function M.Init(addrecipe2, addrecipetofilter, removerecipefromfilter)
+    -- Treat each initialization as a complete API snapshot. Retaining a previous
+    -- optional callback when the new environment omits it masks unavailable APIs
+    -- and can make station migration tests (or reloads) use stale capabilities.
     add_recipe_2 = addrecipe2
-    add_recipe_to_filter = addrecipetofilter or add_recipe_to_filter
-    remove_recipe_from_filter = removerecipefromfilter or remove_recipe_from_filter
+    add_recipe_to_filter = addrecipetofilter
+    remove_recipe_from_filter = removerecipefromfilter
 end
 
 local function describe(recipe)
