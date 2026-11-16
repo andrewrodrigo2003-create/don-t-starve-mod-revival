@@ -326,35 +326,98 @@ function M.set_station(name, tech, filter)
         return false, result.reason
     end
 
-    -- Recipe.level e a unica parte de tecnologia que muda. Os ingredientes,
-    -- atlas, imagem, flags, builder tags e callbacks do outro mod permanecem.
-    recipe.level = TechTree.Create(tech)
+    -- Prepare every fallible input before mutating the live Recipe or its filters.
+    local ok_level, new_level = pcall(TechTree.Create, tech)
+    if not ok_level then
+        result.reason = "invalid-tech"
+        MAMLog.WarnOnce("recipe_station.create_tech." .. name,
+            "Nao foi possivel preparar a tecnologia de '%s'; bancada nao foi alterada.", name)
+        return false, result.reason
+    end
 
+    local target_filter
+    local old_filters = {}
+    local target_needs_add = false
     if filter ~= nil then
-        if add_recipe_to_filter == nil then
+        if type(add_recipe_to_filter) ~= "function" then
             result.reason = "filter-api-unavailable"
             MAMLog.WarnOnce("recipe_station.filter." .. name,
-                "AddRecipeToFilter indisponivel para '%s'; tecnologia alterada, filtro nao.", name)
+                "AddRecipeToFilter indisponivel para '%s'; receita nao foi alterada.", name)
             return false, result.reason
         end
 
-        -- Remove the recipe from its former vanilla/mod filters so it appears
-        -- in the War Bench station filter only.
-        if remove_recipe_from_filter ~= nil and GLOBAL.CRAFTING_FILTERS ~= nil then
-            for filter_name, filter_def in pairs(GLOBAL.CRAFTING_FILTERS) do
-                if filter_name ~= filter and filter_name ~= "FAVORITES"
-                    and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
-                    and filter_def.default_sort_values ~= nil
-                    and filter_def.default_sort_values[name] ~= nil then
-                    remove_recipe_from_filter(name, filter_name)
-                end
+        local filters = GLOBAL.CRAFTING_FILTERS
+        target_filter = filters ~= nil and filters[filter] or nil
+        if target_filter == nil or type(target_filter.default_sort_values) ~= "table" then
+            result.reason = "invalid-filter"
+            MAMLog.WarnOnce("recipe_station.invalid_filter." .. name,
+                "Filtro de destino '%s' invalido para '%s'; receita nao foi alterada.",
+                tostring(filter), name)
+            return false, result.reason
+        end
+
+        target_needs_add = target_filter.default_sort_values[name] == nil
+        for filter_name, filter_def in pairs(filters) do
+            if filter_name ~= filter and filter_name ~= "FAVORITES"
+                and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
+                and type(filter_def.default_sort_values) == "table"
+                and filter_def.default_sort_values[name] ~= nil then
+                old_filters[#old_filters + 1] = filter_name
             end
         end
-        local target_filter = GLOBAL.CRAFTING_FILTERS ~= nil and GLOBAL.CRAFTING_FILTERS[filter] or nil
-        if target_filter == nil or target_filter.default_sort_values == nil
-            or target_filter.default_sort_values[name] == nil then
-            add_recipe_to_filter(name, filter)
+
+        -- If old filters exist, we must be able to remove them. Do not silently
+        -- report success while leaving the recipe visible in multiple categories.
+        if #old_filters > 0 and type(remove_recipe_from_filter) ~= "function" then
+            result.reason = "filter-api-unavailable"
+            MAMLog.WarnOnce("recipe_station.remove_api." .. name,
+                "RemoveRecipeFromFilter indisponivel para '%s'; receita nao foi alterada.", name)
+            return false, result.reason
         end
+
+        -- Add the destination first. If the API errors, the original recipe and
+        -- all former filters remain untouched. Roll back a partial target insert.
+        if target_needs_add then
+            local added, add_error = pcall(add_recipe_to_filter, name, filter)
+            if not added then
+                if type(remove_recipe_from_filter) == "function" then
+                    pcall(remove_recipe_from_filter, name, filter)
+                end
+                result.reason = "filter-add-failed"
+                MAMLog.WarnOnce("recipe_station.add_failed." .. name,
+                    "Nao foi possivel adicionar '%s' ao filtro '%s': %s",
+                    name, tostring(filter), tostring(add_error))
+                return false, result.reason
+            end
+        end
+
+        -- Remove former filters only after the destination is known to exist.
+        -- On failure, restore those already removed and undo the new destination.
+        local removed = {}
+        if type(remove_recipe_from_filter) == "function" then
+            for _, old_filter in ipairs(old_filters) do
+                local removed_ok, remove_error = pcall(remove_recipe_from_filter, name, old_filter)
+                if not removed_ok then
+                    for _, restore_filter in ipairs(removed) do
+                        pcall(add_recipe_to_filter, name, restore_filter)
+                    end
+                    if target_needs_add then
+                        pcall(remove_recipe_from_filter, name, filter)
+                    end
+                    result.reason = "filter-remove-failed"
+                    MAMLog.WarnOnce("recipe_station.remove_failed." .. name,
+                        "Nao foi possivel migrar '%s' do filtro '%s': %s",
+                        name, tostring(old_filter), tostring(remove_error))
+                    return false, result.reason
+                end
+                removed[#removed + 1] = old_filter
+            end
+        end
+    end
+
+    -- Commit the Recipe fields only after filter migration succeeds.
+    recipe.level = new_level
+    if filter ~= nil then
         recipe.filter = filter
     end
 

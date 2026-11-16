@@ -62,12 +62,68 @@ assert(AllRecipes.goldenaxe.image == image, "recipe image must be preserved")
 assert(AllRecipes.goldenaxe.filter == "CRAFTING_STATION", "recipe filter property must be updated")
 assert(CRAFTING_FILTERS.TOOLS.default_sort_values.goldenaxe == nil, "old filter must not retain the recipe")
 assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil, "War Bench filter must receive the recipe")
-assert(#filter_calls == 2 and filter_calls[1].filter == "removed:TOOLS")
-assert(filter_calls[2].filter == "CRAFTING_STATION" and filter_calls[2].name == "goldenaxe")
+assert(#filter_calls == 2 and filter_calls[1].filter == "CRAFTING_STATION")
+assert(filter_calls[2].filter == "removed:TOOLS" and filter_calls[2].name == "goldenaxe")
 
 local calls_after_first_pass = #filter_calls
 assert(guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
 assert(#filter_calls == calls_after_first_pass, "repeated station migration must not duplicate filter entries")
+
+-- Invalid target filters must not mutate recipe technology or remove the old filter.
+local old_level = AllRecipes.goldenaxe.level
+local invalid_ok, invalid_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MISSING_FILTER")
+assert(not invalid_ok and invalid_reason == "invalid-filter")
+assert(AllRecipes.goldenaxe.level == old_level, "invalid destination must preserve recipe level")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "invalid destination must preserve the existing station filter")
+
+-- A failing destination API must leave recipe metadata and old filters untouched.
+local stable_filter = AllRecipes.goldenaxe.filter
+guard.Init(function() end, function() error("simulated AddRecipeToFilter failure") end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
+local add_ok, add_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MODS")
+assert(not add_ok and add_reason == "filter-add-failed")
+assert(AllRecipes.goldenaxe.level == old_level, "failed filter add must preserve recipe level")
+assert(AllRecipes.goldenaxe.filter == stable_filter, "failed filter add must preserve recipe.filter")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "failed filter add must preserve the previous filter entry")
+
+-- Without RemoveRecipeFromFilter, a migration with an existing old filter must fail closed.
+guard.Init(function() end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = 99
+end, nil)
+local remove_api_ok, remove_api_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MODS")
+assert(not remove_api_ok and remove_api_reason == "filter-api-unavailable")
+assert(AllRecipes.goldenaxe.level == old_level, "missing remove API must preserve recipe level")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "missing remove API must preserve old filter entry")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.goldenaxe == nil,
+    "missing remove API must not add duplicate destination entry")
+
+-- If removal itself throws after destination insertion, rollback removes the new entry.
+guard.Init(function() end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = 99
+end, function(name, filter)
+    if filter == "CRAFTING_STATION" then
+        error("simulated RemoveRecipeFromFilter failure")
+    end
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
+local remove_fail_ok, remove_fail_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "MODS")
+assert(not remove_fail_ok and remove_fail_reason == "filter-remove-failed")
+assert(AllRecipes.goldenaxe.level == old_level, "failed old-filter removal must preserve recipe level")
+assert(AllRecipes.goldenaxe.filter == stable_filter, "failed old-filter removal must preserve recipe.filter")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil,
+    "failed old-filter removal must preserve old filter entry")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.goldenaxe == nil,
+    "failed old-filter removal must roll back destination entry")
+
+guard.Init(function() end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = 99
+end, function(name, filter)
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
 
 assert(not guard.set_station("removed_recipe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
 
