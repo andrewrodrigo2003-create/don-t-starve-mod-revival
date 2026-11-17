@@ -132,6 +132,9 @@ jobs:
       - name: Verify metallurgy book wiring
         run: python3 dst-mods/tests/metallurgy_reference_book_contract_test.py
 
+      - name: Verify bilingual MAM localization
+        run: python3 tests/test_mam_localization.py
+
       - name: Verify robot forge automation wiring
         run: python3 dst-mods/tests/robot_forge_automation_contract_test.py
 
