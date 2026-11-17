@@ -136,71 +136,78 @@ local function stage_output_items(plan)
     return staged
 end
 
-local function can_fit_staged_outputs(inventory, staged)
-    local slots = {}
-    local free_slots = 0
-
-    local function scan(slots_table, count)
-        if slots_table == nil then
-            return
-        end
-        for index = 1, count or #slots_table do
+local function plan_output_slots(inventory, staged)
+    local function scan(container, slots_table, count)
+        local storage = { container = container, slots = {} }
+        for index = 1, count do
             local item = slots_table[index]
-            if item == nil then
-                free_slots = free_slots + 1
-            else
-                local room = item.components ~= nil and item.components.stackable ~= nil
-                    and item.components.stackable:RoomLeft() or 0
-                table.insert(slots, { item = item, room = room })
-            end
+            table.insert(storage.slots, {
+                index = index,
+                item = item,
+                room = item ~= nil and item.components.stackable ~= nil
+                    and math.max(0, item.components.stackable:RoomLeft()) or 0,
+            })
         end
+        return storage
     end
 
-    scan(inventory.itemslots, inventory.maxslots)
-    local overflow = inventory:GetOverflowContainer()
-    if overflow ~= nil then
-        scan(overflow.slots, overflow.numslots)
-    end
+    local primary = scan(inventory, inventory.itemslots, inventory.maxslots)
+    local container = inventory:GetOverflowContainer()
+    local overflow = container ~= nil and scan(container, container.slots, container.numslots) or nil
+    local placements = {}
 
     for _, output in ipairs(staged) do
         local stackable = output.components.stackable
         local remaining = stackable ~= nil and stackable:StackSize() or 1
-        local maxsize = stackable ~= nil
-            and math.max(1, stackable.maxsize or 1) or 1
-
-        for _, slot in ipairs(slots) do
-            if remaining > 0 and slot.room > 0
-                and slot.item.components ~= nil
-                and slot.item.components.stackable ~= nil
-                and stackable ~= nil
-                and slot.item.components.stackable:CanStackWith(output) then
-                local used = math.min(remaining, slot.room)
-                slot.room = slot.room - used
-                remaining = remaining - used
-            end
+        local maxsize = stackable ~= nil and math.max(1, stackable.maxsize or 1) or 1
+        local order = { primary, overflow }
+        if overflow ~= nil and overflow.container:ShouldPrioritizeContainer(output) then
+            order = { overflow, primary }
         end
 
-        while remaining > 0 do
-            free_slots = free_slots - 1
-            if free_slots < 0 then
-                return false
+        for pass = 1, 2 do
+            for _, storage in ipairs(order) do
+                for _, slot in ipairs(storage.slots) do
+                    local destination = storage.container
+                    if remaining > 0 and destination:CanTakeItemInSlot(output, slot.index) then
+                        local room = 0
+                        if pass == 1 and slot.item ~= nil and stackable ~= nil
+                            and destination.acceptsstacks
+                            and slot.item.components.stackable ~= nil
+                            and slot.item.components.stackable:CanStackWith(output) then
+                            room = slot.room
+                        elseif pass == 2 and slot.item == nil then
+                            room = destination.acceptsstacks and maxsize or 1
+                        end
+                        if room > 0 then
+                            local amount = math.min(remaining, room)
+                            table.insert(placements, {
+                                item = output,
+                                count = amount,
+                                container = destination,
+                                slot = slot.index,
+                            })
+                            slot.item = slot.item or output
+                            slot.room = room - amount
+                            remaining = remaining - amount
+                        end
+                    end
+                end
             end
-            local placed = math.min(remaining, maxsize)
-            remaining = remaining - placed
-            table.insert(slots, {
-                item = output,
-                room = stackable ~= nil and (maxsize - placed) or 0,
-            })
+        end
+        if remaining > 0 then
+            return nil
         end
     end
 
-    return true
+    return placements
 end
 
 local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", function(act)
     local doer = act.doer
     local item = act.invobject or act.target
-    if doer == nil or item == nil or not item:IsValid()
+    if GLOBAL.TheWorld == nil or not GLOBAL.TheWorld.ismastersim
+        or doer == nil or item == nil or not item:IsValid()
         or doer.components == nil or doer.components.inventory == nil
         or item.components == nil or item.components.inventoryitem == nil
         or item.components.inventoryitem.owner ~= doer
@@ -219,7 +226,8 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
     if staged == nil then
         return false
     end
-    if not can_fit_staged_outputs(inventory, staged) then
+    local placements = plan_output_slots(inventory, staged)
+    if placements == nil then
         for _, output in ipairs(staged) do
             if output:IsValid() then output:Remove() end
         end
@@ -241,11 +249,15 @@ local deconstruct_action = AddAction("MAM_DECONSTRUCT_METAL", "Dismantle", funct
         return false
     end
 
-    for _, output in ipairs(staged) do
-        local accepted = inventory:GiveItem(output)
-        if not accepted and output:IsValid() then
-            -- The preflight should make this unreachable; preserve materials
-            -- on the ground rather than deleting an output after input commit.
+    for _, placement in ipairs(placements) do
+        local output = placement.item
+        if output.components.stackable ~= nil
+            and output.components.stackable:StackSize() > placement.count then
+            output = output.components.stackable:Get(placement.count)
+        end
+        -- Use the reserved slot so overflow priority cannot consume another output's space.
+        local accepted = placement.container:GiveItem(output, placement.slot)
+        if not accepted and output:IsValid() and output.components.inventoryitem.owner == nil then
             local x, y, z = doer.Transform:GetWorldPosition()
             output.Transform:SetPosition(x, y, z)
             output.components.inventoryitem:OnDropped(true)

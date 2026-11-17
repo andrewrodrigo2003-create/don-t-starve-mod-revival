@@ -39,10 +39,40 @@ end
 
 local CRAFTABLES =
 {
+    WARWORKBENCH = {
+        name = { "Bancada de Guerra", "War Bench" },
+        description = { "Sinto-me inspirado.", "I feel inspired." },
+        recipe = { "Alguém trabalhou aqui. Ainda está quente...", "Someone worked on this, still hot..." },
+    },
+    CRAFTBOOK = {
+        name = { "Livro de Projetos", "Craftbook" },
+        description = { "Um caderno científico!", "A scientific notebook!" },
+        recipe = { "Anos de experiência em forma de livro.", "Years of experience, in book form." },
+    },
+    MARBLE_CHEST = {
+        name = { "Baú de Mármore", "Marble Chest" },
+        description = { "É bem espaçoso por dentro.", "It's quite roomy in there." },
+        recipe = { "Proteção à prova de fogo para seus pertences.", "Fire-proof protection for your hot goods." },
+    },
+    COLD_SAFE = {
+        name = { "Cofre Refrigerado", "Cold Storage" },
+        description = { "Nada é tão seguro quanto um cofre.", "Nothing as safe as a safe." },
+        recipe = { "Mantimentos bem protegidos.", "Safe and secure sustenance." },
+    },
+    METAL_STORAGE_CHEST = {
+        name = { "Baú de Metais", "Metal Storage Chest" },
+        description = { "Um lugar seguro para meus metais.", "A safe place for my metals." },
+        recipe = { "Um baú reforçado para minérios, pós, lingotes e materiais de fundição.", "A reinforced chest for ores, dusts, ingots and smelting materials." },
+    },
     METAL_SMELTER = {
         name = { "Fundição de metais", "Metal Smelter" },
         description = { "Uma estrutura para fundir e refinar metais.", "A station for smelting and refining metals." },
         recipe = { "Derreta e refine diferentes metais.", "Smelt and refine different metals." },
+    },
+    MAM_STONE_CHISEL = {
+        name = { "Cinzel de Entalhe em Pedra", "Stone-Carving Chisel" },
+        description = { "Reutilizável para trabalhar pedra. Não se desgasta ao fabricar.", "Reusable for stoneworking. Crafting does not wear it down." },
+        recipe = { "Uma ferramenta reutilizável para trabalhar pedra.", "A reusable tool for cutting stone." },
     },
     METALLURGY_REFERENCE_BOOK = {
         name = { "Guia de Metalurgia", "Metallurgy Guide" },
@@ -56,6 +86,18 @@ for key, entry in pairs(CRAFTABLES) do
     STRINGS.RECIPE_DESC[key] = L(entry.recipe[1], entry.recipe[2])
     STRINGS.CHARACTERS.GENERIC.DESCRIBE[key] = L(entry.description[1], entry.description[2])
 end
+
+STRINGS.ACTIONS.OPEN_CRAFTING.WARWORKBENCH = L("Fabricar na", "Craft at")
+STRINGS.ACTIONS.OPEN_CRAFTING.CRAFTBOOK = L("Consultar", "Read")
+
+STRINGS.RECIPE_DESC.MAM_AXE_BOARDS = L("Requer um machado funcional; a ferramenta não é consumida.",
+    "Requires a working axe; the tool is not consumed.")
+STRINGS.RECIPE_DESC.MAM_CHISEL_CUTSTONE = L("Requer um Cinzel de Entalhe em Pedra reutilizável.",
+    "Requires a reusable Stone-Carving Chisel.")
+STRINGS.CHARACTERS.GENERIC.ACTIONFAIL.BUILD.MAM_NEEDS_AXE = L("Preciso carregar um machado que funcione.",
+    "I need to carry a working axe.")
+STRINGS.CHARACTERS.GENERIC.ACTIONFAIL.BUILD.MAM_NEEDS_CHISEL = L("Preciso carregar meu cinzel de entalhe em pedra.",
+    "I need to carry my stone-carving chisel.")
 
 STRINGS.NAMES.IRONROCK = L("Depósito de ferro", "Iron Deposit")
 STRINGS.NAMES.SPIKYROCK = L("Depósito de cobre", "Copper Deposit")

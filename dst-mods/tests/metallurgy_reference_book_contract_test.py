@@ -17,7 +17,12 @@ assert 'MAMDeconstruction.HasWarWorkbench(entities' in actions
 assert 'entity.prefab == "warworkbench"' in module
 assert "recipe.max_batch" in screen
 assert "Max input batch" in screen
-assert "can_fit_staged_outputs" in actions
+assert 'local placements = plan_output_slots(inventory, staged)' in actions
+assert 'if placements == nil then' in actions
+assert actions.index('local placements = plan_output_slots(inventory, staged)') < actions.index('inventory:RemoveItem(item, false)')
+assert 'destination:CanTakeItemInSlot(output, slot.index)' in actions
+assert 'placement.container:GiveItem(output, placement.slot)' in actions
+assert 'not GLOBAL.TheWorld.ismastersim' in actions
 assert 'BASE_RECOVERY = 0.75' in module
 assert 'wilson = { all = 1 }' in module
 assert 'winona = { nonmagical = 1 }' in module

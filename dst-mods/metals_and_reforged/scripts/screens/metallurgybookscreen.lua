@@ -147,6 +147,26 @@ local function build_pages(owner)
             }, "\n"),
         },
         {
+            title = L("Machado e cinzel", "Axe & chisel"),
+            body = table.concat({
+                MAMConfig.on("mam_axe_crafting")
+                    and L("Tábuas: carregue um machado funcional no inventário, equipado ou na mochila. A fabricação não consome nem desgasta a ferramenta.",
+                        "Boards: carry a working axe in your inventory, equipped or in your backpack. Crafting does not consume or wear the tool.")
+                    or L("O requisito de machado está desativado neste servidor.", "The axe requirement is disabled on this server."),
+                "",
+                L("Com a opção de machado ligada, a receita comum usa 3 toras quando seu custo vanilla está intacto. Custos alterados por outros mods e estações exigidas são preservados.",
+                    "With the axe option enabled, the common recipe uses 3 logs when its vanilla cost is unchanged. Other-mod costs and required stations are preserved."),
+                "",
+                MAMConfig.on("mam_chisel_crafting")
+                    and L("Pedra trabalhada: carregue um Cinzel de Entalhe em Pedra. Fabrique-o com 2 gravetos e 2 pedras lascadas, sem estação. Ele não possui durabilidade nem é consumido.",
+                        "Cut stone: carry a Stone-Carving Chisel. Craft it with 2 twigs and 2 flint, without a station. It has no durability and is not consumed.")
+                    or L("O requisito de cinzel está desativado neste servidor.", "The chisel requirement is disabled on this server."),
+                "",
+                L("As receitas de lote nativas também exigem a ferramenta quando a opção está ligada; seus custos, quantidades e estações não mudam. Transmutações de personagem permanecem separadas.",
+                    "Native batch recipes also require the corresponding tool when enabled; their costs, quantities and stations stay unchanged. Character transmutations remain separate."),
+            }, "\n"),
+        },
+        {
             title = L("Mineração e fontes", "Mining & sources"),
             body = table.concat({
                 L("Rochas: rochas de ouro podem fornecer pó de ouro; rochas lunares e suas conchas podem fornecer materiais de ferro.",

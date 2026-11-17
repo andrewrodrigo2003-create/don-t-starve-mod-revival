@@ -111,6 +111,7 @@ PrefabFiles = {
 	"shears",
 	"craftbook",
 	"metallurgy_reference_book",
+	"mam_stone_chisel",
 	--"cursed_phantom",
 	"cursed_piggy",
 	"cursed_piggy_mask",
@@ -139,6 +140,24 @@ modimport("initialise/modded_cookers.lua")
 modimport("initialise/modded_ui_forecast.lua")
 modimport("initialise/modded_strings.lua")
 modimport("initialise/modded_recipes.lua")
+
+local ToolCrafting = require("mam/tool_crafting")
+AddComponentPostInit("builder", function(builder) ToolCrafting.WrapBuilder(builder, true) end)
+AddClassPostConstruct("components/builder_replica", function(builder) ToolCrafting.WrapBuilder(builder, false) end)
+if not GLOBAL.TheNet:IsDedicated() then
+    AddClassPostConstruct("widgets/redux/craftingmenu_hud", ToolCrafting.WrapCraftingHUD)
+end
+AddRecipePostInit("boards", ToolCrafting.ApplyBoardRecipe)
+AddRecipePostInit("cutstone", ToolCrafting.ApplyStoneRecipe)
+AddSimPostInit(function()
+    if AllRecipes.boards ~= nil then ToolCrafting.ApplyBoardRecipe(AllRecipes.boards) end
+    if AllRecipes.cutstone ~= nil then ToolCrafting.ApplyStoneRecipe(AllRecipes.cutstone) end
+end)
+if MAMConfig.on("mam_chisel_crafting") then
+    AddRecipe2("mam_stone_chisel", { Ingredient("twigs", 2), Ingredient("flint", 2) },
+        TECH.NONE, { image = "pumpkincarver1.tex" }, { "TOOLS", "REFINE" })
+end
+
 modimport("initialise/modded_regrow.lua")
 modimport("initialise/modded_marbletrees.lua")
 -- Depois de modded_marbletrees: o postinit de "marbletree" la' garante o
@@ -220,7 +239,7 @@ AddPrototyperDef("warworkbench", {
     icon_image = "theforge_tab.tex",
     is_crafting_station = true,
     action_str = "WARWORKBENCH",
-    filter_text = "War bench"
+    filter_text = STRINGS.NAMES.WARWORKBENCH
 })
 
 AddPrototyperDef("craftbook", {
@@ -228,7 +247,7 @@ AddPrototyperDef("craftbook", {
     icon_image = "wretchtab.tex",
     is_crafting_station = true,
     action_str = "CRAFTBOOK",
-    filter_text = "Craft book"
+    filter_text = STRINGS.NAMES.CRAFTBOOK
 })
 
 AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("charcoal", 5)}, TECH.SCIENCE_TWO, { placer = "warworkbench_placer", min_spacing = 1, atlas = "images/inventoryimages/obsidian_workbench.xml", image = "obsidian_workbench.tex", }, {"PROTOTYPERS"})
@@ -303,23 +322,6 @@ STRINGS.RECIPE_DESC.JAGGED_ARMOR = "Hope it lasts"
 STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = "Shine in power!"
 --STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = STRINGS.CHARACTERS.GENERIC.DESCRIBE.LAVAARENA_ARMOR_HPDAMAGER
 
-STRINGS.NAMES.WARWORKBENCH = "Armory"
-STRINGS.RECIPE_DESC.WARWORKBENCH = "Someone worked on this, still hot..."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.WARWORKBENCH = "I feel inspired."
-
-STRINGS.RECIPE_DESC.MARBLE_CHEST = "Fire-proof protection for your hot goods."
-STRINGS.NAMES.MARBLE_CHEST = "Marble Chest"
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.MARBLE_CHEST = "It's quite roomy in there."
-
-STRINGS.RECIPE_DESC.COLD_SAFE = "Safe and secure sustenance."
-STRINGS.NAMES.COLD_SAFE = "Cold Storage"
-STRINGS.NAMES.METAL_STORAGE_CHEST = "Metal Storage Chest"
-STRINGS.RECIPE_DESC.METAL_STORAGE_CHEST = "A reinforced chest for ores, dusts, ingots and smelting materials."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.COLD_SAFE = "Nothing as safe as a safe."
-
-STRINGS.NAMES.CRAFTBOOK = "Craftbook"
-STRINGS.RECIPE_DESC.CRAFTBOOK = "Years of experience, in book form."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.CRAFTBOOK = "A scientific notebook!"
 
 
 

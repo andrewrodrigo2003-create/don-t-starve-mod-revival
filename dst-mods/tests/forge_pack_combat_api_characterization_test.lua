@@ -30,7 +30,7 @@ end
 
 -- Vanilla Combat:CalcDamage returns damage and special damage; preserve both.
 check("CalcDamage wrapper preserves special damage return",
-    source:find("local C, spdamage = old_calc_damage(self, A, z, B)", 1, true) ~= nil
+    source:find("C, spdamage = old_calc_damage(self, A, z, B)", 1, true) ~= nil
         and source:find("return C, spdamage", 1, true) ~= nil)
 
 -- Vanilla DoAttack accepts optional range and position arguments after instancemult.

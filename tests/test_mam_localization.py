@@ -63,6 +63,19 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertIn('L("Produzirá: ", "Will produce: ")', forecast)
         self.assertNotIn('return "Smelt"', forecast)
 
+    def test_station_and_storage_texts_are_not_overwritten_after_localization(self):
+        strings = (MOD / "initialise" / "modded_strings.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        for key in ("WARWORKBENCH", "CRAFTBOOK", "MARBLE_CHEST", "COLD_SAFE", "METAL_STORAGE_CHEST"):
+            self.assertIn(key + " =", strings)
+            for prefix in ("STRINGS.NAMES.", "STRINGS.RECIPE_DESC.", "STRINGS.CHARACTERS.GENERIC.DESCRIBE."):
+                self.assertNotIn(prefix + key + " =", main)
+        self.assertIn("filter_text = STRINGS.NAMES.WARWORKBENCH", main)
+        self.assertIn("filter_text = STRINGS.NAMES.CRAFTBOOK", main)
+        self.assertLess(main.index('modimport("initialise/modded_strings.lua")'),
+                        main.index('AddPrototyperDef("warworkbench"'))
+        self.assertNotIn('AddRecipe2("metal_storage_chest"', main)
+
     def test_deconstruction_copy_matches_material_only_implementation(self):
         actions = (
             MOD / "initialise" / "modded_actions.lua"

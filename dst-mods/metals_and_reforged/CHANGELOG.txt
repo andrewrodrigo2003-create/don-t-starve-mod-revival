@@ -1,6 +1,30 @@
 Metals and More Reforged — Changelog
 =====================================
 
+Unreleased — local compatibility work (2026-11-17)
+-------------------------------------------------
+- Keep MAM independent within Beyond the Forge; retain the current book history, localization, War Bench guards and default-off legacy Forge abilities.
+- Preserve the four existing Forge weapon prefabs as melee weapons when legacy abilities are off, without calling inactive combat APIs or advertising unavailable special attacks.
+- Keep configured damage, durability, attack wear, appearance and equip behavior; initialize authoritative durability only on the server.
+- Retain opt-in special attacks and cooldowns when legacy abilities are enabled.
+- Preserve dynamic weapon damage evaluation, special damage, temporary ranges and chained equip/unequip arguments and return values.
+- Recompute cooldown buffs on the owner's equipment events, remove old subscriptions on transfer, and leave vanilla recharge scheduling intact.
+- Reserve deconstruction output slots before consuming material, respecting inventory/backpack filters, read-only containers, stack limits, pocket-only items and compatible overflow priority.
+- Deliver exact quantities to reserved slots, splitting stacks for non-stacking containers; reject insufficient capacity without consuming the input. Keep the material allowlist, recovery rates and one-unit consumption unchanged.
+- Require the authoritative server for deconstruction execution while retaining client action discovery from the replicated War Bench tag; do not extend access to nearby or unrelated storage.
+- Require a working owned chopping tool for boards, Woodie's native boards recipe and native board batches. Tools can be carried, equipped, on the cursor or in the equipped writable backpack; open, nearby and nested storage do not supply them.
+- Share the installed vanilla Woodie baseline of three logs with the common boards recipe only when its original four-log cost remains intact. Preserve other-mod costs, stations, skills and native batch quantities/callbacks.
+- Add the reusable Stone-Carving Chisel for cutstone and native cutstone batches: two twigs and two flint, TECH.NONE, native carving-tool art, no finite uses or stack consumption. Keep character transmutations separate.
+- Add independent default-on axe/chisel settings, Portuguese/English feedback and a guide page. Crafting does not consume or wear the required tool; normal axe chopping is unchanged.
+- Revalidate tools in the authoritative builder before crafting, including buffered requests; retain buffer state on rejection. Client availability uses the same inventory scope, and the HUD checks tool-state changes every 0.25 seconds to refresh after break/repair. Freebuild waives both requirements.
+- Centralize Portuguese/English names, recipe text and inspection text for the War Bench, legacy Craftbook, Marble Chest, Cold Storage and save-only Metal Storage Chest; stop late English overrides and localize station filters/actions without changing recipes, capacities or prefab behavior.
+- Keep the legacy Craftbook distinct from the read-only Metallurgy Guide and retain the retired chest only for existing saves. Nine station/storage localization scenarios passed with stubs and installed DST action sources, covering language defaults, disabled features, native/third-party string preservation and unchanged structure costs; this is not a full mod bootstrap or UI test.
+- Local validation on base 073299f: 28 Lua harnesses passed, including 48 weapon prefab configurations, 26 combat scenarios and 34 deconstruction scenarios; 136 Lua files passed Lua 5.1 syntax checks.
+- Tool crafting passed 63 stub scenarios and 64 scenarios with installed DST Lua methods/declarations, covering Builder/Replica, InventoryReplica, Tool, finite uses and crafting HUD metadata, plus registration, configuration, prefab and localization fixtures. Native chisel animation and inventory atlas references exist in the installation; rendering and network behavior still require the game.
+- The 34 deconstruction scenarios also passed using Inventory/Container methods from the locally installed DST scripts.zip with stub entities; this executes game Lua methods outside the game engine, not an in-game test.
+- Legacy-gate, book, robot and seven localization Python checks passed. Asset checks were re-run and remain 2/3; the icon check cannot complete until the CI-generated PNG is available.
+- Evidence is limited to local source, stub-based execution and the behavioral simulator. No in-game, multiplayer or full mod-list certification; no release, merge or game installation.
+
 Version 2.9.6 — integrated test build (2026-11-12)
 --------------------------------------------------
 

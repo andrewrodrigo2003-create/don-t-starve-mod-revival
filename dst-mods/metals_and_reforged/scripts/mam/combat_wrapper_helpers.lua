@@ -20,6 +20,26 @@ function M.WithDamageOverride(combat, override, callback, ...)
     return unpack(results, 2, results.n)
 end
 
+function M.CalcDamageWithBase(combat, target, item, multiplier, callback)
+    local weapon = item.components.weapon
+    local original = weapon.damage
+    local base = original
+    -- Capture vanilla's evaluation instead of calling a possibly stateful damage function twice.
+    local function capture(...)
+        base = original(...)
+        return base
+    end
+    weapon.damage = capture
+    local success, damage, spdamage = pcall(callback, combat, target, item, multiplier)
+    if weapon.damage == capture then
+        weapon.damage = original
+    end
+    if not success then
+        error(damage, 0)
+    end
+    return damage, spdamage, base
+end
+
 function M.AreaDamageMultiplier(area_percent, additive, multiplicative)
     return (area_percent or 1) * (additive or 1) * (multiplicative or 1)
 end

@@ -1035,6 +1035,20 @@ configuration_options = {
 
 
     {
+        name = "mam_axe_crafting",
+        label = "Tábuas com machado / Axe woodworking",
+        hover = "Exige machado funcional carregado, equipado ou na mochila. A receita padrão usa 3 toras para todos; mantém estação e custos de outros mods. Não consome nem desgasta o machado ao fabricar. Independente das integrações. / Requires a working carried, equipped or backpack axe. Standard boards cost 3 logs for everyone; station and other-mod costs remain. Crafting does not consume or wear the axe. Independent of integrations.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_chisel_crafting",
+        label = "Pedra com cinzel / Chisel stoneworking",
+        hover = "Exige Cinzel de Entalhe em Pedra reutilizável carregado ou na mochila. Mantém custo e estação da pedra trabalhada. Cinzel: 2 gravetos e 2 pedras lascadas, sem estação, sem desgaste. / Requires a reusable Stone-Carving Chisel carried or in a backpack. Keeps cut-stone cost and station. Chisel: 2 twigs and 2 flint, no station or durability. Independent of integrations.",
+        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        default = 1,
+    },
+    {
         name = "mam_third_party_recipe_integration",
         label = "Receitas de outros mods / Other-mod recipes",
         hover = "Ativado: adapta receitas compatíveis preservando ingredientes e metadados. Desativado: deixa receitas de terceiros intactas. Não desativa machado, cinzel ou Mesa de Serragem próprios do MAM. / On adapts supported recipes while preserving ingredients and metadata. Off leaves third-party recipes untouched. Does not disable MAM-owned axe, chisel or Sawing Table mechanics.",
