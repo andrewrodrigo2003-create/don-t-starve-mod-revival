@@ -1037,7 +1037,7 @@ configuration_options = {
     {
         name = "mam_axe_crafting",
         label = "Tábuas com machado / Axe woodworking",
-        hover = "Exige machado funcional carregado, equipado ou na mochila. A receita padrão usa 3 toras para todos; mantém estação e custos de outros mods. Não consome nem desgasta o machado ao fabricar. Independente das integrações. / Requires a working carried, equipped or backpack axe. Standard boards cost 3 logs for everyone; station and other-mod costs remain. Crafting does not consume or wear the axe. Independent of integrations.",
+        hover = "Exige machado funcional carregado, equipado ou na mochila. Preserva custo, estação e requisito de habilidade de cada receita, incluindo a receita especial de Lucy do Woodie. Não consome nem desgasta o machado ao fabricar. / Preserves each recipe cost, station and skill requirement, including Woodie's special Lucy recipe. Crafting does not consume or wear the axe.",
         options = {{description = "Off", data = 0}, {description = "On", data = 1}},
         default = 1,
     },
