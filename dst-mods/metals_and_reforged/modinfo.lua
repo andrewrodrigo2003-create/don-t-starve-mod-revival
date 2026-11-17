@@ -894,19 +894,19 @@ configuration_options = {
     {
         name = "mam_drop_rocky_chance", label = "Chance: Rocky / Rocky chance",
         hover = "Multiplicador apenas dos drops MAM de Rockys selvagens. / Scales only MAM drops from wild Rockys.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_rubble_chance", label = "Chance: escombros / Rubble chance",
         hover = "Multiplicador apenas dos drops MAM de escombros naturais de cavernas. / Scales only MAM drops from natural cave rubble.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_ancient_statues_chance", label = "Chance: estatuas antigas / Ancient statues chance",
         hover = "Multiplicador apenas dos drops MAM de estatuas das Ruinas. / Scales only MAM drops from ancient Ruins statues.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -920,7 +920,7 @@ configuration_options = {
         name = "mam_drop_knight_chance",
         label = "Chance: Cavaleiro mecânico / Clockwork Knight",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -934,7 +934,7 @@ configuration_options = {
         name = "mam_drop_rook_chance",
         label = "Chance: Torre mecânica / Clockwork Rook",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -948,7 +948,7 @@ configuration_options = {
         name = "mam_drop_bishop_chance",
         label = "Chance: Bispo mecânico / Clockwork Bishop",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -962,7 +962,7 @@ configuration_options = {
         name = "mam_drop_chessjunk_chance",
         label = "Chance: Sucata de xadrez / Chess junk",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -976,7 +976,7 @@ configuration_options = {
         name = "mam_drop_firehound_chance",
         label = "Chance: Cão de fogo / Fire Hound",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -990,7 +990,7 @@ configuration_options = {
         name = "mam_drop_icehound_chance",
         label = "Chance: Cão de gelo / Ice Hound",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -1004,7 +1004,7 @@ configuration_options = {
         name = "mam_drop_slurtle_chance",
         label = "Chance: Lesma-de-casco / Chance: Slurtle",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
@@ -1018,7 +1018,7 @@ configuration_options = {
         name = "mam_drop_snurtle_chance",
         label = "Chance: Caracol-de-casco / Chance: Snurtle",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
 	{
@@ -1052,50 +1052,50 @@ configuration_options = {
         name = "mam_third_party_recipe_integration",
         label = "Receitas de outros mods / Other-mod recipes",
         hover = "Ativado: adapta receitas compatíveis preservando ingredientes e metadados. Desativado: deixa receitas de terceiros intactas. Não desativa machado, cinzel ou Mesa de Serragem próprios do MAM. / On adapts supported recipes while preserving ingredients and metadata. Off leaves third-party recipes untouched. Does not disable MAM-owned axe, chisel or Sawing Table mechanics.",
-        options = {{description = "Desligado - não alterar receitas de outros mods / Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
+        options = {{description = "Desligado - não alterar receitas de outros mods / Off - leave other mods' recipes alone", data = 0}, {description = "Ligado - adaptar receitas compatíveis com segurança / On - adapt supported recipes safely", data = 1}},
         default = 1,
     },
     {
         name = "mam_allow_third_party_drop_overrides",
         label = "Substituir drops de outros mods / Replace other-mod loot",
         hover = "Aplica-se somente ao modo Rewrite antigo. Ativado permite substituir tabelas de loot compartilhadas. Desativado força drops aditivos e preserva as tabelas existentes. / Only applies to legacy Rewrite mode. On permits replacing shared loot tables. Off forces additive drops and preserves live tables.",
-        options = {{description = "Desligado - preservar drops de outros mods (recomendado) / Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
+        options = {{description = "Desligado - preservar drops de outros mods (recomendado) / Off - preserve other mods' loot (recommended)", data = 0}, {description = "Ligado - permitir substituição de tabelas antigas / On - allow legacy table replacement", data = 1}},
         default = 0,
     },
     {
         name = "mam_drop_boulders_chance", label = "Chance de drops em rochas / Boulder drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de rochas de ouro e lunares. / Scales only Metals and More materials from gold and moon boulders.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_stalagmites_chance", label = "Chance em estalagmites / Cave formation drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de estalagmites e estalactites. / Scales only Metals and More materials from cave stalagmites and stalactites.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_chess_chance", label = "Chance em criaturas das ruínas / Ruins creature drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de mecanismos e peças de xadrez. / Scales only Metals and More materials from clockworks and chess junk.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_hounds_chance", label = "Chance de fragmentos em cães elementais / Hound gem-shard chance",
         hover = "Ajusta somente os fragmentos de gemas do Metals and More. A opção Auto/Sempre continua controlando a interação com Uncompromising Mode. / Scales only Metals and More gem-shard rolls. The separate Auto/Always option still controls Uncompromising Mode interaction.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_marbletree_chance", label = "Chance em árvores de mármore / Marble-tree drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de árvores de mármore naturais. / Scales only Metals and More material rolls from naturally generated marble trees.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_shark_chance", label = "Chance de escama de tubarão / Sharkscale drop chance",
         hover = "Ajusta somente as chances de escama de tubarão adicionadas pelo Metals and More. / Scales only the sharkscale rolls added by Metals and More.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
