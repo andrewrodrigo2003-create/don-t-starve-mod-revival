@@ -1,7 +1,7 @@
 -- Shared entry point and health check for the DST behavioral simulator.
 local Simulator = {
-    version = "0.3.0",
-    api_profile = "behavioral-core-stategraph-contract-no-game-build",
+    version = "0.3.1",
+    api_profile = "behavioral-core-dst-event-shape-entity-task-lifecycle-no-game-build",
     evidence_level = "L3-foundation-only",
 }
 
