@@ -233,21 +233,7 @@ AddRecipePostInitAny(stamp_mam_tech)
 -- Custom Prototyper and Recipe filters --
 require("recipes_filter")
 
-AddPrototyperDef("warworkbench", {
-    icon_atlas = "images/tabimages/theforge_tab.xml",
-    icon_image = "theforge_tab.tex",
-    is_crafting_station = true,
-    action_str = "WARWORKBENCH",
-    filter_text = STRINGS.NAMES.WARWORKBENCH
-})
 
-AddPrototyperDef("craftbook", {
-    icon_atlas = "images/hud/wretchtab.xml",
-    icon_image = "wretchtab.tex",
-    is_crafting_station = true,
-    action_str = "CRAFTBOOK",
-    filter_text = STRINGS.NAMES.CRAFTBOOK
-})
 
 AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("charcoal", 5)}, TECH.SCIENCE_TWO, { placer = "warworkbench_placer", min_spacing = 1, atlas = "images/inventoryimages/obsidian_workbench.xml", image = "obsidian_workbench.tex", }, {"PROTOTYPERS"})
 
@@ -672,3 +658,21 @@ modimport("scripts/tot_ui.lua")
 
 -- Apply the selected locale after all legacy MAM-owned string assignments.
 modimport("initialise/modded_strings.lua")
+
+AddPrototyperDef("warworkbench", {
+    icon_atlas = "images/tabimages/theforge_tab.xml",
+    icon_image = "theforge_tab.tex",
+    is_crafting_station = true,
+    action_str = "WARWORKBENCH",
+    filter_text = STRINGS.NAMES.WARWORKBENCH
+})
+
+AddPrototyperDef("craftbook", {
+    icon_atlas = "images/hud/wretchtab.xml",
+    icon_image = "wretchtab.tex",
+    is_crafting_station = true,
+    action_str = "CRAFTBOOK",
+    filter_text = STRINGS.NAMES.CRAFTBOOK
+})
+
+modimport("scripts/tot_ui.lua")
