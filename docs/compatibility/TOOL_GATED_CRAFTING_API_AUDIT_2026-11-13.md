@@ -141,7 +141,7 @@ No runtime code had been changed at this cross-check. The implementation and rem
 
 The user's requested axe/chisel implementation is wired locally in MAM, not released or installed in the game. Selected references were extracted from the installed `Don't Starve Together/data/databundles/scripts.zip` into the workspace's `tools/dst-reference/`, outside the mod repository; no game or third-party mod files were modified.
 
-- Installed `recipes.lua` defines common boards at four logs / SCIENCE_ONE, Woodie's skill recipe at three logs plus zero-consumption Lucy / TECH.NONE, cutstone at three rocks / SCIENCE_ONE, and native batches at twenty logs or fifteen rocks for five products. Only the unchanged common four-log cost becomes three; Woodie's skill recipe and batch stations/callbacks remain intact. Removing the common recipe's native `cancarveboards` exclusion and Woodie ingredient forwarding makes the shared route available without altering the skill tree.
+- Installed `recipes.lua` defines common boards at four logs / SCIENCE_ONE, Woodie's skill recipe at three logs plus zero-consumption Lucy / TECH.NONE, cutstone at three rocks / SCIENCE_ONE, and native batches at twenty logs or fifteen rocks for five products. MAM must preserve these costs and the common recipe's `cancarveboards` exclusion and `forward_ingredients` mapping. The axe requirement is enforced by the Builder/Replica gate; it must not rewrite recipe economics or Woodie's skill tree.
 - Installed `modutil.lua` verifies `AddComponentPostInit`, `AddClassPostConstruct` and named `AddRecipePostInit` registration. Only common boards/cutstone metadata are adapted, with an idempotent named reapplication at SimPostInit; there is no global recipe rewrite.
 - `scripts/mam/tool_crafting.lua` checks exact registered recipe IDs and expected products. Builder and Replica `HasIngredients` are wrapped, and server `DoBuild` rejects missing tools before invoking the original method, including buffered requests. Existing `recipe.canbuild` callbacks and their failure reasons are preserved rather than replaced; rejected buffer state is not cleared.
 - Axes require `tool` and `CHOP_tool` tags; the server additionally verifies inventory ownership, a real CHOP action with positive effectiveness and positive remaining uses where applicable. `broken`/`usesdepleted` items are rejected. Lucy and the axe-pickaxe do not depend on `possessable_axe`; prefab names alone never establish capability.
@@ -152,3 +152,14 @@ The user's requested axe/chisel implementation is wired locally in MAM, not rele
 - Local regression: 27 Lua harnesses, 135 Lua syntax checks and the existing Python gate/book/robot/localization checks pass. The new harness was run explicitly; CI configuration was not changed or executed. Packaging asset checks remain 2/3 because the CI-generated branding PNG is absent. CodeRabbit is unavailable; no external review is claimed.
 
 **Still required before release/installation:** real host/client crafting and menu refresh, axe break/repair replication, the user's Woodie/Lucy/UM mod combination, chisel appearance and save/load, buffered save restoration where applicable, and full startup with the installed mod list. Harnesses do not certify those runtime behaviors; no 2.9.7 package, merge or publication was made.
+
+
+## Correção de escopo — preservar a progressão vanilla do Woodie (17/11/2026)
+
+A revisão posterior encontrou uma divergência entre a intenção do usuário e a primeira implementação: `ApplyBoardRecipe` estava reduzindo a receita comum de tábuas de quatro para três toras, removendo `no_builder_tag = "cancarveboards"` e apagando o encaminhamento para `woodie_boards`. Isso universalizava o custo da habilidade do Woodie e podia alterar a seleção de receita do personagem. Essa mutação foi removida.
+
+Estado corrigido na PR #60:
+- Receita comum `boards`: mantém quatro toras, estação, `cancarveboards` e `forward_ingredients` originais.
+- Receita de habilidade `woodie_boards`: mantém três toras, ingrediente Lucy de custo zero e `builder_skill = "woodie_human_lucy_1"`.
+- O MAM acrescenta apenas a exigência de ferramenta funcional ao gate de crafting; não reescreve a skill tree nem os custos.
+- Foram adicionados testes explícitos para impedir regressão nesses contratos.
