@@ -279,15 +279,27 @@ test("wrappers preserve arguments nil returns and are idempotent", function()
     ok, gap, a = builder:HasIngredients("boards", "extra")
     assert(ok and gap == nil and a == "extra")
 end)
-test("board adaptation preserves station and other recipe metadata", function()
+test("axe gate preserves common board cost and Woodie forwarding metadata", function()
     local ingredient = { type = "log", amount = 4, atlas = "native" }
-    local recipe = { product = "boards", ingredients = { ingredient }, numtogive = 1,
+    local recipe = { name = "boards", product = "boards", ingredients = { ingredient }, numtogive = 1,
         level = {}, no_builder_tag = "cancarveboards", forward_ingredients = { "woodie_boards", "other" },
-        canbuild = function() end }
+        description = "boards", canbuild = function() end }
     local level, fn = recipe.level, recipe.canbuild
     gate.ApplyBoardRecipe(recipe); gate.ApplyBoardRecipe(recipe)
-    assert(ingredient.amount == 3 and recipe.level == level and recipe.canbuild == fn)
-    assert(recipe.no_builder_tag == nil and #recipe.forward_ingredients == 1 and recipe.forward_ingredients[1] == "other")
+    assert(ingredient.amount == 4 and recipe.level == level and recipe.canbuild == fn)
+    assert(recipe.no_builder_tag == "cancarveboards")
+    assert(#recipe.forward_ingredients == 2 and recipe.forward_ingredients[1] == "woodie_boards"
+        and recipe.forward_ingredients[2] == "other")
+    assert(recipe.description == "mam_axe_boards")
+end)
+test("Woodie's three-log Lucy skill recipe is never rewritten", function()
+    local recipe = { name = "woodie_boards", product = "boards",
+        ingredients = { { type = "lucy", amount = 0 }, { type = "log", amount = 3 } },
+        builder_skill = "woodie_human_lucy_1", description = "boards" }
+    gate.ApplyBoardRecipe(recipe)
+    assert(recipe.ingredients[1].type == "lucy" and recipe.ingredients[1].amount == 0)
+    assert(recipe.ingredients[2].type == "log" and recipe.ingredients[2].amount == 3)
+    assert(recipe.builder_skill == "woodie_human_lucy_1" and recipe.description == "boards")
 end)
 test("third-party costs descriptions and restrictions are preserved", function()
     local recipe = { product = "boards", ingredients = { { type = "log", amount = 7 } }, numtogive = 1,
