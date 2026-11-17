@@ -34,9 +34,9 @@ for name in forge_recipes:
 assert 'AddRecipe2("warworkbench"' in main and "TECH.SCIENCE_TWO" in next(
     line for line in main.splitlines() if 'AddRecipe2("warworkbench"' in line
 )
-assert 'AddRecipe2("metallurgy_reference_book"' in main
-assert "TECH.ALCHEMY_ONE" in next(
-    line for line in main.splitlines() if 'AddRecipe2("metallurgy_reference_book"' in line
-)
+book_lines = main.splitlines()
+book_start = next(i for i, line in enumerate(book_lines) if 'AddRecipe2("metallurgy_reference_book"' in line)
+book_block = "\\n".join(book_lines[book_start:book_start + 6])
+assert "TECH.ALCHEMY_ONE" in book_block
 
 print("War Workbench recipe contract: all MAM metal weapons/armor are station-gated")
