@@ -154,8 +154,8 @@ local function build_pages(owner)
                         "Boards: carry a working axe in your inventory, equipped or in your backpack. Crafting does not consume or wear the tool.")
                     or L("O requisito de machado está desativado neste servidor.", "The axe requirement is disabled on this server."),
                 "",
-                L("Com a opção de machado ligada, a receita comum usa 3 toras quando seu custo vanilla está intacto. Custos alterados por outros mods e estações exigidas são preservados.",
-                    "With the axe option enabled, the common recipe uses 3 logs when its vanilla cost is unchanged. Other-mod costs and required stations are preserved."),
+                L("Com a opção de machado ligada, a receita comum mantém o custo vanilla de 4 toras. A receita de habilidade do Woodie continua com 3 toras e Lucy; a skill tree não é alterada.",
+                    "With the axe option enabled, the common recipe keeps its vanilla cost of 4 logs. Woodie's skill recipe remains 3 logs plus Lucy; his skill tree is not modified."),
                 "",
                 MAMConfig.on("mam_chisel_crafting")
                     and L("Pedra trabalhada: carregue um Cinzel de Entalhe em Pedra. Fabrique-o com 2 gravetos e 2 pedras lascadas, sem estação. Ele não possui durabilidade nem é consumido.",
