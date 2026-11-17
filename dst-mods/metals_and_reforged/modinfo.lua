@@ -1,5 +1,5 @@
 name = "Metals and More Reforged"
-description = "Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
+description = "Fabrique equipamentos metálicos, recupere materiais e consulte o guia de metalurgia na Bancada de Guerra. / Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
 version = "2.9.6"
 forumthread = ""
@@ -77,8 +77,8 @@ configuration_options = {
         label = "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities",
         hover = "Ativa as habilidades antigas das armas do evento The Forge e hooks globais de combate/StateGraph. Desativado por padrão por compatibilidade; não afeta a metalurgia. / Enables the old Forge Event weapon abilities and global combat/StateGraph hooks. Disabled by default for compatibility; does not affect metallurgy.",
         options = {
-            { description = "Off - Compatibility mode", data = false },
-            { description = "On - Enable legacy abilities", data = true },
+            { description = "Desligado - modo de compatibilidade / Off - Compatibility mode", data = false },
+            { description = "Ligado - ativar habilidades antigas / On - Enable legacy abilities", data = true },
         },
         default = false,
     },
@@ -241,7 +241,7 @@ configuration_options = {
 			{description = "-50%", data = 9},
 			{description = "-25%", data = 13.5},
 			{description = "-10%", data = 16.2},
-			{description = "Default (18s)", data = 18},
+			{description = "Padrão (18s) / Default (18s)", data = 18},
 			{description = "+10%", data = 19.8},
 			{description = "+25%", data = 22.5},
 			{description = "+50%", data = 27},
@@ -378,7 +378,7 @@ configuration_options = {
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -510,7 +510,7 @@ configuration_options = {
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -638,7 +638,7 @@ configuration_options = {
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -662,7 +662,7 @@ configuration_options = {
         options = 
         {
 			{description = "Desligado / Off", data = false},
-			{description = "On - Give me that challenge", data = true},
+			{description = "Ligado - ativar esse desafio / On - Give me that challenge", data = true},
         }, 
         default = true,
 	},
