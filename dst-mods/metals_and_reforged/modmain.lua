@@ -138,7 +138,6 @@ MAMConfig.Init(GetModConfigData)
 modimport("initialise/modded_actions.lua")
 modimport("initialise/modded_cookers.lua")
 modimport("initialise/modded_ui_forecast.lua")
-modimport("initialise/modded_strings.lua")
 modimport("initialise/modded_recipes.lua")
 
 local ToolCrafting = require("mam/tool_crafting")
@@ -670,3 +669,6 @@ env._G = GLOBAL
 _G.fns = require("fns")
 
 modimport("scripts/tot_ui.lua")
+
+-- Apply the selected locale after all legacy MAM-owned string assignments.
+modimport("initialise/modded_strings.lua")
