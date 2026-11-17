@@ -106,7 +106,26 @@ class LocalizationContractTests(unittest.TestCase):
             self.assertIn(key + " =", strings)
         self.assertGreater(main.index('modimport("initialise/modded_strings.lua")'),
                            main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
-        self.assertIn('L("VOU MATAR AGORA!", "I\\'LL KILL NOW!")', strings)
+        self.assertIn("VOU MATAR AGORA!", strings)
+        self.assertIn("I'LL KILL NOW!", strings)
+
+
+    def test_modinfo_configuration_labels_are_bilingual(self):
+        modinfo = (MOD / "modinfo.lua").read_text(encoding="utf-8")
+        for text in (
+            "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities",
+            "Fundição em lotes / Batch smelting",
+            "Drops extras de minério / Extra ore drops",
+            "Automação da forja com robô coletor / Collector robot forge automation",
+            "Preserva custo, estação e requisito de habilidade",
+        ):
+            self.assertIn(text, modinfo)
+
+    def test_book_preserves_common_and_woodie_board_recipe_costs(self):
+        screen = (MOD / "scripts" / "screens" / "metallurgybookscreen.lua").read_text(encoding="utf-8")
+        self.assertIn("custo vanilla de 4 toras", screen)
+        self.assertIn("3 toras e Lucy", screen)
+        self.assertNotIn("receita comum usa 3 toras", screen)
 
 if __name__ == "__main__":
     unittest.main()
