@@ -3,6 +3,7 @@ Metals and More Reforged — Changelog
 
 Unreleased — local compatibility work (2026-11-17)
 -------------------------------------------------
+- Harden robot auto-harvest against nil/throwing output prefab constructors; preserve the ready batch and retry only the undelivered remainder, with regression coverage for template and partial-stack failures.
 - Keep MAM independent within Beyond the Forge; retain the current book history, localization, War Bench guards and default-off legacy Forge abilities.
 - Preserve the four existing Forge weapon prefabs as melee weapons when legacy abilities are off, without calling inactive combat APIs or advertising unavailable special attacks.
 - Keep configured damage, durability, attack wear, appearance and equip behavior; initialize authoritative durability only on the server.
