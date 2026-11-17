@@ -54,3 +54,6 @@ jobs:
             lua5.1 "$test"
           done
 
+
+      - name: Verify bilingual MAM localization
+        run: python3 tests/test_mam_localization.py
