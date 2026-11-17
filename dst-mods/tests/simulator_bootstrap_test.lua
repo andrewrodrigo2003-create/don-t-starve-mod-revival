@@ -48,6 +48,46 @@ assert(world:RemoveEntity(machine))
 assert(world:CountEntities() == 0)
 assert(not world:RemoveEntity(machine), "entity removal must be idempotent")
 
+-- Entity events follow the DST callback shape: (source, data, ...).
+local event_world = Simulator.World.new()
+local emitter = event_world:SpawnEntity("emitter")
+local receiver = event_world:SpawnEntity("receiver")
+local observed_source, observed_data, observed_extra
+receiver:ListenForEvent("payload", function(source_entity, data, extra)
+    observed_source, observed_data, observed_extra = source_entity, data, extra
+end, emitter)
+local payload = { value = 42 }
+emitter:PushEvent("payload", payload, "extra-arg")
+assert(observed_source == emitter, "event callback must receive source as first argument")
+assert(observed_data == payload and observed_data.value == 42, "event callback must receive original data as second argument")
+assert(observed_extra == "extra-arg", "event callback must preserve trailing event arguments")
+
+-- Removing an entity cancels its delayed callbacks and clears its task ownership.
+local doomed = event_world:SpawnEntity("doomed")
+local cancelled_task_ran = false
+local task_handle = doomed:DoTaskInTime(1, function() cancelled_task_ran = true end)
+assert(task_handle and not task_handle:IsDone())
+event_world:RemoveEntity(doomed)
+assert(task_handle:IsCancelled(), "entity removal must cancel owned tasks")
+assert(event_world.scheduler:PendingCount() == 0, "cancelled entity task must not remain pending")
+event_world:AdvanceTime(1)
+assert(not cancelled_task_ran, "removed entity task callback must never execute")
+local schedule_after_remove = pcall(function()
+    doomed:DoTaskInTime(1, function() end)
+end)
+assert(not schedule_after_remove, "removed entities must not schedule new tasks")
+
+-- Normal tasks still run once and receive their owning entity.
+local live = event_world:SpawnEntity("live")
+local callback_owner, normal_calls
+normal_calls = 0
+live:DoTaskInTime(0.25, function(owner_entity)
+    callback_owner = owner_entity
+    normal_calls = normal_calls + 1
+end)
+event_world:AdvanceTime(0.25)
+assert(callback_owner == live and normal_calls == 1, "live entity task contract failed")
+
 -- Entity-owned listeners registered on another entity must be detached on removal.
 local source = world:SpawnEntity("event_source")
 local observer = world:SpawnEntity("observer")
