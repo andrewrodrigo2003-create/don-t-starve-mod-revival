@@ -654,8 +654,6 @@ STRINGS.CURSED_PIGGY_TALK_FIGHT = {
 env._G = GLOBAL
 _G.fns = require("fns")
 
-modimport("scripts/tot_ui.lua")
-
 -- Apply the selected locale after all legacy MAM-owned string assignments.
 modimport("initialise/modded_strings.lua")
 
