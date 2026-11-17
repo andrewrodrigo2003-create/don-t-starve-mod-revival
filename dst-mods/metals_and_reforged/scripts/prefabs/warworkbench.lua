@@ -67,7 +67,7 @@ local function InitFn(Sim)
 	inst:AddComponent("inspectable")
 	
 	inst:AddComponent("prototyper")
-	inst.components.prototyper.trees = TUNING.PROTOTYPER_TREES.ALCHEMY_ONE
+	inst.components.prototyper.trees = TUNING.PROTOTYPER_TREES.MAM_FORGE_ONE
 		inst.components.prototyper.onturnon = OnTurnOn
 	inst.components.prototyper.onturnoff = OnTurnOff
 	inst.components.prototyper.onactivate = function()
