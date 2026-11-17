@@ -1024,7 +1024,7 @@ configuration_options = {
 	{
         name = "mam_robot_smelting",
         label = "Automação da forja com robô coletor / Collector robot forge automation",
-        hover = "Com um W.O.B.O.T. ou W.I.N.bot ativo por perto, a forja pode retirar somente ingredientes registrados de baús e containers compatíveis próximos. Desativado por padrão; nunca retira itens do inventário dos jogadores. / When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
+        hover = "Com um W.O.B.O.T. ou W.I.N.bot ativo por perto, a forja pode retirar somente ingredientes registrados de baús e containers fixos compatíveis próximos. Mochilas, armazenamento portátil e inventários de jogadores não são vasculhados. Desativado por padrão. / With an active W.O.B.O.T. or W.I.N.bot nearby, the smelter can pull only registered ingredients from compatible fixed chests/containers. Backpacks, portable storage and player inventories are never scanned. Disabled by default.",
         options =
         {
             {description = "Desligado / Off", data = 0},
