@@ -56,12 +56,12 @@ A passing subprocess is one check, not a count of every assertion inside it; ful
 
 ## Behavioral simulator
 
-Version 0.3.0 — deterministic core, server/client replication and StateGraph registration contracts. The laboratory runner does not change this core version.
+Version 0.3.1 — deterministic core, DST-shaped entity event callbacks, entity-owned task cancellation, server/client replication and StateGraph registration contracts. The runner and simulator still do not recreate the Klei engine.
 
 This is a reusable behavioral test environment, not a recreation of the Klei engine. It currently models:
 - virtual-time scheduling and cancellation;
-- event delivery, listener tokens and owner-based cleanup;
-- entity validity, tags, components and removal;
+- event delivery with DST-shaped entity callbacks `(source, data, ...)`, listener tokens and owner-based cleanup;
+- entity validity, tags, components and removal, including cancellation of entity-owned delayed tasks;
 - prefab registration/spawning and a minimal world registry;
 - item stacks and version-neutral container/inventory behavior;
 - server-authoritative scalar values, revisioned snapshots, stale-update rejection and client dirty events;
