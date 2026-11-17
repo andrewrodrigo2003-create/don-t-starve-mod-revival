@@ -83,7 +83,7 @@ configuration_options = {
         default = false,
     },
     {
-        name = "Global Weapons options",
+        name = "Opções gerais de armas / Global Weapons options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -95,14 +95,14 @@ configuration_options = {
 		hover = "Seleciona a variante da receita somente quando as habilidades antigas da Forja estão ativadas. / Selects the recipe variant only when Legacy Forge weapon abilities are enabled.",
         options = 
         {
-			{description = "Off - Give me old weapons.", data = false},
-			{description = "On - Give me those abilities.", data = true},
+			{description = "Desligado - usar armas antigas / Off - Give me old weapons.", data = false},
+			{description = "Ligado - usar essas habilidades / On - Give me those abilities.", data = true},
         }, 
         default = false,
 	},
 ------------------------------------------------
 	{
-		name = "Global Forge options",
+		name = "Opções gerais da Forja / Global Forge options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -120,7 +120,7 @@ configuration_options = {
 	},
 	-- Forging hammer
 	{
-		name = "Forging Hammer options",
+		name = "Opções do Martelo de Forja / Forging Hammer options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -252,7 +252,7 @@ configuration_options = {
 	},
 	-- Pith pike
 	{
-		name = "Pith Pike options",
+		name = "Opções da Lança de Pith / Pith Pike options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -389,7 +389,7 @@ configuration_options = {
 	},
 	-- Spiral spear
 	{
-		name = "Spiral Spear options",
+		name = "Opções da Lança Espiral / Spiral Spear options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -521,7 +521,7 @@ configuration_options = {
 	},
 	-- Blacksmith Edge
 	{
-		name = "Blacksmith Edge options",
+		name = "Opções do Fio do Ferreiro / Blacksmith Edge options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -648,7 +648,7 @@ configuration_options = {
 		default = 12,
 	},
 	{
-		name = "Global Weapons options",
+		name = "Opções gerais de armas / Global Weapons options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -668,7 +668,7 @@ configuration_options = {
 	},
 --------------------------------------
 	{
-		name = "Global Metallurgy options",
+		name = "Opções gerais de metalurgia / Global Metallurgy options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -680,8 +680,8 @@ configuration_options = {
 		hover = "A forja processa várias unidades do mesmo resultado por operação e aceita pilhas de minério. Desligado mantém uma unidade por operação e um item por espaço. O servidor define a opção e a forja informa os clientes. / The furnace smelts several units of the same result in one operation, and its slots accept stacks of ore. Off keeps the original one-unit, one-item-per-slot behaviour. The server decides this one; the furnace tells clients what value is in force.",
         options =
         {
-			{description = "Off - one unit per operation", data = 0},
-			{description = "On - smelt in batches", data = 1},
+			{description = "Desligado - uma unidade por operação / Off - one unit per operation", data = 0},
+			{description = "Ligado - fundir em lotes / On - smelt in batches", data = 1},
         },
         default = 1,
 	},
@@ -691,9 +691,9 @@ configuration_options = {
 		hover = "Limite máximo de unidades produzidas por operação. Alguns produtos têm limites próprios: minério repassado sempre gera 1; adamantium gera no máximo 5. / Hard ceiling on units produced by a single operation, whatever the load. Some products cap lower on their own: ore pass-through always gives 1, adamantium gives at most 5.",
         options =
         {
-			{description = "4 units", data = 4},
-			{description = "10 units", data = 10},
-			{description = "20 units", data = 20},
+			{description = "4 unidades / 4 units", data = 4},
+			{description = "10 unidades / 10 units", data = 10},
+			{description = "20 unidades / 20 units", data = 20},
         },
         default = 10,
 	},
@@ -703,10 +703,10 @@ configuration_options = {
 		hover = "Tempo adicional de forja por unidade após a primeira. 0% faz um lote de 10 lingotes levar o mesmo tempo de um único lingote; 25% mantém o tempo proporcional aos materiais usados. / Extra furnace time per unit beyond the first. 0% means a 10-ingot batch takes the same time as a single ingot; 25% keeps time roughly in step with the materials used.",
         options =
         {
-			{description = "0% - no extra time", data = 0},
-			{description = "25% per extra unit", data = 25},
-			{description = "50% per extra unit", data = 50},
-			{description = "75% per extra unit", data = 75},
+			{description = "0% - sem tempo extra / 0% - no extra time", data = 0},
+			{description = "25% por unidade extra / 25% per extra unit", data = 25},
+			{description = "50% por unidade extra / 50% per extra unit", data = 50},
+			{description = "75% por unidade extra / 75% per extra unit", data = 75},
         },
         default = 25,
 	},
@@ -716,8 +716,8 @@ configuration_options = {
 		hover = "O lote consome somente os materiais necessários. O restante volta ao jogador na coleta em vez de ser destruído. Desligado restaura o comportamento original, que consumia toda a carga. / A batch consumes only the materials it needs. What is left in the slots comes back to you on harvest instead of being destroyed. Off restores the original behaviour, where the whole load was consumed even if part of it was never used.",
         options =
         {
-			{description = "Destroy them - original", data = 0},
-			{description = "Return them to me", data = 1},
+			{description = "Destruir - original / Destroy them - original", data = 0},
+			{description = "Devolver ao jogador / Return them to me", data = 1},
         },
         default = 1,
 	},
@@ -727,14 +727,14 @@ configuration_options = {
 		hover = "Mostra no botão da forja o resultado previsto, a quantidade e o tempo antes de iniciar. Se uma carga mista puder gerar mais de uma liga, Previsão completa lista as possibilidades; Resultado certo apenas avisa sobre a incerteza. / Shows what the current load will produce, how many and how long, on the furnace button, before you start smelting. When a mixed load could yield more than one alloy, 'Full forecast' lists the possibilities and 'Certain result only' just warns that the outcome is a coin flip.",
         options =
         {
-			{description = "Off - original Smelt button", data = 0},
-			{description = "Certain result only", data = 1},
-			{description = "Full forecast", data = 2},
+			{description = "Desligado - botão Fundir original / Off - original Smelt button", data = 0},
+			{description = "Somente resultado certo / Certain result only", data = 1},
+			{description = "Previsão completa / Full forecast", data = 2},
         },
         default = 2,
 	},
 	{
-		name = "Global Compatibility options",
+		name = "Opções gerais de compatibilidade / Global Compatibility options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -746,14 +746,14 @@ configuration_options = {
 		hover = "Controla as alterações de ingredientes/custos em receitas VANILLA do MAM. Seguro preserva ingredientes alterados por outros mods; Completo força os valores originais 2.9.3; Desligado desativa essas alterações. A integração de receitas de terceiros é controlada separadamente. Nenhuma dessas opções controla o machado, cinzel ou Mesa de Serragem do MAM. Receitas próprias não são afetadas. / Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. The separate third-party recipe integration switch controls whether supported recipes changed by other mods may be moved to our progression. Neither option controls MAM-owned axe, chisel or Sawing Table mechanics. Recipes added by this mod are unaffected.",
         options =
         {
-			{description = "Never - leave vanilla recipes to other mods", data = 0},
-			{description = "Safe - only while a recipe is still vanilla", data = 1},
-			{description = "Full - original Metals and More behaviour", data = 2},
+			{description = "Nunca - deixar receitas vanilla para outros mods / Never - leave vanilla recipes to other mods", data = 0},
+			{description = "Seguro - somente enquanto a receita for vanilla / Safe - only while a recipe is still vanilla", data = 1},
+			{description = "Completo - comportamento original do Metals and More / Full - original Metals and More behaviour", data = 2},
         },
         default = 1,
 	},
 	{
-		name = "Mining and ore drops",
+		name = "Mineração e drops de minério / Mining and ore drops",
 		options = {
 			{description = "", data = 0}
 		},
@@ -765,8 +765,8 @@ configuration_options = {
 		hover = "Chave geral para todas as fontes extras de materiais do MAM: rochas de ouro e lunares, formações de cavernas, mecanismos das Ruínas, cães elementais, árvores e arbustos de mármore e tubarão. Desligar preserva os drops do jogo e de outros mods. As rochas próprias de cobre e ferro do MAM não são afetadas. / Master switch for every extra material source this mod adds to the world: gold and moon boulders, cave stalagmites, ruins clockworks and chess junk, fire and ice hounds, marble trees and shrubs, and the shark.",
         options =
         {
-			{description = "Off - no extra ore anywhere", data = 0},
-			{description = "On - use the per-source switches below", data = 1},
+			{description = "Desligado - sem minério extra / Off - no extra ore anywhere", data = 0},
+			{description = "Ligado - usar controles por fonte abaixo / On - use the per-source switches below", data = 1},
         },
         default = 1,
 	},
@@ -776,7 +776,7 @@ configuration_options = {
 		hover = "Additive attaches our materials to each rock or creature when it spawns, on top of whatever loot table is live at that moment. Nothing is overwritten, mod load order stops mattering, and only OUR materials are added - vanilla rocks, flint and gold yields are left alone. Rewrite restores the original 2.9.3 behaviour of replacing whole vanilla loot tables, which also lowers some vanilla yields and can overwrite (or be overwritten by) My Moar Metals and Uncompromising Mode, since both write the same tables. Additive is the compatible default; Rewrite is there if you want the old numbers back.",
         options =
         {
-			{description = "Additive - keep other mods' loot (recommended)", data = 1},
+			{description = "Aditivo - preservar drops de outros mods (recomendado) / Additive - keep other mods' loot (recommended)", data = 1},
 			{description = "Rewrite - original 2.9.3 loot tables", data = 2},
         },
         default = 1,
@@ -832,8 +832,8 @@ configuration_options = {
         options =
         {
 			{description = "Off", data = 0},
-			{description = "Auto - skip when Uncompromising Mode is on", data = 1},
-			{description = "Always - even alongside Uncompromising Mode", data = 2},
+			{description = "Automático - ignorar quando Uncompromising Mode estiver ativo / Auto - skip when Uncompromising Mode is on", data = 1},
+			{description = "Sempre - mesmo com Uncompromising Mode / Always - even alongside Uncompromising Mode", data = 2},
         },
         default = 1,
 	},
