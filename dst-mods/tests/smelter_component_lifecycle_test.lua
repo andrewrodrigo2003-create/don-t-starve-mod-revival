@@ -744,6 +744,117 @@ check("robot retry delivers exactly the original batch once",
 config.mam_robot_smelting = robot_config_previous
 TheSim = nil
 
+
+-- Robot-fed batches must move only the planner-selected ingredients from a
+-- compatible nearby chest, and a failed transfer must restore the exact source.
+local function robot_test_container(entity, slots, fail_on_give)
+    local container = {
+        inst = entity, type = "chest", canbeopened = true, numslots = 4,
+        slots = slots or {}, give_calls = 0, fail_on_give = fail_on_give,
+    }
+    function container:RemoveItem(item, all)
+        for slot = 1, self.numslots do
+            if self.slots[slot] == item then
+                local stackable = item.components.stackable
+                if not all and stackable ~= nil and stackable:StackSize() > 1 then
+                    stackable:SetStackSize(stackable:StackSize() - 1)
+                    return make_item(item.prefab, 1)
+                end
+                self.slots[slot] = nil
+                return item
+            end
+        end
+        return nil
+    end
+    function container:GiveItem(item)
+        self.give_calls = self.give_calls + 1
+        if self.fail_on_give == self.give_calls then return false end
+        for slot = 1, self.numslots do
+            local current = self.slots[slot]
+            if current ~= nil and current.prefab == item.prefab
+                and current.components.stackable ~= nil and item.components.stackable ~= nil then
+                current.components.stackable:SetStackSize(
+                    current.components.stackable:StackSize() + item.components.stackable:StackSize())
+                item.removed = true
+                return true
+            end
+        end
+        for slot = 1, self.numslots do
+            if self.slots[slot] == nil then
+                self.slots[slot] = item
+                return true
+            end
+        end
+        return false
+    end
+    function container:Close() self.closed = true end
+    function container:DropEverything()
+        self.dropped = true
+        self.slots = {}
+    end
+    return container
+end
+local function robot_test_entity(prefab)
+    local entity = { prefab = prefab, components = {} }
+    function entity:IsValid() return true end
+    function entity:GetCurrentPlatform() return nil end
+    function entity:GetDistanceSqToInst() return 1 end
+    return entity
+end
+local feed_robot = robot_test_entity("chester")
+feed_robot.components.fueled = { IsEmpty = function() return false end }
+feed_robot.components.inventoryitem = { IsHeld = function() return false end }
+local feed_source = robot_test_entity("marble_chest")
+local feed_source_stack = make_item("copper_ore", 3)
+local feed_source_container = robot_test_container(feed_source, { [1] = feed_source_stack })
+feed_source.components.container = feed_source_container
+local function configure_robot_world(source)
+    TheSim = {
+        FindEntities = function(_, _, _, _, _, musttags)
+            if musttags[1] == "storagerobot" then return { feed_robot } end
+            if musttags[1] == "_container" then return { source } end
+            return {}
+        end,
+    }
+end
+config.mam_robot_smelting = 1
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 30,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 3 } },
+}
+local feed_machine_container = robot_test_container(nil, {})
+local feed_smelter, feed_inst = new_smelter(feed_machine_container)
+feed_machine_container.inst = feed_inst
+feed_inst.Transform = { GetWorldPosition = function() return 0, 0, 0 end }
+feed_inst.GetCurrentPlatform = function() return nil end
+configure_robot_world(feed_source)
+check("robot feeder starts a batch from a nearby compatible chest",
+    feed_smelter:TryStartRobotBatch() == true)
+check("robot feeder transfers only the planned ingredients and starts smelting",
+    feed_smelter.issmelting == true and feed_smelter.product == "copper_ingot"
+        and feed_source_container.slots[1] == nil
+        and next(feed_machine_container.slots) == nil)
+
+local rollback_source = robot_test_entity("cold_safe")
+local rollback_source_stack = make_item("copper_ore", 3)
+local rollback_source_container = robot_test_container(rollback_source, { [1] = rollback_source_stack })
+rollback_source.components.container = rollback_source_container
+local rollback_machine_container = robot_test_container(nil, {}, 2)
+local rollback_feed_smelter, rollback_feed_inst = new_smelter(rollback_machine_container)
+rollback_machine_container.inst = rollback_feed_inst
+rollback_feed_inst.Transform = feed_inst.Transform
+rollback_feed_inst.GetCurrentPlatform = feed_inst.GetCurrentPlatform
+configure_robot_world(rollback_source)
+check("robot feeder rejects a failed container transfer",
+    rollback_feed_smelter:TryStartRobotBatch() == false)
+check("failed robot transfer restores exact source stack and empties smelter",
+    rollback_source_container.slots[1] == rollback_source_stack
+        and rollback_source_stack.components.stackable:StackSize() == 3
+        and next(rollback_machine_container.slots) == nil
+        and rollback_feed_smelter.issmelting == nil)
+config.mam_robot_smelting = robot_config_previous
+TheSim = nil
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
