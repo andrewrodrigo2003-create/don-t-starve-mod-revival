@@ -187,8 +187,8 @@ local function build_pages(owner)
         {
             title = L("Bancada de Guerra", "War Bench"),
             body = table.concat({
-                L("Equipamentos, ferramentas e estruturas metálicas selecionadas ficam disponíveis na Bancada de Guerra (ALCHEMY_ONE).",
-                    "Metal equipment, tools and selected metal structures are available at the War Bench (ALCHEMY_ONE)."),
+                L("Armas e armaduras metálicas do MAM são fabricadas exclusivamente na Bancada de Guerra. Ferramentas e estruturas selecionadas mantêm suas estações próprias.",
+                    "MAM metal weapons and armor are crafted exclusively at the War Bench. Selected tools and structures keep their own stations."),
                 "",
                 L("Itens da progressão da Máquina de Ciência, do Motor de Alquimia e o transistor permanecem no caminho científico para evitar ciclos de pré-requisitos.",
                     "Science Machine and Alchemy Engine progression items, plus the transistor, remain on the science path to avoid prerequisite loops."),
