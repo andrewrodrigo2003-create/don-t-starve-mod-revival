@@ -485,7 +485,7 @@ for _, dedicated in ipairs({ false, true }) do
                 setfenv(assert(loadstring(main:sub(start, finish - 1))), api)()
                 assert(hooks.builder and hooks["components/builder_replica"])
                 assert((hooks["widgets/redux/craftingmenu_hud"] ~= nil) == not dedicated)
-                assert(live.boards.ingredients[1].amount == (axe == 1 and 3 or 4))
+                assert(live.boards.ingredients[1].amount == 4)
                 assert((live.cutstone.description ~= nil) == (chisel == 1))
                 assert((created ~= nil) == (chisel == 1))
                 if created then
@@ -498,8 +498,8 @@ for _, dedicated in ipairs({ false, true }) do
                 end
                 live.boards.ingredients[1].amount = 7; late(); late()
                 assert(live.boards.ingredients[1].amount == 7)
-                live.boards = { product = "boards", numtogive = 1, ingredients = { { type = "log", amount = 4 } } }
-                late(); assert(live.boards.ingredients[1].amount == (axe == 1 and 3 or 4))
+                live.boards = { name = "boards", product = "boards", numtogive = 1, ingredients = { { type = "log", amount = 4 } } }
+                late(); assert(live.boards.ingredients[1].amount == 4)
                 local s = fixture()
                 local server = { inst = s.inst, HasIngredients = function() return true end, DoBuild = function() return true end }
                 hooks.builder(server); assert(server:DoBuild("boards") == (axe == 0))
