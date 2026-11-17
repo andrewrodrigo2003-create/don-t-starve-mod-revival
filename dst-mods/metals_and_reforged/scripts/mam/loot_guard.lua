@@ -61,7 +61,14 @@ end
 --- 2.5 unidades esperadas). Escalar preserva o peso relativo de cada roll e corta
 --- a expectativa para 1 -- e' a opcao "sem farm facil", desligada por padrao para
 --- nao mudar o balanceamento original sem o jogador pedir.
-local function prepare(entries)
+local function prepare(entries, scale)
+    scale = type(scale) == "number" and math.max(0, scale) or 1
+    local scaled = {}
+    for i, entry in ipairs(entries) do
+        scaled[i] = { entry[1], math.min(1, math.max(0, entry[2] * scale)) }
+    end
+    entries = scaled
+
     if not MAMConfig.on("mam_drops_normalise") then
         return entries
     end
@@ -81,7 +88,13 @@ end
 
 -- Compartilhado com newrocks.lua para que o modo Rewrite respeite a mesma
 -- opcao de normalizacao do modo aditivo.
-M.PrepareEntries = prepare
+function M.PrepareEntries(entries, source_key)
+    local scale = 1
+    if source_key ~= nil then
+        scale = MAMConfig.int("mam_drop_" .. source_key .. "_chance", 100) / 100
+    end
+    return prepare(entries, scale)
+end
 
 local function state(source)
     if not MAMConfig.on("mam_extra_drops") then
@@ -89,10 +102,19 @@ local function state(source)
     end
 
     local mode = MAMConfig.int("mam_drops_mode", 1)
+    if mode == 2 and not MAMConfig.on("mam_allow_third_party_drop_overrides") then
+        mode = 1 -- fallback aditivo: nunca substituir loot tables compartilhadas sem opt-in
+    end
+    local parent_value = source.parent_key ~= nil
+        and MAMConfig.int("mam_drop_" .. source.parent_key, 1) or nil
+    if parent_value ~= nil and parent_value <= 0 then
+        return false, "parent-source-off"
+    end
     local value = MAMConfig.int("mam_drop_" .. source.key, 1)
     if value <= 0 then
         return false, "source-off"
     end
+    local compatibility_value = parent_value ~= nil and parent_value or value
     if mode == 0 then
         return false, "disabled"
     end
@@ -104,13 +126,13 @@ local function state(source)
         -- Hounds: no modo Rewrite, Auto sem UM usa a tabela original; com UM,
         -- Auto cede e Always soma nossos fragmentos sem apagar as gemas do UM.
         local rewrite_additive = source.apply_in_rewrite
-            or (source.skip_if_um and value == 2 and M.HasUncompromising())
+            or (source.skip_if_um and compatibility_value == 2 and M.HasUncompromising())
         if not rewrite_additive then
             return false, "rewrite-mode"
         end
     end
 
-    if source.skip_if_um and value == 1 and M.HasUncompromising() then
+    if source.skip_if_um and compatibility_value == 1 and M.HasUncompromising() then
         return false, "um-present"
     end
     return true, "on"
@@ -132,13 +154,18 @@ local function apply(name, inst)
 
     for _, source in ipairs(sources[name] or {}) do
         local enabled, reason = state(source)
-        if enabled then
-            for _, entry in ipairs(source.entries) do
+        local follower = inst.components.follower
+        local followed = source.skip_if_followed and follower ~= nil and follower.leader ~= nil
+        if enabled and not followed then
+            local chance_scale = MAMConfig.int("mam_drop_" .. source.key .. "_chance", 100) / 100
+            local entries = prepare(source.entries, chance_scale)
+            for _, entry in ipairs(entries) do
                 lootdropper:AddChanceLoot(entry[1], entry[2])
                 M.stats.applied = M.stats.applied + 1
             end
         else
-            M.stats.skipped[reason] = (M.stats.skipped[reason] or 0) + 1
+            local skipped_reason = followed and "player-following-creature" or reason
+            M.stats.skipped[skipped_reason] = (M.stats.skipped[skipped_reason] or 0) + 1
         end
     end
 end
@@ -147,7 +174,7 @@ end
 -- @param prefabs  nome do prefab, ou lista de nomes que compartilham a mesma fonte
 -- @param key      identificador da opcao no modinfo (sem o prefixo mam_drop_)
 -- @param entries  { {item, chance}, ... } -- chances exatamente como no v2.9.3
--- @param opts     { skip_if_um = true } cede quando o UM ja' reequilibrou a fonte
+-- @param opts     { skip_if_um = true, parent_key = "chess" } permite controle hierarquico
 function M.Declare(prefabs, key, entries, opts)
     if add_prefab_post_init == nil then
         MAMLog.Error("loot_guard.Declare('%s') chamado sem MAMLootGuard.Init(AddPrefabPostInit)",
@@ -161,9 +188,11 @@ function M.Declare(prefabs, key, entries, opts)
 
     local source = {
         key = key,
-        entries = prepare(entries),
+        entries = entries,
         skip_if_um = opts ~= nil and opts.skip_if_um == true,
         apply_in_rewrite = opts ~= nil and opts.apply_in_rewrite == true,
+        skip_if_followed = opts ~= nil and opts.skip_if_followed == true,
+        parent_key = opts ~= nil and opts.parent_key or nil,
     }
 
     local record = M.declared[key]

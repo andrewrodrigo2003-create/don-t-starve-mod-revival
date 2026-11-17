@@ -42,11 +42,9 @@ elseif y_align == "bottom" then
 	margin_dir_vert = 1
 end
 
-local require = GLOBAL.require
 
-local function PositionMiniMap(controls, screensize)
+local function PositionMiniMap(controls, screenw_full, screenh_full)
 	local hudscale = controls.top_root:GetScale()
-	local screenw_full, screenh_full = GLOBAL.unpack(screensize)
 	local screenw = screenw_full/hudscale.x
 	local screenh = screenh_full/hudscale.y
 	controls.minimap_small:SetPosition(
@@ -71,16 +69,25 @@ local function AddMiniMap(controls)
 		local MiniMapWidget = require "widgets/minimapwidget"
 
 		controls.minimap_small = controls.top_root:AddChild( MiniMapWidget( mapscale ) )
-		local screensize = {GLOBAL.TheSim:GetScreenSize()}
-		PositionMiniMap(controls, screensize)
+		local screenw, screenh = GLOBAL.TheSim:GetScreenSize()
+		PositionMiniMap(controls, screenw, screenh)
 
 		local OnUpdate_base = controls.OnUpdate
 		controls.OnUpdate = function(self, dt)
 			OnUpdate_base(self, dt)
-			local curscreensize = {GLOBAL.TheSim:GetScreenSize()}
-			if curscreensize[1] ~= screensize[1] or curscreensize[2] ~= screensize[2] then
-				PositionMiniMap(controls, curscreensize)
-				screensize = curscreensize
+
+			-- The vanilla Controls:OnUpdate updates these cached dimensions when
+			-- the screen size changes. Reuse them instead of querying TheSim and
+			-- allocating a temporary table a second time every frame.
+			local curscreenw, curscreenh = self._scrnw, self._scrnh
+			if curscreenw == nil or curscreenh == nil then
+				-- Compatibility fallback for game builds without the cached fields.
+				curscreenw, curscreenh = GLOBAL.TheSim:GetScreenSize()
+			end
+
+			if curscreenw ~= screenw or curscreenh ~= screenh then
+				screenw, screenh = curscreenw, curscreenh
+				PositionMiniMap(self, screenw, screenh)
 			end
 		end
 
@@ -105,7 +112,7 @@ AddClassPostConstruct( "widgets/controls", AddMiniMap )
 -- special case: ToggleMap gets bypassed when the map gets hidden while on the map screen
 local MapScreen = require "screens/mapscreen"
 
-MapScreen_OnControl_base = MapScreen.OnControl
+local MapScreen_OnControl_base = MapScreen.OnControl
 MapScreen.OnControl = function( self, control, down )
 	local ret = MapScreen_OnControl_base(self, control, down)
 
@@ -120,7 +127,7 @@ end
 -- keep track of zooming while on the map screen
 local MapWidget = require "widgets/mapwidget"
 
-MapWidget_OnZoomIn_base = MapWidget.OnZoomIn
+local MapWidget_OnZoomIn_base = MapWidget.OnZoomIn
 MapWidget.OnZoomIn = function(self)
 	MapWidget_OnZoomIn_base( self )
 	if minimap_small and self.shown then
@@ -128,7 +135,7 @@ MapWidget.OnZoomIn = function(self)
 	end
 end
 
-MapWidget_OnZoomOut_base = MapWidget.OnZoomOut
+local MapWidget_OnZoomOut_base = MapWidget.OnZoomOut
 MapWidget.OnZoomOut = function(self)
 	MapWidget_OnZoomOut_base( self )
 	if minimap_small and self.shown then

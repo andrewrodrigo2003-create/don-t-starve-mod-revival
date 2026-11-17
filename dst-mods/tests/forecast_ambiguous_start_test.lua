@@ -12,6 +12,7 @@ local config_values = {
     mam_batch_cap = 10,
     mam_batch_time = 25,
     mam_forecast = 1,
+    mam_language = "en",
 }
 
 local MAMConfig = {}
@@ -21,6 +22,10 @@ end
 function MAMConfig.int(name, fallback)
     local value = config_values[name]
     return type(value) == "number" and value or fallback
+end
+function MAMConfig.get(name, fallback)
+    local value = config_values[name]
+    return value ~= nil and value or fallback
 end
 package.preload["mam/config"] = function()
     return MAMConfig
@@ -141,6 +146,10 @@ check("ambiguous load remains startable",
 
 check("ambiguous load communicates uncertainty",
     MAMForecast.button_text(inst) == "Mixed load")
+config_values.mam_language = "ptbr"
+check("Portuguese mode localizes ambiguous load action",
+    MAMForecast.button_text(inst) == "Carga mista")
+config_values.mam_language = "en"
 
 -- In detailed mode, every tied recipe must report its own batch count/time.
 config_values.mam_forecast = 2

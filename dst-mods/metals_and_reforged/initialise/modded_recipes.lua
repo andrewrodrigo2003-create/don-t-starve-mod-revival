@@ -15,7 +15,7 @@ local MAMRecipeGuard = require("mam/recipe_guard")
 -- AddRecipe2 so existe no ambiente do modmain (modutil.lua:732 a poe em env, nao em
 -- GLOBAL), entao o guarda precisa que alguem a injete para o caminho de migracao de
 -- bancada. Idempotente: modded_craftbook.lua faz o mesmo.
-MAMRecipeGuard.Init(AddRecipe2)
+MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter, RemoveRecipeFromFilter)
 
 local IRON_ORE_ATLAS = "images/inventoryimages/iron_ore.xml"
 local IRON_INGOT_ATLAS = "images/inventoryimages/iron_ingot.xml"
@@ -142,23 +142,50 @@ local OVERRIDES =
 
 local has_been_applied = false
 
-local function apply_vanilla_overrides(where)
-    if has_been_applied then
-        return 0, 0
+local function apply_vanilla_overrides(where, force)
+    if has_been_applied and not force then
+        return 0, 0, #OVERRIDES
     end
-    has_been_applied = true
 
-    local applied, total = 0, #OVERRIDES
+    local applied, pending = 0, 0
+    local total = #OVERRIDES
     for _, override in ipairs(OVERRIDES) do
-        if MAMRecipeGuard.apply(override.name, override.ingredients) then
+        local changed, reason = MAMRecipeGuard.apply(override.name, override.ingredients)
+        if changed then
             applied = applied + 1
+        elseif reason == "missing" then
+            pending = pending + 1
         end
     end
 
-    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d aplicadas", where, applied, total)
+    -- These recipes are intentionally moved by changing only their live tech
+    -- requirement and filter. Their ingredient tables and metadata stay intact.
+    local station_recipes =
+    {
+        "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
+        "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
+        "armormarble", "armordragonfly", "ruinshat", "armorruins",
+        "multitool_axe_pickaxe", "winterometer", "rainometer", "nightlight",
+        "portablecookpot_item", "portableblender_item",
+        "portablespicer_item", "glasscutter", "archive_resonator_item",
+        "moondial", "moonrockcrater", "moonglassaxe",
+    }
+    local station_moved = 0
+    for _, name in ipairs(station_recipes) do
+        local moved, reason = MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+        if moved then
+            station_moved = station_moved + 1
+        elseif reason == "missing" or reason == "filter-api-unavailable" or reason == "invalid-tech" then
+            pending = pending + 1
+        end
+    end
+
+    has_been_applied = pending == 0
+    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d; pendentes: %d",
+        where, applied, total, station_moved, #station_recipes, pending)
     MAMRecipeGuard.dump()
 
-    return applied, total
+    return pending, applied, total
 end
 
 -- Roda no servidor E no cliente, depois de todos os modmain: e' o ponto em que a
@@ -177,10 +204,18 @@ end)
 -- STRINGS.NAMES.MIGRATION_PORTAL -- e STRINGS ainda pode estar incompleto em
 -- tempo de carga de mod, o que silenciosamente registraria o fallback no nome
 -- errado. Registrar os dois custa uma tabela vazia e funciona em qualquer verso.
+local function retry_world_recipe_pass(inst, attempt)
+    inst:DoTaskInTime(0.5, function()
+        local ok, pending = MAMLog.Try("modded_recipes.world_retry",
+            apply_vanilla_overrides, "primeira task do world", true)
+        if ok and pending ~= nil and pending > 0 and attempt < 3 then
+            retry_world_recipe_pass(inst, attempt + 1)
+        end
+    end)
+end
+
 for _, world_prefab_name in ipairs({ "world", "forest" }) do
     AddPrefabPostInit(world_prefab_name, function(inst)
-        inst:DoTaskInTime(0, function()
-            apply_vanilla_overrides("primeira task do world")
-        end)
+        retry_world_recipe_pass(inst, 1)
     end)
 end

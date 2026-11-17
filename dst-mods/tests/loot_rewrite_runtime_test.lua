@@ -16,6 +16,7 @@ end
 local config_values = {
     mam_extra_drops = 1,
     mam_drops_mode = 1,
+    mam_allow_third_party_drop_overrides = 1,
     mam_drops_normalise = 0,
     mam_drop_boulders = 1,
     mam_drop_stalagmites = 1,
@@ -24,6 +25,18 @@ local config_values = {
     mam_drop_marbletree = 1,
     mam_drop_shark = 1,
     mam_drop_marbleshrub = 1,
+    mam_drop_rocky = 1,
+    mam_drop_rubble = 1,
+    mam_drop_ancient_statues = 1,
+    mam_drop_knight = 1,
+    mam_drop_rook = 1,
+    mam_drop_bishop = 1,
+    mam_drop_chessjunk = 1,
+    mam_drop_firehound = 1,
+    mam_drop_icehound = 1,
+    mam_drop_slurtle = 1,
+    mam_drop_snurtle = 1,
+    mam_drop_marbleshrub_quantity = 100,
 }
 
 local MAMConfig = {
@@ -86,18 +99,20 @@ local LootGuard = require("mam/loot_guard")
 -- Load the actual declarations used by the mod, not a copied decision function.
 dofile(MOD_ROOT .. "initialise/modded_drops.lua")
 
-local function make_inst()
+local function make_inst(extra_components)
     local dropper = { items = {} }
     function dropper:AddChanceLoot(prefab, chance)
         table.insert(self.items, { prefab = prefab, chance = chance })
     end
-    return { components = { lootdropper = dropper } }
+    local components = extra_components or {}
+    components.lootdropper = dropper
+    return { components = components }
 end
 
-local function run_prefab(name)
+local function run_prefab(name, extra_components)
     local callback = prefab_callbacks[name]
     assert_true(callback ~= nil, "missing AddPrefabPostInit callback for " .. name)
-    local inst = make_inst()
+    local inst = make_inst(extra_components)
     callback(inst)
     return inst.components.lootdropper.items
 end
@@ -127,6 +142,97 @@ assert_eq(#run_prefab("firehound"), 0, "additive hounds Auto with UM")
 config_values.mam_drop_hounds = 2
 assert_eq(#run_prefab("firehound"), 4, "additive hounds Always with UM")
 
+-- Per-source chance sliders affect only MAM's own additive rolls.
+config_values.mam_drops_mode = 1
+config_values.mam_drop_shark = 1
+config_values.mam_drop_shark_chance = 50
+local half_shark = run_prefab("shark")
+assert_eq(#half_shark, 2, "shark retains two independent MAM rolls")
+assert_true(math.abs(half_shark[1].chance - 0.5) < 0.000001, "shark chance is scaled")
+config_values.mam_drop_shark_chance = nil
+
+-- Creature sources have independent switches and chance regulators.
+config_values.mam_drops_mode = 1
+config_values.mam_drop_chess = 1
+config_values.mam_drop_knight = 0
+assert_eq(#run_prefab("knight"), 0, "clockwork knight has its own independent switch")
+config_values.mam_drop_knight = 1
+config_values.mam_drop_knight_chance = 50
+local knight_scaled = run_prefab("knight")
+assert_eq(#knight_scaled, 2, "knight retains its own two copper-ore rolls")
+assert_true(math.abs(knight_scaled[1].chance - 0.25) < 0.000001, "knight chance regulator scales its own loot")
+config_values.mam_drop_knight_chance = nil
+
+config_values.mam_drop_hounds = 2 -- Always isolates per-species toggles from the UM Auto policy.
+config_values.mam_drop_firehound = 0
+assert_eq(#run_prefab("firehound"), 0, "firehound can be disabled without disabling icehound")
+assert_eq(#run_prefab("icehound"), 4, "icehound remains enabled independently")
+config_values.mam_drop_firehound = 1
+
+local slurtle_loot = run_prefab("slurtle")
+local snurtle_loot = run_prefab("snurtle")
+assert_eq(#slurtle_loot, 1, "slurtle has a rare iron dust source")
+assert_eq(slurtle_loot[1].prefab, "iron_dust", "slurtle iron dust material")
+assert_eq(#snurtle_loot, 1, "snurtle has a rare iron dust source")
+assert_true(snurtle_loot[1].chance > slurtle_loot[1].chance, "snurtle's reinforced shell yields a slightly higher chance")
+
+-- New secondary sources: wild Rockys, cave rubble and ancient Ruins statues.
+config_values.mam_drops_mode = 1
+local rocky_loot = run_prefab("rocky")
+assert_eq(#rocky_loot, 2, "wild Rocky has two low-probability mineral dust rolls")
+assert_eq(rocky_loot[1].prefab, "copper_dust", "Rocky copper dust")
+assert_eq(rocky_loot[2].prefab, "iron_dust", "Rocky iron dust")
+local followed_rocky_loot = run_prefab("rocky", { follower = { leader = {} } })
+assert_eq(#followed_rocky_loot, 0, "player-following Rocky must not become a mineral farm")
+
+local rubble_loot = run_prefab("rubble")
+assert_eq(#rubble_loot, 2, "mineable cave rubble gets rare mineral dust")
+for _, statue_name in ipairs({
+    "ruins_statue_mage", "ruins_statue_mage_nogem",
+    "ruins_statue_head", "ruins_statue_head_nogem",
+}) do
+    assert_eq(#run_prefab(statue_name), 2, "ancient statue source registered: " .. statue_name)
+end
+
+config_values.mam_drop_rubble = 0
+assert_eq(#run_prefab("rubble"), 0, "rubble source can be disabled independently")
+config_values.mam_drop_rubble = 1
+config_values.mam_drop_rocky_chance = 50
+local scaled_rocky = run_prefab("rocky")
+assert_true(math.abs(scaled_rocky[1].chance - 0.10) < 0.000001, "Rocky chance slider scales only its dust")
+config_values.mam_drop_rocky_chance = nil
+
+-- Marble-shrub quantity is independent of all other drops and works in additive mode.
+local function make_shrub(stage)
+    local dropper = { loot = { "marble", "rocks", "marblebean" } }
+    function dropper:SetLootSetupFn(fn) self.lootsetupfn = fn end
+    function dropper:SetLoot(loot) self.loot = loot end
+    local inst = { components = { lootdropper = dropper, growable = { stage = stage } } }
+    return inst, dropper
+end
+config_values.mam_drops_mode = 1
+config_values.mam_drop_marbleshrub_quantity = 200
+local shrub_double, shrub_double_dropper = make_shrub(2)
+prefab_callbacks.marbleshrub(shrub_double)
+shrub_double_dropper.lootsetupfn(shrub_double_dropper)
+local shrub_iron = 0
+for _, item in ipairs(shrub_double_dropper.loot) do
+    if item == "iron_ore" then shrub_iron = shrub_iron + 1 end
+end
+assert_eq(shrub_iron, 2, "marble shrub double quantity in additive mode")
+
+-- The same quantity option also governs legacy Rewrite; zero means no MAM iron ore.
+config_values.mam_drops_mode = 2
+config_values.mam_allow_third_party_drop_overrides = 1
+config_values.mam_drop_marbleshrub_quantity = 0
+local shrub_off, shrub_off_dropper = make_shrub(3)
+prefab_callbacks.marbleshrub(shrub_off)
+shrub_off_dropper.lootsetupfn(shrub_off_dropper)
+for _, item in ipairs(shrub_off_dropper.loot) do
+    assert_true(item ~= "iron_ore", "marble shrub quantity Off in Rewrite mode")
+end
+config_values.mam_drop_marbleshrub_quantity = 100
+
 -- Master switch, source switch and client authority are enforced by the real module.
 config_values.mam_extra_drops = 0
 assert_eq(#run_prefab("shark"), 0, "master switch off")
@@ -155,6 +261,15 @@ end
 assert_true(math.abs(gold_total - 1.0) < 0.000001, "normalizer should cap aggregate gold_dust chance")
 config_values.mam_drops_normalise = 0
 
+-- Per-source chance scaling affects only MAM's own rolls and is also used by Rewrite.
+config_values.mam_drop_hounds_chance = 50
+local half_chance = LootGuard.PrepareEntries({ { "redgem_shard", 0.8 } }, "hounds")
+assert_true(math.abs(half_chance[1][2] - 0.4) < 0.000001, "source chance multiplier")
+config_values.mam_drop_hounds_chance = 150
+local increased_chance = LootGuard.PrepareEntries({ { "redgem_shard", 0.8 } }, "hounds")
+assert_eq(increased_chance[1][2], 1, "chance scaling clamps individual rolls at 1.0")
+config_values.mam_drop_hounds_chance = nil
+
 -- Load the actual newrocks prefab file with the minimum DST registration stubs.
 local rewrite_names = {
     "rock2", "rock_moon", "rock_moon_shell",
@@ -172,6 +287,21 @@ local function load_rewrite_tables(overrides, has_um)
     config_values.mam_drop_stalagmites = 1
     config_values.mam_drop_chess = 1
     config_values.mam_drop_hounds = 1
+    config_values.mam_allow_third_party_drop_overrides = 1
+    config_values.mam_drop_chessjunk = 1
+    config_values.mam_drop_knight = 1
+    config_values.mam_drop_rook = 1
+    config_values.mam_drop_bishop = 1
+    config_values.mam_drop_firehound = 1
+    config_values.mam_drop_icehound = 1
+    config_values.mam_drop_boulders_chance = 100
+    config_values.mam_drop_stalagmites_chance = 100
+    config_values.mam_drop_chessjunk_chance = 100
+    config_values.mam_drop_knight_chance = 100
+    config_values.mam_drop_rook_chance = 100
+    config_values.mam_drop_bishop_chance = 100
+    config_values.mam_drop_firehound_chance = 100
+    config_values.mam_drop_icehound_chance = 100
     for key, value in pairs(overrides or {}) do
         config_values[key] = value
     end
@@ -192,6 +322,12 @@ for _, name in ipairs(rewrite_names) do
     present = present + 1
 end
 assert_eq(present, 18, "number of vanilla Rewrite tables")
+
+local protected_tables = load_rewrite_tables({ mam_allow_third_party_drop_overrides = 0 })
+for _, name in ipairs(rewrite_names) do
+    assert_true(protected_tables[name] == nil, "third-party overwrite opt-out must preserve shared table " .. name)
+end
+assert_eq(#run_prefab("rock2"), 2, "safe fallback keeps additive MAM boulder drops")
 
 local no_boulders = load_rewrite_tables({ mam_drop_boulders = 0 })
 assert_true(no_boulders.rock2 == nil and no_boulders.rock_moon == nil and no_boulders.rock_moon_shell == nil,
@@ -216,6 +352,33 @@ local no_hounds = load_rewrite_tables({ mam_drop_hounds = 0 })
 assert_true(no_hounds.hound_fire == nil and no_hounds.hound_cold == nil,
     "hounds source switch must gate both hound tables")
 
+local no_knight = load_rewrite_tables({ mam_drop_knight = 0 })
+assert_true(no_knight.knight == nil and no_knight.knight_nightmare == nil,
+    "knight switch must gate both normal and nightmare tables")
+local no_rook = load_rewrite_tables({ mam_drop_rook = 0 })
+assert_true(no_rook.rook == nil and no_rook.rook_nightmare == nil,
+    "rook switch must gate both normal and nightmare tables")
+local no_bishop = load_rewrite_tables({ mam_drop_bishop = 0 })
+assert_true(no_bishop.bishop == nil and no_bishop.bishop_nightmare == nil,
+    "bishop switch must gate both normal and nightmare tables")
+local no_chessjunk = load_rewrite_tables({ mam_drop_chessjunk = 0 })
+assert_true(no_chessjunk.chess_junk == nil,
+    "chess junk switch must gate its own shared table")
+local no_firehound = load_rewrite_tables({ mam_drop_firehound = 0 })
+assert_true(no_firehound.hound_fire == nil and no_firehound.hound_cold ~= nil,
+    "firehound switch must not disable icehound Rewrite table")
+local no_icehound = load_rewrite_tables({ mam_drop_icehound = 0 })
+assert_true(no_icehound.hound_cold == nil and no_icehound.hound_fire ~= nil,
+    "icehound switch must not disable firehound Rewrite table")
+
+local half_boulder_tables = load_rewrite_tables({ mam_drop_boulders_chance = 50 })
+local half_gold_rolls = {}
+for _, entry in ipairs(half_boulder_tables.rock2) do
+    if entry[1] == "gold_dust" then table.insert(half_gold_rolls, entry[2]) end
+end
+assert_true(math.abs(half_gold_rolls[1] - 0.375) < 0.000001, "Rewrite mode scales first boulder gold roll")
+assert_eq(half_gold_rolls[2], 0.5, "Rewrite mode scales second boulder gold roll")
+
 local um_tables = load_rewrite_tables({}, true)
 assert_true(um_tables.hound_fire == nil and um_tables.hound_cold == nil,
     "Rewrite hounds must not replace UM tables")
@@ -225,4 +388,4 @@ for _, name in ipairs(rewrite_names) do
     assert_true(disabled_tables[name] == nil, "master switch must gate " .. name)
 end
 
-print("PASS: actual loot_guard + modded_drops + newrocks runtime harness; Rewrite sources, UM Auto/Always, normalization and all 18 table gates")
+print("PASS: loot_guard + modded_drops + newrocks; independent overwrite opt-in, additive/Rewrite chance tuning, shrub quantity, UM Auto/Always, normalization and 18 table gates")

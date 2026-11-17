@@ -1,6 +1,6 @@
 # Desconstrução reversível de materiais metalúrgicos
 
-**Status:** especificação preliminar baseada nas receitas atuais; ainda não implementada.  
+**Status:** implementação parcial na branch 2.9.7; não certificada in-game.  
 **Data:** 2026-11-08.  
 **Escopo:** Metals and More Reforged.
 
@@ -37,7 +37,7 @@ Observações:
 
 ## 3. Retornos candidatos para desconstrução
 
-A tabela abaixo traduz os custos atuais para componentes canônicos de um estágio inferior. São candidatos derivados dos dados do código, não valores já implementados nem autorização para mudar receitas.
+A tabela abaixo traduz os custos atuais para componentes canônicos de um estágio inferior. Os nove retornos listados estão implementados em `scripts/mam/deconstruction.lua`; a recuperação padrão é 75% esperada por unidade e os perfis de Wilson, Winona e Maxwell aplicam somente as especialidades já registradas. Isso ainda exige validação in-game.
 
 | Material desconstruído | Retorno candidato | Justificativa |
 |---|---|---|
@@ -76,14 +76,31 @@ Antes da implementação, confirmar se o usuário prefere:
 
 Não criar uma nova estação apenas para esta função sem necessidade demonstrada.
 
-## 6. Fora do escopo nesta etapa
+## 6. Materiais ainda sem regra segura
 
-- Não converter equipamentos metálicos em lingotes automaticamente: isso exigiria regras próprias de durabilidade, componentes, valor e perda.
-- Não desconstruir ligas, gemas ou sucata fora dos casos explicitamente mapeados.
+- Poeiras (`copper_dust`, `iron_dust`, `gold_dust`) são estágios-base e não têm estágio anterior para recuperar.
+- `junk_dust` é um subproduto genérico da presença de tag `metal`; não há proveniência suficiente para escolher um retorno específico sem inventar composição.
+- Fragmentos de gemas são entradas de receitas de gemas/nitre, não produtos com uma receita reversível de menor estágio. Convertê-los em gemas seria avanço, não desmontagem.
+- `sharkscale` é um drop bruto usado por receitas; não há cadeia de processamento MAM que justifique um retorno reverso.
+- Esses itens permanecem deliberadamente fora da allowlist. Não devem aparecer como desmontáveis até que uma origem/retorno seguro seja demonstrado.
+
+## 7. Fora do escopo nesta etapa
+
+- Não converter equipamentos metálicos em lingotes: armas, armaduras, ferramentas, equipamentos e estruturas são explicitamente rejeitados.
+- Não criar retornos genéricos por tag, nem permitir conversão para estágio superior.
 - Não alterar custos atuais de fundição para acomodar a desconstrução.
 - Não mudar receitas de outros mods nem editar Uncompromising Mode.
-- Não declarar a funcionalidade pronta antes de implementação e testes.
+- Não declarar a funcionalidade pronta antes da validação no motor DST.
 
-## 7. Próxima etapa técnica
+## 8. Próxima etapa técnica
 
-Após a escolha da estação, criar uma tabela de retorno final, implementar um pequeno conjunto vertical de receitas (cobre/ferro/ouro), adicionar testes de inventário e transação e só então expandir para bronze, vidro lunar e adamantium. A expansão deve preservar a composição de cada liga e validar o comportamento real do DST.
+Expandir somente quando houver proveniência segura para cada novo prefab; revisar a composição das ligas, os contratos de inventário/overflow, pilhas, save/load e multiplayer. Depois validar a ação no mundo de teste e confirmar que nenhum item não autorizado aparece no menu.
+
+
+## 9. Estado de implementação na branch 2.9.7 — 2026-11-13
+
+Allowlist atual: copper_ore, copper_ingot, iron_ore, iron_ingot, goldnugget, gold_ingot, bronze_ingot, moonglass_ingot e adamantium_ingot. O retorno é canônico e explicitamente mapeado; os materiais não registrados, inclusive equipamentos, são rejeitados.
+
+A tela do Guia de Metalurgia foi corrigida para respeitar a configuração pt-BR/English e agora descreve somente a desmontagem de materiais registrada, sem prometer salvage de equipamentos. A ação e a mensagem de inventário cheio também respeitam o idioma selecionado.
+
+Validação disponível nesta etapa: testes Lua 5.1 do planejador de retorno e contratos Python de localização/cópia. Isso não valida o motor DST, o comportamento real de inventário, multiplayer, save/load nem a integração com UM Beta.
