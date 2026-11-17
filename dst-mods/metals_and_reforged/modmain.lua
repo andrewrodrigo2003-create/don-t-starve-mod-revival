@@ -205,8 +205,8 @@ local function stamp_mam_tech(recipe)
     end
 end
 
--- ALCHEMY e CRAFTSBOOK sao chaves de tecnologia novas criadas por este mod. Toda
--- receita precisa de uma entrada correspondente nelas (0 = nao desbloqueia nesta
+-- ALCHEMY, CRAFTSBOOK e MAM_FORGE sao chaves de tecnologia registradas por mam/tech.lua.
+-- Toda receita precisa de uma entrada correspondente nelas (0 = nao desbloqueia nesta
 -- bancada), senao a arvore de tecnologia fica com buraco.
 --
 -- O original fazia um unico `for pairs(AllRecipes)` aqui, em tempo de carga: receitas
