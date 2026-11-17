@@ -187,23 +187,8 @@ AddMinimapAtlas("images/mapicons/ironrock.xml")
 AddMinimapAtlas("images/inventoryimages/willowdoll.xml")
 
 	
-local newtechtoadd = {"ALCHEMY", "CRAFTSBOOK"}
-for _, v in pairs(newtechtoadd) do
-    local thelower = v:lower()
-    TechTree.AVAILABLE_TECH_BONUS[v] = thelower .. "_bonus"
-    TechTree.AVAILABLE_TECH_TEMPBONUS[v] = thelower .. "_tempbonus"
-    TechTree.AVAILABLE_TECH_BONUS_CLASSIFIED[v] = thelower .. "bonus"
-    TechTree.AVAILABLE_TECH_TEMPBONUS_CLASSIFIED[v] = thelower .. "tempbonus"
-    TechTree.AVAILABLE_TECH_LEVEL_CLASSIFIED[v] = thelower .. "level"
-end
-
-TUNING.PROTOTYPER_TREES.ALCHEMY_ONE = TechTree.Create({
-    ALCHEMY = 1
-})
-
-TUNING.PROTOTYPER_TREES.CRAFTSBOOK_ONE = TechTree.Create({
-    CRAFTSBOOK = 1
-})
+-- Register MAM's private tech trees before recipes and prefabs are loaded.
+require("mam/tech").Register()
 
 local function stamp_mam_tech(recipe)
     if recipe == nil or recipe.level == nil then
@@ -214,6 +199,9 @@ local function stamp_mam_tech(recipe)
     end
     if recipe.level.CRAFTSBOOK == nil then
         recipe.level.CRAFTSBOOK = 0
+    end
+    if recipe.level.MAM_FORGE == nil then
+        recipe.level.MAM_FORGE = 0
     end
 end
 
@@ -254,19 +242,19 @@ AddRecipe2("cold_safe", {Ingredient("gears", 1), Ingredient("iron_ingot", 3, "im
 -- metal_storage_chest permanece registrado apenas para compatibilidade com saves antigos;
 -- não há receita para construí-lo em mundos novos.
 
-AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("tfwp_luxury_nox_helm_hat", {Ingredient("footballhat", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("walrus_tusk", 1)}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages.xml", image="lavaarena_crowndamagerhat.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("tfwp_luxury_nox_helm_hat", {Ingredient("footballhat", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("walrus_tusk", 1)}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas = "images/inventoryimages.xml", image="lavaarena_crowndamagerhat.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("halberd", {Ingredient("log", 2), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("rope", 1) }, TECH.ALCHEMY_ONE, {nounlock = true, atlas="images/inventoryimages/halberd.xml", image="halberd.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("halberd", {Ingredient("log", 2), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("rope", 1) }, TECH.MAM_FORGE_ONE, {nounlock = true, atlas="images/inventoryimages/halberd.xml", image="halberd.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("scepter", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("purplegem", 1), Ingredient("livinglog", 2)}, TECH.ALCHEMY_ONE, {nounlock = true, atlas="images/inventoryimages/pig_scepter_images.xml", image="pig_scepter_images.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("scepter", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("purplegem", 1), Ingredient("livinglog", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas="images/inventoryimages/pig_scepter_images.xml", image="pig_scepter_images.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("forkstick", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("sharkscale", 3, "images/inventoryimages/sharkscale.xml"), Ingredient("gnarwail_horn", 1)}, TECH.ALCHEMY_ONE,{nounlock = true, atlas="images/inventoryimages/forkstick.xml", image="forkstick.tex"}, {"CRAFTING_STATION"}) 
+AddRecipe2("forkstick", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("sharkscale", 3, "images/inventoryimages/sharkscale.xml"), Ingredient("gnarwail_horn", 1)}, TECH.MAM_FORGE_ONE,{nounlock = true, atlas="images/inventoryimages/forkstick.xml", image="forkstick.tex"}, {"CRAFTING_STATION"}) 
 
 AddRecipe2("shears", {Ingredient("log",1), Ingredient("flint",2), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages/shears.xml", image="shears.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("donharpoon", {Ingredient("marble",2), Ingredient("flint",3), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages/donharpoon.xml", image="donharpoon.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("donharpoon", {Ingredient("marble",2), Ingredient("flint",3), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas = "images/inventoryimages/donharpoon.xml", image="donharpoon.tex"}, {"CRAFTING_STATION"})
 
 AddRecipe2("dst_willowdoll", 
 {Ingredient("beefalowool", 4), Ingredient("sewing_kit", 1), Ingredient("charcoal", 10)}, TECH.CRAFTSBOOK_ONE, {nounlock = true, atlas="images/inventoryimages/willowdoll.xml", image="willowdoll.tex"}, {"CRAFTING_STATION"})
@@ -314,13 +302,13 @@ STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = "Shine in power!"
 
 if GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons") then
 
-AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
 
 --[[
 local function MarbleWeapon(inst)
@@ -333,11 +321,11 @@ AddPrefabPostInit("blacksmith_edge", MarbleWeapon)
 
 else
 
-AddRecipe2("forginghammerold", {Ingredient("twigs", 4), Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("forginghammerold", {Ingredient("twigs", 4), Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("pithpikeold", {Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("pithpikeold", {Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("blacksmith_edgeold", {Ingredient("marble", 4),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("blacksmith_edgeold", {Ingredient("marble", 4),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
 
 AddStategraphPostInit("wilson", function(self)
     local onenter = self.states.hit.onenter
@@ -674,3 +662,4 @@ AddPrototyperDef("craftbook", {
 })
 
 modimport("scripts/tot_ui.lua")
+
