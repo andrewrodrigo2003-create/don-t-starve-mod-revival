@@ -773,65 +773,65 @@ configuration_options = {
 	{
         name = "mam_drops_mode",
         label = "Modo de drops de minério / Ore drop mode",
-		hover = "Additive attaches our materials to each rock or creature when it spawns, on top of whatever loot table is live at that moment. Nothing is overwritten, mod load order stops mattering, and only OUR materials are added - vanilla rocks, flint and gold yields are left alone. Rewrite restores the original 2.9.3 behaviour of replacing whole vanilla loot tables, which also lowers some vanilla yields and can overwrite (or be overwritten by) My Moar Metals and Uncompromising Mode, since both write the same tables. Additive is the compatible default; Rewrite is there if you want the old numbers back.",
+		hover = "Aditivo adiciona os materiais do MAM ao loot de cada rocha/criatura sem substituir tabelas existentes; ordem de carregamento deixa de importar e os drops vanilla são preservados. Substituir restaura o comportamento 2.9.3, que troca tabelas inteiras e pode conflitar com My Moar Metals e Uncompromising Mode. Aditivo é o padrão compatível. / Additive attaches our materials to each rock or creature without replacing live loot tables; load order stops mattering and vanilla yields remain unchanged. Rewrite restores the 2.9.3 behaviour of replacing whole vanilla loot tables and can conflict with My Moar Metals and Uncompromising Mode. Additive is the compatible default.",
         options =
         {
 			{description = "Aditivo - preservar drops de outros mods (recomendado) / Additive - keep other mods' loot (recommended)", data = 1},
-			{description = "Rewrite - original 2.9.3 loot tables", data = 2},
+			{description = "Substituir - tabelas de loot originais 2.9.3 / Rewrite - original 2.9.3 loot tables", data = 2},
         },
         default = 1,
 	},
 	{
         name = "mam_drops_normalise",
         label = "Limitar rolagens repetidas / Cap repeated rolls",
-		hover = "The original mod rolls the same material several times on one source - a marble tree rolls gold dust at 1.0, 0.75 and 0.75, so 2.5 pieces on average. On rescales those rolls so a single source averages at most 1 of each material, keeping their relative weights. Off keeps the original numbers exactly. This is the 'no easy farming' knob; it is off by default so the mod's balance is not changed without you asking.",
+		hover = "O mod original pode rolar o mesmo material várias vezes na mesma fonte; uma árvore de mármore, por exemplo, tem média de 2,5 poeiras de ouro. Ligado normaliza as rolagens para no máximo 1 unidade média de cada material por fonte, preservando pesos relativos. Desligado mantém os números originais. / The original mod can roll the same material several times from one source; a marble tree averages 2.5 gold dust. On rescales rolls to at most 1 average unit of each material per source while preserving relative weights. Off keeps original numbers.",
         options =
         {
-			{description = "Off - original 2.9.3 chances", data = 0},
-			{description = "On - at most 1 per material per source", data = 1},
+			{description = "Desligado - chances originais 2.9.3 / Off - original 2.9.3 chances", data = 0},
+			{description = "Ligado - no máximo 1 por material por fonte / On - at most 1 per material per source", data = 1},
         },
         default = 0,
 	},
 	{
         name = "mam_drop_boulders",
         label = "Rochas: ouro e rochas lunares / Boulders: gold and moon rocks",
-		hover = "Gold dust from gold boulders (rock2), iron ore from moon rocks and iron ore plus iron dust from moon rock shells. Chances are the ones 2.9.3 declared.",
+		hover = "Poeira de ouro em rochas douradas (rock2), minério de ferro em rochas lunares e minério de ferro + poeira de ferro nas conchas lunares. As chances seguem os valores declarados na versão 2.9.3. / Gold dust from gold boulders (rock2), iron ore from moon rocks and iron ore plus iron dust from moon rock shells. Chances match 2.9.3.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_stalagmites",
         label = "Estalagmites e estalactites / Cave stalagmites and stalactites",
-		hover = "Copper ore, copper dust and gold dust from every mining stage of stalagmites and tall stalagmites, plus the occasional gem shard and gold ore. Cave rock is the mod's main copper source, so turning this off makes copper noticeably scarcer.",
+		hover = "Minério e poeira de cobre, além de poeira de ouro, em cada estágio de mineração de estalagmites e estalagmites altas; ocasionalmente, fragmentos de gema e minério de ouro. Rochas de cavernas são a principal fonte de cobre do mod, então desligar esta opção torna o cobre mais raro. / Copper ore, copper dust and gold dust from every mining stage of stalagmites and tall stalagmites, plus occasional gem shards and gold ore. Cave rock is the mod's main copper source, so turning this off makes copper scarcer.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_chess",
         label = "Ruínas: mecanismos e sucata de xadrez / Ruins: clockworks and chess junk",
-		hover = "Knights drop copper ore, rooks and bishops drop copper and iron ingots, nightmare variants drop more, and hammerable chess junk drops gem shards and copper dust. Dangerous ruins creatures giving refined metal is intentional: it is the reward for the risk.",
+		hover = "Cavaleiros soltam minério de cobre; torres e bispos soltam lingotes de cobre e ferro; variantes de pesadelo soltam mais; sucata de xadrez quebrável solta fragmentos de gema e poeira de cobre. Metais refinados de criaturas perigosas das Ruínas são uma recompensa intencional pelo risco. / Knights drop copper ore, rooks and bishops drop copper and iron ingots, nightmare variants drop more, and hammerable chess junk drops gem shards and copper dust. Refined metal from dangerous Ruins creatures is intentional risk reward.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_hounds",
         label = "Cães de fogo e gelo: fragmentos de gema / Fire and ice hounds: gem shards",
-		hover = "Uncompromising Mode Beta already reworks fire and ice hound loot to drop red and blue gems. Auto skips our gem shards while UM is enabled, so the same creature is not two gem sources at once; with UM absent, Auto behaves exactly like the original mod. Always adds our shards regardless, which stacks with UM's gems.",
+		hover = "O Uncompromising Mode Beta já altera o loot dos cães de fogo e gelo para soltar gemas vermelhas e azuis. Automático ignora os fragmentos do MAM quando UM está ativo, evitando duas fontes de gema na mesma criatura; sem UM, funciona como o mod original. Sempre adiciona nossos fragmentos, acumulando com as gemas de UM. / Uncompromising Mode Beta already makes fire and ice hounds drop red and blue gems. Auto skips MAM shards while UM is enabled; without UM it behaves like the original mod. Always adds our shards alongside UM.",
         options =
         {
-			{description = "Off", data = 0},
+			{description = "Desligado / Off", data = 0},
 			{description = "Automático - ignorar quando Uncompromising Mode estiver ativo / Auto - skip when Uncompromising Mode is on", data = 1},
 			{description = "Sempre - mesmo com Uncompromising Mode / Always - even alongside Uncompromising Mode", data = 2},
         },
@@ -840,33 +840,33 @@ configuration_options = {
 	{
         name = "mam_drop_marbletree",
         label = "Árvores de mármore (somente naturais) / Marble trees (natural only)",
-		hover = "Marble seeds, gold dust and copper ore from the marble trees the world generates. Trees grown from a planted marble seed are deliberately excluded, so ore cannot be farmed by replanting seeds.",
+		hover = "Sementes de mármore, poeira de ouro e minério de cobre das árvores geradas naturalmente pelo mundo. Árvores cultivadas de sementes plantadas são excluídas para impedir farm de minério por replantio. / Marble seeds, gold dust and copper ore from naturally generated marble trees. Trees grown from planted seeds are excluded to prevent ore farming by replanting.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_marbleshrub",
         label = "Arbustos de mármore: minério de ferro / Marble shrubs: iron ore",
-		hover = "Iron ore from marble shrubs, one at the normal stage and two at the tall stage, as in 2.9.3. In Additive mode the game's own marble and marble bean roll is kept and our ore is added to it; in Rewrite mode the original fixed loot lists are used.",
+		hover = "Minério de ferro de arbustos de mármore: uma unidade no estágio normal e duas no alto, como na versão 2.9.3. No modo Aditivo, os drops vanilla de mármore e feijão de mármore são preservados e o minério é acrescentado; em Substituir, usam-se as listas fixas antigas. / Iron ore from marble shrubs: one at normal stage and two at tall stage, as in 2.9.3. Additive keeps vanilla marble and marble-bean rolls; Rewrite uses the original fixed loot lists.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_shark",
         label = "Tubarão: escama de tubarão / Shark: sharkscale",
-		hover = "Sharkscale from sharks, used by the mod's own equipment. Uncompromising Mode adds its own leather to the same creature through a separate roll, so the two do not conflict.",
+		hover = "Escamas de tubarão usadas nos equipamentos do MAM. O Uncompromising Mode adiciona seu couro por uma rolagem separada, então os dois drops não entram em conflito. / Sharkscale is used by MAM equipment. Uncompromising Mode adds its leather through a separate roll, so the drops do not conflict.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
@@ -874,21 +874,21 @@ configuration_options = {
         name = "mam_drop_rocky",
         label = "Rocky: poeira mineral / Rock Lobsters: mineral dust",
         hover = "Rocky selvagens podem soltar pequenas quantidades de poeira de cobre e, raramente, ferro. Rockies seguindo um jogador nao geram esses drops. / Wild Rockys may drop small amounts of copper dust and rarely iron dust. Player-following Rockies are excluded.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_rubble",
         label = "Escombros de cavernas / Cave rubble",
         hover = "Minerar escombros naturais de cavernas pode revelar poeira de cobre e, raramente, ferro. Os drops originais de pedra sao preservados. / Mining natural cave rubble may reveal copper dust and rarely iron dust. Original rock drops are preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_ancient_statues",
         label = "Estatuas antigas das Ruinas / Ancient Ruins statues",
         hover = "Minerar estatuas antigas pode revelar poeira metalica em pequenas quantidades. Gemas e Thulecite originais nao sao alteradas. / Mining ancient statues may reveal small amounts of metal dust. Original gems and Thulecite are unchanged.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -913,7 +913,7 @@ configuration_options = {
         name = "mam_drop_knight",
         label = "Cavaleiro mecânico / Clockwork Knight",
         hover = "Minério de cobre. Também respeita o controle geral de criaturas das Ruínas. / Copper ore. Also obeys the Ruins family master switch.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -927,7 +927,7 @@ configuration_options = {
         name = "mam_drop_rook",
         label = "Torre mecânica / Clockwork Rook",
         hover = "Lingotes de cobre e ferro. / Copper and iron ingots.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -941,7 +941,7 @@ configuration_options = {
         name = "mam_drop_bishop",
         label = "Bispo mecânico / Clockwork Bishop",
         hover = "Fragmentos de gemas e lingotes raros. / Gem shards and rare ingots.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -955,7 +955,7 @@ configuration_options = {
         name = "mam_drop_chessjunk",
         label = "Sucata de xadrez / Chess junk",
         hover = "Poeira de cobre e fragmentos de gemas. / Copper dust and gem shards.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -969,7 +969,7 @@ configuration_options = {
         name = "mam_drop_firehound",
         label = "Cão de fogo / Fire Hound",
         hover = "Fragmentos de rubi; a regra Auto do Uncompromising Mode continua valendo. / Red gem shards; Uncompromising Mode Auto behavior is preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -983,7 +983,7 @@ configuration_options = {
         name = "mam_drop_icehound",
         label = "Cão de gelo / Ice Hound",
         hover = "Fragmentos de safira; a regra Auto do Uncompromising Mode continua valendo. / Blue gem shards; Uncompromising Mode Auto behavior is preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -997,7 +997,7 @@ configuration_options = {
         name = "mam_drop_slurtle",
         label = "Slurtle",
         hover = "Poeira de ferro rara, como resíduo mineral do casco. / Rare iron dust from mineral traces in its shell.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -1011,7 +1011,7 @@ configuration_options = {
         name = "mam_drop_snurtle",
         label = "Snurtle",
         hover = "Poeira de ferro rara, um pouco mais provável que em Slurtles. / Rare iron dust, slightly more likely than from Slurtles.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
@@ -1027,8 +1027,8 @@ configuration_options = {
         hover = "Com um W.O.B.O.T. ou W.I.N.bot ativo por perto, a forja pode retirar somente ingredientes registrados de baús e containers compatíveis próximos. Desativado por padrão; nunca retira itens do inventário dos jogadores. / When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
         options =
         {
-            {description = "Off", data = 0},
-            {description = "On", data = 1},
+            {description = "Desligado / Off", data = 0},
+            {description = "Ligado / On", data = 1},
         },
         default = 0,
 	},
@@ -1038,28 +1038,28 @@ configuration_options = {
         name = "mam_axe_crafting",
         label = "Tábuas com machado / Axe woodworking",
         hover = "Exige machado funcional carregado, equipado ou na mochila. Preserva custo, estação e requisito de habilidade de cada receita, incluindo a receita especial de Lucy do Woodie. Não consome nem desgasta o machado ao fabricar. / Preserves each recipe cost, station and skill requirement, including Woodie's special Lucy recipe. Crafting does not consume or wear the axe.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_chisel_crafting",
         label = "Pedra com cinzel / Chisel stoneworking",
         hover = "Exige Cinzel de Entalhe em Pedra reutilizável carregado ou na mochila. Mantém custo e estação da pedra trabalhada. Cinzel: 2 gravetos e 2 pedras lascadas, sem estação, sem desgaste. / Requires a reusable Stone-Carving Chisel carried or in a backpack. Keeps cut-stone cost and station. Chisel: 2 twigs and 2 flint, no station or durability. Independent of integrations.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_third_party_recipe_integration",
         label = "Receitas de outros mods / Other-mod recipes",
         hover = "Ativado: adapta receitas compatíveis preservando ingredientes e metadados. Desativado: deixa receitas de terceiros intactas. Não desativa machado, cinzel ou Mesa de Serragem próprios do MAM. / On adapts supported recipes while preserving ingredients and metadata. Off leaves third-party recipes untouched. Does not disable MAM-owned axe, chisel or Sawing Table mechanics.",
-        options = {{description = "Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
+        options = {{description = "Desligado - não alterar receitas de outros mods / Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
         default = 1,
     },
     {
         name = "mam_allow_third_party_drop_overrides",
         label = "Substituir drops de outros mods / Replace other-mod loot",
         hover = "Aplica-se somente ao modo Rewrite antigo. Ativado permite substituir tabelas de loot compartilhadas. Desativado força drops aditivos e preserva as tabelas existentes. / Only applies to legacy Rewrite mode. On permits replacing shared loot tables. Off forces additive drops and preserves live tables.",
-        options = {{description = "Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
+        options = {{description = "Desligado - preservar drops de outros mods (recomendado) / Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
         default = 0,
     },
     {
@@ -1101,7 +1101,7 @@ configuration_options = {
     {
         name = "mam_drop_marbleshrub_quantity", label = "Minério dos arbustos de mármore / Marble-shrub iron ore",
         hover = "Controla somente a quantidade de minério de ferro do Metals and More. Os demais drops do arbusto e de outros mods não mudam. / Controls only Metals and More iron ore quantity. Other shrub loot and other mods' drops are unchanged.",
-        options = {{description = "Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
         default = 100,
     },
 
