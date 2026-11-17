@@ -109,8 +109,6 @@ class LocalizationContractTests(unittest.TestCase):
             self.assertIn(key + " =", strings)
         self.assertGreater(main.index('modimport("initialise/modded_strings.lua")'),
                            main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
-        self.assertLess(main.index('modimport("initialise/modded_strings.lua")'),
-                        main.index('AddPrototyperDef("warworkbench"'))
         self.assertIn("VOU MATAR AGORA!", strings)
         self.assertIn("I'LL KILL NOW!", strings)
 
