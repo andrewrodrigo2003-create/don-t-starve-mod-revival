@@ -34,7 +34,8 @@ class LocalizationContractTests(unittest.TestCase):
         config_init = main.index("MAMConfig.Init(GetModConfigData)")
         strings_import = main.index('modimport("initialise/modded_strings.lua")')
         self.assertLess(config_init, strings_import)
-        self.assertGreater(strings_import, main.index('modimport("scripts/tot_ui.lua")'))
+        self.assertGreater(strings_import, main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
+        self.assertLess(strings_import, main.index('AddPrototyperDef("warworkbench"'))
         self.assertGreater(strings_import, main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
 
 
