@@ -34,6 +34,8 @@ class LocalizationContractTests(unittest.TestCase):
         config_init = main.index("MAMConfig.Init(GetModConfigData)")
         strings_import = main.index('modimport("initialise/modded_strings.lua")')
         self.assertLess(config_init, strings_import)
+        self.assertGreater(strings_import, main.index('modimport("scripts/tot_ui.lua")'))
+        self.assertGreater(strings_import, main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
 
 
     def test_metallurgy_guide_uses_selected_language_without_mixed_paragraphs(self):
@@ -72,8 +74,8 @@ class LocalizationContractTests(unittest.TestCase):
                 self.assertNotIn(prefix + key + " =", main)
         self.assertIn("filter_text = STRINGS.NAMES.WARWORKBENCH", main)
         self.assertIn("filter_text = STRINGS.NAMES.CRAFTBOOK", main)
-        self.assertLess(main.index('modimport("initialise/modded_strings.lua")'),
-                        main.index('AddPrototyperDef("warworkbench"'))
+        self.assertGreater(main.index('modimport("initialise/modded_strings.lua")'),
+                           main.index('modimport("scripts/tot_ui.lua")'))
         self.assertNotIn('AddRecipe2("metal_storage_chest"', main)
 
     def test_deconstruction_copy_matches_material_only_implementation(self):
@@ -90,6 +92,21 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertNotIn("Item durability scales equipment salvage", screen)
 
 
+
+    def test_legacy_mam_owned_strings_have_bilingual_entries_applied_last(self):
+        strings = (MOD / "initialise" / "modded_strings.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        for key in (
+            "DST_WILLOWDOLL", "SHEARS", "FORKSTICK", "SHARKSCALE", "SCEPTER",
+            "HALBERD", "TFWP_LUXURY_NOX_HELM_HAT", "JAGGED_ARMOR",
+            "FORGINGHAMMEROLD", "PITHPIKEOLD", "BLACKSMITH_EDGEOLD",
+            "CURSED_PHANTOM", "CURSED_PHANTOM_FRIENDLY", "CURSED_PIGGY_WEAPON",
+            "CURSED_PIGGY_MASK", "CURSED_PIGGY",
+        ):
+            self.assertIn(key + " =", strings)
+        self.assertGreater(main.index('modimport("initialise/modded_strings.lua")'),
+                           main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
+        self.assertIn('L("VOU MATAR AGORA!", "I\\'LL KILL NOW!")', strings)
 
 if __name__ == "__main__":
     unittest.main()
