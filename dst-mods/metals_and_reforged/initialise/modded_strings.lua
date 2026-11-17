@@ -192,7 +192,8 @@ for key, entry in pairs(LEGACY_ITEMS) do
     if entry.description ~= nil then
         STRINGS.CHARACTERS.GENERIC.DESCRIBE[key] = L(entry.description[1], entry.description[2])
     end
-    if entry.wendy_description ~= nil then
+    if entry.wendy_description ~= nil and STRINGS.CHARACTERS.WENDY ~= nil
+        and STRINGS.CHARACTERS.WENDY.DESCRIBE ~= nil then
         STRINGS.CHARACTERS.WENDY.DESCRIBE[key] = L(entry.wendy_description[1], entry.wendy_description[2])
     end
 end
