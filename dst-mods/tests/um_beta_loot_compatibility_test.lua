@@ -32,7 +32,7 @@ GLOBAL = { TheWorld = { ismastersim = true }, UMCommonFns = nil }
 package.loaded["mam/config"] = nil
 package.loaded["mam/log"] = nil
 package.loaded["mam/loot_guard"] = nil
-local guard = require("mam/loot_guard")
+local guard = dofile("dst-mods/metals_and_reforged/scripts/mam/loot_guard.lua")
 
 local callbacks = {}
 guard.Init(function(prefab, fn)
