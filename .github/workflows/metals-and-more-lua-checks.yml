@@ -104,6 +104,7 @@ jobs:
             dst-mods/tests/metal_storage_chest_deprecation_test.lua \
             dst-mods/tests/metal_deconstruction_test.lua \
             dst-mods/tests/recipe_station_migration_test.lua \
+            dst-mods/tests/tool_gated_crafting_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
             dst-mods/tests/weapon_compatibility_contract_test.lua \
@@ -156,3 +157,4 @@ jobs:
           path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip
           if-no-files-found: error
           retention-days: 14
+
