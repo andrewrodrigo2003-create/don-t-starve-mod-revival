@@ -45,6 +45,7 @@ jobs:
           set -euo pipefail
           for test in \
             dst-mods/tests/recipe_station_migration_test.lua \
+             dst-mods/tests/tool_gated_crafting_test.lua \
             dst-mods/tests/recipe_application_retry_test.lua \
             dst-mods/tests/metal_deconstruction_test.lua
           do
@@ -52,3 +53,4 @@ jobs:
             echo "Running $test"
             lua5.1 "$test"
           done
+
