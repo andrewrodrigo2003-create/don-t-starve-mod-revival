@@ -128,20 +128,12 @@ function M.WrapCraftingHUD(hud)
 end
 
 function M.ApplyBoardRecipe(recipe)
-    if not Config.on("mam_axe_crafting") or recipe.product ~= "boards" then return end
-    local ingredients = recipe.ingredients
-    if #ingredients == 1 and ingredients[1].type == "log" and ingredients[1].amount == 4
-        and recipe.numtogive == 1 then
-        -- Native woodie_boards costs three logs; never replace another mod's ingredient list.
-        ingredients[1].amount = 3
-    end
-    if recipe.no_builder_tag == "cancarveboards" then recipe.no_builder_tag = nil end
-    if recipe.forward_ingredients ~= nil then
-        for i = #recipe.forward_ingredients, 1, -1 do
-            if recipe.forward_ingredients[i] == "woodie_boards" then
-                table.remove(recipe.forward_ingredients, i)
-            end
-        end
+    -- Only the shared vanilla recipe receives MAM's description. Its native
+    -- ingredients, station, builder tags and Woodie forwarding are gameplay
+    -- contracts: the axe gate must not rewrite Woodie's skill-tree recipe.
+    if not Config.on("mam_axe_crafting") or recipe.name ~= "boards"
+        or recipe.product ~= "boards" then
+        return
     end
     if recipe.description == nil or recipe.description == "boards" then
         recipe.description = "mam_axe_boards"
