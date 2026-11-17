@@ -46,6 +46,7 @@ jobs:
           for test in \
             dst-mods/tests/recipe_station_migration_test.lua \
              dst-mods/tests/tool_gated_crafting_test.lua \
+             dst-mods/tests/mam_localization_runtime_test.lua \
             dst-mods/tests/recipe_application_retry_test.lua \
             dst-mods/tests/metal_deconstruction_test.lua
           do
@@ -57,3 +58,4 @@ jobs:
 
       - name: Verify bilingual MAM localization
         run: python3 tests/test_mam_localization.py
+
