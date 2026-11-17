@@ -25,6 +25,9 @@ package.preload["mam/config"] = function() return MAMConfig end
 local planned
 local smelting = {
     CalculateSmelterPlan = function() return planned end,
+    IsSmelterIngredient = function(prefab)
+        return prefab == "copper_ore"
+    end,
     GetSmelterRecipe = function(_, product)
         return product ~= nil and {} or nil
     end,
