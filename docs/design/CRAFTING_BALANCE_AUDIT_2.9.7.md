@@ -316,6 +316,14 @@ O novo custo preserva os materiais vanilla e adiciona 1 iron ingot (3 iron-value
 **Limite:** é um ajuste de custo fundamentado em baseline e atributos de código/documentação; não é uma declaração de balanceamento final. Frequência real de marble, impacto no tempo até a primeira armadura e comportamento multiplayer continuam sem amostragem no motor DST. A documentação oficial da Klei confirma que mods podem ajustar tuning de itens e regras de mundo, mas não substitui validação no jogo: [Klei — Modding Don't Starve and Don't Starve Together](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together).
 
 
+### 6.4. Auditoria de dano — `forkstick`
+
+**Correção aplicada:** o prefab definia `weapon:SetDamage(math.random(12,99))` durante a criação do item. Isso não era uma faixa aleatória por golpe: cada instância recebia um dano-base diferente, com intervalo de 87 pontos, sem opção de configuração, sem indicação no tooltip e sem regra de progressão. Duas cópias do mesmo item podiam ter valores muito diferentes.
+
+O dano agora usa `TUNING.SPEAR_DAMAGE`, o baseline de lança do DST (34 de dano). A referência de jogo documenta a lança com 34 de dano e 150 usos: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST). A escolha mantém o forkstick na escala de uma arma vanilla conhecida, em vez de deixar uma ferramenta de travessia aquática variar aleatoriamente entre dano de ferramenta e dano muito acima de armas avançadas.
+
+A alteração **não** modifica receita (`gold_ingot×3 + sharkscale×3 + gnarwail_horn×1`), combustível, duração de travessia, controle de afogamento, umidade, usos ou efeitos visuais. O item ainda exige comparação de desempenho e segurança em runtime/multiplayer. A comunidade possui mods de combate que oferecem dano aleatório de forma deliberada, mas com min/max e opções explícitas; exemplo: [Papapav's Armory](https://steamcommunity.com/workshop/filedetails/?id=3370627907). Esse padrão explícito não existia no forkstick.
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
