@@ -97,6 +97,14 @@ for _, locale in ipairs({ "ptbr", "en", "missing", "invalid" }) do
             load_strings()
             load_strings()
             setfenv(assert(loadstring(station_registration)), env)()
+            -- Recipe declarations live earlier in modmain.lua; execute only the three
+            -- one-line registrations under test instead of expecting them in the station block.
+            for line in main:gmatch("[^\n]+") do
+                local name = line:match('AddRecipe2%("([^"]+)"')
+                if baseline[name] ~= nil then
+                    setfenv(assert(loadstring(line)), env)()
+                end
+            end
             assert(strings.NAMES == names and strings.RECIPE_DESC == recipes)
             assert(generic.DESCRIBE == describe and generic.ACTIONFAIL.BUILD == build)
             assert(strings.ACTIONS.OPEN_CRAFTING == actions)
