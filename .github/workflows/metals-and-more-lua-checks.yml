@@ -136,6 +136,9 @@ jobs:
       - name: Verify bilingual MAM localization
         run: python3 tests/test_mam_localization.py
 
+      - name: Verify complete crafting balance matrix
+        run: python3 tests/test_mam_crafting_balance_contract.py
+
       - name: Verify DST laboratory runner
         run: python3 tests/test_dst_lab_runner.py
 
