@@ -89,7 +89,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn('{gold = 1, metal = 1}', smelting)
         self.assertIn('tags.gold >= 3 and tags.metal and tags.metal >= 3', products)
         self.assertIn('assert_consumption("gold batch", gold, { goldnugget = 6 }, {})', harness)
-        self.assertIn("3 goldnuggets (as mesmas 3 unidades satisfazem gold e metal)", self.balance)
+        self.assertIn("3 gold nuggets (as mesmas 3 unidades satisfazem gold e metal)", self.balance)
 
     def test_lunar_tag_surplus_is_documented_without_changing_runtime_values(self):
         smelting = (MOD / "scripts" / "smelting.lua").read_text(encoding="utf-8")
