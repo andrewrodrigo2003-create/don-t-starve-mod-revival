@@ -5,7 +5,7 @@
 
 ## Scope and sources
 
-The audit covers the MAM-owned material prefabs defined by:
+The audit covers the material prefabs used by MAM's material progression. This includes the vanilla `goldnugget` input as well as MAM-defined material prefabs:
 - `scripts/prefabs/metals.lua`
 - `scripts/prefabs/metal_dusts.lua`
 - `scripts/prefabs/gem_shards.lua`
