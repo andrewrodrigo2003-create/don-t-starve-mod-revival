@@ -47,7 +47,7 @@ The current values below are read from `initialise/modded_recipes.lua` and `modm
 
 - One `iron_ingot` requires at least 3 iron-value units and has a 15-second base cook time.
 - One `copper_ingot` requires at least 3 copper-value units and has a 15-second base cook time.
-- One `gold_ingot` requires at least 3 gold-value units plus the current metal-tag threshold and has a 15-second base cook time.
+- One `gold_ingot` requires `gold>=3` and `metal>=3` simultaneously, with a 15-second base cook time; each `goldnugget` contributes to both tags, so 3 nuggets satisfy both thresholds.
 - One `bronze_ingot` requires at least 3 copper-value units plus at least 1 iron-value unit.
 - One `moonglass_ingot` requires at least 2 moonglass-value units and moon-tag value.
 - These are minimum recipe predicates; the actual load may contain more material, competing candidate recipes, fuel and batch time. Do not equate one ingot with one nugget.
