@@ -519,3 +519,17 @@ A PR #51 introduz `legacy_forge_weapon_abilities`, desligado por padrão:
 - preserva os prefabs/configuração base do pacote para evitar quebrar saves que contenham itens antigos.
 
 Esta é uma mitigação de compatibilidade baseada na auditoria estática, **não prova de que o conflito com Woodie Better Skill Tree foi causado por esses hooks**. O teste in-game com o mod de Woodie habilitado e o sistema legado desligado continua obrigatório. O usuário pode reativar as habilidades legadas manualmente se desejar.
+
+
+## Continuidade 2.9.7 — auditoria quantitativa de crafting (2026-11-18)
+
+- PR #66 draft: [inventário completo de custos e contratos](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/66), empilhada sobre #65 → #63 → #60 → #51.
+- Cobertura de código: 21 overrides vanilla, 25 receitas próprias MAM, 35 receitas movidas ao Craftbook e cinco receitas nativas com gate de ferramenta.
+- Novo teste `tests/test_mam_crafting_balance_contract.py` compara assinaturas de ingredientes com a auditoria e está integrado ao workflow. Também verifica baseline de recipe guard, gates de ferramentas, interseção de tags ouro/metal e diferença lunar.
+- Machado/cinzel já implementados na base; não reimplementar. A Mesa de Serragem permanece pendente até verificação real do prefab/API.
+- Nenhum custo foi alterado: gargalos de ferro inicial, ligas, cozinha portátil, lunar, armazenamento e equipamentos exigem medição controlada antes de ajuste.
+- A contabilidade da forja confirma que 3 gold nuggets satisfazem simultaneamente gold=3 e metal=3; não contar como seis itens. O moonglass ingot custa moon=1 mas carrega moon=2 na tabela de valores, diferença documentada para decisão.
+- CI da PR #66: run #44348420098 estava em execução no checkpoint; consultar o HEAD mais recente antes de declarar aprovação.
+- Sem teste in-game, multiplayer, save/load ou UM Beta; sem merge, release ou publicação Steam. Hydrated/Dehydrated, Better Lucy e terceiros permanecem intocados.
+
+Fontes canônicas: `docs/design/FULL_CRAFTING_REWORK_2.9.7.md`, `docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md` e `docs/design/METAL_ITEM_CRAFTING_MATRIX.md`.

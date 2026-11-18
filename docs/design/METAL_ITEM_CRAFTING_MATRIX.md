@@ -24,8 +24,14 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 
 | Prefab | Custo atual encontrado | Estação/tech configurada | Ação |
 |---|---|---|---|
-| `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | Science Two / estrutura | manter como estação principal |
-| `metal_storage_chest` | 3 iron_ingot, 2 cutstone, 1 gears | `ALCHEMY_ONE` + `CRAFTING_STATION` | integrado; validar em jogo |
+| `metal_smelter` | 4 iron_ore, 2 cutstone | `SCIENCE_ONE` / Structures | estação de processamento primária; medir custo de entrada |
+| `marbleseed` | 1 iron_ore, 1 marble | `SCIENCE_ONE` / Refine | receita própria; validar utilidade e fonte do item |
+| `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | `SCIENCE_TWO` / Prototypers | estação de fabricação metalúrgica; validar filtro real |
+| `mam_stone_chisel` | 2 twigs, 2 flint | `TECH.NONE` / Tools + Refine | ferramenta reutilizável, sem durabilidade ou consumo |
+| `metallurgy_reference_book` | 2 papyrus, 2 charcoal, 1 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | livro informativo; não desbloqueia receitas |
+| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + `CRAFTING_STATION` + Containers | estrutura existente; custo depende da capacidade real |
+| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + `CRAFTING_STATION` + Cooking | estrutura frigorífica; medir preservação e capacidade |
+| `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; comparar progressão |
@@ -41,6 +47,8 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 | `blacksmith_edge` | 5 marble, 2 driftwood_log, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
 
 As variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` também têm receitas próprias quando `forge_weapons` está desligado. Não remover nem duplicar sem uma decisão de migração.
+
+As receitas de equipamentos e estruturas metalúrgicas adicionais permanecem na matriz de custos da auditoria quantitativa; esta tabela resume a estação e o estado de disponibilidade.
 
 ## 3. Receitas vanilla atualmente reescritas com materiais metalúrgicos
 
@@ -106,3 +114,27 @@ A decisão do usuário permite obter materiais de estágio inferior desconstruin
 | `adamantium_ingot` | 3 `nightmarefuel` + 1 `iron_ingot` | Liga composta; proposta derivada das tags/requisito nomeado |
 
 **Importante:** nenhuma receita/custo foi alterado. Os retornos ainda precisam de confirmação, escolha da estação e testes. Materiais externos aceitos por tags podem ser normalizados para os componentes canônicos; não se promete reconstruir exatamente a carga original.
+
+
+---
+
+## 8. Cobertura integral da migração Craftbook — 2026-11-18
+
+A matriz inicial listava apenas exemplos. A implementação atual migra 35 receitas; custos exatos e contratos ficam na seção 4 de `CRAFTING_BALANCE_AUDIT_2.9.7.md`.
+
+`seedpouch`, `icepack`, `piggyback`, `sewing_kit`, `flowerhat`, `purpleamulet`, `amulet`, `blueamulet`, `umbrella`, `molehat`, `minerhat`, `backpack`, `armorslurper`, `icehat`, `beefalohat`, `earmuffshat`, `winterhat`, `beehat`, `trunkvest_summer`, `bushhat`, `catcoonhat`, `sweatervest`, `eyebrellahat`, `watermelonhat`, `featherhat`, `hawaiianshirt`, `beargervest`, `cane`, `tophat`, `strawhat`, `reflectivevest`, `rainhat`, `raincoat`, `trunkvest_winter`, `bernie_inactive`
+
+A migração de estação não deve ser confundida com rebalanceamento: preservar ingredientes e metadados vivos quando a assinatura difere do baseline conhecido, conforme `mam/recipe_guard.lua`.
+
+A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed, chisel, War Workbench, livro, estruturas e equipamentos) e seus custos atuais também está na seção 3 da auditoria quantitativa.
+
+
+## 9. Regras de estação efetivas no código — 2026-11-18
+
+- `modded_recipes.lua` migra as receitas listadas em `station_recipes` para `TECH.ALCHEMY_ONE` e o filtro `CRAFTING_STATION`, sem reescrever a tabela de ingredientes durante a migração. A lista inclui birdcage, dragonflychest, compass, razor, lightning_rod, ferramentas douradas, armaduras selecionadas, portable cooking e receitas lunares.
+- `researchlab`, `researchlab2` e `transistor` recebem somente o override de ingredientes quando o baseline vanilla ainda corresponde; não entram na lista de migração para a bancada.
+- `metal_smelter` é Science One; `warworkbench` é Science Two. A bancada de metalurgia e a forja de processamento são estações diferentes.
+- O `craftbook` é outro prototyper; as 35 receitas migradas não devem ser presumidas como receitas da War Workbench.
+- Equipamentos próprios em `ALCHEMY_ONE` usam `CRAFTING_STATION`; itens da progressão MAM de tier superior usam `MAM_FORGE_ONE` quando definido no código.
+- As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando as opções legadas correspondentes estão ativas; as variantes `*old` são o caminho alternativo. A matriz deve manter as duas assinaturas sem presumir que ambas coexistem.
+- A migração só deve ser considerada comprovada após validar o filtro visual e o prototyper dentro do DST; `TECH` isoladamente não comprova exclusividade de estação.

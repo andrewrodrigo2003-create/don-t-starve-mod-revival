@@ -149,4 +149,22 @@ The branch now adds three independently configurable secondary sources, all usin
 
 Each source has its own On/Off setting and a separate 25–150% chance multiplier. These are deliberately low-yield secondary routes: no guaranteed ingots, no replacement of primary ore progression, and no shared loot-table edits in the default mode. Runtime harness coverage has been added for registration, chance scaling, independent disablement and follower exclusion; CI and in-game balance verification remain pending.
 
-These settings and harness assertions are implemented on the branch, but the full 2.9.7 package is not yet ready: mandatory axe/chisel crafting, verified Sawing Table integration, complete recipe/drop adapter coverage, and the remaining rework/localization work are still pending. Automated CI is running; in-game/multiplayer/save-load verification remains required.
+Historical status as of 2026-11-12: at that point mandatory axe/chisel crafting and Sawing Table verification were still pending. The later section “Local implementation — installed-source verification (2026-11-17)” and the 2026-11-18 checkpoint supersede the axe/chisel pending status: the tool gates are now implemented and covered by the dedicated harness. Sawing Table integration remains unimplemented because its target prefab/API has not been verified. The full 2.9.7 package still requires CI on the latest HEAD and real in-game, multiplayer and save/load validation.
+
+
+---
+
+## Checkpoint de implementação e balanceamento — 2026-11-18
+
+Esta seção atualiza o estado posterior às notas históricas de 12–17/11 e deve ser usada como referência atual para os itens abaixo.
+
+- **Machado/cinzel:** implementação já presente em `scripts/mam/tool_crafting.lua`, com wrappers específicos de Builder e Builder Replica, revalidação final no servidor e atualização de disponibilidade do HUD. Cinco receitas nativas estão cobertas: `boards`, `woodie_boards`, `boards_bunch`, `cutstone`, `cutstone_bunch`. O harness tem 63 cenários com stubs (64 com fontes locais do DST). Isso não é teste no motor; host/cliente, quebra/recuperação de ferramenta, inventário/overflow e combinação Woodie/Lucy/UM ainda precisam de runtime real.
+- **Mesa de Serragem:** não implementada. Não foi confirmado prefab/API apropriado no build alvo; não inventar integração nem reativar a receita vanilla substituída.
+- **Inventário de crafting:** PR #66 registra 21 overrides vanilla, 25 receitas próprias MAM e 35 receitas migradas ao Craftbook, com assinaturas exatas e teste de cobertura ligado à CI. O Craftbook continua sendo prototyper separado da War Workbench.
+- **Matriz de estações:** `metal_storage_chest` é apenas prefab legado para saves existentes, sem receita nova. `metal_smelter` é Science One; `warworkbench` é Science Two. `marble_chest`, `cold_safe`, livro e cinzel estão incluídos na matriz.
+- **Balanceamento:** nenhum custo foi alterado neste checkpoint. A auditoria identifica gargalos para medição; não há curva de aquisição/tempo suficientemente controlada para justificar números novos.
+- **Contabilidade da forja:** tags podem se sobrepor; três gold nuggets fornecem simultaneamente gold=3 e metal=3. A tabela lunar debita moon=1 e atribui moon=2 ao moonglass ingot produzido; a divergência está registrada para decisão, sem declarar exploit confirmado ou alterar o runtime.
+- **CI:** PR #66 draft; workflow run #44348420098 estava em andamento no registro deste checkpoint. Não declarar CI aprovada até consultar o resultado para o HEAD atual.
+- **Governança:** PR #66 é empilhada sobre #65 → #63 → #60 → #51. Sem merge, release, upload Steam ou alteração de Hydrated/Dehydrated, Better Lucy, UM ou arquivos de terceiros. `modinfo.lua` permanece 2.9.6 até build final e teste real.
+
+Auditoria de referência: [CRAFTING_BALANCE_AUDIT_2.9.7.md](CRAFTING_BALANCE_AUDIT_2.9.7.md). A matriz de itens e bancadas está em [METAL_ITEM_CRAFTING_MATRIX.md](METAL_ITEM_CRAFTING_MATRIX.md).
