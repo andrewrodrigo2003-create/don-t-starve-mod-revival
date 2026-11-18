@@ -105,6 +105,12 @@ for _, locale in ipairs({ "ptbr", "en", "missing", "invalid" }) do
                     setfenv(assert(loadstring(line)), env)()
                 end
             end
+            -- The reference book registration is multiline and intentionally has no prototyper.
+            local book_start = assert(main:find('AddRecipe2("metallurgy_reference_book"', 1, true))
+            local book_end_marker = '}, TECH.ALCHEMY_ONE, { image = "cookbook.tex" }, { "CRAFTING_STATION" })'
+            local book_end = assert(main:find(book_end_marker, book_start, true))
+            local book_source = main:sub(book_start, book_end + #book_end_marker - 1)
+            setfenv(assert(loadstring(book_source)), env)()
             assert(strings.NAMES == names and strings.RECIPE_DESC == recipes)
             assert(generic.DESCRIBE == describe and generic.ACTIONFAIL.BUILD == build)
             assert(strings.ACTIONS.OPEN_CRAFTING == actions)
