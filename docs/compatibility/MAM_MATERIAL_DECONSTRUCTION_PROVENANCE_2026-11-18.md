@@ -1,7 +1,7 @@
 # Metals and More Reforged — material deconstruction provenance audit
 
 **Date:** 2026-11-18  
-**Status:** implemented as an explicit audit registry and regression contract in draft PR #65; not yet CI-validated or tested in-game.
+**Status:** implemented in draft PR #65; GitHub Actions run #507 passed on 2026-11-18. Not tested in-game.
 
 ## Scope and sources
 
@@ -47,4 +47,4 @@ Reverse provenance is checked against `scripts/smelting_products.lua` and the ex
 
 ## Validation limits
 
-PR #65 is a draft stacked on the CI-enabled base derived from PR #60. No CI run/check was returned for its current HEAD at the time of this audit. No DST runtime, multiplayer, save/load, or Uncompromising Mode Beta validation is claimed.
+PR #65 is a draft stacked on the CI-enabled base derived from PR #60. GitHub Actions run #507 (run ID 44345295109) completed successfully: Lua 5.1 parsing, available regression harnesses, localization, book wiring, automation wiring, tech contracts, asset checks and install-package verification all passed. The deconstruction action runtime reported 34 passed / 0 failed using DST stubs. No in-game DST, multiplayer, save/load, or Uncompromising Mode Beta runtime validation is claimed.
