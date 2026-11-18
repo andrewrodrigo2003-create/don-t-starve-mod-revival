@@ -113,6 +113,22 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertNotIn("spikyrock =", worldgen)
         self.assertIn("não é um prefab ausente", self.balance)
 
+    def test_storage_capacity_and_cold_safe_fridge_contract(self):
+        modmain = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        marble_chest = (MOD / "scripts" / "prefabs" / "marble_chest.lua").read_text(encoding="utf-8")
+        cold_safe = (MOD / "scripts" / "prefabs" / "cold_safe.lua").read_text(encoding="utf-8")
+        self.assertIn("for y = 3, -1, -1 do", modmain)
+        self.assertIn("for x = -1, 3 do", modmain)
+        self.assertIn("params.marble_chest = makeChest()", modmain)
+        self.assertIn("params.cold_safe = makeChest()", modmain)
+        self.assertIn('inst:AddTag("chest")', marble_chest)
+        self.assertIn('inst:AddTag("fridge")', cold_safe)
+        self.assertIn("function params.cold_safe.itemtestfn", modmain)
+        self.assertIn('item:HasTag("icebox_valid")', modmain)
+        self.assertIn('item:HasTag("fresh")', modmain)
+        self.assertIn("25 slots", self.balance)
+        self.assertIn("preserver\` não é obrigatório", self.balance)
+
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
             "| `boards` | `log×4` |",
