@@ -30,7 +30,7 @@ local RETURNS =
 }
 
 -- This inventory is intentionally broader than the reversible allowlist. Every
--- MAM-owned material prefab must have an explicit provenance disposition so new
+-- material prefab used by the MAM progression must have an explicit provenance disposition so new
 -- materials cannot silently disappear from deconstruction review.
 local MATERIAL_AUDIT =
 {
