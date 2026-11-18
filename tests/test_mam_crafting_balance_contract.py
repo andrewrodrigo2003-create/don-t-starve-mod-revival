@@ -96,6 +96,23 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn("500)", shears)
         self.assertIn("Maior candidato a revisão", self.balance)
 
+    def test_ore_acquisition_paths_and_legacy_gold_alias_are_documented(self):
+        worldgen = (MOD / "modworldgenmain.lua").read_text(encoding="utf-8")
+        modmain = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        goldore = (MOD / "scripts" / "prefabs" / "goldore.lua").read_text(encoding="utf-8")
+        drops = (MOD / "initialise" / "modded_drops.lua").read_text(encoding="utf-8")
+        newrocks = (MOD / "scripts" / "prefabs" / "newrocks.lua").read_text(encoding="utf-8")
+        self.assertIn('"goldore"', modmain)
+        self.assertIn('return Prefab("gold_ore", fn, assets)', goldore)
+        self.assertIn('SpawnPrefab("goldnugget")', goldore)
+        self.assertIn("countprefabs.gold_ore = math.random(5)", worldgen)
+        self.assertIn("local SHRUB_IRON_BY_STAGE = { [2] = 1, [3] = 2 }", drops)
+        self.assertIn("local previous = lootdropper.lootsetupfn", drops)
+        self.assertIn("previous(dropper)", drops)
+        self.assertIn('Prefab("spikyrock"', newrocks)
+        self.assertNotIn("spikyrock =", worldgen)
+        self.assertIn("alias de migração", self.balance)
+
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
             "| `boards` | `log×4` |",
