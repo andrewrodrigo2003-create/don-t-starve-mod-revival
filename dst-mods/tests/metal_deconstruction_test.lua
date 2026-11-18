@@ -75,6 +75,39 @@ for _, prefab in ipairs({
     assert(not recovery.IsSupported(prefab),
         "material without a safe reverse rule must remain unsupported: " .. prefab)
 end
+-- Every material prefab used by MAM progression has an explicit provenance disposition.
+-- Only entries with a proven reverse path are eligible for the action; raw inputs,
+-- ambiguous mixed by-products and loot-only materials remain intentionally excluded.
+local expected_material_status = {
+    copper_ore = "recoverable", copper_ingot = "recoverable",
+    iron_ore = "recoverable", iron_ingot = "recoverable",
+    goldnugget = "recoverable", gold_ingot = "recoverable",
+    bronze_ingot = "recoverable", moonglass_ingot = "recoverable",
+    adamantium_ingot = "recoverable",
+    copper_dust = "raw_input", iron_dust = "raw_input", gold_dust = "raw_input",
+    junk_dust = "mixed_byproduct",
+    redgem_shard = "raw_gem_material", bluegem_shard = "raw_gem_material",
+    yellowgem_shard = "raw_gem_material", greengem_shard = "raw_gem_material",
+    orangegem_shard = "raw_gem_material", purplegem_shard = "raw_gem_material",
+    sharkscale = "raw_creature_material",
+}
+local audited_prefabs = recovery.GetMaterialAuditPrefabs()
+assert(#audited_prefabs == 20, "MAM material inventory changed; update provenance coverage")
+for prefab, expected_status in pairs(expected_material_status) do
+    local status, reason = recovery.GetMaterialAudit(prefab)
+    assert(status == expected_status and type(reason) == "string" and reason ~= "",
+        "missing or undocumented material provenance: " .. prefab)
+    assert(recovery.IsSupported(prefab) == (expected_status == "recoverable"),
+        "deconstruction allowlist disagrees with provenance: " .. prefab)
+end
+for _, prefab in ipairs(audited_prefabs) do
+    assert(expected_material_status[prefab] ~= nil,
+        "new MAM material needs a provenance decision: " .. prefab)
+end
+for prefab in pairs(expected_material_status) do
+    assert(recovery.GetMaterialAudit(prefab) ~= nil,
+        "material missing from audit inventory: " .. prefab)
+end
 assert(recovery.BuildPlan("unknown_metal", "wilson", always_success) == nil)
 
 
