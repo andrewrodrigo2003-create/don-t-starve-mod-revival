@@ -75,7 +75,7 @@ for _, prefab in ipairs({
     assert(not recovery.IsSupported(prefab),
         "material without a safe reverse rule must remain unsupported: " .. prefab)
 end
--- Every MAM-owned material prefab has an explicit provenance disposition.
+-- Every material prefab used by MAM progression has an explicit provenance disposition.
 -- Only entries with a proven reverse path are eligible for the action; raw inputs,
 -- ambiguous mixed by-products and loot-only materials remain intentionally excluded.
 local expected_material_status = {
