@@ -11,9 +11,23 @@ assert 'name = "Legacy Forge weapon abilities"' not in modinfo
 assert modinfo.count('label = "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities"') == 1
 assert 'default = false' in modinfo[modinfo.index('name = "legacy_forge_weapon_abilities"'):]
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in modmain
-stategraph_hook = modmain.index('AddStategraphPostInit("wilson"')
-stategraph_guard = modmain.rfind('if GetModConfigData("legacy_forge_weapon_abilities") then', 0, stategraph_hook)
-assert stategraph_guard >= 0
+stategraph_block = """if GetModConfigData("legacy_forge_weapon_abilities") then
+    AddStategraphPostInit("wilson", function(self)
+        local hit_state = self.states ~= nil and self.states.hit or nil
+        local onenter = hit_state ~= nil and hit_state.onenter or nil
+        if type(onenter) ~= "function" then
+            return
+        end
+
+        hit_state.onenter = function(inst, ...)
+            if inst:HasTag("parrying") then
+                return inst.sg:GoToState("parry_pre")
+            end
+            return onenter(inst, ...)
+        end
+    end)
+end"""
+assert stategraph_block in modmain
 assert modmain.count('AddStategraphPostInit("wilson"') == 1
 assert 'local hit_state = self.states ~= nil and self.states.hit or nil' in modmain
 assert 'if type(onenter) ~= "function" then' in modmain
