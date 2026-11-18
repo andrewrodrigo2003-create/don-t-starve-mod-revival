@@ -68,7 +68,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         guard = (MOD / "scripts" / "mam" / "recipe_guard.lua").read_text(encoding="utf-8")
         self.assertRegex(
             self.modded,
-            r'MAMRecipeGuard\\.set_station\\(\\s*"madscience_lab",\\s*TECH\\.NONE,\\s*"STRUCTURES"',
+            r'MAMRecipeGuard\.set_station\(\s*"madscience_lab",\\s*TECH\\.NONE,\\s*"STRUCTURES"',
         )
         self.assertIn("remove_special_event = true", self.modded)
         self.assertIn('clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS"', self.modded)
