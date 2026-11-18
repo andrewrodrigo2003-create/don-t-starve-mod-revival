@@ -96,9 +96,19 @@ Before changing either existing recipe, resolve the actual registered container 
 ### 1. Regras de leitura de custo
 
 - As quantidades abaixo são exatamente as chamadas `Ingredient(prefab, amount)` encontradas no código.
-- Lingote não equivale a uma pepita: a forja exige atualmente 3 unidades de valor de cobre/ferro, 3 de ouro **mais** 3 de valor `metal` para ouro, bronze exige 3 cobre + 1 ferro, vidro lunar exige 2 moonglass + 1 unidade de requisito lunar, e adamantium exige 3 steel + 1 iron_ingot nomeado.
-- Portanto, o custo efetivo de uma receita com lingotes deve ser calculado expandindo a conversão e somando os materiais auxiliares, não contando cada lingote como uma unidade abstrata.
+- Lingote não equivale a uma pepita. Cobre/ferro exigem 3 unidades de seu valor específico; ouro exige simultaneamente `gold=3` e `metal=3`. Esses requisitos **se sobrepõem**: cada `goldnugget` fornece `gold=1` e `metal=1`, então 3 pepitas satisfazem ambos; não são 6 unidades físicas. O mesmo princípio vale para `copper_ore` e `iron_ore`, que também fornecem `metal=1`.
+- Bronze exige 3 cobre + 1 ferro; vidro lunar exige 2 moonglass + pelo menos 1 moon; adamantium exige `steel=3` e um `iron_ingot` nomeado. O custo efetivo deve expandir as entradas físicas e preservar a interseção de tags, sem somar duas vezes o mesmo item.
 - A tabela não inventa rendimento de mineração, chance de drop ou tempo de aquisição. Esses valores dependem das fontes/biomas e precisam de dados do jogo/UM antes de alterar custos.
+
+
+
+### 1.1. Interseção de tags e divergência lunar que precisam permanecer explícitas
+
+- `smelting.lua` atribui a cada `goldnugget` `gold=1, metal=1`; o predicado de `gold_ingot` pede `gold>=3` e `metal>=3`. O harness confirma que 6 pepitas produzem 2 lingotes. Logo, são 3 pepitas por lingote, não 6.
+- `copper_ore` e `iron_ore` também fornecem simultaneamente o metal correspondente e `metal=1`. O requisito de uma tag não deve ser somado como se fosse outro ingrediente.
+- `nightmarefuel` fornece `iron=2, steel=1, metal=1`. Adamantium pede `steel>=3` e um `iron_ingot` nomeado: o custo físico atual é 3 nightmarefuel + 1 iron_ingot. Os valores de ferro/metal que vêm junto do nightmarefuel são atributos do mesmo item consumido, não ingredientes adicionais nem retornos separados.
+- **Ponto de auditoria lunar:** `PRODUCT_COSTS.moonglass_ingot` debita `moonglass=2, moon=1`, enquanto `smelting.lua` registra o lingote produzido com `moonglass=2, moon=2`. O harness atual confirma que 2 lingotes consomem 4 moonglass + 2 moonrocknugget e deixam 2 moonglass. O valor `moon=2` do produto carrega uma unidade lunar a mais por lingote do que o custo debitado. Isso não gera um item moon separado, mas altera a contabilidade de tags se o lingote voltar à forja; precisa de decisão explícita e teste de não duplicação antes de alterar qualquer valor.
+- A diferença lunar é registrada como **divergência de valor a investigar**, não como exploit confirmado nem como correção aprovada. Não alterar a tabela de tags nesta PR.
 
 ### 2. Overrides vanilla — assinatura atual MAM
 
@@ -223,10 +233,10 @@ A implementação de `mam/tool_crafting.lua` acrescenta um requisito de ferramen
 | Primeira ciência e fundição | Science Machine: 4 iron_ore; Metal Smelter: 4 iron_ore + 2 cutstone, em Science One | Duas despesas de 4 iron_ore antes/na entrada da metalurgia. Medir aquisição inicial de ferro e confirmar que não há softlock; não reduzir custo sem curva de mineração |
 | Alchemy Engine | 2 iron_ingot = mínimo 6 iron-value, além de 4 boards e 2 transistors | Medir tempo de obtenção/fundição e concorrência com War Workbench |
 | Birdcage | 1 bronze_ingot = mínimo 3 copper + 1 iron | Verificar disponibilidade de cobre/ferro antes de Birdcage; comparar com custo vanilla de 6 goldnuggets |
-| Dragonfly Chest | 2 gold_ingot = mínimo 6 gold + 6 metal-value, mais boss scale e boards | Custo composto; conferir se requisito pós-boss e capacidade justificam 2 barras |
+| Dragonfly Chest | 2 gold_ingot = 6 goldnuggets (cada uma fornece gold + metal), mais boss scale e boards | Custo composto; conferir se requisito pós-boss e capacidade justificam 2 barras |
 | Compass / Razor | Compass usa 1 iron_ore; Razor usa 1 iron_ingot = mínimo 3 iron-value | Compass troca gold por iron; Razor troca flint por três unidades de ferro e precisa de comparação funcional |
-| Transistor / Lightning Rod | 1 copper_ingot = 3 copper; 1 gold_ingot = 3 gold + 3 metal-value | Confirmar oferta de cobre e metal; não contar lingote como 1 nugget |
-| Ferramentas douradas | 1 gold_ingot cada = mínimo 3 gold + 3 metal-value, contra 2 goldnuggets vanilla | Aumenta o valor nominal de ouro e acrescenta requisito de metal; revisar durabilidade/velocidade e concorrência de lingotes |
+| Transistor / Lightning Rod | 1 copper_ingot = 3 copper ore; 1 gold_ingot = 3 gold nuggets (as mesmas 3 unidades satisfazem gold e metal) | Confirmar oferta de cobre/ouro; não contar lingote como 1 nugget nem dobrar tag sobreposta |
+| Ferramentas douradas | 1 gold_ingot cada = 3 goldnuggets (gold=3 e metal=3 pelas mesmas unidades), contra 2 goldnuggets vanilla | Aumenta o custo físico de ouro em 50%; revisar durabilidade/velocidade e concorrência de lingotes |
 | Marble Armor | 12 marble + 4 rope + 1 iron_ingot | Duplica marble/rope e adiciona 3 iron-value; comparar defesa/durabilidade e renovabilidade |
 | Cozinha portátil | Três itens exigem 3 iron_ore cada; blender também mantém 2 transistors | Avaliar o pacote junto: não cobrar ferro + transistores sem benefício proporcional |
 | Lunar | Moonglass ingot requer 2 moonglass + moon; vidro/arquivo/moondial/crater/axe adicionam marble/boards | Expandir conversão, confirmar disponibilidade de moonrock/moonglass e progressão lunar antes de alterar |
