@@ -66,6 +66,8 @@ local DEFAULTS = {
     mam_drop_slurtle_chance = 100,
     mam_drop_snurtle_chance = 100,
     mam_drop_marbleshrub_quantity = 100,
+    mam_axe_crafting     = 1,
+    mam_chisel_crafting  = 1,
     mam_robot_smelting   = 0,  -- collector robot may feed nearby smelters from compatible containers
     mam_language         = "ptbr", -- ptbr = Brazilian Portuguese, en = English
 
@@ -123,6 +125,8 @@ local ALLOWED = {
     mam_drop_slurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_snurtle_chance = { [25] = true, [50] = true, [75] = true, [100] = true, [125] = true, [150] = true },
     mam_drop_marbleshrub_quantity = { [0] = true, [100] = true, [200] = true, [300] = true },
+    mam_axe_crafting      = { [0] = true, [1] = true },
+    mam_chisel_crafting   = { [0] = true, [1] = true },
     mam_robot_smelting    = { [0] = true, [1] = true },
     mam_language          = { ptbr = true, en = true },
 }

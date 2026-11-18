@@ -36,6 +36,18 @@ Repositório de engenharia e manutenção de mods para **Don't Starve Together (
 
 Os níveis 1–4 não substituem o nível 5. Não declarar compatibilidade ampla apenas porque o CI passou.
 
+### Laboratório local
+
+```sh
+python -B dst-mods/tests/run_lab.py --lua lua5.1 --luac luac5.1 --output dst-lab-report.json
+```
+
+O executor reúne os harnesses atuais, contratos Python, parsing e simulador, incluindo machado/cinzel e localização das bancadas. `--lua` e `--luac` também aceitam caminhos completos, inclusive no Windows. Para os três harnesses com fontes locais do jogo, acrescente `--dst-scripts "caminho/para/scripts"`; isso não inicia o DST nem comprova comportamento no motor.
+
+O JSON guarda comandos, logs, versões das ferramentas, branch/HEAD, alterações locais e hashes dos arquivos verificados. O destino deve ser novo e seu diretório já deve existir: relatórios anteriores nunca são sobrescritos. Falhas, arquivos obrigatórios ausentes e timeouts retornam código não zero; a ausência do PNG gerado pelo pipeline continua sendo falha de assets, não um teste dispensado. CI, pacote e jogo real ficam explicitamente como não executados.
+
+Veja [execução, categorias e limites do laboratório](dst-mods/tests/simulator/README.md). O executor é local; esta atualização não altera nem executa workflows de CI.
+
 ## Histórico de origem
 
 A intenção original do projeto foi recuperar mods abandonados, corrigir incompatibilidades e trabalhar em traduções. Um dos mods de referência informado no início foi [o mod da Oficina Steam](https://steamcommunity.com/sharedfiles/filedetails/?id=3814815896). O placeholder antigo de URL para “mod revivido” foi removido porque não apontava para uma página válida.

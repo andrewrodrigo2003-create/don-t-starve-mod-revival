@@ -1,4 +1,5 @@
 -- Small deterministic event contract with explicit listener ownership.
+-- Push preserves payload-only utility events; PushFrom models DST source/data callbacks.
 local EventBus = {}
 EventBus.__index = EventBus
 
@@ -43,7 +44,7 @@ function EventBus:RemoveOwner(owner)
     return removed
 end
 
-function EventBus:Push(event, data)
+local function dispatch(self, event, ...)
     local bucket = self.listeners[event]
     if bucket == nil then return 0 end
     local snapshot = {}
@@ -52,7 +53,7 @@ function EventBus:Push(event, data)
     for _, listener in ipairs(snapshot) do
         if listener.active then
             delivered = delivered + 1
-            listener.callback(data or {})
+            listener.callback(...)
         end
     end
     local compact = {}
@@ -61,6 +62,15 @@ function EventBus:Push(event, data)
     end
     self.listeners[event] = #compact > 0 and compact or nil
     return delivered
+end
+
+function EventBus:Push(event, data)
+    return dispatch(self, event, data or {})
+end
+
+function EventBus:PushFrom(event, source, data, ...)
+    assert(source ~= nil, "event source required")
+    return dispatch(self, event, source, data or {}, ...)
 end
 
 function EventBus:Count(event)

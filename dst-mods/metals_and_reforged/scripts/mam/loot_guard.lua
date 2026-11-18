@@ -49,9 +49,11 @@ function M.Init(fn)
     add_prefab_post_init = fn
 end
 
---- Uncompromising Mode publica GLOBAL.UMCommonFns no modmain dele (modmain.lua:22).
---- Consultado tarde, na construcao da entidade: a essa altura todos os modmain ja
---- rodaram, qualquer que seja a ordem de carga. Sem o UM, devolve false e nada muda.
+--- A Public Beta publica GLOBAL.UMCommonFns em modmain.lua:22 (Uncompromising-Survival/UncompromisingMode, branch utw-beta).
+--- O contrato de hound_fire/hound_cold foi verificado em postinit/prefabs/firehound.lua:4-11
+--- e icehound.lua:4-11: AddSimPostInit instala redgem/bluegem 0.3 nas tabelas compartilhadas.
+--- Consultado tarde, na construcao da entidade: todos os modmain ja rodaram, qualquer
+--- que seja a ordem de carga. Sem UM, devolve false e nada muda.
 function M.HasUncompromising()
     return GLOBAL.UMCommonFns ~= nil
 end

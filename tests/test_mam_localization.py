@@ -34,6 +34,9 @@ class LocalizationContractTests(unittest.TestCase):
         config_init = main.index("MAMConfig.Init(GetModConfigData)")
         strings_import = main.index('modimport("initialise/modded_strings.lua")')
         self.assertLess(config_init, strings_import)
+        self.assertGreater(strings_import, main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
+        self.assertLess(strings_import, main.index('AddPrototyperDef("warworkbench"'))
+        self.assertGreater(strings_import, main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
 
 
     def test_metallurgy_guide_uses_selected_language_without_mixed_paragraphs(self):
@@ -63,6 +66,21 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertIn('L("Produzirá: ", "Will produce: ")', forecast)
         self.assertNotIn('return "Smelt"', forecast)
 
+    def test_station_and_storage_texts_are_not_overwritten_after_localization(self):
+        strings = (MOD / "initialise" / "modded_strings.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        for key in ("WARWORKBENCH", "CRAFTBOOK", "MARBLE_CHEST", "COLD_SAFE", "METAL_STORAGE_CHEST"):
+            self.assertIn(key + " =", strings)
+            for prefix in ("STRINGS.NAMES.", "STRINGS.RECIPE_DESC.", "STRINGS.CHARACTERS.GENERIC.DESCRIBE."):
+                self.assertNotIn(prefix + key + " =", main)
+        self.assertIn("filter_text = STRINGS.NAMES.WARWORKBENCH", main)
+        self.assertIn("filter_text = STRINGS.NAMES.CRAFTBOOK", main)
+        self.assertLess(main.index('modimport("initialise/modded_strings.lua")'),
+                        main.index('AddPrototyperDef("warworkbench"'))
+        self.assertLess(main.index('AddPrototyperDef("warworkbench"'),
+                        main.index('modimport("scripts/tot_ui.lua")'))
+        self.assertNotIn('AddRecipe2("metal_storage_chest"', main)
+
     def test_deconstruction_copy_matches_material_only_implementation(self):
         actions = (
             MOD / "initialise" / "modded_actions.lua"
@@ -77,6 +95,40 @@ class LocalizationContractTests(unittest.TestCase):
         self.assertNotIn("Item durability scales equipment salvage", screen)
 
 
+
+    def test_legacy_mam_owned_strings_have_bilingual_entries_applied_last(self):
+        strings = (MOD / "initialise" / "modded_strings.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        for key in (
+            "DST_WILLOWDOLL", "SHEARS", "FORKSTICK", "SHARKSCALE", "SCEPTER",
+            "HALBERD", "TFWP_LUXURY_NOX_HELM_HAT", "JAGGED_ARMOR",
+            "FORGINGHAMMEROLD", "PITHPIKEOLD", "BLACKSMITH_EDGEOLD",
+            "CURSED_PHANTOM", "CURSED_PHANTOM_FRIENDLY", "CURSED_PIGGY_WEAPON",
+            "CURSED_PIGGY_MASK", "CURSED_PIGGY",
+        ):
+            self.assertIn(key + " =", strings)
+        self.assertGreater(main.index('modimport("initialise/modded_strings.lua")'),
+                           main.index("STRINGS.CURSED_PIGGY_TALK_FIGHT"))
+        self.assertIn("VOU MATAR AGORA!", strings)
+        self.assertIn("I'LL KILL NOW!", strings)
+
+
+    def test_modinfo_configuration_labels_are_bilingual(self):
+        modinfo = (MOD / "modinfo.lua").read_text(encoding="utf-8")
+        for text in (
+            "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities",
+            "Fundição em lotes / Batch smelting",
+            "Drops extras de minério / Extra ore drops",
+            "Automação da forja com robô coletor / Collector robot forge automation",
+            "Preserva custo, estação e requisito de habilidade",
+        ):
+            self.assertIn(text, modinfo)
+
+    def test_book_preserves_common_and_woodie_board_recipe_costs(self):
+        screen = (MOD / "scripts" / "screens" / "metallurgybookscreen.lua").read_text(encoding="utf-8")
+        self.assertIn("custo vanilla de 4 toras", screen)
+        self.assertIn("3 toras e Lucy", screen)
+        self.assertNotIn("receita comum usa 3 toras", screen)
 
 if __name__ == "__main__":
     unittest.main()

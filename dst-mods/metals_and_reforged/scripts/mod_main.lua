@@ -46,15 +46,15 @@ AddPlayerPostInit(
         end
     end
 )
+local old_get_display_name = _G.EntityScript.GetDisplayName
 function _G.EntityScript:GetDisplayName()
-    local m = self:GetAdjectivedName()
-    if self.prefab ~= nil then
-        local n = d.NAME_DETAIL_EXTENTION[string.upper(self.nameoverride ~= nil and self.nameoverride or self.prefab)]
-        if n ~= nil then
-            return m .. "\n" .. n
+    if self.nameoverride ~= nil and d.NAME_DETAIL_EXTENTION ~= nil then
+        local detail = d.NAME_DETAIL_EXTENTION[string.upper(self.nameoverride)]
+        if detail ~= nil then
+            return self:GetAdjectivedName() .. "\n" .. detail
         end
     end
-    return m
+    return old_get_display_name(self)
 end
 _G.DAMAGETYPES = {PHYSICAL = 1, MAGIC = 2}
 _G.DAMAGETYPE_IDS = {}
@@ -146,29 +146,39 @@ AddComponentPostInit(
         local old_get_attack_range = self.GetAttackRange
         function self:GetAttackRange()
             local z = self:GetWeapon()
-            if z and z.components.weapon:CanAltAttack() then
-                return z.components.weapon.altattackrange
-            else
-                return old_get_attack_range(self)
+            local weapon = z ~= nil and z.components.weapon or nil
+            if weapon ~= nil and weapon:CanAltAttack() and weapon.altattackrange ~= nil then
+                return weapon.altattackrange
             end
+            return old_get_attack_range(self)
         end
         local old_get_hit_range = self.GetHitRange
         function self:GetHitRange()
-            local z = self:GetWeapon()
-            if z and z.components.weapon:CanAltAttack() then
-                return self.attackrange + z.components.weapon.althitrange
-            else
-                return old_get_hit_range(self)
+            if self.temprange ~= nil then
+                return self.temprange
             end
+            local z = self:GetWeapon()
+            local weapon = z ~= nil and z.components.weapon or nil
+            if weapon ~= nil and weapon:CanAltAttack() and weapon.althitrange ~= nil then
+                return self.attackrange + weapon.althitrange
+            end
+            return old_get_hit_range(self)
         end
         local old_calc_damage = self.CalcDamage
         function self:CalcDamage(A, z, B)
             if A:HasTag("alwaysblock") then
                 return 0
             end
-            local C, spdamage = old_calc_damage(self, A, z, B)
             local D = z ~= nil and z.components.weapon.damage or self.defaultdamage
-            if z and z.components.weapon:CanAltAttack() or not z and self.damage_override then
+            local original_damage = D
+            local is_alt = z ~= nil and z.components.weapon:CanAltAttack()
+            local C, spdamage
+            if is_alt and type(D) == "function" then
+                C, spdamage, D = MAMCombatWrapperHelpers.CalcDamageWithBase(self, A, z, B, old_calc_damage)
+            else
+                C, spdamage = old_calc_damage(self, A, z, B)
+            end
+            if type(D) ~= "function" and (is_alt or not z and self.damage_override) then
                 local E = 0
                 if z then
                     E =
@@ -178,6 +188,9 @@ AddComponentPostInit(
                     E =
                         type(self.damage_override) == "function" and self.damage_override(self.inst, A) or
                         self.damage_override
+                end
+                if E == original_damage then
+                    E = D
                 end
                 C = MAMCombatWrapperHelpers.ApplyAltDamage(C, D, self.damagebonus, E)
             end
@@ -568,7 +581,7 @@ AddComponentPostInit(
             end
         end
         local af = self.Equip
-        function self:Equip(ad)
+        function self:Equip(ad, ...)
             if ad.components.combat then
                 for P, ae in pairs(self.damagebuffs) do
                     for o, K in pairs(ae) do
@@ -589,10 +602,10 @@ AddComponentPostInit(
                 end
             end
             self:AddBuffsTo(ad)
-            af(self, ad)
+            return af(self, ad, ...)
         end
         local ai = self.Unequip
-        function self:Unequip(ad)
+        function self:Unequip(ad, ...)
             if ad.components.combat then
                 for P, ae in pairs(self.damagebuffs) do
                     for o, K in pairs(ae) do
@@ -609,7 +622,7 @@ AddComponentPostInit(
                 end
             end
             self:RemoveBuffsFrom(ad)
-            ai(self, ad)
+            return ai(self, ad, ...)
         end
     end
 )
@@ -617,37 +630,28 @@ AddComponentPostInit(
     "rechargeable",
     function(self)
         self.owner = nil
-        self.onequip = function(l, ae)
-            if self.owner ~= nil then
-                self:SetChargeTimeMod(self.inst, l.prefab, self.owner.components.buffable:GetBuffData("cooldown_mult"))
+        local function refresh_cooldown_buff()
+            local buffable = self.owner ~= nil and self.owner.components.buffable or nil
+            if buffable ~= nil then
+                self:SetChargeTimeMod(self.inst, self.inst.prefab, buffable:GetBuffData("cooldown_mult"))
+            else
+                self:RemoveChargeTimeMod(self.inst, self.inst.prefab)
             end
-        end
-        self.onunequip = function(l, ae)
-            self:RemoveChargeTimeMod(self.inst, l.prefab)
         end
         self.inst:ListenForEvent(
             "equipped",
             function(l, ae)
                 self.owner = ae.owner
-                self.pickup = false
-                self:SetChargeTimeMod(self.inst, l.prefab, self.owner.components.buffable:GetBuffData("cooldown_mult"))
-                if not self.updating then
-                    self.updating = true
-                    self.inst:StartUpdatingComponent(self)
-                end
-                self.inst:ListenForEvent("equip", self.onequip, l)
-                self.inst:ListenForEvent("unequip", self.onunequip, l)
+                refresh_cooldown_buff()
+                self.inst:ListenForEvent("equip", refresh_cooldown_buff, self.owner)
+                self.inst:ListenForEvent("unequip", refresh_cooldown_buff, self.owner)
             end
         )
         self.inst:ListenForEvent(
             "unequipped",
             function(l, ae)
-                self.inst:RemoveEventCallback("equip", self.onequip, l)
-                self.inst:RemoveEventCallback("unequip", self.onunequip, l)
-                if self.pickup and self.updating then
-                    self.updating = false
-                    self.inst:StopUpdatingComponent(self)
-                end
+                self.inst:RemoveEventCallback("equip", refresh_cooldown_buff, self.owner)
+                self.inst:RemoveEventCallback("unequip", refresh_cooldown_buff, self.owner)
                 self:RemoveChargeTimeMod(self.inst, l.prefab)
                 self.owner = nil
             end
@@ -686,8 +690,11 @@ AddClassPostConstruct(
         end
         function self:CanAltAttack()
             if self.classified ~= nil and self.classified.isaltattacking:value() then
-                return self.inst.components.weapon and self.components.weapon:CanAltAttack() or
-                    self.can_altattack_fn(self.inst)
+                local weapon = self.inst.components.weapon
+                if weapon ~= nil then
+                    return weapon:CanAltAttack()
+                end
+                return self.can_altattack_fn(self.inst)
             end
         end
         local old_attack_range = self.AttackRange
@@ -701,7 +708,9 @@ AddClassPostConstruct(
     function(self)
         local ak = self.CanBeAttacked
         function self:CanBeAttacked(G)
-            if TUNING.PREVENT_COMPAGNION_ATTACK and (self.inst:HasTag("companion") and G and G:HasTag("player")) then
+            local config = TUNING.THE_FORGE_ITEM_PACK
+            if config ~= nil and config.PREVENT_COMPAGNION_ATTACK
+                and self.inst:HasTag("companion") and G ~= nil and G:HasTag("player") then
                 return false
             end
             return ak(self, G)

@@ -426,8 +426,12 @@ function Smelter:TryAutoHarvestToStorage()
     end
 
     local remaining = math.max(1, tonumber(self.batch) or 1)
-    local template = SpawnPrefab(self.product)
-    if template == nil then
+    -- A prefab constructor can throw as well as return nil. Keep the ready
+    -- entitlement intact so the periodic robot task can retry on its next pass.
+    local template_ok, template = pcall(SpawnPrefab, self.product)
+    if not template_ok or template == nil then
+        MAMLog.Warn("produto %s indisponivel para coleta automatica; lote preservado (%s)",
+            tostring(self.product), tostring(template))
         return false
     end
 
@@ -445,12 +449,15 @@ function Smelter:TryAutoHarvestToStorage()
     end
 
     while remaining > 0 do
-        local loot = SpawnPrefab(self.product)
-        if loot == nil then
+        -- The template preflight above does not guarantee that every
+        -- subsequent stack can be constructed. Preserve only the undelivered
+        -- remainder after a nil result or constructor exception.
+        local spawn_ok, loot = pcall(SpawnPrefab, self.product)
+        if not spawn_ok or loot == nil then
             self.batch = remaining
             self:PublishPlan()
-            MAMLog.Warn("produto %s aguardando espaco/retentativa automatica: %d unidade(s)",
-                tostring(self.product), remaining)
+            MAMLog.Warn("produto %s aguardando geracao/retentativa automatica: %d unidade(s) (%s)",
+                tostring(self.product), remaining, tostring(loot))
             return false
         end
 

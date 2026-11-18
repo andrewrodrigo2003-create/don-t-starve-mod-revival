@@ -104,6 +104,11 @@ jobs:
             dst-mods/tests/metal_storage_chest_deprecation_test.lua \
             dst-mods/tests/metal_deconstruction_test.lua \
             dst-mods/tests/recipe_station_migration_test.lua \
+            dst-mods/tests/tool_gated_crafting_test.lua \
+            dst-mods/tests/station_storage_localization_test.lua \
+            dst-mods/tests/mam_localization_runtime_test.lua \
+            dst-mods/tests/um_beta_loot_compatibility_test.lua \
+            dst-mods/tests/mam_tech_tree_runtime_test.lua \
             dst-mods/tests/mam_config_test.lua \
             dst-mods/tests/loot_rewrite_runtime_test.lua \
             dst-mods/tests/weapon_compatibility_contract_test.lua \
@@ -131,6 +136,15 @@ jobs:
       - name: Verify metallurgy book wiring
         run: python3 dst-mods/tests/metallurgy_reference_book_contract_test.py
 
+      - name: Verify bilingual MAM localization
+        run: python3 tests/test_mam_localization.py
+
+      - name: Verify DST laboratory runner
+        run: python3 tests/test_dst_lab_runner.py
+
+      - name: Verify War Workbench tech contract
+        run: python3 dst-mods/tests/warworkbench_tech_contract_test.py
+
       - name: Verify robot forge automation wiring
         run: python3 dst-mods/tests/robot_forge_automation_contract_test.py
 
@@ -156,3 +170,7 @@ jobs:
           path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip
           if-no-files-found: error
           retention-days: 14
+
+
+
+

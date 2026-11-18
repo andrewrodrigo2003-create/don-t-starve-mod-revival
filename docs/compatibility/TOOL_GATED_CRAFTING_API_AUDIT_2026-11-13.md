@@ -135,4 +135,31 @@ Tool requirements are waived in freebuild mode, matching the vanilla crafting mo
 
 ### Implementation status after this cross-check
 
-No runtime code has been changed. This research narrows the design and identifies a viable client API surface, but the following gates remain open: target-build source parity, the exact registration hook/load order, replicated equipped-item visibility, inventory/overflow behavior, and the chisel prefab's pre-pristine tag setup. Do not claim the axe/chisel requirement is implemented until those are covered by focused harnesses and an in-game client/server test.
+No runtime code had been changed at this cross-check. The implementation and remaining validation status below supersede this historical status.
+
+## Local implementation — installed-source verification (2026-11-17)
+
+The user's requested axe/chisel implementation is wired locally in MAM, not released or installed in the game. Selected references were extracted from the installed `Don't Starve Together/data/databundles/scripts.zip` into the workspace's `tools/dst-reference/`, outside the mod repository; no game or third-party mod files were modified.
+
+- Installed `recipes.lua` defines common boards at four logs / SCIENCE_ONE, Woodie's skill recipe at three logs plus zero-consumption Lucy / TECH.NONE, cutstone at three rocks / SCIENCE_ONE, and native batches at twenty logs or fifteen rocks for five products. MAM must preserve these costs and the common recipe's `cancarveboards` exclusion and `forward_ingredients` mapping. The axe requirement is enforced by the Builder/Replica gate; it must not rewrite recipe economics or Woodie's skill tree.
+- Installed `modutil.lua` verifies `AddComponentPostInit`, `AddClassPostConstruct` and named `AddRecipePostInit` registration. Only common boards/cutstone metadata are adapted, with an idempotent named reapplication at SimPostInit; there is no global recipe rewrite.
+- `scripts/mam/tool_crafting.lua` checks exact registered recipe IDs and expected products. Builder and Replica `HasIngredients` are wrapped, and server `DoBuild` rejects missing tools before invoking the original method, including buffered requests. Existing `recipe.canbuild` callbacks and their failure reasons are preserved rather than replaced; rejected buffer state is not cleared.
+- Axes require `tool` and `CHOP_tool` tags; the server additionally verifies inventory ownership, a real CHOP action with positive effectiveness and positive remaining uses where applicable. `broken`/`usesdepleted` items are rejected. Lucy and the axe-pickaxe do not depend on `possessable_axe`; prefab names alone never establish capability.
+- Lookup is limited to inventory slots, equipped items, cursor item and the equipped writable overflow container. Nearby/open/nested storage is not searched. Tools are neither ingredients nor durability charges. Freebuild remains exempt on both sides.
+- The dedicated `mam_stone_chisel` prefab registers its tag before pristine and only creates inventory/inspectable components on the master. It has no finite uses, stackable, pumpkin-carving action or combat component. Its recipe costs two twigs and two flint at TECH.NONE, independently of third-party recipe integration. Its native `pumpkincarver` animation and `pumpkincarver1.tex` entry in `images/inventoryimages3.xml` were verified in the installation; no borrowed assets were copied into MAM.
+- Installed CraftingMenuHUD uses Replica `HasIngredients` and `IsBuildBuffered` to populate `meta.can_build`. A focused test reproduced stale availability after an axe broke without an inventory event. A client HUD wrapper now checks owned tool-state changes every 0.25 seconds, refreshing only on a state change and preserving the original update. Dedicated servers do not load this HUD hook.
+- `dst-mods/tests/tool_gated_crafting_test.lua` passes 63 stub scenarios, or 64 with the optional local reference directory. The latter executes installed Builder/Replica, InventoryReplica, Tool, FiniteUses and HUD methods, plus selected native recipe declarations and generic speech. Entity creation, networking, delivery and rendering remain simulated. Registration is exercised through the targeted modmain block, not a complete game bootstrap.
+- Local regression: 27 Lua harnesses, 135 Lua syntax checks and the existing Python gate/book/robot/localization checks pass. The new harness was run explicitly; CI configuration was not changed or executed. Packaging asset checks remain 2/3 because the CI-generated branding PNG is absent. CodeRabbit is unavailable; no external review is claimed.
+
+**Still required before release/installation:** real host/client crafting and menu refresh, axe break/repair replication, the user's Woodie/Lucy/UM mod combination, chisel appearance and save/load, buffered save restoration where applicable, and full startup with the installed mod list. Harnesses do not certify those runtime behaviors; no 2.9.7 package, merge or publication was made.
+
+
+## Correção de escopo — preservar a progressão vanilla do Woodie (17/11/2026)
+
+A revisão posterior encontrou uma divergência entre a intenção do usuário e a primeira implementação: `ApplyBoardRecipe` estava reduzindo a receita comum de tábuas de quatro para três toras, removendo `no_builder_tag = "cancarveboards"` e apagando o encaminhamento para `woodie_boards`. Isso universalizava o custo da habilidade do Woodie e podia alterar a seleção de receita do personagem. Essa mutação foi removida.
+
+Estado corrigido na PR #60:
+- Receita comum `boards`: mantém quatro toras, estação, `cancarveboards` e `forward_ingredients` originais.
+- Receita de habilidade `woodie_boards`: mantém três toras, ingrediente Lucy de custo zero e `builder_skill = "woodie_human_lucy_1"`.
+- O MAM acrescenta apenas a exigência de ferramenta funcional ao gate de crafting; não reescreve a skill tree nem os custos.
+- Foram adicionados testes explícitos para impedir regressão nesses contratos.

@@ -257,4 +257,258 @@ assert(idempotent_state.onupdate({ sg = { statemem = {} } }, 0.5) == "once",
 
 print("stategraph wrapper contract: OK (arguments, returns, cleanup and guards preserved)")
 
+local mod_root = "dst-mods/metals_and_reforged/"
+local function prefab_environment(enabled, mastersim, durability, foreign_api)
+    local postinits, component_hooks = {}, {}
+    local sandbox = setmetatable({
+        TUNING = { ELECTRIC_DAMAGE_MULT = 1.5 },
+        STRINGS = { NAMES = {}, RECIPE_DESC = {} },
+        ACTIONS = { ATTACK = {}, CASTAOE = {} },
+        TheWorld = { ismastersim = mastersim },
+        EntityScript = { GetDisplayName = function() return "original-name" end },
+        FRAMES = 1 / 30,
+        Asset = function(kind, path) return { type = kind, file = path } end,
+        resolvefilepath = function(path) return path end,
+        MakeInventoryPhysics = function(inst) inst.inventoryphysics = true end,
+        AddClassPostConstruct = function() end,
+        AddPlayerPostInit = function() end,
+        AddStategraphPostInit = function() end,
+        AddRecipeTab = function() return {} end,
+    }, { __index = _G })
+    sandbox._G, sandbox.GLOBAL, sandbox.env = sandbox, sandbox, sandbox
+    local original_name = sandbox.EntityScript.GetDisplayName
+    local original_cast = function() return "original-cast" end
+    sandbox.ACTIONS.CASTAOE.strfn = original_cast
+    if foreign_api then
+        sandbox.DAMAGETYPES = { PHYSICAL = "foreign-physical" }
+    end
+    local original_types = sandbox.DAMAGETYPES
+    function sandbox.Class(base, constructor)
+        local class = { _ctor = constructor }
+        class.__index = class
+        return setmetatable(class, {
+            __index = base,
+            __call = function(self, ...)
+                local instance = setmetatable({}, self)
+                constructor(instance, ...)
+                return instance
+            end,
+        })
+    end
+    sandbox.Prefab = sandbox.Class(nil, function(self, name, fn, assets, dependencies)
+        self.name, self.fn, self.assets, self.dependencies = name, fn, assets, dependencies
+    end)
+    function sandbox.modimport(path)
+        return setfenv(assert(loadfile(mod_root .. path)), sandbox)()
+    end
+    function sandbox.require(name)
+        if name == "class" or name == "util" then return end
+        if name == "mod_prefab" then return sandbox.modimport("scripts/mod_prefab.lua") end
+        return require(name)
+    end
+    function sandbox.GetModConfigData(name, default)
+        if name == "legacy_forge_weapon_abilities" then return enabled end
+        if name:match("_DURABILITY$") then return durability end
+        if name:match("_DURABILITY_NORMAL$") then return 2 end
+        if name:match("_DAMAGE$") then return default + 3 end
+        return default
+    end
+    function sandbox.AddComponentPostInit(name, fn) component_hooks[name] = fn end
+    function sandbox.AddPrefabPostInit(name, fn) postinits[name] = fn end
+    local function setfield(field)
+        return function(self, value) self[field] = value end
+    end
+    local function animation()
+        return {
+            SetBank = setfield("bank"), SetBuild = setfield("build"),
+            PlayAnimation = setfield("animation"),
+            OverrideSymbol = function(self, symbol, build, image) self.swap = { symbol, build, image } end,
+            Show = function(self, symbol) self[symbol] = true end,
+            Hide = function(self, symbol) self[symbol] = false end,
+        }
+    end
+    function sandbox.CreateEntity()
+        local inst = { components = {}, replica = {}, tags = {}, AnimState = animation() }
+        inst.entity = {
+            AddTransform = function() end, AddAnimState = function() end,
+            AddSoundEmitter = function() end, AddNetwork = function() end,
+            SetPristine = function() inst.pristine = true end,
+        }
+        function inst:AddTag(tag) self.tags[tag] = true end
+        function inst:RemoveTag(tag) self.tags[tag] = nil end
+        function inst:HasTag(tag) return self.tags[tag] == true end
+        function inst:Remove() self.removed = true end
+        function inst:AddComponent(name)
+            assert(mastersim or name == "aoetargeting", "client added server component: " .. name)
+            local component = { inst = self }
+            if name == "weapon" then
+                component.SetDamage, component.SetOnAttack = setfield("damage"), setfield("onattack")
+                if component_hooks.weapon then component_hooks.weapon(component) end
+                if foreign_api then
+                    component.SetDamageType = function() error("foreign damage API must not activate MAM abilities") end
+                    component.SetAltAttack = component.SetDamageType
+                end
+            elseif name == "equippable" then
+                component.SetOnEquip, component.SetOnUnequip = setfield("onequip"), setfield("onunequip")
+            elseif name == "aoetargeting" then
+                component.reticule = {}
+                component.SetEnabled, component.SetRange = setfield("enabled"), setfield("range")
+                component.SetAlwaysValid = setfield("alwaysvalid")
+            elseif name == "aoespell" then
+                component.SetAOESpell = setfield("spell")
+                component.OnSpellCast = setfield("caster")
+            elseif name == "aoeweapon_leap" or name == "aoeweapon_lunge" then
+                component.SetStimuli, component.SetWidth = setfield("stimuli"), setfield("width")
+                component.SetOnLeapFn, component.SetOnLungeFn = setfield("onleap"), setfield("onlunge")
+            elseif name == "rechargeable" then
+                component.SetChargeTime = setfield("chargetime")
+                component.Discharge = setfield("discharged")
+                component.SetOnDischargedFn, component.SetOnChargedFn = setfield("ondischarged"), setfield("oncharged")
+            elseif name == "reticule_spawner" then
+                component.Setup = function(self, ...) self.setup = { ... } end
+            elseif name == "parryweapon" then
+                component.SetOnParryStartFn = setfield("onparrystart")
+            elseif name == "helmsplitter" then
+                component.SetOnHelmSplitFn = setfield("onhelmsplit")
+            elseif name == "finiteuses" then
+                component.consumption = {}
+                component.SetMaxUses, component.SetUses = setfield("total"), setfield("current")
+                component.SetOnFinished = setfield("onfinished")
+                function component:SetConsumption(action, amount) self.consumption[action] = amount end
+            else
+                assert(name == "inspectable" or name == "inventoryitem" or name == "multithruster",
+                    "unexpected component: " .. name)
+            end
+            self.components[name] = component
+        end
+        return inst
+    end
+    sandbox.modimport("initialise/modded_forgepack.lua")
+    if not enabled then
+        assert(next(component_hooks) == nil, "disabled abilities must not register global component hooks")
+        assert(sandbox.EntityScript.GetDisplayName == original_name, "disabled abilities replaced display names")
+        assert(sandbox.ACTIONS.CASTAOE.strfn == original_cast, "disabled abilities replaced CASTAOE")
+        assert(sandbox.DAMAGETYPES == original_types, "disabled abilities changed damage globals")
+    end
+    return sandbox, postinits
+end
+
+local prefab_cases = {
+    { "forginghammer", "hammer_mjolnir", "hammer_mjolnir", "swap_hammer_mjolnir", "hammer", "combat_leap" },
+    { "pithpike", "spear_gungnir", "spear_gungnir", "swap_spear_gungnir", "pointy", "combat_lunge" },
+    { "spiralspear", "spear_lance", "spear_lance", "swap_spear_lance", "pointy", "combat_superjump" },
+    { "blacksmith_edge", "lavaarena_heavyblade", "sword_buster", "swap_sword_buster", "sharp" },
+}
+local ability_components = {
+    "aoetargeting", "aoespell", "aoeweapon_leap", "aoeweapon_lunge", "rechargeable",
+    "reticule_spawner", "parryweapon", "helmsplitter", "multithruster",
+}
+local prefab_passed, prefab_failures = 0, {}
+for _, mode in ipairs({ { enabled = false }, { enabled = true }, { enabled = false, foreign = true } }) do
+    for _, mastersim in ipairs({ false, true }) do
+        for _, durability in ipairs({ 0, 80 }) do
+            for _, data in ipairs(prefab_cases) do
+                local success, message = pcall(function()
+                    local sandbox, postinits = prefab_environment(mode.enabled, mastersim, durability, mode.foreign)
+                    local prefab = sandbox.modimport("scripts/prefabs/" .. data[1] .. ".lua")
+                    assert(prefab.name == data[1], "saved prefab identity changed")
+                    local inst = prefab.fn()
+                    inst.prefab = prefab.name
+                    postinits[prefab.name](inst)
+                    assert(inst.pristine and inst.inventoryphysics, "network/physics setup lost")
+                    assert(inst.nameoverride == data[2] and inst.AnimState.bank == data[3]
+                        and inst.AnimState.build == data[3], "weapon appearance changed")
+                    assert(inst:HasTag(data[5]), "normal weapon tag lost")
+                    if not mode.enabled then
+                        for _, name in ipairs(ability_components) do
+                            assert(inst.components[name] == nil, "disabled ability component remains: " .. name)
+                        end
+                        for _, tag in ipairs({ "aoeweapon_leap", "aoeweapon_lunge", "superjump", "parryweapon" }) do
+                            assert(not inst:HasTag(tag), "disabled ability tag remains: " .. tag)
+                        end
+                    else
+                        assert(inst.components.aoetargeting ~= nil, "opt-in targeting lost")
+                    end
+                    if mastersim then
+                        local tuning = sandbox.TUNING.THE_FORGE_ITEM_PACK[data[1]:upper()]
+                        assert(inst.components.weapon.damage == tuning.DAMAGE, "configured melee damage changed")
+                        assert(inst.components.inventoryitem.imagename == data[2], "inventory image changed")
+                        local owner = sandbox.CreateEntity()
+                        local victim = sandbox.CreateEntity()
+                        local spark_hit = false
+                        sandbox.SpawnPrefab = function(name)
+                            assert(name == "weaponsparks_fx", "normal attack triggered alternate effects")
+                            return { SetPosition = function(_, attacker, target)
+                                assert(attacker == owner and target == victim)
+                                spark_hit = true
+                            end }
+                        end
+                        if data[1] ~= "blacksmith_edge" then
+                            inst.components.weapon.onattack(inst, owner, victim)
+                            assert(spark_hit, "normal attack feedback lost")
+                        end
+                        inst.components.equippable.onequip(inst, owner)
+                        assert(owner.AnimState.swap[2] == data[4] and owner.AnimState.ARM_carry,
+                            "normal equip visuals lost")
+                        inst.components.equippable.onunequip(inst, owner)
+                        assert(owner.AnimState.ARM_normal and not owner:HasTag("stronggrip"), "unequip cleanup lost")
+                        if durability > 0 then
+                            local uses = inst.components.finiteuses
+                            assert(uses.total == durability and uses.current == durability, "configured durability changed")
+                            assert(uses.consumption[sandbox.ACTIONS.ATTACK] == 2, "normal attack wear changed")
+                            assert(uses.consumption[sandbox.ACTIONS.CASTAOE]
+                                == durability * tuning.DURABILITY.CONSUMPTION_SPECIAL / 100,
+                                "special attack wear changed")
+                            uses.onfinished(inst)
+                            assert(inst.removed, "worn-out weapon must still be removed")
+                        else
+                            assert(inst.components.finiteuses == nil, "unlimited durability setting changed")
+                        end
+                        if mode.enabled then
+                            local charge = inst.components.rechargeable
+                            assert(charge.chargetime == tuning.COOLDOWN, "configured cooldown changed")
+                            charge.ondischarged(inst)
+                            assert(inst.components.aoetargeting.enabled == false)
+                            charge.oncharged(inst)
+                            assert(inst.components.aoetargeting.enabled == true)
+                            assert(type(inst.components.aoespell.spell) == "function", "opt-in spell lost")
+                            function owner:PushEvent(event, payload) self.event, self.payload = event, payload end
+                            local position = {}
+                            if data[6] then
+                                inst.components.aoespell.spell(inst, owner, position)
+                                assert(owner.event == data[6] and owner.payload.targetpos == position
+                                    and owner.payload.weapon == inst, "opt-in cast event changed")
+                                assert(inst.components.weapon.altdamage == tuning.ALT_DAMAGE, "alternate damage changed")
+                            else
+                                assert(inst.components.parryweapon.duration == tuning.PARRY_DURATION)
+                                assert(inst.components.helmsplitter.damage == tuning.HELMSPLIT_DAMAGE)
+                                function inst:GetAngleToPoint(point) assert(point == position) return 90 end
+                                inst.components.aoespell.spell(inst, owner, position)
+                                assert(owner.event == "combat_parry" and owner.payload.direction == 90
+                                    and owner.payload.duration == tuning.PARRY_DURATION
+                                    and owner.payload.weapon == inst, "opt-in parry event changed")
+                                assert(charge.discharged == tuning.COOLDOWN
+                                    and inst.components.aoespell.caster == owner, "parry cooldown/cast notification lost")
+                            end
+                        end
+                    else
+                        assert(inst.components.weapon == nil and inst.components.finiteuses == nil,
+                            "client constructed authoritative weapon components")
+                    end
+                end)
+                if success then
+                    prefab_passed = prefab_passed + 1
+                else
+                    local label = data[1] .. " legacy=" .. tostring(mode.enabled) .. " server=" .. tostring(mastersim)
+                        .. " durability=" .. durability .. " foreign=" .. tostring(mode.foreign)
+                    prefab_failures[#prefab_failures + 1] = label .. ": " .. tostring(message)
+                    print("FAIL: " .. prefab_failures[#prefab_failures])
+                end
+            end
+        end
+    end
+end
+print("weapon prefab runtime: " .. prefab_passed .. " passed / " .. #prefab_failures .. " failed (DST stubs)")
+assert(#prefab_failures == 0, "weapon prefab gate regressions remain")
+
 print("weapon compatibility contract: OK (legacy projectile hook removed; melee/AOE retained)")

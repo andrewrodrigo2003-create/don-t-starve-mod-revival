@@ -59,6 +59,7 @@ local function E(e)
     SpawnPrefab("superjump_fx"):SetTarget(e)
 end
 local function F()
+    local legacy_abilities = TUNING.THE_FORGE_ITEM_PACK.LEGACY_WEAPON_ABILITIES
     local e = CreateEntity()
     e.entity:AddTransform()
     e.entity:AddAnimState()
@@ -69,53 +70,63 @@ local function F()
     e.AnimState:SetBuild("sword_buster")
     e.AnimState:PlayAnimation("idle")
     e:AddTag("sharp")
-    e:AddTag("parryweapon")
-    e:AddComponent("aoetargeting")
-    e.components.aoetargeting:SetAlwaysValid(true)
-    e.components.aoetargeting.reticule.reticuleprefab = "reticulearc"
-    e.components.aoetargeting.reticule.pingprefab = "reticulearcping"
-    e.components.aoetargeting.reticule.targetfn = c
-    e.components.aoetargeting.reticule.mousetargetfn = d
-    e.components.aoetargeting.reticule.updatepositionfn = m
-    e.components.aoetargeting.reticule.validcolour = {1, .75, 0, 1}
-    e.components.aoetargeting.reticule.invalidcolour = {.5, 0, 0, 1}
-    e.components.aoetargeting.reticule.ease = true
-    e.components.aoetargeting.reticule.mouseenabled = true
+    if legacy_abilities then
+        e:AddTag("parryweapon")
+        e:AddComponent("aoetargeting")
+        e.components.aoetargeting:SetAlwaysValid(true)
+        e.components.aoetargeting.reticule.reticuleprefab = "reticulearc"
+        e.components.aoetargeting.reticule.pingprefab = "reticulearcping"
+        e.components.aoetargeting.reticule.targetfn = c
+        e.components.aoetargeting.reticule.mousetargetfn = d
+        e.components.aoetargeting.reticule.updatepositionfn = m
+        e.components.aoetargeting.reticule.validcolour = {1, .75, 0, 1}
+        e.components.aoetargeting.reticule.invalidcolour = {.5, 0, 0, 1}
+        e.components.aoetargeting.reticule.ease = true
+        e.components.aoetargeting.reticule.mouseenabled = true
+    end
     e.entity:SetPristine()
     if not TheWorld.ismastersim then
         return e
     end
-    e:AddComponent("aoespell")
-    e.components.aoespell:SetAOESpell(B)
+    if legacy_abilities then
+        e:AddComponent("aoespell")
+        e.components.aoespell:SetAOESpell(B)
+    end
     e:AddComponent("equippable")
     e.components.equippable:SetOnEquip(v)
     e.components.equippable:SetOnUnequip(x)
-    e:AddComponent("helmsplitter")
-    e.components.helmsplitter:SetOnHelmSplitFn(E)
-    e.components.helmsplitter.damage = TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.HELMSPLIT_DAMAGE
+    if legacy_abilities then
+        e:AddComponent("helmsplitter")
+        e.components.helmsplitter:SetOnHelmSplitFn(E)
+        e.components.helmsplitter.damage = TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.HELMSPLIT_DAMAGE
+    end
     e:AddComponent("inspectable")
     e:AddComponent("inventoryitem")
     e.components.inventoryitem.imagename = "lavaarena_heavyblade"
-    e:AddComponent("parryweapon")
-    e.components.parryweapon.duration = TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.PARRY_DURATION
-    e.components.parryweapon:SetOnParryStartFn(D)
-    e:AddComponent("rechargeable")
-    e.components.rechargeable:SetChargeTime(TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.COOLDOWN)
-    e.components.rechargeable:SetOnDischargedFn(
-        function(e)
-            e.components.aoetargeting:SetEnabled(false)
-        end
-    )
-    e.components.rechargeable:SetOnChargedFn(
-        function(e)
-            e.components.aoetargeting:SetEnabled(true)
-        end
-    )
-    e:AddComponent("reticule_spawner")
-    e.components.reticule_spawner:Setup(unpack(TUNING.THE_FORGE_ITEM_PACK.RET_DATA.blacksmith_edge))
+    if legacy_abilities then
+        e:AddComponent("parryweapon")
+        e.components.parryweapon.duration = TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.PARRY_DURATION
+        e.components.parryweapon:SetOnParryStartFn(D)
+        e:AddComponent("rechargeable")
+        e.components.rechargeable:SetChargeTime(TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.COOLDOWN)
+        e.components.rechargeable:SetOnDischargedFn(
+            function(e)
+                e.components.aoetargeting:SetEnabled(false)
+            end
+        )
+        e.components.rechargeable:SetOnChargedFn(
+            function(e)
+                e.components.aoetargeting:SetEnabled(true)
+            end
+        )
+        e:AddComponent("reticule_spawner")
+        e.components.reticule_spawner:Setup(unpack(TUNING.THE_FORGE_ITEM_PACK.RET_DATA.blacksmith_edge))
+    end
     e:AddComponent("weapon")
     e.components.weapon:SetDamage(TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.DAMAGE)
-    e.components.weapon:SetDamageType(DAMAGETYPES.PHYSICAL)
+    if legacy_abilities then
+        e.components.weapon:SetDamageType(DAMAGETYPES.PHYSICAL)
+    end
     return e
 end
 return CustomPrefab(
