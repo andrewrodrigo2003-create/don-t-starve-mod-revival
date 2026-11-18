@@ -3,7 +3,7 @@ Metals and More Reforged — Changelog
 
 Material deconstruction audit — 2026-11-18 (unreleased)
 ------------------------------------------------------
-- Inventory every MAM-owned material prefab and record an explicit provenance disposition.
+- Inventory every material prefab used by MAM progression, including vanilla goldnugget, and record an explicit provenance disposition.
 - Keep the existing nine reversible smelting/material entries eligible for recovery.
 - Explicitly classify copper/iron/gold dust as raw inputs, junk dust as an ambiguous mixed-load by-product, gem shards as loot materials, and sharkscale as a harvested raw material; these remain non-deconstructible until a safe reverse path exists.
 - Add regression coverage that fails when a new MAM material is missing from the audit or when the reversible allowlist disagrees with its provenance status.
