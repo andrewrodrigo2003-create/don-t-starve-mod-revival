@@ -180,9 +180,22 @@ local function apply_vanilla_overrides(where, force)
         end
     end
 
+    -- The vanilla Mad Scientist Lab is gated by Hallowed Nights. MAM keeps the
+    -- vanilla prefab/ingredients but makes its construction year-round, moving
+    -- it out of the seasonal filter and clearing only the vanilla event hint.
+    local lab_moved, lab_reason = MAMRecipeGuard.set_station(
+        "madscience_lab", TECH.NONE, "STRUCTURES",
+        { remove_special_event = true, clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS" })
+    if lab_moved then
+        station_moved = station_moved + 1
+    elseif lab_reason == "missing" or lab_reason == "filter-api-unavailable"
+        or lab_reason == "invalid-tech" or lab_reason == "invalid-filter" then
+        pending = pending + 1
+    end
+
     has_been_applied = pending == 0
-    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d; pendentes: %d",
-        where, applied, total, station_moved, #station_recipes, pending)
+    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d (inclui laboratorio sazonal); pendentes: %d",
+        where, applied, total, station_moved, #station_recipes + 1, pending)
     MAMRecipeGuard.dump()
 
     return pending, applied, total
