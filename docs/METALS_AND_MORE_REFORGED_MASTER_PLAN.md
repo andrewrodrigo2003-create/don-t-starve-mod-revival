@@ -523,13 +523,13 @@ Esta é uma mitigação de compatibilidade baseada na auditoria estática, **nã
 
 ## Continuidade 2.9.7 — auditoria quantitativa de crafting (2026-11-18)
 
-- PR #66 draft: [inventário completo de custos e contratos](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/66), empilhada sobre #65 → #63 → #60 → #51.
+- PR #66 draft: [inventário completo de custos e contratos](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/66), empilhada sobre #65 → #63 → #60 → #51. PR #69 draft: [ajustes de Marble Suit, Forkstick e Don Harpoon](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/69), empilhada sobre #66.
 - Cobertura de código: 21 overrides vanilla, 25 receitas próprias MAM, 35 receitas movidas ao Craftbook e cinco receitas nativas com gate de ferramenta.
 - Novo teste `tests/test_mam_crafting_balance_contract.py` compara assinaturas de ingredientes com a auditoria e está integrado ao workflow. Também verifica baseline de recipe guard, gates de ferramentas, interseção de tags ouro/metal e diferença lunar.
 - Machado/cinzel já implementados na base; não reimplementar. A Mesa de Serragem permanece pendente até verificação real do prefab/API.
-- Nenhum custo foi alterado: gargalos de ferro inicial, ligas, cozinha portátil, lunar, armazenamento e equipamentos exigem medição controlada antes de ajuste.
+- PR #69 altera somente três pontos: `armormarble` para 6 marble + 2 rope + 1 iron_ingot; Forkstick para dano fixo de lança vanilla (34); Don Harpoon para 68 dano/100 usos, preservando alcance/projétil e -20% velocidade. Os demais custos e atributos permanecem sem mudança até auditoria específica.
 - A contabilidade da forja confirma que 3 gold nuggets satisfazem simultaneamente gold=3 e metal=3; não contar como seis itens. O moonglass ingot custa moon=1 mas carrega moon=2 na tabela de valores, diferença documentada para decisão.
-- CI da PR #66: run #44348420098 estava em execução no checkpoint; consultar o HEAD mais recente antes de declarar aprovação.
+- CI da PR #66: run #44349620694 aprovada. PR #69: run #529 detectou somente uma asserção documental com texto divergente sobre o alias `gold_ore`; corrigida no código de teste e run #530 pendente para o HEAD atual.
 - Sem teste in-game, multiplayer, save/load ou UM Beta; sem merge, release ou publicação Steam. Hydrated/Dehydrated, Better Lucy e terceiros permanecem intocados.
 
 Fontes canônicas: `docs/design/FULL_CRAFTING_REWORK_2.9.7.md`, `docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md` e `docs/design/METAL_ITEM_CRAFTING_MATRIX.md`.
