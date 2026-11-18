@@ -106,3 +106,16 @@ A decisão do usuário permite obter materiais de estágio inferior desconstruin
 | `adamantium_ingot` | 3 `nightmarefuel` + 1 `iron_ingot` | Liga composta; proposta derivada das tags/requisito nomeado |
 
 **Importante:** nenhuma receita/custo foi alterado. Os retornos ainda precisam de confirmação, escolha da estação e testes. Materiais externos aceitos por tags podem ser normalizados para os componentes canônicos; não se promete reconstruir exatamente a carga original.
+
+
+---
+
+## 8. Cobertura integral da migração Craftbook — 2026-11-18
+
+A matriz inicial listava apenas exemplos. A implementação atual migra 35 receitas; custos exatos e contratos ficam na seção 4 de `CRAFTING_BALANCE_AUDIT_2.9.7.md`.
+
+`seedpouch`, `icepack`, `piggyback`, `sewing_kit`, `flowerhat`, `purpleamulet`, `amulet`, `blueamulet`, `umbrella`, `molehat`, `minerhat`, `backpack`, `armorslurper`, `icehat`, `beefalohat`, `earmuffshat`, `winterhat`, `beehat`, `trunkvest_summer`, `bushhat`, `catcoonhat`, `sweatervest`, `eyebrellahat`, `watermelonhat`, `featherhat`, `hawaiianshirt`, `beargervest`, `cane`, `tophat`, `strawhat`, `reflectivevest`, `rainhat`, `raincoat`, `trunkvest_winter`, `bernie_inactive`
+
+A migração de estação não deve ser confundida com rebalanceamento: preservar ingredientes e metadados vivos quando a assinatura difere do baseline conhecido, conforme `mam/recipe_guard.lua`.
+
+A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed, chisel, War Workbench, livro, estruturas e equipamentos) e seus custos atuais também está na seção 3 da auditoria quantitativa.
