@@ -340,6 +340,8 @@ A comparação usa somente valores DST, não variantes single-player. As referê
 
 Referências: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST), [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST), [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST), [Glass Cutter](https://dontstarve.wiki.gg/wiki/Glass_Cutter), [Elding Spear](https://dontstarve.wiki.gg/wiki/Elding_Spear), [Marble Suit/DST](https://dontstarve.wiki.gg/wiki/Marble_Suit/DST), [Metals and More! Reworked — Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184).
 
+**Sinal comunitário:** uma discussão no Reddit de 11/03/2025 descreve 68 de dano (Dark Sword/Glass Cutter) como referência de arma melee geral de alto nível; valores acima disso costumam depender de efeitos especiais/planar, condições de alvo ou progressão tardia. Os participantes também apontam custos altos e penalidades como contrapeso, mas há opiniões defendendo armas de late game mais fortes quando o custo/risco é realmente elevado. Isso não é um teto absoluto de dano nem consenso universal; é um benchmark útil para itens sem efeito planar. Fonte: [DST weapon strength discussion — r/dontstarve](https://www.reddit.com/r/dontstarve/comments/1j8he3f/).
+
 **Decisão desta rodada:** ajustar Marble Suit, estabilizar Forkstick e alinhar Don Harpoon ao baseline de 68 dano/100 usos da Dark Sword. O alcance 12–14 e a natureza de projétil permanecem como vantagem, compensados pela penalidade de movimento de 20% e pelo custo de 2 iron ingots + 2 marble + 3 flint. A validação de arremesso, recuperação e consumo de usos continua pendente.
 
 ### 6.6. Verificação dos caminhos de aquisição e migração
