@@ -39,4 +39,4 @@ assert 'modimport("initialise/modded_pithpikemove.lua")' in modmain
 assert 'modimport("initialise/modded_mace.lua")' in modmain
 assert 'modimport("initialise/modded_stronger_bernie.lua")' in modmain
 assert 'modimport("initialise/modded_forgepack.lua")' in modmain
-print("Legacy Forge weapon ability gate: 10 checks passed")
+print("Legacy Forge weapon ability gate: static contracts passed")
