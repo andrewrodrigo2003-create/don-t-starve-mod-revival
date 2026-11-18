@@ -352,16 +352,17 @@ AddRecipe2("pithpikeold", {Ingredient("marble", 2), Ingredient("gold_ingot", 1, 
 
 AddRecipe2("blacksmith_edgeold", {Ingredient("marble", 4),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
 
-AddStategraphPostInit("wilson", function(self)
-    local onenter = self.states.hit.onenter
-    self.states.hit.onenter = function(inst, ...)
-        if inst:HasTag("parrying") then 
-	    return inst.sg:GoToState("parry_pre") 
-        else 
-	    return onenter(inst, ...) 
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    AddStategraphPostInit("wilson", function(self)
+        local onenter = self.states.hit.onenter
+        self.states.hit.onenter = function(inst, ...)
+            if inst:HasTag("parrying") then
+                return inst.sg:GoToState("parry_pre")
+            end
+            return onenter(inst, ...)
         end
-    end 
-end)
+    end)
+end
 
 end
 
