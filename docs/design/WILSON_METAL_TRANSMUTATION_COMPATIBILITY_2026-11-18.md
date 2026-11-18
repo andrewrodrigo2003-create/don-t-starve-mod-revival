@@ -1,60 +1,86 @@
-# Wilson — integração de transmutação com Metals and More
+# Metals and More — transmutação universal no Laboratório de Alquimia
 
 **Data:** 2026-11-18  
-**Status:** pesquisa de compatibilidade e regra de projeto; receitas MAM de transmutação ainda não implementadas.
+**Status:** direção de projeto confirmada; tabela de conversões e implementação de runtime ainda em desenvolvimento.
 
-## Decisões do projeto já estabelecidas
+## Decisão confirmada pelo usuário
 
-- A desconstrução de materiais usa recuperação padrão de **75% por etapa**.
-- Wilson recupera **100% de todos os materiais** na desconstrução.
-- Winona recupera **100% de materiais não mágicos**.
-- Maxwell recupera **100% de materiais mágicos de escuridão**.
-- A transmutação de Wilson é uma habilidade própria, distinta da desconstrução e da metalurgia, e deve depender do aprendizado das habilidades pertinentes.
-- A cadeia de desconstrução permanece reversa e por etapas: barra/lingote → minério bruto → poeira. Ligas devolvem seus componentes correspondentes.
+A transmutação de minérios é uma mecânica geral do Metals and More, disponível a **todos os sobreviventes**, sem exigir Wilson, árvore de habilidades, personagem específico ou desbloqueio individual de skill.
 
-A PR #65 implementa os perfis de recuperação acima e a allowlist de materiais. Isso não implementa a habilidade separada de transmutação.
+O ponto central para executar a transmutação será o **Mad Scientist Lab** vanilla (`madscience_lab`), chamado aqui de **Bancada/Laboratório de Alquimia**. O MAM deverá permitir fabricar essa bancada a qualquer momento, independentemente do evento Hallowed Nights estar ativo. A bancada também poderá receber outras funções alquímicas futuras, além da transmutação de minérios.
 
-## Compatibilidade com a árvore vanilla de Wilson
+A implementação não deve depender de `TECH.HALLOWED_NIGHTS`, de `wilson_alchemy_*` ou de `skilltreeupdater:IsActivated` para disponibilizar a função. Wilson não terá privilégio exclusivo. A mesma regra de acesso vale para todos os personagens.
 
-A documentação da árvore de habilidades baseada no build DST 722832 (atualizada em 2026-04-28) identifica a categoria Alchemy e a seguinte progressão de nós:
+## Distinção entre sistemas
 
-| Nó | Função vanilla documentada |
-|---|---|
-| `wilson_alchemy_1` | Transmutation, raiz da categoria Alchemy |
-| `wilson_alchemy_3` | Transmute Ore I |
-| `wilson_alchemy_7` | Transmute Ore II |
-| `wilson_alchemy_8` | Transmute Ore III |
+- **Desconstrução:** desfaz um item metálico e devolve os materiais de origem, com as regras de recuperação próprias.
+- **Transmutação:** converte deliberadamente um minério/material metálico em outro, mediante uma receita/custo explícito e usando a Bancada de Alquimia.
+- **Metalurgia:** processa materiais em poeiras, lingotes, ligas e equipamentos na cadeia normal de fabricação.
 
-O espelho público do script `prefabs/skilltree_wilson.lua` confirma a topologia: `wilson_alchemy_1` é raiz e conecta aos ramos de alquimia; `wilson_alchemy_3` conecta a `wilson_alchemy_7`, que conecta a `wilson_alchemy_8`.
+Essas mecânicas devem permanecer separadas em código, UI, logs e testes. Transmutação não pode virar um atalho para recuperar 100% dos ingredientes de uma receita nem criar ciclos de conversão lucrativos.
 
-A API documentada do componente `skilltreeupdater` oferece `inst.components.skilltreeupdater:IsActivated(skill)`. O script vanilla espelhado usa o mesmo método para verificar habilidades ativas. O servidor MAM deve validar a habilidade no momento da ação, sem confiar apenas em UI ou estado enviado pelo cliente.
+## Bancada e disponibilidade fora do evento
 
-## Regra técnica recomendada
+A referência vanilla identifica o prefab e a estação como:
 
-1. Reutilizar a árvore Alchemy vanilla; não criar uma árvore paralela para Wilson.
-2. Usar `skilltreeupdater:IsActivated(...)` no servidor, verificando existência do componente e do método antes da chamada.
-3. Manter a transmutação separada da ação `MAM_DECONSTRUCT_METAL`: desconstrução recupera componentes com perda de 25%; transmutação é uma conversão ativa de uma família de materiais e precisa de receitas próprias.
-4. Não conceder a outros sobreviventes a transmutação de Wilson por meio dos perfis de recuperação.
-5. Não permitir que transmutação ignore custos, gere progressão gratuita ou substitua a forja como rota normal de fabricação.
-6. Registrar e testar cada conversão em uma tabela explícita, incluindo custo de entrada, saída, tier de habilidade, estação/condição, limites por ação e prevenção de ciclos lucrativos.
+- Prefab/recipe ID: `madscience_lab`.
+- A estação é uma crafting station (`PROTOTYPER_DEFS.madscience_lab`).
+- O vanilla associa sua receita de construção a `TECH.HALLOWED_NIGHTS` e ao aviso `NEEDSHALLOWED_NIGHTS`; essa restrição sazonal não atende ao projeto.
+- O MAM deverá registrar/ajustar a receita da bancada para que seja fabricável em qualquer mundo e época, sem depender do evento sazonal. A implementação deve preservar o prefab/visual vanilla e evitar registrar uma segunda estrutura duplicada.
+- A bancada deve expor as receitas MAM de transmutação por meio do fluxo de crafting station apropriado. Não basta adicionar receitas comuns ao filtro se o prototyper não as disponibilizar no contexto da estação.
 
-## Ponto ainda não especificado
+O código atual do MAM já registra tecnologias próprias (`ALCHEMY`, `CRAFTSBOOK`, `MAM_FORGE`) e utiliza `AddRecipe2` e filtros de crafting station. A implementação deve seguir os helpers e contratos existentes, em vez de criar um sistema paralelo ou alterar globalmente o comportamento de outras estações.
 
-As decisões recuperadas confirmam que Wilson deve ter transmutação, mas não enumeram quais conversões MAM concretas devem existir. Portanto, não inventar uma tabela de receitas nesta etapa. A implementação de runtime fica pendente da definição de conversões e de seus custos. O uso de `wilson_alchemy_8` como requisito para conversões metálicas de tier alto é uma proposta de balanceamento, não uma decisão aprovada.
+## Contrato funcional pretendido
 
-## Fontes técnicas
+1. Qualquer sobrevivente pode usar a Bancada de Alquimia.
+2. A bancada pode ser fabricada em qualquer momento, mesmo com Hallowed Nights desativado.
+3. A transmutação só ocorre na bancada; não é uma habilidade portátil ou uma receita de crafting livre.
+4. Cada conversão declara entradas, quantidades, saída, quantidade produzida e requisitos/custos adicionais.
+5. A operação valida no servidor os itens realmente disponíveis e consome os custos uma única vez.
+6. A UI mostra claramente o resultado e o custo antes da confirmação; falhas não consomem materiais.
+7. Receitas não criam loops de lucro nem substituem a forja/metalurgia como rota principal de progressão.
+8. O desenho da bancada deve permitir adicionar no futuro outras operações alquímicas sem acoplar tudo ao código de minérios.
 
-- [Wilson skill tree — DST Vanilla API, build 722832](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/skilltree_wilson)
-- [SkillTreeUpdater — DST Vanilla API, build 722832](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/skilltreeupdater)
-- [Espelho público do script skilltree_wilson.lua](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/skilltree_wilson.lua)
-- [Espelho público de skilltreedata.lua](https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/skilltreedata.lua)
+## Regras de desconstrução já estabelecidas — permanecem independentes
 
-Os espelhos são fontes comunitárias de referência, não distribuição oficial da Klei. Confirmar os identificadores e a API no build DST efetivamente usado antes de publicar ou declarar compatibilidade final.
+- Recuperação padrão: **75% por etapa**.
+- Wilson: 100% de recuperação de todos os materiais na desconstrução.
+- Winona: 100% de recuperação de materiais não mágicos.
+- Maxwell: 100% de recuperação de materiais mágicos de escuridão.
+- Cadeia reversa por etapas: barra/lingote → minério bruto → poeira; ligas devolvem seus componentes correspondentes.
+
+Esses perfis não concedem nem restringem a transmutação. A transmutação é universal e usa apenas os custos definidos em sua própria tabela de receitas.
+
+## Conversões e balanceamento ainda pendentes
+
+Nenhuma matriz completa de conversões metálicas foi aprovada. Antes de implementar, cada receita precisa ser avaliada com base em:
+
+- tier e raridade do material de origem e destino;
+- abundância real no mundo e fontes de obtenção;
+- custos de catalisadores, energia/essência ou materiais auxiliares, quando fizer sentido;
+- proporção de entrada/saída e risco de ciclos;
+- impacto em progressão inicial, média e tardia;
+- compatibilidade com Uncompromising Mode Beta e outros mods de metais/minérios.
+
+Não assumir conversões gratuitas, proporções 1:1 ou receitas específicas como decisões aprovadas. A matriz deve ser pesquisada e balanceada antes do runtime.
+
+## Referências técnicas
+
+- [Mad Scientist Lab / Hallowed Nights — Don't Starve Wiki](https://dontstarve.wiki.gg/wiki/Hallowed_Nights)
+- [Mad Science Filter — Don't Starve Wiki](https://dontstarve.wiki.gg/wiki/Mad_Science_Filter)
+- [Crafting technology and item lifecycles — Game Design Lab](https://teemo.dev/game-design/dont-starve-together/systems/crafting/)
+- [Vanilla recipes.lua mirror — PROTOTYPER_DEFS and madscience_lab recipe](https://github.com/BadWolf22/Dont-Starve-Together-Scripts/blob/master/recipes.lua)
+- [DST Vanilla API — Recipes / PROTOTYPER_DEFS](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/recipes)
+
+Os scripts consultados são espelhos comunitários/documentação de referência, não distribuição oficial da Klei. Confirmar comportamento e assinatura no build DST usado pelo projeto antes de declarar compatibilidade final.
 
 ## Validação pendente
 
-- Contrato de servidor para cada habilidade de transmutação.
-- Testes de conversão com custo físico exato e prevenção de ciclos.
-- Save/load e multiplayer.
-- Compatibilidade com UM Beta e mods que alterem skill trees.
-- Teste real no DST.
+- Disponibilidade da bancada com Hallowed Nights ativo e inativo.
+- Craft da bancada por todos os sobreviventes, incluindo Wickerbottom e personagens modded.
+- Acesso às receitas pela crafting station em multiplayer (cliente/servidor).
+- Consumo atômico de ingredientes, falhas, cancelamento e save/load.
+- Testes de proporções e prevenção de ciclos lucrativos.
+- Compatibilidade com UM Beta e mods que alterem crafting filters, recipes ou Mad Science Lab.
+- Teste real no DST; CI/simuladores não substituem runtime.
