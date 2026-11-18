@@ -81,6 +81,21 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertNotRegex(forkstick, r"SetDamage\(\s*math\.random")
         self.assertIn("dano-base diferente", self.balance)
 
+    def test_equipment_balance_audit_tracks_key_prefab_stats(self):
+        jagged = (MOD / "scripts" / "prefabs" / "jagged_armor.lua").read_text(encoding="utf-8")
+        halberd = (MOD / "scripts" / "prefabs" / "halberd.lua").read_text(encoding="utf-8")
+        harpoon = (MOD / "scripts" / "prefabs" / "donharpoon.lua").read_text(encoding="utf-8")
+        shears = (MOD / "scripts" / "prefabs" / "shears.lua").read_text(encoding="utf-8")
+        self.assertIn("InitCondition(1500, 0.85)", jagged)
+        self.assertIn("HALBERD_DAMAGE = 51", halberd)
+        self.assertIn("HALBERD_USES = 150", halberd)
+        self.assertIn("HARPOON_DAMAGE = 80", harpoon)
+        self.assertIn("HARPOON_USES = 150", harpoon)
+        self.assertIn("HARPOON_RANGE = 12", harpoon)
+        self.assertIn("SetRadius(4)", shears)
+        self.assertIn("500)", shears)
+        self.assertIn("Maior candidato a revisão", self.balance)
+
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
             "| `boards` | `log×4` |",
