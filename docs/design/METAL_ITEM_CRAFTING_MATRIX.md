@@ -29,8 +29,8 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 | `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | `SCIENCE_TWO` / Prototypers | estação de fabricação metalúrgica; validar filtro real |
 | `mam_stone_chisel` | 2 twigs, 2 flint | `TECH.NONE` / Tools + Refine | ferramenta reutilizável, sem durabilidade ou consumo |
 | `metallurgy_reference_book` | 2 papyrus, 2 charcoal, 1 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | livro informativo; não desbloqueia receitas |
-| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + `CRAFTING_STATION` + Containers | estrutura existente; custo depende da capacidade real |
-| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + `CRAFTING_STATION` + Cooking | estrutura frigorífica; medir preservação e capacidade |
+| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + `CRAFTING_STATION` + Containers | 25 slots (5×5), armazenamento geral, 3 hits; sem burnable/propagator explícitos; validar fogo no runtime |
+| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + `CRAFTING_STATION` + Cooking | 25 slots (5×5), tag `fridge` usa taxa vanilla de 50% e resfria; itemtest de comida; 3 hits |
 | `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
@@ -143,3 +143,8 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 ### Rebalanceamento de armadura — 2026-11-18
 
 `armormarble` preserva o custo vanilla de 6 marble + 2 rope e acrescenta 1 iron ingot. A versão anterior duplicava marble/rope sem alterar os atributos vanilla (735 condição, 95% absorção, -30% velocidade), além de exigir a bancada metalúrgica. O custo agora adiciona progressão metálica sem inflar novamente os materiais-base. `jagged_armor` permanece inalterada e será auditada separadamente, pois sua receita herda `armormarble` e possui atributos próprios superiores.
+
+
+### Nota de balanceamento de armazenamento — 2026-11-18
+
+A capacidade real dos dois widgets está confirmada por `makeChest()`: 25 posições cada, contra 9 no baú/Ice Box vanilla. `cold_safe` não precisa do componente `preserver`; a tag `fridge` já ativa o comportamento vanilla de conservação e resfriamento. `marble_chest` não registra componentes `burnable`/`propagator`, ao contrário do baú vanilla; confirmar a interação com fogo em runtime. Nenhum custo de armazenamento foi alterado: 2,78× de capacidade precisa ser comparado ao custo real de aquisição e ao uso no mundo antes de ajustar receitas.
