@@ -34,13 +34,13 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 | `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
-| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; comparar progressão |
+| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | 1500 condição, 85% absorção, +10% velocidade; custo mantido para auditoria separada |
 | `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `halberd` | 2 log, 3 iron_ingot, 1 rope | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
+| `halberd` | 2 log, 3 iron_ingot, 1 rope | `ALCHEMY_ONE` + `CRAFTING_STATION` | 51 dano/150 usos, chop 7, -15% velocidade e -0,25 sanity; manter em observação |
+| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | 32 dano, alcance 1,6, cane speed e fuel; avaliar utilidade/fuel |
+| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `ALCHEMY_ONE` + `CRAFTING_STATION` | dano fixo em `TUNING.SPEAR_DAMAGE` (34), 50 usos e travessia aquática com fuel |
+| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | 17 dano, 500 usos, coleta em área de raio 4; validar rendimento por uso |
+| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | 68 dano/100 usos, alcance 12–14, projétil, -20% velocidade; validar arremesso/recuperação |
 | `forginghammer` | 1 hammer, 1 lightninggoathorn, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
 | `pithpike` | 2 lightninggoathorn, 3 gold_ingot, 3 houndstooth | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
 | `spiralspear` | 3 marble, 1 pithpike, 2 townportaltalisman | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
