@@ -111,7 +111,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn("previous(dropper)", drops)
         self.assertIn('Prefab("spikyrock"', newrocks)
         self.assertNotIn("spikyrock =", worldgen)
-        self.assertIn("prefab de migração", self.balance)
+        self.assertIn("não é um prefab ausente", self.balance)
 
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
