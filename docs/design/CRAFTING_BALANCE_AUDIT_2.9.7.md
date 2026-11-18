@@ -85,3 +85,160 @@ Before changing either existing recipe, resolve the actual registered container 
 - Do not implement global/nearby storage access or automatic withdrawal in this milestone.
 - Do not modify Uncompromising Mode, My Moar Metals, Hydrated/Dehydrated, Better Lucy or other mods.
 - Do not apply blanket metal substitutions to every vanilla recipe.
+
+
+---
+
+## 2026-11-18 — inventário integral de receitas e contrato de balanceamento
+
+**Escopo:** fotografia do código da branch empilhada na PR #65. Esta seção registra custos efetivos e cobertura; não aprova mudanças de custo por si só. As receitas permanecem inalteradas nesta etapa.
+
+### 1. Regras de leitura de custo
+
+- As quantidades abaixo são exatamente as chamadas `Ingredient(prefab, amount)` encontradas no código.
+- Lingote não equivale a uma pepita: a forja exige atualmente 3 unidades de valor de cobre/ferro, 3 de ouro **mais** 3 de valor `metal` para ouro, bronze exige 3 cobre + 1 ferro, vidro lunar exige 2 moonglass + 1 unidade de requisito lunar, e adamantium exige 3 steel + 1 iron_ingot nomeado.
+- Portanto, o custo efetivo de uma receita com lingotes deve ser calculado expandindo a conversão e somando os materiais auxiliares, não contando cada lingote como uma unidade abstrata.
+- A tabela não inventa rendimento de mineração, chance de drop ou tempo de aquisição. Esses valores dependem das fontes/biomas e precisam de dados do jogo/UM antes de alterar custos.
+
+### 2. Overrides vanilla — assinatura atual MAM
+
+| Receita | Ingredientes atuais | Natureza |
+|---|---|---|
+| `researchlab` | `iron_ore×4 + log×4 + rocks×4` | Override vanilla protegido por assinatura e recipe guard |
+| `researchlab2` | `boards×4 + iron_ingot×2 + transistor×2` | Override vanilla protegido por assinatura e recipe guard |
+| `birdcage` | `papyrus×2 + bronze_ingot×1 + seeds×2` | Override vanilla protegido por assinatura e recipe guard |
+| `dragonflychest` | `dragon_scales×1 + boards×4 + gold_ingot×2` | Override vanilla protegido por assinatura e recipe guard |
+| `compass` | `iron_ore×1 + flint×1` | Override vanilla protegido por assinatura e recipe guard |
+| `razor` | `twigs×2 + iron_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `transistor` | `cutstone×1 + copper_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `lightning_rod` | `gold_ingot×1 + cutstone×1` | Override vanilla protegido por assinatura e recipe guard |
+| `goldenaxe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `goldenpickaxe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `goldenshovel` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `golden_farm_hoe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `armormarble` | `marble×12 + rope×4 + iron_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `portablecookpot_item` | `iron_ore×3 + charcoal×6 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
+| `portableblender_item` | `iron_ore×3 + transistor×2 + twigs×4` | Override vanilla protegido por assinatura e recipe guard |
+| `portablespicer_item` | `iron_ore×3 + cutstone×3 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
+| `glasscutter` | `boards×1 + moonglass_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `archive_resonator_item` | `thulecite×1 + moonglass_ingot×2` | Override vanilla protegido por assinatura e recipe guard |
+| `moondial` | `bluemooneye×1 + moonglass_ingot×1 + marble×5` | Override vanilla protegido por assinatura e recipe guard |
+| `moonrockcrater` | `moonglass_ingot×1 + moonrocknugget×2 + marble×1` | Override vanilla protegido por assinatura e recipe guard |
+| `moonglassaxe` | `moonglass_ingot×1 + twigs×2 + marble×1` | Override vanilla protegido por assinatura e recipe guard |
+
+### 3. Receitas próprias MAM — assinatura atual
+
+| Receita | Ingredientes atuais | Natureza |
+|---|---|---|
+| `metal_smelter` | `iron_ore×4 + cutstone×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `marbleseed` | `iron_ore×1 + marble×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `mam_stone_chisel` | `twigs×2 + flint×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `warworkbench` | `cutstone×5 + iron_ingot×3 + charcoal×5` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `metallurgy_reference_book` | `papyrus×2 + charcoal×2 + iron_ingot×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `armor_sanity` | `adamantium_ingot×2 + papyrus×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `nightsword` | `adamantium_ingot×2 + livinglog×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `marble_chest` | `marble×5 + gold_ingot×2 + cutstone×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `cold_safe` | `gears×1 + iron_ingot×3 + bluegem×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `jagged_armor` | `houndstooth×4 + gold_ingot×3 + armormarble×1 + iron_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `tfwp_luxury_nox_helm_hat` | `footballhat×1 + gold_ingot×3 + walrus_tusk×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `halberd` | `log×2 + iron_ingot×3 + rope×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `scepter` | `gold_ingot×3 + purplegem×1 + livinglog×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `forkstick` | `gold_ingot×3 + sharkscale×3 + gnarwail_horn×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `shears` | `log×1 + flint×2 + iron_ingot×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `donharpoon` | `marble×2 + flint×3 + iron_ingot×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `dst_willowdoll` | `beefalowool×4 + sewing_kit×1 + charcoal×10` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `forginghammer` | `hammer×1 + lightninggoathorn×1 + gold_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `pithpike` | `lightninggoathorn×2 + gold_ingot×3 + houndstooth×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `spiralspear` | `marble×3 + pithpike×1 + townportaltalisman×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `blacksmith_edge` | `marble×5 + driftwood_log×2 + gold_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `forginghammerold` | `twigs×4 + marble×2 + gold_ingot×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `pithpikeold` | `marble×2 + gold_ingot×1 + houndstooth×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `blacksmith_edgeold` | `marble×4 + driftwood_log×2 + gold_ingot×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `craftbook` | `papyrus×2 + charcoal×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+
+### 4. Receitas movidas ao Craftbook — custos preservados
+
+Estas receitas são migradas para a estação Craftbook pelo adaptador `modded_craftbook.lua`. A lista abaixo registra os ingredientes da lista MAM atual; a integração só deve adaptar a receita quando a assinatura viva corresponder ao baseline suportado, preservando a receita de terceiros quando divergir.
+
+| Receita | Ingredientes atuais | Natureza |
+|---|---|---|
+| `seedpouch` | `slurtle_shellpieces×2 + cutgrass×4 + seeds×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `icepack` | `bearger_fur×1 + gears×1 + transistor×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `piggyback` | `pigskin×4 + silk×6 + rope×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `sewing_kit` | `log×1 + silk×8 + houndstooth×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `flowerhat` | `petals×12` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `purpleamulet` | `goldnugget×6 + nightmarefuel×4 + purplegem×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `amulet` | `goldnugget×3 + nightmarefuel×2 + redgem×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `blueamulet` | `goldnugget×3 + bluegem×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `umbrella` | `twigs×6 + pigskin×1 + silk×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `molehat` | `mole×2 + transistor×2 + wormlight×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `minerhat` | `strawhat×1 + bronze_ingot×1 + fireflies×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `backpack` | `cutgrass×4 + twigs×4` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `armorslurper` | `slurper_pelt×6 + rope×2 + nightmarefuel×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `icehat` | `transistor×2 + rope×4 + ice×10` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `beefalohat` | `beefalowool×8 + horn×2 + winterhat×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `earmuffshat` | `rabbit×2 + twigs×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `winterhat` | `beefalowool×4 + silk×4 + earmuffshat×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `beehat` | `silk×8 + rope×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `trunkvest_summer` | `trunk_summer×1 + silk×8` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `bushhat` | `strawhat×1 + rope×1 + dug_berrybush×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `catcoonhat` | `coontail×3 + silk×4` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `sweatervest` | `houndstooth×8 + silk×6` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `eyebrellahat` | `deerclops_eyeball×1 + twigs×15 + boneshard×4` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `watermelonhat` | `watermelon×1 + twigs×3` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `featherhat` | `feather_crow×3 + feather_robin×2 + tentaclespots×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `hawaiianshirt` | `papyrus×3 + silk×3 + cactus_flower×5` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `beargervest` | `bearger_fur×1 + sweatervest×1 + rope×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `cane` | `gold_ingot×2 + walrus_tusk×1 + twigs×4` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `tophat` | `silk×6` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `strawhat` | `cutgrass×12` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `reflectivevest` | `rope×1 + feather_robin×3 + pigskin×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `rainhat` | `mole×2 + strawhat×1 + boneshard×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `raincoat` | `tentaclespots×2 + rope×2 + boneshard×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `trunkvest_winter` | `trunk_winter×1 + silk×8 + beefalowool×2` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+| `bernie_inactive` | `beardhair×3 + beefalowool×6 + sewing_kit×1` | Migração de estação; ingredientes mantidos pela lista MAM atual |
+
+### 5. Tábuas e pedra — requisitos nativos de ferramenta
+
+A implementação de `mam/tool_crafting.lua` acrescenta um requisito de ferramenta sem alterar a economia nativa da receita. A fonte instalada do DST consultada em 2026-11-17 registrou:
+
+| Receita | Ingredientes nativos | Regra MAM |
+|---|---|---|
+| `boards` | `log×4` | Machado funcional; não consumido |
+| `woodie_boards` | `log×3 + lucy×0` | Machado funcional; preserva skill e encaminhamento vanilla |
+| `boards_bunch` | `log×20` | Machado funcional; lote de 5 |
+| `cutstone` | `rocks×3` | Cinzel reutilizável; não consumido |
+| `cutstone_bunch` | `rocks×15` | Cinzel reutilizável; lote de 5 |
+
+- Machado: tags `tool` + `CHOP_tool` e, no servidor, componente `tool` real com `CanDoAction(CHOP)`, efetividade positiva e usos restantes válidos.
+- Cinzel: prefab e tag MAM dedicados; sem durabilidade, sem stack consumível e sem ação de combate.
+- Cliente e servidor verificam inventário/equipamento; servidor revalida posse e capacidade no instante da fabricação. Freebuild é exceção consistente nos dois lados.
+- O escopo de busca é inventário, equipamento, cursor e overflow equipado gravável; armazenamento aberto/próximo/nested não é procurado.
+- A Mesa de Serragem continua fora do código: não foi encontrado/validado um prefab/API do alvo atual que justifique integração. Não reativar receita vanilla por hipótese.
+
+### 6. Leitura quantitativa preliminar e decisões bloqueadas
+
+| Área | Evidência atual | Risco / decisão necessária |
+|---|---|---|
+| Primeira ciência e fundição | Science Machine: 4 iron_ore; Metal Smelter: 4 iron_ore + 2 cutstone, em Science One | Duas despesas de 4 iron_ore antes/na entrada da metalurgia. Medir aquisição inicial de ferro e confirmar que não há softlock; não reduzir custo sem curva de mineração |
+| Alchemy Engine | 2 iron_ingot = mínimo 6 iron-value, além de 4 boards e 2 transistors | Medir tempo de obtenção/fundição e concorrência com War Workbench |
+| Birdcage | 1 bronze_ingot = mínimo 3 copper + 1 iron | Verificar disponibilidade de cobre/ferro antes de Birdcage; comparar com custo vanilla de 6 goldnuggets |
+| Dragonfly Chest | 2 gold_ingot = mínimo 6 gold + 6 metal-value, mais boss scale e boards | Custo composto; conferir se requisito pós-boss e capacidade justificam 2 barras |
+| Compass / Razor | Compass usa 1 iron_ore; Razor usa 1 iron_ingot = mínimo 3 iron-value | Compass troca gold por iron; Razor troca flint por três unidades de ferro e precisa de comparação funcional |
+| Transistor / Lightning Rod | 1 copper_ingot = 3 copper; 1 gold_ingot = 3 gold + 3 metal-value | Confirmar oferta de cobre e metal; não contar lingote como 1 nugget |
+| Ferramentas douradas | 1 gold_ingot cada = mínimo 3 gold + 3 metal-value, contra 2 goldnuggets vanilla | Aumenta o valor nominal de ouro e acrescenta requisito de metal; revisar durabilidade/velocidade e concorrência de lingotes |
+| Marble Armor | 12 marble + 4 rope + 1 iron_ingot | Duplica marble/rope e adiciona 3 iron-value; comparar defesa/durabilidade e renovabilidade |
+| Cozinha portátil | Três itens exigem 3 iron_ore cada; blender também mantém 2 transistors | Avaliar o pacote junto: não cobrar ferro + transistores sem benefício proporcional |
+| Lunar | Moonglass ingot requer 2 moonglass + moon; vidro/arquivo/moondial/crater/axe adicionam marble/boards | Expandir conversão, confirmar disponibilidade de moonrock/moonglass e progressão lunar antes de alterar |
+| Estações MAM | Smelter 4 iron ore + 2 cutstone; War Workbench 3 iron_ingot + 5 cutstone + 5 charcoal; book 1 iron_ingot | Verificar soma acumulada e gargalo entre primeira forja, bancada e equipamento |
+| Armazenamento MAM | Marble Chest 2 gold_ingot + 5 marble + 3 cutstone; Cold Safe 3 iron_ingot + gear + bluegem | Não balancear sem confirmar slots reais, preservação, resistência ao fogo, martelamento e retornos |
+| Equipamentos próprios | Armaduras/armas usam 2–3 ingots por família, além de itens de boss/raridade | Comparar dano, defesa, durabilidade, reparo e estação; separar receitas legadas opcionais das atuais |
+
+**Sem mudanças de custo nesta etapa.** As fontes de aquisição ainda não estão quantificadas com amostras controladas e o teste in-game está pendente. A próxima alteração deve escolher um grupo fechado, calcular o custo expandido, definir baseline/objetivo e adicionar regressão antes de editar receitas.
+
+### 7. Cobertura de inventário
+
+- Overrides vanilla registrados: 21.
+- Receitas próprias encontradas em `modmain.lua`, `modded_recipes.lua` e `modded_craftbook.lua`: 25.
+- Receitas migradas ao Craftbook: 35.
+- A cobertura é validada por `tests/test_mam_crafting_balance_contract.py`, que compara as assinaturas do código com esta documentação. Receita nova sem registro ou custo alterado sem atualização deliberada da matriz falha na CI.
