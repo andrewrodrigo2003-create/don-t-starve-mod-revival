@@ -9,6 +9,9 @@ on:
     paths:
       - 'dst-mods/metals_and_reforged/**'
       - 'dst-mods/tests/**'
+      - 'tests/test_mam_crafting_balance_contract.py'
+      - 'docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md'
+      - 'docs/design/METAL_ITEM_CRAFTING_MATRIX.md'
       - '.github/workflows/metals-and-more-lua-checks.yml'
   workflow_dispatch:
 
