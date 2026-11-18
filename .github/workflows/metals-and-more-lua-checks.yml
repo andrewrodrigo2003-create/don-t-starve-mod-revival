@@ -6,10 +6,6 @@ on:
       - fix/allow-ambiguous-smelting
       - fix/smelter-refund-retry-2026-11-11
   pull_request:
-    branches:
-      - main
-      - feature/full-crafting-rework-localization-2026-11-12
-      - audit/mam-ci-enabled-base-2026-11-18
     paths:
       - 'dst-mods/metals_and_reforged/**'
       - 'dst-mods/tests/**'
