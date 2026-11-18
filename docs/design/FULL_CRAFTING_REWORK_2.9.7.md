@@ -73,7 +73,7 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 
 ## 7. Implementation sequence and release gates
 
-1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale still need provenance-based decisions before claiming complete material coverage.
+1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale now have explicit provenance dispositions recorded in [the 2026-11-18 material audit](../compatibility/MAM_MATERIAL_DECONSTRUCTION_PROVENANCE_2026-11-18.md); only materials with safe reverse rules remain eligible, while raw inputs and ambiguous by-products stay excluded.
 2. Implement the localization registry and language selection; add complete string-coverage tests.
 3. Replace the narrow deconstruction allowlist with a material-only registry and explicit character profile resolver; add full survivor/material coverage tests.
 4. Implement non-consuming tool validation for chisel/axe and verified Sawing Table integration; remove the replaced vanilla board/cut-stone crafting routes without disabling unrelated recipes.
