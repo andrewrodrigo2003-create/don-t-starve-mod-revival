@@ -81,6 +81,26 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
             self.assertRegex(guard, rf"(?m)^\s*{re.escape(recipe)}\s*=",
                              f"Missing vanilla baseline/guard coverage for {recipe}")
 
+    def test_overlapping_gold_tags_are_not_counted_as_separate_items(self):
+        smelting = (MOD / "scripts" / "smelting.lua").read_text(encoding="utf-8")
+        products = (MOD / "scripts" / "smelting_products.lua").read_text(encoding="utf-8")
+        harness = (ROOT / "dst-mods" / "tests" / "smelting_module_harness.lua").read_text(encoding="utf-8")
+        self.assertIn('{"goldnugget"},', smelting)
+        self.assertIn('{gold = 1, metal = 1}', smelting)
+        self.assertIn('tags.gold >= 3 and tags.metal and tags.metal >= 3', products)
+        self.assertIn('assert_consumption("gold batch", gold, { goldnugget = 6 }, {})', harness)
+        self.assertIn("3 goldnuggets (as mesmas 3 unidades satisfazem gold e metal)", self.balance)
+
+    def test_lunar_tag_surplus_is_documented_without_changing_runtime_values(self):
+        smelting = (MOD / "scripts" / "smelting.lua").read_text(encoding="utf-8")
+        products = (MOD / "scripts" / "smelting_products.lua").read_text(encoding="utf-8")
+        harness = (ROOT / "dst-mods" / "tests" / "smelting_module_harness.lua").read_text(encoding="utf-8")
+        self.assertIn('{moonglass = 2, moon = 2}', smelting)
+        self.assertIn('moonglass_ingot   = { tags = { moonglass = 2, moon = 1 } }', products)
+        self.assertIn('assert_consumption("moonglass batch", moon,', harness)
+        self.assertIn('moonglass = 4, moonrocknugget = 2', harness)
+        self.assertIn("divergência de valor a investigar", self.balance)
+
     def test_balance_contract_is_in_ci(self):
         workflow = (ROOT / ".github" / "workflows" / "metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
         self.assertIn("tests/test_mam_crafting_balance_contract.py", workflow)
