@@ -190,7 +190,8 @@ local function init()
     MakeHauntableLaunch(inst)
 
     inst:AddComponent("weapon")
-    inst.components.weapon:SetDamage(math.random(12,99))
+    -- Keep the weapon on the vanilla spear damage baseline; a per-instance random 12–99 roll made identical forksticks wildly inconsistent.
+    inst.components.weapon:SetDamage(TUNING.SPEAR_DAMAGE)
 
     inst:AddComponent("inspectable")
     
