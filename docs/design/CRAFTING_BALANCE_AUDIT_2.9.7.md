@@ -324,6 +324,24 @@ O dano agora usa `TUNING.SPEAR_DAMAGE`, o baseline de lança do DST (34 de dano)
 
 A alteração **não** modifica receita (`gold_ingot×3 + sharkscale×3 + gnarwail_horn×1`), combustível, duração de travessia, controle de afogamento, umidade, usos ou efeitos visuais. O item ainda exige comparação de desempenho e segurança em runtime/multiplayer. A comunidade possui mods de combate que oferecem dano aleatório de forma deliberada, mas com min/max e opções explícitas; exemplo: [Papapav's Armory](https://steamcommunity.com/workshop/filedetails/?id=3370627907). Esse padrão explícito não existia no forkstick.
 
+### 6.5. Comparação de equipamentos — prioridades da próxima rodada
+
+A comparação usa somente valores DST, não variantes single-player. As referências vanilla mostram que dano, usos, efeitos especiais, mobilidade e custo de oportunidade precisam ser avaliados em conjunto:
+
+| Item | Código MAM / custo atual | Comparação DST | Leitura de balanceamento |
+|---|---|---|---|
+| Jagged Armor | 1500 condição, 85% absorção, +10% velocidade; `houndstooth×4 + gold_ingot×3 + armormarble×1 + iron_ingot×3` | Marble Suit: 735 condição, 95%, -30% velocidade | Armadura de mobilidade e maior durabilidade, menor absorção; custo alto pode ser justificável, mas validar dano efetivo absorvido e duração antes de mexer |
+| Halberd | 51 dano, 150 usos, chop eficiência 7, -15% velocidade, -0,25 sanity; `iron_ingot×3 + log×2 + rope×1` | Spear: 34 dano/150 usos; Dark Sword: 68/100 | Mult ferramenta com penalidades e fome ao cortar; 51 fica entre lança e espada sombria, manter em observação |
+| Don Harpoon | 80 dano, 150 usos, alcance 12–14, projétil velocidade 30, -20% velocidade; `iron_ingot×2 + marble×2 + flint×3` | Dark Sword e Glass Cutter: 68 dano; Dark Sword 100 usos, Glass Cutter 75 (até 150 contra sombras) | **Maior candidato a revisão:** supera dano das armas vanilla de alto tier e adiciona alcance/projétil e 150 usos; penalidade de movimento e custo de metal contam a favor, então não nerfar sem verificar comportamento de arremesso/recuperação e dano real |
+| Scepter | 32 dano, alcance 1,6, bônus de velocidade de cane, combustível; `gold_ingot×3 + purplegem×1 + livinglog×2` | Spear 34 dano; Walking Cane é mobilidade, não arma de dano alto | Dano modesto com mobilidade e fuel; avaliar utilidade/fuel, não só DPS |
+| Forkstick | 34 dano (corrigido), 50 usos, fuel; atravessa água ao suspender afogamento enquanto equipado; `gold_ingot×3 + sharkscale×3 + gnarwail_horn×1` | Spear 34 dano/150 usos | Dano agora está no baseline da lança; o valor do item está na travessia aquática e no combustível, não em dano aleatório |
+| Shears | 17 dano, 500 usos, `areapicker` raio 4; `iron_ingot×2 + log×1 + flint×2` | Ferramentas vanilla comuns causam 17 dano; durabilidade e área são a vantagem | Ferramenta de coleta em área, não arma; validar quantos recursos colhe por uso e possíveis interações com ActionQueue/mods de colheita |
+| Night Armor / Dark Sword | Cada receita usa 2 adamantium ingots; Night Armor também 3 papyrus, Dark Sword 1 livinglog | Night Armor vanilla: 525 condição, 95%, -10 sanity/min e -10% do dano recebido; Dark Sword: 68 dano, 100 usos, -20 sanity/min | O custo MAM expande cada 2 adamantium para 6 nightmarefuel + 2 iron ingots. É uma cobrança metalúrgica adicional relevante, mas os itens já são de tier alto; medir concorrência com outros usos de adamantium antes de alterar |
+
+Referências: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST), [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST), [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST), [Glass Cutter](https://dontstarve.wiki.gg/wiki/Glass_Cutter), [Elding Spear](https://dontstarve.wiki.gg/wiki/Elding_Spear), [Marble Suit/DST](https://dontstarve.wiki.gg/wiki/Marble_Suit/DST), [Metals and More! Reworked — Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184).
+
+**Decisão desta rodada:** ajustar Marble Suit e estabilizar Forkstick; manter as outras receitas/atributos sem alteração. Don Harpoon fica no topo da fila para revisão de combate, pois seus 80 de dano, alcance e usos parecem fortes em relação às armas vanilla, mas o comportamento de projétil e recuperação precisa ser entendido antes de escolher novo dano ou durabilidade.
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
