@@ -24,12 +24,20 @@ Essas mecânicas devem permanecer separadas em código, UI, logs e testes. Trans
 A referência vanilla identifica o prefab e a estação como:
 
 - Prefab/recipe ID: `madscience_lab`.
-- A estação é uma crafting station (`PROTOTYPER_DEFS.madscience_lab`).
+- A estação é registrada como crafting station (`PROTOTYPER_DEFS.madscience_lab`) e seu prefab possui o componente especializado `madsciencelab`.
 - O vanilla associa sua receita de construção a `TECH.HALLOWED_NIGHTS` e ao aviso `NEEDSHALLOWED_NIGHTS`; essa restrição sazonal não atende ao projeto.
 - O MAM deverá registrar/ajustar a receita da bancada para que seja fabricável em qualquer mundo e época, sem depender do evento sazonal. A implementação deve preservar o prefab/visual vanilla e evitar registrar uma segunda estrutura duplicada.
 - A bancada deve expor as receitas MAM de transmutação por meio do fluxo de crafting station apropriado. Não basta adicionar receitas comuns ao filtro se o prototyper não as disponibilizar no contexto da estação.
 
 O código atual do MAM já registra tecnologias próprias (`ALCHEMY`, `CRAFTSBOOK`, `MAM_FORGE`) e utiliza `AddRecipe2` e filtros de crafting station. A implementação deve seguir os helpers e contratos existentes, em vez de criar um sistema paralelo ou alterar globalmente o comportamento de outras estações.
+
+## Comportamento específico do Mad Scientist Lab
+
+A documentação do prefab vanilla mostra que `madscience_lab` não é apenas uma bancada de crafting comum: possui o componente `madsciencelab`, com fluxo de experimento em etapas, callbacks de início/conclusão e resultados vanilla baseados em tabelas ponderadas. O método `StartMakingScience(product, name)` inicia esse fluxo; o callback vanilla de conclusão escolhe resultados de experimento.
+
+Consequência para o MAM: **não reutilizar diretamente a tabela aleatória de resultados vanilla como motor da transmutação**, pois cada conversão de minério precisa ser determinística e consumir exatamente os materiais escolhidos pelo jogador. A implementação deve criar uma operação MAM própria, validada no servidor, e integrar a apresentação/animação da bancada sem sobrescrever globalmente as experiências Hallowed Nights. Se o componente vanilla não oferecer um ponto de extensão seguro para isso, usar uma ação/componente MAM dedicado associado ao prefab, preservando o fluxo original de Halloween.
+
+A receita da bancada também precisa ser disponibilizada fora do evento sem depender de `TECH.HALLOWED_NIGHTS`/hint sazonal. Antes de sobrescrever ou re-registrar a receita vanilla, verificar a ordem de carregamento e o contrato de `AddRecipe2`/RecipePostInit no build alvo, para evitar duplicidade ou conflito com outros mods.
 
 ## Contrato funcional pretendido
 
@@ -69,6 +77,7 @@ Não assumir conversões gratuitas, proporções 1:1 ou receitas específicas co
 
 - [Mad Scientist Lab / Hallowed Nights — Don't Starve Wiki](https://dontstarve.wiki.gg/wiki/Hallowed_Nights)
 - [Mad Science Filter — Don't Starve Wiki](https://dontstarve.wiki.gg/wiki/Mad_Science_Filter)
+- [Madscience Lab prefab/component — DST Vanilla API](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/madscience_lab)
 - [Crafting technology and item lifecycles — Game Design Lab](https://teemo.dev/game-design/dont-starve-together/systems/crafting/)
 - [Vanilla recipes.lua mirror — PROTOTYPER_DEFS and madscience_lab recipe](https://github.com/BadWolf22/Dont-Starve-Together-Scripts/blob/master/recipes.lua)
 - [DST Vanilla API — Recipes / PROTOTYPER_DEFS](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/recipes)
