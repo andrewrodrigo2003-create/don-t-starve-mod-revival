@@ -78,7 +78,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
     def test_forkstick_damage_uses_vanilla_spear_baseline(self):
         forkstick = (MOD / "scripts" / "prefabs" / "forkstick.lua").read_text(encoding="utf-8")
         self.assertIn("inst.components.weapon:SetDamage(TUNING.SPEAR_DAMAGE)", forkstick)
-        self.assertNotRegex(forkstick, r"SetDamage\\(\\s*math\\.random")
+        self.assertNotRegex(forkstick, r"SetDamage\(\s*math\.random")
         self.assertIn("dano-base diferente", self.balance)
 
     def test_tool_gated_vanilla_recipes_are_documented(self):
