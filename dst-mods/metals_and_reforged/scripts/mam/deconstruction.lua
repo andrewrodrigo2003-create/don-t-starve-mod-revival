@@ -124,6 +124,21 @@ function MAMDeconstruction.HasWarWorkbench(entities, ismastersim)
     return false
 end
 
+function MAMDeconstruction.GetMaterialAudit(prefab)
+    local entry = MATERIAL_AUDIT[prefab]
+    if entry == nil then return nil end
+    return entry.status, entry.reason
+end
+
+function MAMDeconstruction.GetMaterialAuditPrefabs()
+    local result = {}
+    for prefab in pairs(MATERIAL_AUDIT) do
+        table.insert(result, prefab)
+    end
+    table.sort(result)
+    return result
+end
+
 function MAMDeconstruction.GetReturns(prefab)
     return RETURNS[prefab]
 end
