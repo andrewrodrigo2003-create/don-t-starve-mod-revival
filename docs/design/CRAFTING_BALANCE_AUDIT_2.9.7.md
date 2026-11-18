@@ -265,6 +265,44 @@ Esse total é um **orçamento de valor de ingrediente**, não uma previsão de 2
 
 O livro opcional acrescenta 1 iron ingot (3 iron-value), 2 papyrus e 2 charcoal depois de Alchemy One; não está incluído no total obrigatório da bancada.
 
+
+
+### 6.2. Fontes de aquisição configuradas — rendimento esperado por evento
+
+Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração padrão: `mam_extra_drops=1`, modo aditivo, normalização desligada e multiplicadores de chance em 100%. É **expectativa por evento de mineração/colheita/morte**, não quantidade garantida em cada evento nem rendimento por dia. Os drops vanilla continuam separados.
+
+| Fonte / evento | Drops MAM esperados por evento | Valor metalúrgico esperado | Estágio / ressalva |
+|---|---|---|---|
+| `ironrock` (novo boulder) | 2,50 `iron_ore` | 2,50 iron-value | Rota de superfície; worldgen distribui peso 0,75 em sete famílias de salas Rocky/BGDirt/SpiderVillage |
+| `rock2` | 1,75 `gold_dust` | 0,875 gold-value | Superfície; 0,75 + 1,00 rolls |
+| `rock_moon` | 1,00 `iron_ore` | 1,00 iron-value | Lunar; dois rolls de 0,50 |
+| `rock_moon_shell` | 0,50 `iron_ore` + 0,75 `iron_dust` | 0,875 iron-value | Lunar; poeira vale 0,5 iron por unidade |
+| `stalagmite` / full | 1,50 `copper_ore` + 2,50 `copper_dust` + 0,75 `gold_dust` | 2,75 copper-value + 0,375 gold-value | Caverna; gem shards adicionais não entram no valor metálico |
+| `stalagmite_med` | 1,60 `copper_ore` + 1,75 `copper_dust` + 0,50 `gold_dust` | 2,475 copper-value + 0,25 gold-value | Caverna |
+| `stalagmite_low` | 0,50 `copper_ore` + 1,75 `copper_dust` + 0,25 `gold_dust` | 1,375 copper-value + 0,125 gold-value | Caverna |
+| `stalagmite_tall` / full | 1,00 `copper_ore` + 2,00 `copper_dust` + 1,35 `gold_dust` | 2,00 copper-value + 0,675 gold-value | Caverna |
+| `stalagmite_tall_med` | 1,35 `copper_ore` + 2,00 `copper_dust` + 1,00 `gold_dust` | 2,35 copper-value + 0,50 gold-value | Caverna |
+| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; confirmar o caminho de conversão de `gold_ore` |
+| Clockwork Knight | 1,50 `copper_ore` | 1,50 copper-value | Ruínas; perigo maior que rochas |
+| Clockwork Rook | 1,50 `copper_ingot` + 1,00 `iron_ingot` | 4,50 copper-value + 3,00 iron-value | Ruínas; fonte de lingotes de estágio avançado |
+| Clockwork Bishop | 0,75 `copper_ingot` + 1,00 `iron_ingot` | 2,25 copper-value + 3,00 iron-value | Ruínas; gem shards adicionais |
+| Nightmare Bishop | 0,50 `copper_ingot` + 1,00 `iron_ingot` | 1,50 copper-value + 3,00 iron-value | Ruínas; purple shards adicionais |
+| Árvore de mármore natural | 1,00 `copper_ore` + 2,50 `gold_dust` + 0,25 `goldnugget` | 1,00 copper-value + 1,50 gold-value | Somente `marbletree` natural; árvores plantadas `marbletree_1..4` são excluídas |
+| Arbusto de mármore, estágio 2/3 | 1 / 2 `iron_ore` adicionados ao loot do estágio | 1 / 2 iron-value | Quantidade ajustável; preservar o loot vanilla e verificar frequência/regeneração in-game |
+| Rocky selvagem | 0,20 `copper_dust` + 0,05 `iron_dust` | 0,10 copper-value + 0,025 iron-value | Fonte secundária; seguidores do jogador são excluídos |
+| Slurtle / Snurtle | 0,08 / 0,12 `iron_dust` | 0,04 / 0,06 iron-value | Fonte secundária, poeira apenas |
+| Rubble / estátuas antigas | 0,15 `copper_dust` + 0,05 `iron_dust` | 0,075 copper-value + 0,025 iron-value | Fonte secundária; mineração preserva drops vanilla |
+
+**Interpretação para a primeira bancada:** 23 iron-value equivalem matematicamente a cerca de 9,2 eventos de `ironrock` se todo o ferro viesse dessa fonte (2,5 por evento). Isso não estima quantos `ironrock` existem em um mundo nem quanto tempo o jogador leva para encontrá-los; o peso de distribuição 0,75 não é uma contagem de spawn. As amostras de mundo e a rota real de mineração ainda precisam ser medidas.
+
+**Limites da tabela:**
+- Roll repetido do mesmo item é independente no modo aditivo; com normalização desligada, as probabilidades somam valor esperado (por exemplo, marbletree tem 2,50 gold_dust esperado).
+- O modo Rewrite é opt-in e pode substituir loot compartilhado; não é o baseline padrão.
+- A fonte de gem shards de Fire/Ice Hounds cede ao UM quando a configuração está em Auto; não contar os shards do MAM como rendimento adicional em UM Beta.
+- `spikyrock` tem tabela de loot no prefab, mas não foi encontrado peso de distribuição para ele em `modworldgenmain.lua`; não incluí-lo como rota garantida de mundo até confirmar outra origem de spawn.
+- As chances/quantidades registradas são configuração de código; a frequência de eventos, disponibilidade de biomas e resultado real por mundo não foram amostrados.
+
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
