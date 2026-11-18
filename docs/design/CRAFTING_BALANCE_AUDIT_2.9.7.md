@@ -246,6 +246,25 @@ A implementação de `mam/tool_crafting.lua` acrescenta um requisito de ferramen
 
 **Sem mudanças de custo nesta etapa.** As fontes de aquisição ainda não estão quantificadas com amostras controladas e o teste in-game está pendente. A próxima alteração deve escolher um grupo fechado, calcular o custo expandido, definir baseline/objetivo e adicionar regressão antes de editar receitas.
 
+
+
+### 6.1. Orçamento cumulativo até a primeira War Workbench
+
+A partir das assinaturas atuais, o caminho mínimo de estações fica:
+
+| Etapa | Custo metalúrgico acumulado |
+|---|---|
+| Science Machine | 4 iron-value (4 iron_ore na rota direta), 4 logs, 4 rocks |
+| Metal Smelter | +4 iron-value, +2 cutstone |
+| Alchemy Engine | +6 iron-value (2 iron ingots), +6 copper-value (2 copper ingots para 2 transistors), +2 cutstone, +4 boards |
+| War Workbench | +9 iron-value (3 iron ingots), +5 cutstone, +5 charcoal |
+
+**Total direto até a primeira War Workbench:** 23 iron-value, 6 copper-value, 9 cutstone e 5 charcoal, além de 4 logs + 4 rocks para a Science Machine e 4 boards para a Alchemy Engine. Quatro boards equivalem a 16 logs na receita comum; Woodie preserva sua rota própria de 3 logs por board, portanto o custo de madeira pode variar por personagem sem alterar o gate de ferramenta.
+
+Esse total é um **orçamento de valor de ingrediente**, não uma previsão de 23 iron ore físicos: iron dust contribui 0,5 iron por unidade, nightmarefuel contribui iron=2 e outras fontes podem fornecer os mesmos valores. A conversão de valor para tempo de jogo depende da frequência de cada fonte, bioma, risco, combustível e lotes. O número revela a pressão acumulada da progressão, mas não prova softlock nem justifica reduzir custo sem amostragem controlada.
+
+O livro opcional acrescenta 1 iron ingot (3 iron-value), 2 papyrus e 2 charcoal depois de Alchemy One; não está incluído no total obrigatório da bancada.
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
