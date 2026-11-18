@@ -9,7 +9,7 @@ end
 
 local main = read(root .. "modmain.lua")
 local start = assert(main:find('AddPrototyperDef("warworkbench"', 1, true))
-local finish = assert(main:find("-- metal_storage_chest", start, true))
+local finish = assert(main:find('modimport("scripts/tot_ui.lua")', start, true))
 assert(main:find('modimport("initialise/modded_strings.lua")', 1, true) < start)
 local station_registration = main:sub(start, finish - 1)
 local expected = {
