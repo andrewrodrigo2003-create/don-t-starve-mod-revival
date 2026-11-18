@@ -1,6 +1,11 @@
 Metals and More Reforged — Changelog
 =====================================
 
+Compatibility correction — 2026-11-18 (unreleased)
+--------------------------------------------------
+- Register the legacy Wilson parry StateGraph hook only when Legacy Forge weapon abilities are explicitly enabled.
+- Skip the hook safely if the Wilson hit state or its onenter callback is unavailable; preserve the original callback and arguments when present.
+
 Unreleased — local compatibility work (2026-11-17)
 -------------------------------------------------
 - Harden robot auto-harvest against nil/throwing output prefab constructors; preserve the ready batch and retry only the undelivered remainder, with regression coverage for template and partial-stack failures.
