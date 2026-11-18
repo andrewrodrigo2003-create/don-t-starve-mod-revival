@@ -11,6 +11,7 @@ assert 'name = "Legacy Forge weapon abilities"' not in modinfo
 assert modinfo.count('label = "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities"') == 1
 assert 'default = false' in modinfo[modinfo.index('name = "legacy_forge_weapon_abilities"'):]
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in modmain
+# Match the complete block so a nearby but unrelated config guard cannot satisfy this regression.
 stategraph_block = """if GetModConfigData("legacy_forge_weapon_abilities") then
     AddStategraphPostInit("wilson", function(self)
         local hit_state = self.states ~= nil and self.states.hit or nil
