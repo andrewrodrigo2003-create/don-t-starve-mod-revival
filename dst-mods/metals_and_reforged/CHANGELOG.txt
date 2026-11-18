@@ -1,6 +1,18 @@
 Metals and More Reforged — Changelog
 =====================================
 
+Material deconstruction audit — 2026-11-18 (unreleased)
+------------------------------------------------------
+- Inventory every MAM-owned material prefab and record an explicit provenance disposition.
+- Keep the existing nine reversible smelting/material entries eligible for recovery.
+- Explicitly classify copper/iron/gold dust as raw inputs, junk dust as an ambiguous mixed-load by-product, gem shards as loot materials, and sharkscale as a harvested raw material; these remain non-deconstructible until a safe reverse path exists.
+- Add regression coverage that fails when a new MAM material is missing from the audit or when the reversible allowlist disagrees with its provenance status.
+
+Compatibility correction — 2026-11-18 (unreleased)
+--------------------------------------------------
+- Register the legacy Wilson parry StateGraph hook only when Legacy Forge weapon abilities are explicitly enabled.
+- Skip the hook safely if the Wilson hit state or its onenter callback is unavailable; preserve the original callback and arguments when present.
+
 Unreleased — local compatibility work (2026-11-17)
 -------------------------------------------------
 - Harden robot auto-harvest against nil/throwing output prefab constructors; preserve the ready batch and retry only the undelivered remainder, with regression coverage for template and partial-stack failures.
