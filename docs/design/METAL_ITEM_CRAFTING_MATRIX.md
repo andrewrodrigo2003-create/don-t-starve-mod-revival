@@ -63,7 +63,7 @@ As receitas de equipamentos e estruturas metalúrgicas adicionais permanecem na 
 | `transistor` | 1 cutstone, 1 copper_ingot | override vanilla; confirmar estação atual |
 | `lightning_rod` | 1 gold_ingot, 1 cutstone | override vanilla; confirmar estação atual |
 | `goldenaxe`, `goldenpickaxe`, `goldenshovel`, `golden_farm_hoe` | 4 twigs, 1 gold_ingot cada | ferramentas de ouro; avaliar como família, sem receita em lote |
-| `armormarble` | 12 marble, 4 rope, 1 iron_ingot | override vanilla; confirmar estação atual |
+| `armormarble` | 6 marble, 2 rope, 1 iron_ingot | override vanilla; custo reequilibrado para preservar baseline vanilla + gate metalúrgico |
 | `portablecookpot_item` | 3 iron_ore, 6 charcoal, 6 twigs | override vanilla; confirmar estação atual |
 | `portableblender_item` | 3 iron_ore, 2 transistor, 4 twigs | override vanilla; confirmar estação atual |
 | `portablespicer_item` | 3 iron_ore, 3 cutstone, 6 twigs | override vanilla; confirmar estação atual |
@@ -138,3 +138,8 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 - Equipamentos próprios em `ALCHEMY_ONE` usam `CRAFTING_STATION`; itens da progressão MAM de tier superior usam `MAM_FORGE_ONE` quando definido no código.
 - As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando as opções legadas correspondentes estão ativas; as variantes `*old` são o caminho alternativo. A matriz deve manter as duas assinaturas sem presumir que ambas coexistem.
 - A migração só deve ser considerada comprovada após validar o filtro visual e o prototyper dentro do DST; `TECH` isoladamente não comprova exclusividade de estação.
+
+
+### Rebalanceamento de armadura — 2026-11-18
+
+`armormarble` preserva o custo vanilla de 6 marble + 2 rope e acrescenta 1 iron ingot. A versão anterior duplicava marble/rope sem alterar os atributos vanilla (735 condição, 95% absorção, -30% velocidade), além de exigir a bancada metalúrgica. O custo agora adiciona progressão metálica sem inflar novamente os materiais-base. `jagged_armor` permanece inalterada e será auditada separadamente, pois sua receita herda `armormarble` e possui atributos próprios superiores.
