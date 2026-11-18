@@ -1,6 +1,12 @@
 Metals and More Reforged — Changelog
 =====================================
 
+Universal Alchemy Station — 2026-11-18 (unreleased)
+---------------------------------------------------
+- Make the vanilla Mad Scientist Lab craftable year-round without requiring Hallowed Nights, preserving its vanilla prefab and live ingredient list.
+- Move its recipe out of the seasonal filter, remove only the vanilla Hallowed Nights hint, and retain compatibility with third-party ingredient changes.
+- Establish the Mad Scientist Lab as the universal MAM station for future deterministic mineral transmutation; all survivors can use it, with no Wilson skill-tree requirement.
+
 Material deconstruction audit — 2026-11-18 (unreleased)
 ------------------------------------------------------
 - Inventory every material prefab used by MAM progression, including vanilla goldnugget, and record an explicit provenance disposition.

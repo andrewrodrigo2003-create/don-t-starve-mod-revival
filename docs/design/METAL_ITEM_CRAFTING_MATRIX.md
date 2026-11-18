@@ -131,6 +131,8 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 
 ## 9. Regras de estação efetivas no código — 2026-11-18
 
+- `madscience_lab` (Mad Scientist Lab / Bancada de Alquimia) mantém o custo vanilla (`cutstone×2 + transistor×2`) e o prefab original, mas fica fabricável fora de Hallowed Nights: tecnologia `TECH.NONE`, filtro `STRUCTURES`, remoção de `SPECIAL_EVENT` e limpeza condicional do hint vanilla `NEEDSHALLOWED_NIGHTS`. A migração preserva ingredientes ativos de outros mods. A bancada é o ponto universal de futuras transmutação e funções alquímicas para todos os sobreviventes.
+
 - `modded_recipes.lua` migra as receitas listadas em `station_recipes` para `TECH.ALCHEMY_ONE` e o filtro `CRAFTING_STATION`, sem reescrever a tabela de ingredientes durante a migração. A lista inclui birdcage, dragonflychest, compass, razor, lightning_rod, ferramentas douradas, armaduras selecionadas, portable cooking e receitas lunares.
 - `researchlab`, `researchlab2` e `transistor` recebem somente o override de ingredientes quando o baseline vanilla ainda corresponde; não entram na lista de migração para a bancada.
 - `metal_smelter` é Science One; `warworkbench` é Science Two. A bancada de metalurgia e a forja de processamento são estações diferentes.

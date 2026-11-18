@@ -303,7 +303,8 @@ end
 
 --- Move uma receita existente para o filtro/tecnologia da War Bench sem
 --- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
-function M.set_station(name, tech, filter)
+function M.set_station(name, tech, filter, options)
+    options = type(options) == "table" and options or {}
     local result = { name = name, applied = false, reason = "unknown" }
     M.results["station:" .. name] = result
 
@@ -362,7 +363,8 @@ function M.set_station(name, tech, filter)
         target_needs_add = target_filter.default_sort_values[name] == nil
         for filter_name, filter_def in pairs(filters) do
             if filter_name ~= filter and filter_name ~= "FAVORITES"
-                and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
+                and filter_name ~= "CHARACTER"
+                and (filter_name ~= "SPECIAL_EVENT" or options.remove_special_event ~= true)
                 and type(filter_def.default_sort_values) == "table"
                 and filter_def.default_sort_values[name] ~= nil then
                 old_filters[#old_filters + 1] = filter_name
@@ -422,6 +424,9 @@ function M.set_station(name, tech, filter)
     recipe.level = new_level
     if filter ~= nil then
         recipe.filter = filter
+    end
+    if options.clear_hint_msg_if ~= nil and recipe.hint_msg == options.clear_hint_msg_if then
+        recipe.hint_msg = nil
     end
 
     result.applied = true
