@@ -29,7 +29,7 @@ The current values below are read from `initialise/modded_recipes.lua` and `modm
 | Transistor | 2 gold nuggets, 1 cut stone | 1 copper ingot, 1 cut stone | Copper availability and science progression |
 | Lightning Rod | 4 gold nuggets, 1 cut stone | 1 gold ingot, 1 cut stone | Gold ingot currently represents 3 gold-value units |
 | Golden Axe/Pickaxe/Shovel/Farm Hoe | 4 twigs, 2 gold nuggets | 4 twigs, 1 gold ingot | The current ingot route raises nominal gold value from 2 to 3 units; assess against durability and tool tier |
-| Marble Armor | 6 marble, 2 rope | 12 marble, 4 rope, 1 iron ingot | Current proposal doubles marble/rope and adds iron; check defense, durability and acquisition risk |
+| Marble Armor | 6 marble, 2 rope | 6 marble, 2 rope, 1 iron ingot | Rebalanced: preserve vanilla base materials, add one iron ingot and keep the War Workbench gate |
 | Portable Cookpot | 2 gold nuggets, 6 charcoal, 6 twigs | 3 iron ore, 6 charcoal, 6 twigs | Compare raw iron acquisition to gold baseline and portable cooking utility |
 | Portable Blender | 2 gold nuggets, 2 transistors, 4 twigs | 3 iron ore, 2 transistors, 4 twigs | Avoid charging both the full iron route and the existing transistor gate without clear value |
 | Portable Spice Station | 2 gold nuggets, 3 cut stone, 6 twigs | 3 iron ore, 3 cut stone, 6 twigs | Compare material access and the value of portable seasoning |
@@ -126,7 +126,7 @@ Before changing either existing recipe, resolve the actual registered container 
 | `goldenpickaxe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
 | `goldenshovel` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
 | `golden_farm_hoe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
-| `armormarble` | `marble×12 + rope×4 + iron_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `armormarble` | `marble×6 + rope×2 + iron_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
 | `portablecookpot_item` | `iron_ore×3 + charcoal×6 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
 | `portableblender_item` | `iron_ore×3 + transistor×2 + twigs×4` | Override vanilla protegido por assinatura e recipe guard |
 | `portablespicer_item` | `iron_ore×3 + cutstone×3 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
@@ -237,7 +237,7 @@ A implementação de `mam/tool_crafting.lua` acrescenta um requisito de ferramen
 | Compass / Razor | Compass usa 1 iron_ore; Razor usa 1 iron_ingot = mínimo 3 iron-value | Compass troca gold por iron; Razor troca flint por três unidades de ferro e precisa de comparação funcional |
 | Transistor / Lightning Rod | 1 copper_ingot = 3 copper ore; 1 gold_ingot = 3 gold nuggets (as mesmas 3 unidades satisfazem gold e metal) | Confirmar oferta de cobre/ouro; não contar lingote como 1 nugget nem dobrar tag sobreposta |
 | Ferramentas douradas | 1 gold_ingot cada = 3 goldnuggets (gold=3 e metal=3 pelas mesmas unidades), contra 2 goldnuggets vanilla | Aumenta o custo físico de ouro em 50%; revisar durabilidade/velocidade e concorrência de lingotes |
-| Marble Armor | 12 marble + 4 rope + 1 iron_ingot | Duplica marble/rope e adiciona 3 iron-value; comparar defesa/durabilidade e renovabilidade |
+| Marble Armor | 6 marble + 2 rope + 1 iron_ingot | Mantém o custo vanilla de marble/rope e acrescenta 3 iron-value; estação metalúrgica permanece como gate |
 | Cozinha portátil | Três itens exigem 3 iron_ore cada; blender também mantém 2 transistors | Avaliar o pacote junto: não cobrar ferro + transistores sem benefício proporcional |
 | Lunar | Moonglass ingot requer 2 moonglass + moon; vidro/arquivo/moondial/crater/axe adicionam marble/boards | Expandir conversão, confirmar disponibilidade de moonrock/moonglass e progressão lunar antes de alterar |
 | Estações MAM | Smelter 4 iron ore + 2 cutstone; War Workbench 3 iron_ingot + 5 cutstone + 5 charcoal; book 1 iron_ingot | Verificar soma acumulada e gargalo entre primeira forja, bancada e equipamento |
@@ -301,6 +301,19 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 - A fonte de gem shards de Fire/Ice Hounds cede ao UM quando a configuração está em Auto; não contar os shards do MAM como rendimento adicional em UM Beta.
 - `spikyrock` tem tabela de loot no prefab, mas não foi encontrado peso de distribuição para ele em `modworldgenmain.lua`; não incluí-lo como rota garantida de mundo até confirmar outra origem de spawn.
 - As chances/quantidades registradas são configuração de código; a frequência de eventos, disponibilidade de biomas e resultado real por mundo não foram amostrados.
+
+
+### 6.3. Rebalanceamento aplicado — Marble Suit / `armormarble`
+
+**Decisão:** o custo MAM foi ajustado de `marble×12 + rope×4 + iron_ingot×1` para `marble×6 + rope×2 + iron_ingot×1`.
+
+**Evidência:** a receita vanilla de DST é 6 marble + 2 rope na Alchemy Engine. A armadura mantém os atributos vanilla documentados para DST: 735 de condição, 95% de absorção e penalidade de movimento de 30%. A versão anterior do MAM duplicava marble e rope e ainda acrescentava um iron ingot, sem evidência de aumento dos atributos defensivos. Isso criava um triplo custo de entrada (matéria-prima base duplicada + metalurgia) para o mesmo equipamento. Referência de jogo: [Marble Suit — DST Wiki](https://dontstarve.wiki.gg/wiki/Marble_Suit/DST).
+
+O novo custo preserva os materiais vanilla e adiciona 1 iron ingot (3 iron-value), enquanto a receita continua submetida ao filtro da bancada metalúrgica/War Workbench. Assim, a metalurgia é exigida sem cobrar duas vezes a progressão de marble/rope. A mudança não altera atributos, durabilidade, velocidade ou comportamento da armadura.
+
+**Efeito indireto:** `jagged_armor` consome uma `armormarble`; seu custo composto cai em 6 marble e 2 rope, mas permanecem os 3 gold ingots, 3 iron ingots e 4 houndstooth próprios da receita. A armadura Jagged não foi alterada: seus atributos (1500 de condição, 85% de absorção e +10% de velocidade) indicam um equipamento distinto e exigem uma auditoria separada antes de mexer no preço.
+
+**Limite:** é um ajuste de custo fundamentado em baseline e atributos de código/documentação; não é uma declaração de balanceamento final. Frequência real de marble, impacto no tempo até a primeira armadura e comportamento multiplayer continuam sem amostragem no motor DST. A documentação oficial da Klei confirma que mods podem ajustar tuning de itens e regras de mundo, mas não substitui validação no jogo: [Klei — Modding Don't Starve and Don't Starve Together](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together).
 
 
 ### 7. Cobertura de inventário
