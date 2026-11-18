@@ -40,7 +40,7 @@ The current values below are read from `initialise/modded_recipes.lua` and `modm
 | Moonglass Axe | 2 twigs, 3 moonglass | 2 twigs, 1 moonglass ingot, 1 marble | Compare ingot conversion yield and tool durability |
 | Metal Smelter | MAM-owned | 4 iron ore, 2 cut stone | Validate earliest access and no softlock |
 | War Workbench | MAM-owned | 5 cut stone, 3 iron ingots, 5 charcoal | High-impact progression gate; compare output recipes and station role |
-| Marble Chest | MAM-owned | 5 marble, 2 gold ingots, 3 cut stone | Verify real slot count, fire behavior, hammer returns and cost against vanilla chest |
+| Marble Chest | MAM-owned | 5 marble, 2 gold ingots, 3 cut stone | 25 slots vs vanilla chest 9; no burnable/propagator setup in prefab; compare premium storage utility/cost |
 | Cold Safe (fridge) | MAM-owned | 1 gear, 3 iron ingots, 1 blue gem | 25 slots vs vanilla icebox 9; `fridge` tag activates vanilla 50% spoilage rate and cooling; compare premium capacity/cost |
 
 ## Confirmed conversion facts from the current smelting code
@@ -59,10 +59,10 @@ The mod already has:
 - `cold_safe`: uses the 5×5 chest animation asset, has the `fridge` tag and calls `WidgetSetup("cold_safe")`.
 - `metal_storage_chest`: legacy prefab kept for save compatibility; no new crafting recipe should be added.
 
-The registered widget layouts are now confirmed in code: \`makeChest()\` creates a 5×5 grid (25 slots) and is assigned to both structures. Vanilla chest and icebox each have 9 slots, so both MAM structures provide 2.78× the base capacity.
+The registered widget layouts are now confirmed in code: `makeChest()` creates a 5×5 grid (25 slots) and is assigned to both structures. Vanilla chest and icebox each have 9 slots, so both MAM structures provide 2.78× the base capacity.
 
-- \`marble_chest\`: accepts general storage, has 3 hammer work units, and its prefab does not add \`burnable\`/\`propagator\` components (unlike the vanilla chest). Treat the apparent fire resistance as code-derived and verify it in runtime.
-- \`cold_safe\`: has the \`fridge\` tag, 3 hammer work units, and an item filter for \`icebox_valid\` plus edible perishables. The \`fridge\` tag itself is sufficient: DST \`perishable.lua\` uses \`TUNING.PERISH_FRIDGE_MULT\` when the owner has the tag and no \`preserver\` component; the temperature component also treats a \`fridge\` as cold unless it has \`nocool\`. Vanilla icebox likewise uses the \`fridge\` tag without adding \`preserver\`. Therefore no \`preserver\` component is missing.
+- `marble_chest`: accepts general storage, has 3 hammer work units, and its prefab does not add `burnable`/`propagator` components (unlike the vanilla chest). Treat the apparent fire resistance as code-derived and verify it in runtime.
+- `cold_safe`: has the `fridge` tag, 3 hammer work units, and an item filter for `icebox_valid` plus edible perishables. The `fridge` tag itself is sufficient: DST `perishable.lua` uses `TUNING.PERISH_FRIDGE_MULT` when the owner has the tag and no `preserver` component; the temperature component also treats a `fridge` as cold unless it has `nocool`. Vanilla icebox likewise uses the `fridge` tag without adding `preserver`. Therefore no `preserver` component is missing.
 - Vanilla baselines: chest = 3 boards, 9 slots, burnable; icebox = 2 gold nuggets + 1 gear + 1 cutstone, 9 slots, 50% spoilage rate. MAM marble chest = 5 marble + 2 gold ingots + 3 cutstone; cold safe = 1 gear + 3 iron ingots + 1 blue gem.
 
 Both MAM recipes are premium structures with 25 slots. The Cold Safe preserves at the same vanilla rate, not a stronger rate; its advantage is 16 extra food slots. The Marble Chest adds 16 general-purpose slots and lacks the vanilla chest's explicit burnable/propagator setup. The current recipes are expensive but the utility is also substantially higher. Do not change either cost until the acquisition/processing cost is measured against the 2.78× capacity and the actual in-game fire/hammer behavior.
@@ -362,16 +362,16 @@ Referências: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST), [Dark Swor
 
 ### 6.7. Auditoria de armazenamento — capacidade e preservação confirmadas
 
-A função \`makeChest()\` constrói 25 posições (5×5) e é usada por \`marble_chest\` e \`cold_safe\`. Isso é 2,78× a capacidade de 9 slots do baú e da Ice Box vanilla.
+A função `makeChest()` constrói 25 posições (5×5) e é usada por `marble_chest` e `cold_safe`. Isso é 2,78× a capacidade de 9 slots do baú e da Ice Box vanilla.
 
 | Estrutura | Capacidade / função | Receita | Comparação / decisão |
 |---|---|---|---|
 | Vanilla Chest | 9 slots; aceita itens gerais; tem burnable + propagator; 2 hits | 3 boards | Baseline geral |
 | MAM Marble Chest | 25 slots; itens gerais; 3 hits; prefab não adiciona burnable/propagator | 5 marble + 2 gold_ingot + 3 cutstone | 2,78× slots e provável resistência a fogo por ausência dos componentes; confirmar runtime; manter custo até comparar aquisição |
-| Vanilla Ice Box | 9 slots; tag \`fridge\`; 50% da taxa de spoilage; resfriamento; 2 hits | 2 goldnugget + 1 gear + 1 cutstone | Baseline de conservação |
-| MAM Cold Safe | 25 slots; tag \`fridge\`; itemtest de alimento/\`icebox_valid\`; 3 hits | 1 gear + 3 iron_ingot + 1 bluegem | Mesma taxa de conservação vanilla; 2,78× slots, não uma geladeira mais potente |
+| Vanilla Ice Box | 9 slots; tag `fridge`; 50% da taxa de spoilage; resfriamento; 2 hits | 2 goldnugget + 1 gear + 1 cutstone | Baseline de conservação |
+| MAM Cold Safe | 25 slots; tag `fridge`; itemtest de alimento/`icebox_valid`; 3 hits | 1 gear + 3 iron_ingot + 1 bluegem | Mesma taxa de conservação vanilla; 2,78× slots, não uma geladeira mais potente |
 
-**Importante:** o componente \`preserver\` não é obrigatório para uma geladeira simples. O código vanilla de \`perishable.lua\` aplica \`TUNING.PERISH_FRIDGE_MULT\` quando o dono tem a tag \`fridge\` e não tem \`preserver\`; o componente de temperatura também resfria itens em entidades com essa tag, exceto \`nocool\`. O prefab vanilla \`icebox\` também usa \`fridge\` sem adicionar \`preserver\`. Portanto, o \`cold_safe\` atual preserva e resfria corretamente por tag; nenhuma correção de componente é necessária.
+**Importante:** o componente `preserver` não é obrigatório para uma geladeira simples. O código vanilla de `perishable.lua` aplica `TUNING.PERISH_FRIDGE_MULT` quando o dono tem a tag `fridge` e não tem `preserver`; o componente de temperatura também resfria itens em entidades com essa tag, exceto `nocool`. O prefab vanilla `icebox` também usa `fridge` sem adicionar `preserver`. Portanto, o `cold_safe` atual preserva e resfria corretamente por tag; nenhuma correção de componente é necessária.
 
 A Cold Safe custa 9 iron-value + gear + bluegem em vez de 2 gold nuggets + gear + cutstone. A Marble Chest custa 5 marble + 6 gold-value + 3 cutstone em vez de 3 boards. As duas são upgrades de capacidade 2,78×; a Marble Chest ainda não registra burnable/propagator, ao contrário do baú vanilla. Esses deltas parecem premium, mas não são suficientes para aprovar redução de custo sem medir o tempo de aquisição e confirmar comportamento de fogo/hammer no jogo.
 
