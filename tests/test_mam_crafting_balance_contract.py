@@ -105,6 +105,27 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
             self.assertIn(value, self.balance)
 
+
+    def test_ironrock_expected_yield_and_worldgen_distribution_are_documented(self):
+        rocks = (MOD / "scripts" / "prefabs" / "newrocks.lua").read_text(encoding="utf-8")
+        worldgen = (MOD / "modworldgenmain.lua").read_text(encoding="utf-8")
+        block = re.search(r"SetSharedLootTable\(\s*'ironrock',\s*\{([\s\S]*?)\}\s*\)", rocks)
+        self.assertIsNotNone(block, "Missing ironrock shared loot table")
+        chances = [float(x) for x in re.findall(r"\{\s*'iron_ore'\s*,\s*([0-9.]+)\s*\}", block.group(1))]
+        self.assertAlmostEqual(sum(chances), 2.5)
+        self.assertGreaterEqual(len(re.findall(r"ironrock\s*=\s*0\.75", worldgen)), 7)
+        self.assertIn("2,50 `iron_ore`", self.balance)
+        self.assertIn("9,2 eventos de `ironrock`", self.balance)
+
+    def test_acquisition_expectations_use_default_additive_drop_settings(self):
+        config = (MOD / "scripts" / "mam" / "config.lua").read_text(encoding="utf-8")
+        guard = (MOD / "scripts" / "mam" / "loot_guard.lua").read_text(encoding="utf-8")
+        self.assertRegex(config, r"mam_extra_drops\s*=\s*1")
+        self.assertRegex(config, r"mam_drops_mode\s*=\s*1")
+        self.assertRegex(config, r"mam_drops_normalise\s*=\s*0")
+        self.assertIn("lootdropper:AddChanceLoot(entry[1], entry[2])", guard)
+        self.assertIn("roll repetido do mesmo item é independente", self.balance)
+
     def test_balance_contract_is_in_ci(self):
         workflow = (ROOT / ".github" / "workflows" / "metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
         self.assertIn("tests/test_mam_crafting_balance_contract.py", workflow)
