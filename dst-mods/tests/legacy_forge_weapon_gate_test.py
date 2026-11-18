@@ -14,7 +14,7 @@ assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in modmain
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") then' in forgepack
 stategraph_hook = modmain.index('AddStategraphPostInit("wilson"')
 stategraph_guard = modmain.rfind('if GetModConfigData("legacy_forge_weapon_abilities") then', 0, stategraph_hook)
-assert stategraph_guard > modmain.rfind("\\nend", 0, stategraph_hook)
+assert stategraph_guard > modmain.rfind("\nend", 0, stategraph_hook)
 assert modmain.count('AddStategraphPostInit("wilson"') == 1
 assert 'modimport("scripts/mod_main.lua")' in forgepack
 assert 'if GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons") then' in modmain
@@ -22,4 +22,4 @@ assert 'modimport("initialise/modded_pithpikemove.lua")' in modmain
 assert 'modimport("initialise/modded_mace.lua")' in modmain
 assert 'modimport("initialise/modded_stronger_bernie.lua")' in modmain
 assert 'modimport("initialise/modded_forgepack.lua")' in modmain
-print("Legacy Forge weapon ability gate: 10 checks passed")
+print("Legacy Forge weapon ability gate: 12 checks passed")
