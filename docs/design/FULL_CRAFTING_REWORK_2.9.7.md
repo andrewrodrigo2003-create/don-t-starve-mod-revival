@@ -149,7 +149,7 @@ The branch now adds three independently configurable secondary sources, all usin
 
 Each source has its own On/Off setting and a separate 25–150% chance multiplier. These are deliberately low-yield secondary routes: no guaranteed ingots, no replacement of primary ore progression, and no shared loot-table edits in the default mode. Runtime harness coverage has been added for registration, chance scaling, independent disablement and follower exclusion; CI and in-game balance verification remain pending.
 
-These settings and harness assertions are implemented on the branch, but the full 2.9.7 package is not yet ready: mandatory axe/chisel crafting, verified Sawing Table integration, complete recipe/drop adapter coverage, and the remaining rework/localization work are still pending. Automated CI is running; in-game/multiplayer/save-load verification remains required.
+Historical status as of 2026-11-12: at that point mandatory axe/chisel crafting and Sawing Table verification were still pending. The later section “Local implementation — installed-source verification (2026-11-17)” and the 2026-11-18 checkpoint supersede the axe/chisel pending status: the tool gates are now implemented and covered by the dedicated harness. Sawing Table integration remains unimplemented because its target prefab/API has not been verified. The full 2.9.7 package still requires CI on the latest HEAD and real in-game, multiplayer and save/load validation.
 
 
 ---
