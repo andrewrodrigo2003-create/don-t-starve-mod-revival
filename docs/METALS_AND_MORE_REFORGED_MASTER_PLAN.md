@@ -529,6 +529,7 @@ Esta é uma mitigação de compatibilidade baseada na auditoria estática, **nã
 - Machado/cinzel já implementados na base; não reimplementar. A Mesa de Serragem permanece pendente até verificação real do prefab/API.
 - PR #69 altera somente três pontos: `armormarble` para 6 marble + 2 rope + 1 iron_ingot; Forkstick para dano fixo de lança vanilla (34); Don Harpoon para 68 dano/100 usos, preservando alcance/projétil e -20% velocidade. Os demais custos e atributos permanecem sem mudança até auditoria específica.
 - A contabilidade da forja confirma que 3 gold nuggets satisfazem simultaneamente gold=3 e metal=3; não contar como seis itens. O moonglass ingot custa moon=1 mas carrega moon=2 na tabela de valores, diferença documentada para decisão.
+- Armazenamento (2026-11-18): `makeChest()` confirma 25 slots para `marble_chest` e `cold_safe` (2,78× vanilla). A tag `fridge` da Cold Safe ativa a conservação/resfriamento vanilla sem componente `preserver`; Marble Chest não registra `burnable`/`propagator`. Custos mantidos até medir aquisição e testar fogo/hammer no runtime.
 - CI da PR #66: run #44349620694 aprovada. PR #69: run #529 detectou somente uma asserção documental com texto divergente sobre o alias `gold_ore`; corrigida no código de teste e run #530 pendente para o HEAD atual.
 - Sem teste in-game, multiplayer, save/load ou UM Beta; sem merge, release ou publicação Steam. Hydrated/Dehydrated, Better Lucy e terceiros permanecem intocados.
 
