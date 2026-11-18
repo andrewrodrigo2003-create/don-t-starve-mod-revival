@@ -340,7 +340,7 @@ A comparação usa somente valores DST, não variantes single-player. As referê
 
 Referências: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST), [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST), [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST), [Glass Cutter](https://dontstarve.wiki.gg/wiki/Glass_Cutter), [Elding Spear](https://dontstarve.wiki.gg/wiki/Elding_Spear), [Marble Suit/DST](https://dontstarve.wiki.gg/wiki/Marble_Suit/DST), [Metals and More! Reworked — Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184).
 
-**Decisão desta rodada:** ajustar Marble Suit e estabilizar Forkstick; manter as outras receitas/atributos sem alteração. Don Harpoon fica no topo da fila para revisão de combate, pois seus 80 de dano, alcance e usos parecem fortes em relação às armas vanilla, mas o comportamento de projétil e recuperação precisa ser entendido antes de escolher novo dano ou durabilidade.
+**Decisão desta rodada:** ajustar Marble Suit, estabilizar Forkstick e alinhar Don Harpoon ao baseline de 68 dano/100 usos da Dark Sword. O alcance 12–14 e a natureza de projétil permanecem como vantagem, compensados pela penalidade de movimento de 20% e pelo custo de 2 iron ingots + 2 marble + 3 flint. A validação de arremesso, recuperação e consumo de usos continua pendente.
 
 ### 7. Cobertura de inventário
 
