@@ -282,7 +282,7 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 | `stalagmite_low` | 0,50 `copper_ore` + 1,75 `copper_dust` + 0,25 `gold_dust` | 1,375 copper-value + 0,125 gold-value | Caverna |
 | `stalagmite_tall` / full | 1,00 `copper_ore` + 2,00 `copper_dust` + 1,35 `gold_dust` | 2,00 copper-value + 0,675 gold-value | Caverna |
 | `stalagmite_tall_med` | 1,35 `copper_ore` + 2,00 `copper_dust` + 1,00 `gold_dust` | 2,35 copper-value + 0,50 gold-value | Caverna |
-| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; confirmar o caminho de conversão de `gold_ore` |
+| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; alias `gold_ore` converte para `goldnugget` via prefab de migração |
 | Clockwork Knight | 1,50 `copper_ore` | 1,50 copper-value | Ruínas; perigo maior que rochas |
 | Clockwork Rook | 1,50 `copper_ingot` + 1,00 `iron_ingot` | 4,50 copper-value + 3,00 iron-value | Ruínas; fonte de lingotes de estágio avançado |
 | Clockwork Bishop | 0,75 `copper_ingot` + 1,00 `iron_ingot` | 2,25 copper-value + 3,00 iron-value | Ruínas; gem shards adicionais |
