@@ -124,7 +124,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertRegex(config, r"mam_drops_mode\s*=\s*1")
         self.assertRegex(config, r"mam_drops_normalise\s*=\s*0")
         self.assertIn("lootdropper:AddChanceLoot(entry[1], entry[2])", guard)
-        self.assertIn("roll repetido do mesmo item é independente", self.balance)
+        self.assertIn("Roll repetido do mesmo item é independente", self.balance)
 
     def test_balance_contract_is_in_ci(self):
         workflow = (ROOT / ".github" / "workflows" / "metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
