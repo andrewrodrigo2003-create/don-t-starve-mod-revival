@@ -127,7 +127,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn('item:HasTag("icebox_valid")', modmain)
         self.assertIn('item:HasTag("fresh")', modmain)
         self.assertIn("25 slots", self.balance)
-        self.assertIn("preserver\` não é obrigatório", self.balance)
+        self.assertIn("o componente `preserver` não é obrigatório", self.balance)
 
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
