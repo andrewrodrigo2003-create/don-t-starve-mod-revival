@@ -101,6 +101,10 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn('moonglass = 4, moonrocknugget = 2', harness)
         self.assertIn("divergência de valor a investigar", self.balance)
 
+    def test_cumulative_first_war_workbench_budget_is_documented(self):
+        for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
+            self.assertIn(value, self.balance)
+
     def test_balance_contract_is_in_ci(self):
         workflow = (ROOT / ".github" / "workflows" / "metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
         self.assertIn("tests/test_mam_crafting_balance_contract.py", workflow)
