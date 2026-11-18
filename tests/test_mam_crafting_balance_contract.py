@@ -64,6 +64,17 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         for name, cost in recipes.items():
             self.assert_recipe_row(name, cost)
 
+    def test_marble_armor_preserves_vanilla_materials_and_adds_metallurgy(self):
+        recipes = table_recipes(self.modded)
+        self.assertEqual(
+            recipes.get("armormarble"),
+            "marble×6 + rope×2 + iron_ingot×1",
+        )
+        self.assertIn(
+            "| Marble Armor | 6 marble, 2 rope | 6 marble, 2 rope, 1 iron ingot |",
+            self.balance,
+        )
+
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
             "| `boards` | `log×4` |",
