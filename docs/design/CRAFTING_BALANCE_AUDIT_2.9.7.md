@@ -342,6 +342,16 @@ Referências: [Spear/DST](https://dontstarve.wiki.gg/wiki/Spear/DST), [Dark Swor
 
 **Decisão desta rodada:** ajustar Marble Suit, estabilizar Forkstick e alinhar Don Harpoon ao baseline de 68 dano/100 usos da Dark Sword. O alcance 12–14 e a natureza de projétil permanecem como vantagem, compensados pela penalidade de movimento de 20% e pelo custo de 2 iron ingots + 2 marble + 3 flint. A validação de arremesso, recuperação e consumo de usos continua pendente.
 
+### 6.6. Verificação dos caminhos de aquisição e migração
+
+**Marble shrubs:** `initialise/modded_drops.lua` lê `growable.stage` e acrescenta 1 `iron_ore` no estágio 2 e 2 no estágio 3. No modo aditivo padrão, encadeia o `lootsetupfn` anterior e preserva o loot vanilla/outros mods; conta os `iron_ore` já existentes antes de inserir, evitando duplicação. O hook não altera o componente `growable`, estágios, timers ou regrowth. Portanto, a quantidade de minério por colheita está definida, mas a frequência de regrowth continua sendo a do jogo e não foi amostrada.
+
+**Legacy `gold_ore`:** não é um prefab ausente. `modmain.lua` registra `goldore`; `scripts/prefabs/goldore.lua` retorna `Prefab("gold_ore")` e substitui a entidade legada por `goldnugget` preservando stack size e, quando possível, slot/container. A conversão ocorre após 0,1 s. Assim, o roll de 0.05 `gold_ore` da tabela de stalagmite tall low produz o item de ouro atual, não um drop nulo. `modworldgenmain.lua` também define `countprefabs.gold_ore = math.random(5)` para a sala `Graveyard`; isso é um valor por definição de sala, não uma contagem total de mundo, porque o número de instâncias dessa sala não foi medido.
+
+**`spikyrock`:** o prefab e a tabela de loot existem em `newrocks.lua`, mas a distribuição direta em `modworldgenmain.lua` só registra `ironrock` e `iron_ore` nas salas rocky e `gold_ore` no Graveyard. Não há `spikyrock` em `AddRoomPreInit`/distribuição do MAM. Tratar como prefab disponível para spawn externo/console ou outra integração, não como fonte garantida na economia atual.
+
+**Resultado:** o caminho do arbusto é aditivo e preserva o regrowth vanilla; o alias de ouro está confirmado e converte; o spikyrock continua fora do orçamento de aquisição até aparecer uma rota de spawn real. Nenhum rendimento por dia/mundo foi inferido a partir de pesos de densidade.
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
