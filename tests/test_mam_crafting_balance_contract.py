@@ -64,6 +64,19 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         for name, cost in recipes.items():
             self.assert_recipe_row(name, cost)
 
+    def test_mad_scientist_lab_is_available_outside_hallowed_nights(self):
+        guard = (MOD / "scripts" / "mam" / "recipe_guard.lua").read_text(encoding="utf-8")
+        self.assertRegex(
+            self.modded,
+            r'MAMRecipeGuard\\.set_station\\(\\s*"madscience_lab",\\s*TECH\\.NONE,\\s*"STRUCTURES"',
+        )
+        self.assertIn("remove_special_event = true", self.modded)
+        self.assertIn('clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS"', self.modded)
+        self.assertIn("function M.set_station(name, tech, filter, options)", guard)
+        self.assertIn("options.remove_special_event ~= true", guard)
+        self.assertIn("recipe.hint_msg == options.clear_hint_msg_if", guard)
+        self.assertIn("recipe.hint_msg = nil", guard)
+
     def test_tool_gated_vanilla_recipes_are_documented(self):
         required = (
             "| `boards` | `log×4` |",
