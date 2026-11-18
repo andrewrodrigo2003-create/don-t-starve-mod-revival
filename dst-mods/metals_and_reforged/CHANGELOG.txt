@@ -1,6 +1,10 @@
 Metals and More Reforged — Changelog
 =====================================
 
+Compatibility correction — 2026-11-18 (unreleased)
+--------------------------------------------------
+- Register the legacy Wilson parry StateGraph hook only when Legacy Forge weapon abilities are explicitly enabled. The default compatibility mode no longer installs this global interception.
+
 Version 2.9.6 — integrated test build (2026-11-12)
 --------------------------------------------------
 
