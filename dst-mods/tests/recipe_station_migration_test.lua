@@ -175,9 +175,15 @@ assert(CRAFTING_FILTERS.STRUCTURES.default_sort_values.madscience_lab ~= nil,
     "year-round Structures filter must receive the Mad Scientist Lab")
 assert(CRAFTING_FILTERS.SPECIAL_EVENT.default_sort_values.madscience_lab == nil,
     "explicit seasonal migration must remove the Mad Scientist Lab from SPECIAL_EVENT")
-assert(#filter_calls == calls_before_lab + 2)
-assert(filter_calls[calls_before_lab + 1].filter == "STRUCTURES")
-assert(filter_calls[calls_before_lab + 2].filter == "removed:SPECIAL_EVENT")
+local lab_calls = {}
+for i = calls_before_lab + 1, #filter_calls do
+    if filter_calls[i].name == "madscience_lab" then
+        lab_calls[#lab_calls + 1] = filter_calls[i]
+    end
+end
+assert(#lab_calls == 2, "Mad Scientist Lab migration must add one target and remove one seasonal filter")
+assert(lab_calls[1].filter == "STRUCTURES")
+assert(lab_calls[2].filter == "removed:SPECIAL_EVENT")
 
 -- Default station migrations must not remove a seasonal filter accidentally.
 AllRecipes.seasonal_preserved = {
