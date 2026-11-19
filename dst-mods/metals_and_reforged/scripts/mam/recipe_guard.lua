@@ -364,7 +364,7 @@ function M.set_station(name, tech, filter, options)
         for filter_name, filter_def in pairs(filters) do
             if filter_name ~= filter and filter_name ~= "FAVORITES"
                 and filter_name ~= "CHARACTER"
-                and (filter_name ~= "SPECIAL_EVENT" or options.remove_special_event ~= true)
+                and (filter_name ~= "SPECIAL_EVENT" or options.remove_special_event == true)
                 and type(filter_def.default_sort_values) == "table"
                 and filter_def.default_sort_values[name] ~= nil then
                 old_filters[#old_filters + 1] = filter_name

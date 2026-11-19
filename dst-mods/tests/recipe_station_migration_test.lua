@@ -143,4 +143,76 @@ local adapted, adapted_reason = guard.set_station("goldenaxe", TECH.ALCHEMY_ONE,
 assert(adapted and adapted_reason == "applied")
 assert(AllRecipes.goldenaxe.ingredients == third_party_ingredients, "enabled integration must preserve third-party ingredients")
 
+
+-- Seasonal recipes are removed from SPECIAL_EVENT only when explicitly requested.
+-- The Mad Scientist Lab must preserve its vanilla ingredients and clear only
+-- the exact Hallowed Nights hint while moving to the year-round Structures tab.
+TECH.NONE = { ALCHEMY = 0 }
+CRAFTING_FILTERS.STRUCTURES = { default_sort_values = {} }
+CRAFTING_FILTERS.SPECIAL_EVENT = {
+    default_sort_values = { madscience_lab = 1, seasonal_preserved = 2, seasonal_hint = 3 },
+}
+AllRecipes.madscience_lab = {
+    ingredients = { { type = "cutstone", amount = 2 }, { type = "transistor", amount = 2 } },
+    level = { SPECIAL_EVENT = 1 },
+    filter = "SPECIAL_EVENT",
+    hint_msg = "NEEDSHALLOWED_NIGHTS",
+}
+local lab_ingredients = AllRecipes.madscience_lab.ingredients
+local calls_before_lab = #filter_calls
+local lab_ok, lab_reason = guard.set_station("madscience_lab", TECH.NONE, "STRUCTURES", {
+    remove_special_event = true,
+    clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS",
+})
+assert(lab_ok and lab_reason == "applied")
+assert(AllRecipes.madscience_lab.ingredients == lab_ingredients,
+    "seasonal station migration must preserve the vanilla ingredient table")
+assert(AllRecipes.madscience_lab.filter == "STRUCTURES")
+assert(AllRecipes.madscience_lab.level.ALCHEMY == 0)
+assert(AllRecipes.madscience_lab.hint_msg == nil,
+    "only the matching vanilla Hallowed Nights hint should be cleared")
+assert(CRAFTING_FILTERS.STRUCTURES.default_sort_values.madscience_lab ~= nil,
+    "year-round Structures filter must receive the Mad Scientist Lab")
+assert(CRAFTING_FILTERS.SPECIAL_EVENT.default_sort_values.madscience_lab == nil,
+    "explicit seasonal migration must remove the Mad Scientist Lab from SPECIAL_EVENT")
+local lab_calls = {}
+for i = calls_before_lab + 1, #filter_calls do
+    if filter_calls[i].name == "madscience_lab" then
+        lab_calls[#lab_calls + 1] = filter_calls[i]
+    end
+end
+assert(#lab_calls == 2, "Mad Scientist Lab migration must add one target and remove one seasonal filter")
+assert(lab_calls[1].filter == "STRUCTURES")
+assert(lab_calls[2].filter == "removed:SPECIAL_EVENT")
+
+-- Default station migrations must not remove a seasonal filter accidentally.
+AllRecipes.seasonal_preserved = {
+    ingredients = { { type = "boards", amount = 2 } },
+    level = { SPECIAL_EVENT = 1 },
+    filter = "SPECIAL_EVENT",
+    hint_msg = "OTHER_EVENT_HINT",
+}
+local preserved_ok = guard.set_station("seasonal_preserved", TECH.NONE, "STRUCTURES")
+assert(preserved_ok)
+assert(CRAFTING_FILTERS.SPECIAL_EVENT.default_sort_values.seasonal_preserved ~= nil,
+    "SPECIAL_EVENT must remain untouched unless remove_special_event is explicit")
+assert(AllRecipes.seasonal_preserved.hint_msg == "OTHER_EVENT_HINT",
+    "ordinary station migration must preserve unrelated hints")
+
+-- Even with explicit event removal, a non-matching hint must be preserved.
+AllRecipes.seasonal_hint = {
+    ingredients = { { type = "cutstone", amount = 1 } },
+    level = { SPECIAL_EVENT = 1 },
+    filter = "SPECIAL_EVENT",
+    hint_msg = "OTHER_EVENT_HINT",
+}
+local mismatch_ok = guard.set_station("seasonal_hint", TECH.NONE, "STRUCTURES", {
+    remove_special_event = true,
+    clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS",
+})
+assert(mismatch_ok)
+assert(CRAFTING_FILTERS.SPECIAL_EVENT.default_sort_values.seasonal_hint == nil)
+assert(AllRecipes.seasonal_hint.hint_msg == "OTHER_EVENT_HINT",
+    "hint cleanup must be conditional on the exact vanilla hint value")
+
 print("PASS: War Bench migration preserves metadata and honors the independent third-party recipe switch")
