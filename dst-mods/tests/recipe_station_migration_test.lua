@@ -144,6 +144,16 @@ assert(adapted and adapted_reason == "applied")
 assert(AllRecipes.goldenaxe.ingredients == third_party_ingredients, "enabled integration must preserve third-party ingredients")
 
 
+-- Restore call recording after the failure-path cases above rebind the guard
+-- with callbacks that intentionally do not write to filter_calls.
+guard.Init(function() end, function(name, filter)
+    table.insert(filter_calls, { name = name, filter = filter })
+    CRAFTING_FILTERS[filter].default_sort_values[name] = #filter_calls
+end, function(name, filter)
+    table.insert(filter_calls, { name = name, filter = "removed:" .. filter })
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
+
 -- Seasonal recipes are removed from SPECIAL_EVENT only when explicitly requested.
 -- The Mad Scientist Lab must preserve its vanilla ingredients and clear only
 -- the exact Hallowed Nights hint while moving to the year-round Structures tab.
