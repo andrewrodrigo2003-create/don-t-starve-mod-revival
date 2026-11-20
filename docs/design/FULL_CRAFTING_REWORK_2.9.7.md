@@ -164,14 +164,14 @@ Esta seção atualiza o estado posterior às notas históricas de 12–17/11 e d
 - **Matriz de estações:** `metal_storage_chest` é apenas prefab legado para saves existentes, sem receita nova. `metal_smelter` é Science One; `warworkbench` é Science Two. `marble_chest`, `cold_safe`, livro e cinzel estão incluídos na matriz.
 - **Balanceamento:** checkpoint histórico de 18/11; supersedido pela continuidade de 20/11. A branch atual ajusta Marble Suit para 6 marble + 2 rope + 1 iron_ingot, fixa Forkstick em 34 e Don Harpoon em 68/100; Jagged Armor e Adamantium mantêm custos/atributos premium após comparação com baselines vanilla.
 - **Contabilidade da forja:** tags podem se sobrepor; três gold nuggets fornecem simultaneamente gold=3 e metal=3. A tag de saída do moonglass ingot foi alinhada a moon=1, igual ao custo físico de um moonrocknugget. Adamantium continua 3 nightmarefuel + 1 iron_ingot por barra.
-- **CI:** PR #66 draft; workflow run #44348420098 estava em andamento no registro deste checkpoint. Não declarar CI aprovada até consultar o resultado para o HEAD atual.
-- **Governança:** PR #66 é empilhada sobre #65 → #63 → #60 → #51. Sem merge, release, upload Steam ou alteração de Hydrated/Dehydrated, Better Lucy, UM ou arquivos de terceiros. `modinfo.lua` permanece 2.9.6 até build final e teste real.
+- **CI:** PR #66 run #44349620694 aprovada; PR #73 runs #566 (`44735195600`) e #567 (`44735226014`) aprovadas no HEAD `de39435ba06e6d0c7f20f262ec2065fd8ad0e7fb`.
+- **Governança:** PR #73 é draft, empilhada sobre PR #72 (linha #70 → #71 → #72 → #73); PR #69 foi fechada sem merge como supersedida. Sem merge, release, upload Steam ou alteração de Hydrated/Dehydrated, Better Lucy, UM ou arquivos de terceiros. `modinfo.lua` permanece 2.9.6 até build final e teste real.
 
 Auditoria de referência: [CRAFTING_BALANCE_AUDIT_2.9.7.md](CRAFTING_BALANCE_AUDIT_2.9.7.md). A matriz de itens e bancadas está em [METAL_ITEM_CRAFTING_MATRIX.md](METAL_ITEM_CRAFTING_MATRIX.md).
 
 ## Continuidade técnica — 2026-11-20
 
-- A PR #72 integra o Laboratório de Alquimia universal como receita year-round, mas a auditoria do prefab vanilla confirmou que ele usa `TUNING.PROTOTYPER_TREES.MADSCIENCE` e recria o prototyper após cada experimento. O registro de `ALCHEMY_ONE` sozinho não disponibilizava a estação. A implementação atual estende a árvore vanilla com `ALCHEMY=1` sem apagar `MADSCIENCE=1`, preservando os experimentos Hallowed Nights.
+- A PR #72 integra o Laboratório de Alquimia universal como receita year-round; a PR #73 estende `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1` sem apagar `MADSCIENCE=1`, porque o prefab vanilla recria o prototyper após cada experimento. CI #566/#567 aprovadas.
 - O `archive_resonator_item` troca apenas `recipe.level` de `TECH.LOST` para `ALCHEMY_ONE`; a migração não altera `nounlock`, builder tags ou estado de aprendizado/blueprint. Portanto, a exigência de blueprint não é declarada removida sem teste runtime. A desmontagem por martelo foi alinhada a 1 moonglass_ingot + 1 thulecite, devolvendo 1 lingote (50% do custo de dois) e thulecite integral.
 - Balanceamento portado para a linha atual: Marble Suit 6 marble + 2 rope + 1 iron_ingot; Forkstick 34 dano fixo; Don Harpoon 68 dano/100 usos. Jagged Armor permanece 1500/85%/+10% e exige War Workbench.
 - A tag `moon` do moonglass ingot agora é 1, igual ao moonrocknugget consumido. Adamantium mantém 3 nightmarefuel + 1 iron_ingot por lingote.
