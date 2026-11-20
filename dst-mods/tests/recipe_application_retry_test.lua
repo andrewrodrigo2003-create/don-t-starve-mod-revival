@@ -11,6 +11,7 @@ end
 local function run_case(module_path, method_name, expected_minimum)
     local sim_callbacks = {}
     local prefab_callbacks = {}
+    local recipe_postinit_callbacks = {}
     local caught_errors = 0
     local calls = 0
     local successful_calls = 0
@@ -74,10 +75,40 @@ local function run_case(module_path, method_name, expected_minimum)
     }
 
     AddRecipe2 = function() end
+    AddRecipePostInit = function(name, fn) recipe_postinit_callbacks[name] = fn end
     AddSimPostInit = function(fn) table.insert(sim_callbacks, fn) end
     AddPrefabPostInit = function(name, fn) prefab_callbacks[name] = fn end
 
     dofile(module_path)
+    if module_path:find("modded_recipes.lua", 1, true) then
+        local deconstruct_postinit = recipe_postinit_callbacks.archive_resonator
+        check(type(deconstruct_postinit) == "function", "registers Astral Detector deconstruction post-init")
+        local vanilla_deconstruction = {
+            is_deconstruction_recipe = true,
+            ingredients = {
+                { type = "moonrocknugget", amount = 1 },
+                { type = "thulecite", amount = 1 },
+            },
+        }
+        deconstruct_postinit(vanilla_deconstruction)
+        check(#vanilla_deconstruction.ingredients == 2
+            and vanilla_deconstruction.ingredients[1].type == "moonglass_ingot"
+            and vanilla_deconstruction.ingredients[1].amount == 1
+            and vanilla_deconstruction.ingredients[2].type == "thulecite"
+            and vanilla_deconstruction.ingredients[2].amount == 1,
+            "Astral Detector hammer refund matches half of the MAM Moonglass cost")
+        local third_party_deconstruction = {
+            is_deconstruction_recipe = true,
+            ingredients = {
+                { type = "third_party_material", amount = 2 },
+                { type = "thulecite", amount = 1 },
+            },
+        }
+        deconstruct_postinit(third_party_deconstruction)
+        check(third_party_deconstruction.ingredients[1].type == "third_party_material"
+            and third_party_deconstruction.ingredients[1].amount == 2,
+            "preserves third-party Astral Detector deconstruction overrides")
+    end
     check(#sim_callbacks == 1, module_path .. " registers one sim post-init")
 
     -- First pass fails after one successful recipe. MAMLog.Try catches it,
