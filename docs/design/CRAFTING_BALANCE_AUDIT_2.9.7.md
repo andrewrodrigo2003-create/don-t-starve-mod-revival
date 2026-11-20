@@ -149,11 +149,11 @@ Before changing either existing recipe, resolve the actual registered container 
 | `marble_chest` | `marble×5 + gold_ingot×2 + cutstone×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `cold_safe` | `gears×1 + iron_ingot×3 + bluegem×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `jagged_armor` | `houndstooth×4 + gold_ingot×3 + armormarble×1 + iron_ingot×3` | `MAM_FORGE_ONE`/War Workbench; 1500 condição, 85% absorção, +10% velocidade |
-| `tfwp_luxury_nox_helm_hat` | `footballhat×1 + gold_ingot×3 + walrus_tusk×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
-| `halberd` | `log×2 + iron_ingot×3 + rope×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
-| `scepter` | `gold_ingot×3 + purplegem×1 + livinglog×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `tfwp_luxury_nox_helm_hat` | `footballhat×1 + gold_ingot×3 + walrus_tusk×1` | `MAM_FORGE_ONE`; 1250/85%, +15% dano e +10% velocidade |
+| `halberd` | `log×2 + iron_ingot×3 + rope×1` | `MAM_FORGE_ONE`; 51 dano/150 usos, chop 7, -15% velocidade, -15 sanity/min, 2 hunger/chop |
+| `scepter` | `gold_ingot×3 + purplegem×1 + livinglog×2` | `MAM_FORGE_ONE`; 32 dano, alcance 1,6, cane speed, luz raio 6, fuel OSSIFY/NIGHTMARE |
 | `forkstick` | `gold_ingot×3 + sharkscale×3 + gnarwail_horn×1` | `MAM_FORGE_ONE`; dano fixo 34 (`TUNING.SPEAR_DAMAGE`), sem rolagem 12–99 |
-| `shears` | `log×1 + flint×2 + iron_ingot×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `shears` | `log×1 + flint×2 + iron_ingot×2` | `ALCHEMY_ONE`; 17 dano, 500 usos, raio 4, 1 uso por ação AREAPICK concluída |
 | `donharpoon` | `marble×2 + flint×3 + iron_ingot×2` | `MAM_FORGE_ONE`; 68 dano/100 usos, alcance 12–14 e -20% velocidade |
 | `dst_willowdoll` | `beefalowool×4 + sewing_kit×1 + charcoal×10` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `forginghammer` | `hammer×1 + lightninggoathorn×1 + gold_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
@@ -281,7 +281,7 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 | `stalagmite_low` | 0,50 `copper_ore` + 1,75 `copper_dust` + 0,25 `gold_dust` | 1,375 copper-value + 0,125 gold-value | Caverna |
 | `stalagmite_tall` / full | 1,00 `copper_ore` + 2,00 `copper_dust` + 1,35 `gold_dust` | 2,00 copper-value + 0,675 gold-value | Caverna |
 | `stalagmite_tall_med` | 1,35 `copper_ore` + 2,00 `copper_dust` + 1,00 `gold_dust` | 2,35 copper-value + 0,50 gold-value | Caverna |
-| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; confirmar o caminho de conversão de `gold_ore` |
+| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; `gold_ore` é alias legado que migra para `goldnugget`, não é prefab ausente |
 | Clockwork Knight | 1,50 `copper_ore` | 1,50 copper-value | Ruínas; perigo maior que rochas |
 | Clockwork Rook | 1,50 `copper_ingot` + 1,00 `iron_ingot` | 4,50 copper-value + 3,00 iron-value | Ruínas; fonte de lingotes de estágio avançado |
 | Clockwork Bishop | 0,75 `copper_ingot` + 1,00 `iron_ingot` | 2,25 copper-value + 3,00 iron-value | Ruínas; gem shards adicionais |
@@ -359,10 +359,13 @@ A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium
 | Resplendent Nox Helm | 1250 condição, 85% absorção, +15% dano físico, +10% velocidade | footballhat + 3 gold_ingot + walrus_tusk; MAM_FORGE_ONE | Capacete ofensivo premium. Thulecite Crown tem 840 condição/90% e chance de campo de força de 33% por 4 s (cooldown 9 s); Nox troca o proc defensivo por dano/mobilidade e maior condição. Manter, mas medir stacking com armadura corporal e bônus de personagem. |
 | Halberd | 51 dano, 150 usos, chop 7, -15% velocidade, dapperness -0,25/s (= -15 sanity/min), 2 hunger por chop; dano dobra contra Leif | 2 logs + 3 iron_ingot + rope; MAM_FORGE_ONE | Ferramenta/arma híbrida com custo alto e penalidades reais. 51×150 = 7650 dano bruto nominal; Dark Sword 68×100 = 6800, mas o Halberd tem dano por golpe menor e perde velocidade/sanidade/fome ao cortar. Manter em observação. |
 | Regal Scepter | 32 dano, alcance 1,6, cane speed, luz raio 6, fueltype OSSIFY + NIGHTMARE; reserva inicial = metade do tempo de Top Hat | 3 gold_ingot + purplegem + 2 livinglog; MAM_FORGE_ONE | Item multifunção (arma, mobilidade e luz) com consumo de combustível. Custo alto parece apropriado; medir duração real do combustível e utilidade em combate. |
-| Harvest Shears | 17 dano, 500 usos, areapicker raio 4; `SetConsumption(ACTIONS.AREAPICK, 1)` | log + 2 flint + 2 iron_ingot; ALCHEMY_ONE | Uma carga por ação AREAPICK concluída, não por planta individual. `BufferedAction:Do()` chama `invobject:OnUsedAsItem`; `FiniteUses:OnUsedAsItem` debita o consumo configurado. 500 ações de área é generoso; maior prioridade de medição de rendimento/ação, sem nerfar sem amostragem. |
+| Harvest Shears | 17 dano, 500 usos, areapicker raio 4; `SetConsumption(ACTIONS.AREAPICK, 1)` | log + 2 flint + 2 iron_ingot; ALCHEMY_ONE | 1 uso por ação AREAPICK concluída, não por planta individual. `BufferedAction:Do()` chama `invobject:OnUsedAsItem`; `FiniteUses:OnUsedAsItem` debita o consumo configurado. 500 ações de área é generoso; maior prioridade de medição de rendimento/ação, sem nerfar sem amostragem. |
 
 O Nox Helm MAM usa o build/asset do Forge, mas é uma variante craftável própria com componente de armadura; não confundir com o Nox Helm de evento, que é drop do Forge e não possui a mesma receita/armadura. A página original do MAM confirma os valores 1250/85%, +15% dano e +10% velocidade.
 
 **Leitura de balanceamento:** os maiores candidatos a teste de campo são Harvest Shears (500 usos por ação de área) e Nox Helm (armadura ofensiva no slot de cabeça). Halberd e Scepter são multifunção com custos e penalidades. Nenhum desses atributos foi alterado nesta etapa.
 
 Fontes: [Workshop original MAM](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184), [Thulecite Crown/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Crown/DST), [Resplendent Nox Helm — Forge event](https://dontstarve.wiki.gg/wiki/Resplendent_Nox_Helm), [FiniteUses component](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/finiteuses), [BufferedAction source](https://github.com/vietnd69/dst-scripts/blob/main/bufferedaction.lua).
+
+
+Nota de compatibilidade de prefab: `gold_ore` é alias legado que migra para `goldnugget`, não é prefab ausente. O contador `countprefabs.gold_ore` em uma definição de sala é um valor local da sala, não a quantidade total do mundo.
