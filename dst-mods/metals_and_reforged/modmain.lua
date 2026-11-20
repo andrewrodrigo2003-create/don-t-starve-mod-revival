@@ -302,13 +302,21 @@ STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = "Shine in power!"
 
 if GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons") then
 
-AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.FORGINGHAMMER.DISABLE_RECIPE then
+    AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.DISABLE_RECIPE then
+    AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.SPIRALSPEAR.DISABLE_RECIPE then
+    AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.DISABLE_RECIPE then
+    AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+end
 
 --[[
 local function MarbleWeapon(inst)
