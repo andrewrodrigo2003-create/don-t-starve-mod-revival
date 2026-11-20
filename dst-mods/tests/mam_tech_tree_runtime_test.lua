@@ -3,7 +3,7 @@ local original_tuning = TUNING
 local original_techtree = package.loaded["techtree"]
 
 local TechTree = {
-    AVAILABLE_TECH = { "SCIENCE" },
+    AVAILABLE_TECH = { "SCIENCE", "MADSCIENCE" },
     BONUS_TECH = { "SCIENCE" },
     AVAILABLE_TECH_BONUS = { SCIENCE = "science_bonus" },
     AVAILABLE_TECH_TEMPBONUS = { SCIENCE = "science_tempbonus" },
@@ -24,7 +24,7 @@ end
 
 package.loaded["techtree"] = TechTree
 TECH = { NONE = TechTree.Create(), SCIENCE_TWO = { SCIENCE = 2 } }
-TUNING = { PROTOTYPER_TREES = {} }
+TUNING = { PROTOTYPER_TREES = { MADSCIENCE = TechTree.Create({ MADSCIENCE = 1 }) } }
 
 local MAMTech = dofile("dst-mods/metals_and_reforged/scripts/mam/tech.lua")
 local trees = MAMTech.Register()
@@ -54,6 +54,10 @@ assert(TECH.MAM_FORGE_ONE.MAM_FORGE == 1)
 assert(TUNING.PROTOTYPER_TREES.ALCHEMY_ONE.ALCHEMY == 1)
 assert(TUNING.PROTOTYPER_TREES.CRAFTSBOOK_ONE.CRAFTSBOOK == 1)
 assert(TUNING.PROTOTYPER_TREES.MAM_FORGE_ONE.MAM_FORGE == 1)
+assert(TUNING.PROTOTYPER_TREES.MADSCIENCE.MADSCIENCE == 1,
+    "the vanilla Mad Scientist Lab tree must be preserved")
+assert(TUNING.PROTOTYPER_TREES.MADSCIENCE.ALCHEMY == 1,
+    "the Mad Scientist Lab must also expose MAM Alchemy recipes")
 assert(trees.MAM_FORGE.MAM_FORGE == 1)
 
 MAMTech.Register()
@@ -61,6 +65,8 @@ for _, name in ipairs({ "ALCHEMY", "CRAFTSBOOK", "MAM_FORGE" }) do
     assert(count(TechTree.AVAILABLE_TECH, name) == 1)
     assert(count(TechTree.BONUS_TECH, name) == 1)
 end
+assert(TUNING.PROTOTYPER_TREES.MADSCIENCE.ALCHEMY == 1,
+    "registering MAM tech twice must not remove the alchemy station level")
 
 TECH = original_global_tech
 TUNING = original_tuning
