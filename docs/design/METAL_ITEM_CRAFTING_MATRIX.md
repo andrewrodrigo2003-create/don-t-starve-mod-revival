@@ -138,7 +138,7 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 - `metal_smelter` é Science One; `warworkbench` é Science Two. A bancada de metalurgia e a forja de processamento são estações diferentes.
 - O `craftbook` é outro prototyper; as 35 receitas migradas não devem ser presumidas como receitas da War Workbench.
 - Equipamentos próprios em `ALCHEMY_ONE` usam `CRAFTING_STATION`; itens da progressão MAM de tier superior usam `MAM_FORGE_ONE` quando definido no código.
-- As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando as opções legadas correspondentes estão ativas; as variantes `*old` são o caminho alternativo. A matriz deve manter as duas assinaturas sem presumir que ambas coexistem.
+- As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando `legacy_forge_weapon_abilities` e `forge_weapons` estão ativos; cada `*_DISABLE_RECIPE` agora é respeitado individualmente. Com as opções desligadas, `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` são a rota alternativa; `spiralspear` não tem variante old. Stats base 20/25/30/30; habilidades especiais (30/25/75/helmsplit100) só com legacy abilities. Durabilidade default 0=infinita, configurável via `finiteuses` quando >0. Não alterar sem runtime.
 - A migração só deve ser considerada comprovada após validar o filtro visual e o prototyper dentro do DST; `TECH` isoladamente não comprova exclusividade de estação.
 
 
