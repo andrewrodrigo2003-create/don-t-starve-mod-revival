@@ -73,7 +73,7 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn("remove_special_event = true", self.modded)
         self.assertIn('clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS"', self.modded)
         self.assertIn("function M.set_station(name, tech, filter, options)", guard)
-        self.assertIn("options.remove_special_event ~= true", guard)
+        self.assertIn("options.remove_special_event == true", guard)
         self.assertIn("recipe.hint_msg == options.clear_hint_msg_if", guard)
         self.assertIn("recipe.hint_msg = nil", guard)
 
