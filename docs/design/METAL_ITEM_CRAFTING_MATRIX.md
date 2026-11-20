@@ -34,7 +34,7 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 | `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
-| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; comparar progressão |
+| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `MAM_FORGE_ONE` + War Workbench | 1500/85% e +10% velocidade; equipamento premium |
 | `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
 | `halberd` | 2 log, 3 iron_ingot, 1 rope | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
 | `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
@@ -63,12 +63,12 @@ As receitas de equipamentos e estruturas metalúrgicas adicionais permanecem na 
 | `transistor` | 1 cutstone, 1 copper_ingot | override vanilla; confirmar estação atual |
 | `lightning_rod` | 1 gold_ingot, 1 cutstone | override vanilla; confirmar estação atual |
 | `goldenaxe`, `goldenpickaxe`, `goldenshovel`, `golden_farm_hoe` | 4 twigs, 1 gold_ingot cada | ferramentas de ouro; avaliar como família, sem receita em lote |
-| `armormarble` | 12 marble, 4 rope, 1 iron_ingot | override vanilla; confirmar estação atual |
+| `armormarble` | 6 marble, 2 rope, 1 iron_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; custo vanilla preservado + 1 lingote |
 | `portablecookpot_item` | 3 iron_ore, 6 charcoal, 6 twigs | override vanilla; confirmar estação atual |
 | `portableblender_item` | 3 iron_ore, 2 transistor, 4 twigs | override vanilla; confirmar estação atual |
 | `portablespicer_item` | 3 iron_ore, 3 cutstone, 6 twigs | override vanilla; confirmar estação atual |
 | `glasscutter` | 1 boards, 1 moonglass_ingot | conflito conhecido com overrides de outros mods; manter recipe guard |
-| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | item lunar; avaliar progressão antes de mover |
+| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; 4 moonglass + 2 moonrock + thulecite; remove o gate vanilla `TECH.LOST`/blueprint |
 | `moondial` | 1 bluemooneye, 1 moonglass_ingot, 5 marble | item lunar; avaliar progressão antes de mover |
 | `moonrockcrater` | 1 moonglass_ingot, 2 moonrocknugget, 1 marble | item lunar; avaliar progressão antes de mover |
 | `moonglassaxe` | 1 moonglass_ingot, 2 twigs, 1 marble | item lunar; avaliar progressão antes de mover |
@@ -131,7 +131,7 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 
 ## 9. Regras de estação efetivas no código — 2026-11-18
 
-- `madscience_lab` (Mad Scientist Lab / Bancada de Alquimia) mantém o custo vanilla (`cutstone×2 + transistor×2`) e o prefab original, mas fica fabricável fora de Hallowed Nights: tecnologia `TECH.NONE`, filtro `STRUCTURES`, remoção de `SPECIAL_EVENT` e limpeza condicional do hint vanilla `NEEDSHALLOWED_NIGHTS`. A migração preserva ingredientes ativos de outros mods. A bancada é o ponto universal de futuras transmutação e funções alquímicas para todos os sobreviventes.
+- `madscience_lab` (Mad Scientist Lab / Bancada de Alquimia) mantém o custo vanilla (`cutstone×2 + transistor×2`) e o prefab original, mas fica fabricável fora de Hallowed Nights: tecnologia `TECH.NONE`, filtro `STRUCTURES`, remoção de `SPECIAL_EVENT` e limpeza condicional do hint vanilla `NEEDSHALLOWED_NIGHTS`. A migração preserva ingredientes ativos de outros mods. `mam/tech.lua` estende `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1`, preservando `MADSCIENCE=1`; assim a bancada realmente prototipa receitas `ALCHEMY_ONE` mesmo após remover/recriar o prototyper durante experimentos.
 
 - `modded_recipes.lua` migra as receitas listadas em `station_recipes` para `TECH.ALCHEMY_ONE` e o filtro `CRAFTING_STATION`, sem reescrever a tabela de ingredientes durante a migração. A lista inclui birdcage, dragonflychest, compass, razor, lightning_rod, ferramentas douradas, armaduras selecionadas, portable cooking e receitas lunares.
 - `researchlab`, `researchlab2` e `transistor` recebem somente o override de ingredientes quando o baseline vanilla ainda corresponde; não entram na lista de migração para a bancada.
@@ -140,3 +140,11 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 - Equipamentos próprios em `ALCHEMY_ONE` usam `CRAFTING_STATION`; itens da progressão MAM de tier superior usam `MAM_FORGE_ONE` quando definido no código.
 - As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando as opções legadas correspondentes estão ativas; as variantes `*old` são o caminho alternativo. A matriz deve manter as duas assinaturas sem presumir que ambas coexistem.
 - A migração só deve ser considerada comprovada após validar o filtro visual e o prototyper dentro do DST; `TECH` isoladamente não comprova exclusividade de estação.
+
+
+### Atualização de balanceamento e progressão — 2026-11-20
+
+- `armormarble`: 6 marble + 2 rope + 1 iron_ingot; continua em Alchemy One, pois é receita vanilla migrada, não equipamento MAM novo de War Workbench.
+- `jagged_armor`: permanece em MAM_FORGE_ONE/War Workbench; 1500 condição, 85% absorção, +10% velocidade; custo 4 houndstooth + 3 gold_ingot + 1 armormarble + 3 iron_ingot. O custo premium é mantido.
+- `forkstick`: dano fixo de lança vanilla (34); `donharpoon`: 68 dano/100 usos, alcance 12–14 e penalidade de movimento preservados.
+- `moonglass_ingot`: saída agora carrega moon=1, alinhada ao moonrocknugget consumido; adamantium mantém 3 nightmarefuel + 1 iron_ingot por barra.
