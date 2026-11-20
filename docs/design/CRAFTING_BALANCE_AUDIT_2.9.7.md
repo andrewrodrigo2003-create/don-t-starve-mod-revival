@@ -302,6 +302,16 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 - As chances/quantidades registradas são configuração de código; a frequência de eventos, disponibilidade de biomas e resultado real por mundo não foram amostrados.
 
 
+### 6.8. Pacote opcional de armas The Forge — gates e durabilidade
+
+As quatro armas do pacote The Forge são conteúdo opcional, não a progressão metalúrgica principal:
+
+- `legacy_forge_weapon_abilities` = false por padrão; `forge_weapons` = false por padrão. As receitas novas só são registradas quando ambas estão ligadas. Com as opções desligadas, o código registra as variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold`; `spiralspear` só aparece na rota nova.
+- Dano básico configurado: Forging Hammer 20, Pith Pike 25, Spiral Spear 30, Blacksmith Edge 30 — 20/25/30/30, abaixo da lança vanilla (34). Habilidades especiais só existem com `legacy_forge_weapon_abilities` ativo: Hammer 30/raio 4,1/cooldown 18s; Pith Pike 25/lunge distância 6,5 + largura 3,25/cooldown 12s; Spiral Spear 75/alcance 16/raio 2,05/cooldown 12s; Blacksmith Edge helmsplit 100/parry 5s/cooldown 12s.
+- Durabilidade padrão `AMOUNT=0` significa infinita por escolha de configuração. Se configurada acima de zero, o postinit adiciona `finiteuses`: ataque normal consome 1 uso; especial consome 5% da durabilidade máxima (padrão configurável). Portanto, não há bug de durabilidade ignorada.
+- **Correção nesta branch:** os quatro controles individuais `*_DISABLE_RECIPE` eram lidos para `TUNING`, mas não eram consultados pelos `AddRecipe2` reais. Agora cada receita só é registrada quando seu `DISABLE_RECIPE` correspondente é falso. Os controles passam a funcionar sem alterar stats ou habilitar o pacote por padrão.
+- Decisão de balanceamento: manter os números e os defaults atuais; não ativar o pacote automaticamente. Medir habilidades especiais e custo de cooldown em runtime antes de qualquer ajuste. As receitas opcionais desativadas por padrão não devem ser confundidas com a linha principal de War Workbench.
+
 ### 7. Cobertura de inventário
 
 - Overrides vanilla registrados: 21.
