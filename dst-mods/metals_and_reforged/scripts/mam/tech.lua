@@ -42,6 +42,16 @@ function M.Register()
     TUNING.PROTOTYPER_TREES.MAM_FORGE_ONE = TUNING.PROTOTYPER_TREES.MAM_FORGE_ONE
         or TechTree.Create({ MAM_FORGE = 1 })
 
+    -- The vanilla Mad Scientist Lab creates/removes its prototyper during each
+    -- experiment and always rebuilds it from TUNING.PROTOTYPER_TREES.MADSCIENCE.
+    -- Extend that shared tree instead of replacing the component: vanilla
+    -- MADSCIENCE experiments remain available while MAM ALCHEMY recipes work
+    -- at the year-round lab. The original tech entries are preserved.
+    local madscience_tree = TUNING.PROTOTYPER_TREES.MADSCIENCE
+    assert(type(madscience_tree) == "table",
+        "MAM universal alchemy requires the vanilla MADSCIENCE prototyper tree")
+    madscience_tree.ALCHEMY = math.max(tonumber(madscience_tree.ALCHEMY) or 0, 1)
+
     TECH.ALCHEMY_ONE = TECH.ALCHEMY_ONE or TechTree.Create({ ALCHEMY = 1 })
     TECH.CRAFTSBOOK_ONE = TECH.CRAFTSBOOK_ONE or TechTree.Create({ CRAFTSBOOK = 1 })
     TECH.MAM_FORGE_ONE = TECH.MAM_FORGE_ONE or TechTree.Create({ MAM_FORGE = 1 })

@@ -50,7 +50,7 @@ AddSmelterIngredientValues({"gold_ingot"},			{gold = 3, metal = 3})
 
 AddSmelterIngredientValues({"moonglass"},			{moonglass = 1})
 AddSmelterIngredientValues({"moonrocknugget"},		{moon = 1, mineral = 1})
-AddSmelterIngredientValues({"moonglass_ingot"},		{moonglass = 2, moon = 2})
+AddSmelterIngredientValues({"moonglass_ingot"},		{moonglass = 2, moon = 1})
 
 AddSmelterIngredientValues({"rocks", "nitre"},		{mineral = 1})
 

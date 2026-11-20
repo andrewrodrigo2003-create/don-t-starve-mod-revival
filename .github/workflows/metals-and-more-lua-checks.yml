@@ -5,13 +5,15 @@ on:
     branches:
       - fix/allow-ambiguous-smelting
       - fix/smelter-refund-retry-2026-11-11
+      - 'balance/**'
   pull_request:
     paths:
       - 'dst-mods/metals_and_reforged/**'
       - 'dst-mods/tests/**'
       - 'tests/test_mam_crafting_balance_contract.py'
-      - 'docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md'
-      - 'docs/design/METAL_ITEM_CRAFTING_MATRIX.md'
+      - 'docs/design/**'
+      - 'docs/METALS_AND_MORE_REFORGED_MASTER_PLAN.md'
+      - 'dst-mods/metals_and_reforged/CHANGELOG.txt'
       - '.github/workflows/metals-and-more-lua-checks.yml'
   workflow_dispatch:
 
