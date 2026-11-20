@@ -29,22 +29,22 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 | `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | `SCIENCE_TWO` / Prototypers | estação de fabricação metalúrgica; validar filtro real |
 | `mam_stone_chisel` | 2 twigs, 2 flint | `TECH.NONE` / Tools + Refine | ferramenta reutilizável, sem durabilidade ou consumo |
 | `metallurgy_reference_book` | 2 papyrus, 2 charcoal, 1 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | livro informativo; não desbloqueia receitas |
-| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + `CRAFTING_STATION` + Containers | estrutura existente; custo depende da capacidade real |
-| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + `CRAFTING_STATION` + Cooking | estrutura frigorífica; medir preservação e capacidade |
+| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + Mad Scientist Lab + Containers | 25 slots (5×5), 3 hits; sem burnable/propagator explícitos; validar fogo |
+| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + Mad Scientist Lab + Cooking | 25 slots (5×5), tag fridge ativa conservação/resfriamento vanilla 50%; 3 hits |
 | `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `MAM_FORGE_ONE` + War Workbench | 1500/85% e +10% velocidade; equipamento premium |
-| `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `halberd` | 2 log, 3 iron_ingot, 1 rope | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `forginghammer` | 1 hammer, 1 lightninggoathorn, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `pithpike` | 2 lightninggoathorn, 3 gold_ingot, 3 houndstooth | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `spiralspear` | 3 marble, 1 pithpike, 2 townportaltalisman | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `blacksmith_edge` | 5 marble, 2 driftwood_log, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
+| `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `MAM_FORGE_ONE` + War Workbench | 1250/85% armor; +15% dano e +10% velocidade; capacete ofensivo premium |
+| `halberd` | 2 log, 3 iron_ingot, 1 rope | `MAM_FORGE_ONE` + War Workbench | 51 dano/150 usos, chop 7, -15% velocidade, -15 sanity/min e 2 hunger por chop |
+| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `MAM_FORGE_ONE` + War Workbench | 32 dano, alcance 1,6, velocidade de cane, luz raio 6 e combustível ossify/nightmare |
+| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `MAM_FORGE_ONE` + War Workbench | 34 dano fixo, 50 usos; valor principal é travessia aquática/fuel |
+| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + Mad Scientist Lab | 17 dano, 500 usos, área raio 4; 1 uso por ação AREAPICK concluída |
+| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `MAM_FORGE_ONE` + War Workbench | 68 dano/100 usos, alcance 12–14, projétil, -20% velocidade |
+| `forginghammer` | 1 hammer, 1 lightninggoathorn, 3 gold_ingot | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção; variantes `*old` usam a mesma bancada |
+| `pithpike` | 2 lightninggoathorn, 3 gold_ingot, 3 houndstooth | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção; variantes `*old` usam a mesma bancada |
+| `spiralspear` | 3 marble, 1 pithpike, 2 townportaltalisman | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção e validar |
+| `blacksmith_edge` | 5 marble, 2 driftwood_log, 3 gold_ingot | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção e validar |
 
 As variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` também têm receitas próprias quando `forge_weapons` está desligado. Não remover nem duplicar sem uma decisão de migração.
 
