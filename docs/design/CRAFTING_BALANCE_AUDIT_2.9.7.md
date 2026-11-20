@@ -281,7 +281,7 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 | `stalagmite_low` | 0,50 `copper_ore` + 1,75 `copper_dust` + 0,25 `gold_dust` | 1,375 copper-value + 0,125 gold-value | Caverna |
 | `stalagmite_tall` / full | 1,00 `copper_ore` + 2,00 `copper_dust` + 1,35 `gold_dust` | 2,00 copper-value + 0,675 gold-value | Caverna |
 | `stalagmite_tall_med` | 1,35 `copper_ore` + 2,00 `copper_dust` + 1,00 `gold_dust` | 2,35 copper-value + 0,50 gold-value | Caverna |
-| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; `gold_ore` é alias legado que migra para `goldnugget`, não é prefab ausente |
+| `stalagmite_tall_low` | 0,75 `copper_ore` + 1,30 `copper_dust` + 1,00 `gold_dust` + 0,05 `gold_ore` legado | 1,40 copper-value + 0,50 gold-value (mais alias legado) | Caverna; `gold_ore` é alias legado que migra para `goldnugget`, não é um prefab ausente |
 | Clockwork Knight | 1,50 `copper_ore` | 1,50 copper-value | Ruínas; perigo maior que rochas |
 | Clockwork Rook | 1,50 `copper_ingot` + 1,00 `iron_ingot` | 4,50 copper-value + 3,00 iron-value | Ruínas; fonte de lingotes de estágio avançado |
 | Clockwork Bishop | 0,75 `copper_ingot` + 1,00 `iron_ingot` | 2,25 copper-value + 3,00 iron-value | Ruínas; gem shards adicionais |
@@ -368,4 +368,4 @@ O Nox Helm MAM usa o build/asset do Forge, mas é uma variante craftável própr
 Fontes: [Workshop original MAM](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184), [Thulecite Crown/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Crown/DST), [Resplendent Nox Helm — Forge event](https://dontstarve.wiki.gg/wiki/Resplendent_Nox_Helm), [FiniteUses component](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/finiteuses), [BufferedAction source](https://github.com/vietnd69/dst-scripts/blob/main/bufferedaction.lua).
 
 
-Nota de compatibilidade de prefab: `gold_ore` é alias legado que migra para `goldnugget`, não é prefab ausente. O contador `countprefabs.gold_ore` em uma definição de sala é um valor local da sala, não a quantidade total do mundo.
+Nota de compatibilidade de prefab: `gold_ore` é alias legado que migra para `goldnugget`, não é um prefab ausente. O contador `countprefabs.gold_ore` em uma definição de sala é um valor local da sala, não a quantidade total do mundo.
