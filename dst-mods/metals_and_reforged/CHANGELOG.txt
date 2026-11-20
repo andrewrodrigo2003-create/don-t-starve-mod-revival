@@ -6,6 +6,7 @@ Universal Alchemy and equipment balance — 2026-11-20 (unreleased)
 - Extend the vanilla Mad Scientist Lab prototyper tree with MAM ALCHEMY while preserving MADSCIENCE, so migrated ALCHEMY_ONE recipes have a real station and vanilla experiments continue to work.
 - Align the Moonglass Ingot output moon tag with its consumed Moon Rock Nugget (moon=1), preventing downstream tag-value inflation.
 - Align the Astral Detector hammer deconstruction recipe to return one Moonglass Ingot plus Thulecite (50% ingot refund) instead of stale vanilla Moon Rock; preserve third-party deconstruction overrides.
+- Honor the per-weapon DISABLE_RECIPE configuration for the optional Forge pack weapons; leave both Forge weapon feature gates disabled by default.
 - Restore Marble Suit's vanilla material baseline (6 marble + 2 rope) and add one Iron Ingot as the metalworking cost.
 - Replace Forkstick's random 12–99 base damage with the vanilla spear baseline (34); balance Don Harpoon to 68 damage / 100 uses while preserving its projectile/range and movement penalty.
 - Audit Jagged Armor against Thulecite Suit and keep its premium 1500/85%/+10% profile and War Workbench cost; document Adamantium and lunar conversion economics.
