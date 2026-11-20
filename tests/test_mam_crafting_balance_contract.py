@@ -238,6 +238,25 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertNotIn("recipe.nounlock", station_fn)
         self.assertNotIn("recipe.builder_tag", station_fn)
 
+    def test_optional_forge_pack_recipe_disable_switches_are_honored(self):
+        modmain = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        modinfo = (MOD / "modinfo.lua").read_text(encoding="utf-8")
+        forgepack = (MOD / "initialise" / "modded_forgepack.lua").read_text(encoding="utf-8")
+        self.assertIn('GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons")', modmain)
+        for weapon in ("FORGINGHAMMER", "PITHPIKE", "SPIRALSPEAR", "BLACKSMITH_EDGE"):
+            self.assertIn(f"if not TUNING.THE_FORGE_ITEM_PACK.{weapon}.DISABLE_RECIPE then", modmain)
+            self.assertIn(f"{weapon}.DISABLE_RECIPE = GetModConfigData", forgepack)
+        legacy_at = modinfo.index('name = "legacy_forge_weapon_abilities"')
+        forge_at = modinfo.index('name = "forge_weapons"')
+        self.assertIn("default = false", modinfo[legacy_at:legacy_at + 500])
+        self.assertIn("default = false", modinfo[forge_at:forge_at + 500])
+        self.assertIn('GetModConfigData("FORGING_HAMMER_DURABILITY", 0)', forgepack)
+        self.assertIn("DURABILITY.AMOUNT > 0", forgepack)
+        self.assertIn("SetMaxUses", forgepack)
+        self.assertIn("SetConsumption(", forgepack)
+        self.assertIn("20/25/30/30", self.balance)
+        self.assertIn("receitas opcionais desativadas por padrão", self.balance)
+
     def test_cumulative_first_war_workbench_budget_is_documented(self):
         for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
             self.assertIn(value, self.balance)
