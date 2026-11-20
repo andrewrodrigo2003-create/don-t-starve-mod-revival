@@ -177,3 +177,4 @@ Auditoria de referência: [CRAFTING_BALANCE_AUDIT_2.9.7.md](CRAFTING_BALANCE_AUD
 - A tag `moon` do moonglass ingot agora é 1, igual ao moonrocknugget consumido. Adamantium mantém 3 nightmarefuel + 1 iron_ingot por lingote.
 - A auditoria de armazenamento confirma 25 slots para Marble Chest e Cold Safe; a tag `fridge` já fornece a preservação vanilla. Fogo e martelamento continuam sem validação no motor.
 - O checkpoint não certifica a versão 2.9.7: runtime, multiplayer, save/load e UM Beta 6.0.4 continuam pendentes.
+- Outros equipamentos auditados: Nox Helm (1250/85%, +15% dano, +10% velocidade), Halberd (51/150, chop 7 e penalidades), Scepter (32 dano, cane speed/luz/fuel) e Shears (500 usos, raio 4, 1 uso por ação AREAPICK). Manter atributos por enquanto; medir rendimento de Shears e stacking do Nox Helm.
