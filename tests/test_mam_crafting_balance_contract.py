@@ -224,6 +224,20 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn("1 uso por ação AREAPICK concluída", self.balance)
         self.assertIn("Nox Helm", self.balance)
 
+    def test_archive_resonator_deconstruction_refund_matches_mam_recipe(self):
+        modded = (MOD / "initialise" / "modded_recipes.lua").read_text(encoding="utf-8")
+        guard = (MOD / "scripts" / "mam" / "recipe_guard.lua").read_text(encoding="utf-8")
+        self.assertIn('AddRecipePostInit("archive_resonator"', modded)
+        self.assertIn("recipe.is_deconstruction_recipe", modded)
+        self.assertIn('Ingredient("moonglass_ingot", 1)', modded)
+        self.assertIn('Ingredient("thulecite", 1)', modded)
+        self.assertIn("50% de reembolso do lingote", self.balance)
+        self.assertIn("estado de aprendizado/blueprint não é alterado", self.balance)
+        station_fn = guard.split("function M.set_station", 1)[1].split("\nfunction M.", 1)[0]
+        self.assertIn("recipe.level = new_level", station_fn)
+        self.assertNotIn("recipe.nounlock", station_fn)
+        self.assertNotIn("recipe.builder_tag", station_fn)
+
     def test_cumulative_first_war_workbench_budget_is_documented(self):
         for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
             self.assertIn(value, self.balance)
