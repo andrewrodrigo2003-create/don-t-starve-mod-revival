@@ -172,7 +172,7 @@ Auditoria de referência: [CRAFTING_BALANCE_AUDIT_2.9.7.md](CRAFTING_BALANCE_AUD
 ## Continuidade técnica — 2026-11-20
 
 - A PR #72 integra o Laboratório de Alquimia universal como receita year-round, mas a auditoria do prefab vanilla confirmou que ele usa `TUNING.PROTOTYPER_TREES.MADSCIENCE` e recria o prototyper após cada experimento. O registro de `ALCHEMY_ONE` sozinho não disponibilizava a estação. A implementação atual estende a árvore vanilla com `ALCHEMY=1` sem apagar `MADSCIENCE=1`, preservando os experimentos Hallowed Nights.
-- O `archive_resonator_item` perde `TECH.LOST`/blueprint quando é migrado para `ALCHEMY_ONE`. É uma alteração de progressão documentada para revisão, não uma simples troca de filtro.
+- O `archive_resonator_item` troca apenas `recipe.level` de `TECH.LOST` para `ALCHEMY_ONE`; a migração não altera `nounlock`, builder tags ou estado de aprendizado/blueprint. Portanto, a exigência de blueprint não é declarada removida sem teste runtime. A desmontagem por martelo foi alinhada a 1 moonglass_ingot + 1 thulecite, devolvendo 1 lingote (50% do custo de dois) e thulecite integral.
 - Balanceamento portado para a linha atual: Marble Suit 6 marble + 2 rope + 1 iron_ingot; Forkstick 34 dano fixo; Don Harpoon 68 dano/100 usos. Jagged Armor permanece 1500/85%/+10% e exige War Workbench.
 - A tag `moon` do moonglass ingot agora é 1, igual ao moonrocknugget consumido. Adamantium mantém 3 nightmarefuel + 1 iron_ingot por lingote.
 - A auditoria de armazenamento confirma 25 slots para Marble Chest e Cold Safe; a tag `fridge` já fornece a preservação vanilla. Fogo e martelamento continuam sem validação no motor.
