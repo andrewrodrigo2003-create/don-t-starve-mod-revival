@@ -105,7 +105,7 @@ local OVERRIDES =
     -- --- Marmore e cozinha portatil ---
     -- vanilla: marble 6, rope 2
     { name = "armormarble", ingredients = {
-        Ingredient("marble", 12), Ingredient("rope", 4), Ingredient("iron_ingot", 1, IRON_INGOT_ATLAS) } },
+        Ingredient("marble", 6), Ingredient("rope", 2), Ingredient("iron_ingot", 1, IRON_INGOT_ATLAS) } },
     -- vanilla: goldnugget 2, charcoal 6, twigs 6
     { name = "portablecookpot_item", ingredients = {
         Ingredient("iron_ore", 3, IRON_ORE_ATLAS), Ingredient("charcoal", 6), Ingredient("twigs", 6) } },
