@@ -533,3 +533,17 @@ Esta é uma mitigação de compatibilidade baseada na auditoria estática, **nã
 - Sem teste in-game, multiplayer, save/load ou UM Beta; sem merge, release ou publicação Steam. Hydrated/Dehydrated, Better Lucy e terceiros permanecem intocados.
 
 Fontes canônicas: `docs/design/FULL_CRAFTING_REWORK_2.9.7.md`, `docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md` e `docs/design/METAL_ITEM_CRAFTING_MATRIX.md`.
+
+## Continuidade 2.9.7 — estação universal, equipamentos e economia lunar (2026-11-20)
+
+- Linha de trabalho atual: branch `balance/mam-tier-equipment-lunar-economy-2026-11-20`, iniciada a partir do HEAD validado da PR #72 (`8ee0d1b6`). A nova PR será empilhada sobre a #72, sem mesclar nenhuma PR.
+- Mad Scientist Lab: a auditoria da fonte vanilla confirmou que o prefab usa `TUNING.PROTOTYPER_TREES.MADSCIENCE` e remove/recria o prototyper durante experimentos. A árvore agora recebe `ALCHEMY=1` mantendo `MADSCIENCE=1`; o laboratório realmente fornece `ALCHEMY_ONE` sem quebrar os experimentos vanilla.
+- Marble Suit: custo ajustado para 6 marble + 2 rope + 1 iron_ingot; mantém os materiais base vanilla e acrescenta 3 iron-value. Continua em Alchemy One, pois é uma receita vanilla migrada. Jagged Armor permanece em War Workbench.
+- Forkstick: dano fixo 34 (lança vanilla), sem rolagem 12–99. Don Harpoon: 68 dano/100 usos, alcance 12–14 e -20% movimento preservados.
+- Jagged Armor: 1500 condição, 85% absorção, +10% movimento; 1765 de capacidade efetiva de absorção, cerca de 26% acima da Thulecite Suit (1400), mas com menor absorção por golpe e sem regen de sanidade. Receita premium mantida: 4 houndstooth + 3 gold ingots + 1 Marble Suit + 3 iron ingots.
+- Adamantium: 3 nightmarefuel + 1 iron_ingot por barra; Night Armor e Dark Sword usam 2 barras cada (6 nightmarefuel + 2 iron_ingots), além de seus materiais básicos. Custo premium mantido para validação de economia.
+- Moonglass: cada barra custa 2 moonglass + 1 moonrocknugget; o tag de saída moon foi corrigido de 2 para 1 para impedir superávit de contabilidade em receitas futuras. Astral Detector custa 2 barras + thulecite (4 moonglass + 2 moonrock + thulecite) e tem 10 usos; custo premium mantido por enquanto.
+- O `archive_resonator_item` originalmente usa TECH.LOST/blueprint; a migração para ALCHEMY_ONE substitui essa exigência. Registrar como alteração de progressão intencional a validar.
+- Armazenamento: Marble Chest e Cold Safe têm 25 slots (2,78× vanilla); Cold Safe usa a tag fridge para preservação vanilla; Marble Chest não registra burnable/propagator, mas resistência a fogo depende de runtime.
+- Referências: [Workshop original](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184), [Thulecite Suit/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Suit/DST), [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST), [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST), [Astral Detector](https://dontstarve.wiki.gg/wiki/Astral_Detector), [Moon Glass](https://dontstarve.wiki.gg/wiki/Moon_Glass), [Moon Rock](https://dontstarve.wiki.gg/wiki/Moon_Rock), [Mad Science Lab prefab](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua).
+- Limites: nenhum teste no motor DST, multiplayer, save/load, UM Beta 6.0.4, água/umidade, fogo ou martelamento foi executado nesta etapa. CI do novo HEAD ainda precisa ser consultada. Sem merge, release ou publicação Steam.
