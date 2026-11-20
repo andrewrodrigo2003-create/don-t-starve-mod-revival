@@ -315,7 +315,7 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 
 A implementação anterior registrava `TECH.ALCHEMY_ONE`, mas o Mad Scientist Lab vanilla usa `TUNING.PROTOTYPER_TREES.MADSCIENCE`; nenhum prefab MAM atribuía a árvore ALCHEMY a essa bancada. Assim, mover receitas para Alchemy One não bastava para garantir que houvesse uma estação capaz de prototipá-las. A correção atual estende a própria tabela compartilhada `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1`, preserva a árvore vanilla MADSCIENCE (`MADSCIENCE=1`). Isso é importante porque o prefab vanilla remove e recria seu componente `prototyper` durante os experimentos: modificar a árvore compartilhada mantém o acesso MAM após cada ciclo e não substitui o fluxo Hallowed Nights. A receita da bancada continua year-round, com custo vanilla, e todos os sobreviventes podem utilizá-la.
 
-**Efeito de progressão que precisa ficar explícito:** `archive_resonator_item` originalmente usa `TECH.LOST` e blueprint da Fountain of Knowledge. A migração de estação substitui seu `recipe.level` por `ALCHEMY_ONE`, removendo esse requisito de blueprint. O item é o Astral Detector, com 10 usos, que localiza peças do Celestial Sanctum e outros alvos; não é uma chave obrigatória para entrar no Ancient Archive. A alteração é um bypass de blueprint no código atual e precisa de validação de design/runtime antes do release.
+**Efeito de progressão que precisa ficar explícito:** `archive_resonator_item` originalmente usa `TECH.LOST`. A migração substitui apenas `recipe.level` por `ALCHEMY_ONE` e atualiza o filtro; `MAMRecipeGuard.set_station` não altera `recipe.nounlock`, `builder_tag` ou o estado de receita aprendida. Portanto, não afirmar que a blueprint da Fountain of Knowledge foi removida: a exigência de aprendizado pode continuar separada do tech level e precisa de validação no jogo. O item é o Astral Detector de 10 usos, que localiza peças do Celestial Sanctum e outros alvos; não é uma chave obrigatória para entrar no Ancient Archive.
 
 ### Marble Suit, Jagged Armor e armas
 
@@ -332,7 +332,7 @@ A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium
 
 - Cada `moonglass_ingot` consome 2 moonglass + 1 moonrocknugget. A tag de saída foi alinhada a esse custo, sem alterar a receita física.
 - Moonglass tem rotas de renovação ligadas à Lunar Island/Vitreoasis e ciclos de lua; moonrock vem de meteoritos e fontes lunares periódicas. Ambos são renováveis, mas moonrock tem custo de oportunidade maior por concorrer com várias receitas e reparos lunares.
-- `archive_resonator_item`: 2 ingots + 1 thulecite = 4 moonglass + 2 moonrock + thulecite, contra 1 moonrock + thulecite vanilla. O Astral Detector tem 10 usos e é utilitário; o custo dobra moonrock e acrescenta 4 moonglass. Registrar como receita premium, sem reduzir até medir a quantidade de detecções por item e a taxa real de reposição.
+- `archive_resonator_item`: 2 ingots + 1 thulecite = 4 moonglass + 2 moonrock + thulecite, contra 1 moonrock + thulecite vanilla. O Astral Detector tem 10 usos e é utilitário; o custo dobra moonrock e acrescenta 4 moonglass. O deconstruction vanilla devolvia moonrock×1 + thulecite×1; isso não correspondia ao novo custo. A branch atual alinha a receita de desmontagem para moonglass_ingot×1 + thulecite×1: com `HAMMER_LOOT_PERCENT=.5` e arredondamento para cima, o martelo devolve 1 lingote (50% de reembolso do lingote) e 1 thulecite. A ação Dismantle continua retornando o item com usos restantes, não os materiais. Custo de craft mantido até medir detecções por item e reposição lunar.
 - `glasscutter`: 1 board + 1 ingot = 2 moonglass + 1 moonrock + board, contra 5 moonglass + log vanilla; reduz glass e adiciona moonrock.
 - `moondial`: 1 bluemooneye + 1 ingot + 5 marble; `moonrockcrater`: 1 ingot + 2 moonrock + 1 marble; `moonglassaxe`: 1 ingot + 2 twigs + 1 marble. Os custos adicionais de marble/boards devem ser avaliados contra a utilidade específica, não tratados como equivalentes diretos de moonrock.
 
@@ -347,7 +347,7 @@ A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium
 - [Jagged Grand Armor — item separado do evento Forge](https://dontstarve.wiki.gg/wiki/Jagged_Grand_Armor)
 - [Astral Detector](https://dontstarve.wiki.gg/wiki/Astral_Detector) · [Moon Glass](https://dontstarve.wiki.gg/wiki/Moon_Glass) · [Moon Rock](https://dontstarve.wiki.gg/wiki/Moon_Rock)
 - [Nightmare Fuel/DST](https://dontstarve.wiki.gg/wiki/Nightmare_Fuel/DST)
-- [Vanilla Mad Scientist Lab prefab source](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua) · [Mad Scientist Lab API notes](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/madscience_lab)
+- [Vanilla Mad Scientist Lab prefab source](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua) · [Mad Scientist Lab API notes](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/madscience_lab) · [vanilla recipes/deconstruction](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/recipes.lua) · [lootdropper hammer refund](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/components/lootdropper.lua) · [HAMMER_LOOT_PERCENT](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/tuning.lua)
 - [Klei modding guidance](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together)
 - [DST Hotfix 762172 — 5 Nov 2026](https://steamcommunity.com/app/322330/announcements/) (no armor/weapon recipe changes in the latest public hotfix) · [Community discussion: 68 damage as a high-tier melee benchmark](https://www.reddit.com/r/dontstarve/comments/1j8he3f/)
 
@@ -373,3 +373,6 @@ Nota de compatibilidade de prefab: `gold_ore` é alias legado que migra para `go
 
 
 **Current game baseline:** the latest official announcement visible on 20/11/2026 is Hotfix 762172 (05/11/2026). It changes map-screen sounds and fixes bugs involving Depth Worms, Moonblind birds, Skittersquids, Werepigs, Mermummies, retrofit behavior, Clean Sweeper visuals and shard loading; no armor/weapon stats or crafting recipe changes are listed. Use this as the current public baseline until a newer hotfix appears.
+
+
+**Contrato de blueprint e desmontagem:** a migração Alchemy One muda apenas tech level/filtro; o estado de aprendizado/blueprint não é alterado pela migração. A desmontagem por martelo foi atualizada de `moonrocknugget×1 + thulecite×1` para `moonglass_ingot×1 + thulecite×1`, respeitando a nova receita e o retorno padrão de 50% de loot do martelo.
