@@ -1,6 +1,6 @@
 # Crafting and progression balance audit — Metals and More Reforged 2.9.7
 
-Date: 2026-11-12  
+Date: 2026-11-20  
 Status: source inventory and balance hypotheses; no recipe cost is approved solely by this document.
 
 ## Design target
@@ -29,7 +29,7 @@ The current values below are read from `initialise/modded_recipes.lua` and `modm
 | Transistor | 2 gold nuggets, 1 cut stone | 1 copper ingot, 1 cut stone | Copper availability and science progression |
 | Lightning Rod | 4 gold nuggets, 1 cut stone | 1 gold ingot, 1 cut stone | Gold ingot currently represents 3 gold-value units |
 | Golden Axe/Pickaxe/Shovel/Farm Hoe | 4 twigs, 2 gold nuggets | 4 twigs, 1 gold ingot | The current ingot route raises nominal gold value from 2 to 3 units; assess against durability and tool tier |
-| Marble Armor | 6 marble, 2 rope | 12 marble, 4 rope, 1 iron ingot | Current proposal doubles marble/rope and adds iron; check defense, durability and acquisition risk |
+| Marble Armor | 6 marble, 2 rope | 6 marble, 2 rope, 1 iron ingot | Vanilla material baseline preserved; adds 3 iron-value and uses the Alchemy One station gate |
 | Portable Cookpot | 2 gold nuggets, 6 charcoal, 6 twigs | 3 iron ore, 6 charcoal, 6 twigs | Compare raw iron acquisition to gold baseline and portable cooking utility |
 | Portable Blender | 2 gold nuggets, 2 transistors, 4 twigs | 3 iron ore, 2 transistors, 4 twigs | Avoid charging both the full iron route and the existing transistor gate without clear value |
 | Portable Spice Station | 2 gold nuggets, 3 cut stone, 6 twigs | 3 iron ore, 3 cut stone, 6 twigs | Compare material access and the value of portable seasoning |
@@ -40,8 +40,8 @@ The current values below are read from `initialise/modded_recipes.lua` and `modm
 | Moonglass Axe | 2 twigs, 3 moonglass | 2 twigs, 1 moonglass ingot, 1 marble | Compare ingot conversion yield and tool durability |
 | Metal Smelter | MAM-owned | 4 iron ore, 2 cut stone | Validate earliest access and no softlock |
 | War Workbench | MAM-owned | 5 cut stone, 3 iron ingots, 5 charcoal | High-impact progression gate; compare output recipes and station role |
-| Marble Chest | MAM-owned | 5 marble, 2 gold ingots, 3 cut stone | Verify real slot count, fire behavior, hammer returns and cost against vanilla chest |
-| Cold Safe (fridge) | MAM-owned | 1 gear, 3 iron ingots, 1 blue gem | Verify real slot count, food preservation multiplier and cost against vanilla icebox |
+| Marble Chest | MAM-owned | 5 marble, 2 gold ingots, 3 cut stone | 25 slots vs vanilla chest 9; no burnable/propagator setup in prefab; fire/hammer runtime still pending |
+| Cold Safe (fridge) | MAM-owned | 1 gear, 3 iron ingots, 1 blue gem | 25 slots vs vanilla Ice Box 9; `fridge` tag applies vanilla 50% spoilage and cooling; runtime pending |
 
 ## Confirmed conversion facts from the current smelting code
 
@@ -59,7 +59,7 @@ The mod already has:
 - `cold_safe`: uses the 5×5 chest animation asset, has the `fridge` tag and calls `WidgetSetup("cold_safe")`.
 - `metal_storage_chest`: legacy prefab kept for save compatibility; no new crafting recipe should be added.
 
-Before changing either existing recipe, resolve the actual registered container widget layouts and food-preservation behavior in the active DST build. The animation asset alone does not prove the slot count. Compare the real capacity and functionality to the vanilla chest/icebox. The marble chest and cold safe must be priced according to their actual delivered utility, not their names or art.
+Code audit confirms both registered widgets use `makeChest()` with a 5×5 grid (25 slots), versus 9 slots for vanilla Chest/Ice Box. The Cold Safe `fridge` tag activates vanilla 50% spoilage and cooling; o componente `preserver` não é obrigatório para uma geladeira simples. The Marble Chest prefab does not add `burnable`/`propagator` components, unlike vanilla chest; fire resistance and hammer returns still require runtime verification. Price both structures by delivered utility, not art or name.
 
 ## Priority balance decisions
 
