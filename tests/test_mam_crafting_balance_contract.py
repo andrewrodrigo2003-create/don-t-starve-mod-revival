@@ -154,6 +154,10 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertNotRegex(forkstick, r"SetDamage\(\s*math\.random")
         self.assertIn("HARPOON_DAMAGE = 68", harpoon)
         self.assertIn("HARPOON_USES = 100", harpoon)
+        self.assertIn('\"armormarble\"', self.modded)
+        self.assertIn("MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE", self.modded)
+        jagged_line = next(line for line in self.modmain.splitlines() if 'AddRecipe2(\"jagged_armor\"' in line)
+        self.assertIn("TECH.MAM_FORGE_ONE", jagged_line)
 
     def test_cumulative_first_war_workbench_budget_is_documented(self):
         for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
