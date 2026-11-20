@@ -68,7 +68,7 @@ As receitas de equipamentos e estruturas metalúrgicas adicionais permanecem na 
 | `portableblender_item` | 3 iron_ore, 2 transistor, 4 twigs | override vanilla; confirmar estação atual |
 | `portablespicer_item` | 3 iron_ore, 3 cutstone, 6 twigs | override vanilla; confirmar estação atual |
 | `glasscutter` | 1 boards, 1 moonglass_ingot | conflito conhecido com overrides de outros mods; manter recipe guard |
-| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; 4 moonglass + 2 moonrock + thulecite; remove o gate vanilla `TECH.LOST`/blueprint |
+| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; 4 moonglass + 2 moonrock + thulecite; substitui o tech level `TECH.LOST`; aprendizado/blueprint não é alterado explicitamente |
 | `moondial` | 1 bluemooneye, 1 moonglass_ingot, 5 marble | item lunar; avaliar progressão antes de mover |
 | `moonrockcrater` | 1 moonglass_ingot, 2 moonrocknugget, 1 marble | item lunar; avaliar progressão antes de mover |
 | `moonglassaxe` | 1 moonglass_ingot, 2 twigs, 1 marble | item lunar; avaliar progressão antes de mover |
@@ -148,3 +148,4 @@ A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed,
 - `jagged_armor`: permanece em MAM_FORGE_ONE/War Workbench; 1500 condição, 85% absorção, +10% velocidade; custo 4 houndstooth + 3 gold_ingot + 1 armormarble + 3 iron_ingot. O custo premium é mantido.
 - `forkstick`: dano fixo de lança vanilla (34); `donharpoon`: 68 dano/100 usos, alcance 12–14 e penalidade de movimento preservados.
 - `moonglass_ingot`: saída agora carrega moon=1, alinhada ao moonrocknugget consumido; adamantium mantém 3 nightmarefuel + 1 iron_ingot por barra.
+- `archive_resonator` deconstruction: retorno vanilla foi atualizado para 1 moonglass_ingot + 1 thulecite. Como o martelo retorna 50% com arredondamento para cima, isso devolve 1 lingote (50% do custo de dois) e o thulecite integral; Dismantle preserva o item/usos restantes.
