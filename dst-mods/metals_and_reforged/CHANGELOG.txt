@@ -8,6 +8,7 @@ Universal Alchemy and equipment balance — 2026-11-20 (unreleased)
 - Restore Marble Suit's vanilla material baseline (6 marble + 2 rope) and add one Iron Ingot as the metalworking cost.
 - Replace Forkstick's random 12–99 base damage with the vanilla spear baseline (34); balance Don Harpoon to 68 damage / 100 uses while preserving its projectile/range and movement penalty.
 - Audit Jagged Armor against Thulecite Suit and keep its premium 1500/85%/+10% profile and War Workbench cost; document Adamantium and lunar conversion economics.
+- Record Nox Helm, Halberd, Scepter and Shears stats/consumption for balance follow-up; no attribute changes until runtime measurements.
 Universal Alchemy Station — 2026-11-18 (unreleased)
 ---------------------------------------------------
 - Make the vanilla Mad Scientist Lab craftable year-round without requiring Hallowed Nights, preserving its vanilla prefab and live ingredient list.
