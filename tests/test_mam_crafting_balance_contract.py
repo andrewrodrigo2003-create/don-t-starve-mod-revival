@@ -104,15 +104,56 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         self.assertIn('assert_consumption("gold batch", gold, { goldnugget = 6 }, {})', harness)
         self.assertIn("3 gold nuggets (as mesmas 3 unidades satisfazem gold e metal)", self.balance)
 
-    def test_lunar_tag_surplus_is_documented_without_changing_runtime_values(self):
+    def test_moonglass_lunar_tag_matches_the_consumed_moonrock(self):
         smelting = (MOD / "scripts" / "smelting.lua").read_text(encoding="utf-8")
         products = (MOD / "scripts" / "smelting_products.lua").read_text(encoding="utf-8")
         harness = (ROOT / "dst-mods" / "tests" / "smelting_module_harness.lua").read_text(encoding="utf-8")
-        self.assertIn('{moonglass = 2, moon = 2}', smelting)
+        self.assertIn('{moonglass = 2, moon = 1}', smelting)
         self.assertIn('moonglass_ingot   = { tags = { moonglass = 2, moon = 1 } }', products)
         self.assertIn('assert_consumption("moonglass batch", moon,', harness)
         self.assertIn('moonglass = 4, moonrocknugget = 2', harness)
-        self.assertIn("divergência de valor a investigar", self.balance)
+        self.assertIn("tag moon do lingote agora corresponde a 1 moonrocknugget", self.balance)
+
+    def test_mad_scientist_lab_provides_the_mam_alchemy_tree(self):
+        tech = (MOD / "scripts" / "mam" / "tech.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        self.assertIn("local madscience_tree = TUNING.PROTOTYPER_TREES.MADSCIENCE", tech)
+        self.assertIn("madscience_tree.ALCHEMY = math.max", tech)
+        self.assertIn("vanilla MADSCIENCE prototyper tree", tech)
+        self.assertIn('AddRecipe2("metallurgy_reference_book"', main)
+        self.assertIn("TECH.ALCHEMY_ONE", main)
+        self.assertIn("Mad Scientist Lab", self.balance)
+        self.assertIn("preserva a árvore vanilla MADSCIENCE", self.balance)
+
+    def test_jagged_armor_power_is_documented_against_thulecite(self):
+        jagged = (MOD / "scripts" / "prefabs" / "jagged_armor.lua").read_text(encoding="utf-8")
+        main = (MOD / "modmain.lua").read_text(encoding="utf-8")
+        self.assertIn("InitCondition(1500, 0.85)", jagged)
+        self.assertIn("walkspeedmult = 1.1", jagged)
+        self.assertIn('AddRecipe2("jagged_armor"', main)
+        self.assertIn("1.765", self.balance)
+        self.assertIn("Thulecite Suit", self.balance)
+        self.assertIn("1500 de condição, 85% de absorção e +10%", self.balance)
+
+    def test_adamantium_cost_is_composed_from_nightmare_fuel_and_named_iron(self):
+        smelting = (MOD / "scripts" / "smelting.lua").read_text(encoding="utf-8")
+        products = (MOD / "scripts" / "smelting_products.lua").read_text(encoding="utf-8")
+        harness = (ROOT / "dst-mods" / "tests" / "smelting_module_harness.lua").read_text(encoding="utf-8")
+        self.assertIn("{iron = 2, steel = 1, metal = 1}", smelting)
+        self.assertIn("tags.steel and tags.steel >= 3 and names.iron_ingot", products)
+        self.assertIn("adamantium_ingot  = { tags = { steel = 3 }, names = { iron_ingot = 1 }", products)
+        self.assertIn('assert_consumption("adamantium batch", adamantium', harness)
+        self.assertIn("6 nightmarefuel + 2 iron_ingot", self.balance)
+
+    def test_equipment_balance_ports_are_in_the_current_line(self):
+        recipes = table_recipes(self.modded)
+        self.assertEqual(recipes.get("armormarble"), "marble×6 + rope×2 + iron_ingot×1")
+        forkstick = (MOD / "scripts" / "prefabs" / "forkstick.lua").read_text(encoding="utf-8")
+        harpoon = (MOD / "scripts" / "prefabs" / "donharpoon.lua").read_text(encoding="utf-8")
+        self.assertIn("SetDamage(TUNING.SPEAR_DAMAGE)", forkstick)
+        self.assertNotRegex(forkstick, r"SetDamage\(\s*math\.random")
+        self.assertIn("HARPOON_DAMAGE = 68", harpoon)
+        self.assertIn("HARPOON_USES = 100", harpoon)
 
     def test_cumulative_first_war_workbench_budget_is_documented(self):
         for value in ("23 iron-value", "6 copper-value", "9 cutstone", "5 charcoal"):
