@@ -349,6 +349,7 @@ A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium
 - [Nightmare Fuel/DST](https://dontstarve.wiki.gg/wiki/Nightmare_Fuel/DST)
 - [Vanilla Mad Scientist Lab prefab source](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua) · [Mad Scientist Lab API notes](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/madscience_lab)
 - [Klei modding guidance](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together)
+- [DST Hotfix 762172 — 5 Nov 2026](https://steamcommunity.com/app/322330/announcements/) (no armor/weapon recipe changes in the latest public hotfix) · [Community discussion: 68 damage as a high-tier melee benchmark](https://www.reddit.com/r/dontstarve/comments/1j8he3f/)
 
 **Limites:** contratos e harnesses validam a lógica estática; ainda não há sessão real no DST, teste host/cliente, multiplayer, save/load, UM Beta 6.0.4, água/umidade, fogo ou martelamento.
 
@@ -369,3 +370,6 @@ Fontes: [Workshop original MAM](https://steamcommunity.com/sharedfiles/filedetai
 
 
 Nota de compatibilidade de prefab: `gold_ore` é alias legado que migra para `goldnugget`, não é um prefab ausente. O contador `countprefabs.gold_ore` em uma definição de sala é um valor local da sala, não a quantidade total do mundo.
+
+
+**Current game baseline:** the latest official announcement visible on 20/11/2026 is Hotfix 762172 (05/11/2026). It changes map-screen sounds and fixes bugs involving Depth Worms, Moonblind birds, Skittersquids, Werepigs, Mermummies, retrofit behavior, Clean Sweeper visuals and shard loading; no armor/weapon stats or crafting recipe changes are listed. Use this as the current public baseline until a newer hotfix appears.
