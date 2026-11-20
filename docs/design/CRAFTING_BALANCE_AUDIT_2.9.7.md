@@ -107,8 +107,7 @@ Before changing either existing recipe, resolve the actual registered container 
 - `smelting.lua` atribui a cada `goldnugget` `gold=1, metal=1`; o predicado de `gold_ingot` pede `gold>=3` e `metal>=3`. O harness confirma que 6 pepitas produzem 2 lingotes. Logo, são 3 pepitas por lingote, não 6.
 - `copper_ore` e `iron_ore` também fornecem simultaneamente o metal correspondente e `metal=1`. O requisito de uma tag não deve ser somado como se fosse outro ingrediente.
 - `nightmarefuel` fornece `iron=2, steel=1, metal=1`. Adamantium pede `steel>=3` e um `iron_ingot` nomeado: o custo físico atual é 3 nightmarefuel + 1 iron_ingot. Os valores de ferro/metal que vêm junto do nightmarefuel são atributos do mesmo item consumido, não ingredientes adicionais nem retornos separados.
-- **Ponto de auditoria lunar:** `PRODUCT_COSTS.moonglass_ingot` debita `moonglass=2, moon=1`, enquanto `smelting.lua` registra o lingote produzido com `moonglass=2, moon=2`. O harness atual confirma que 2 lingotes consomem 4 moonglass + 2 moonrocknugget e deixam 2 moonglass. O valor `moon=2` do produto carrega uma unidade lunar a mais por lingote do que o custo debitado. Isso não gera um item moon separado, mas altera a contabilidade de tags se o lingote voltar à forja; precisa de decisão explícita e teste de não duplicação antes de alterar qualquer valor.
-- A diferença lunar é registrada como **divergência de valor a investigar**, não como exploit confirmado nem como correção aprovada. Não alterar a tabela de tags nesta PR.
+- **Correção lunar aplicada nesta branch:** `PRODUCT_COSTS.moonglass_ingot` debita `moonglass=2, moon=1` e o lingote produzido agora recebe exatamente `moonglass=2, moon=1`. O tag moon do lingote agora corresponde a 1 moonrocknugget. O harness confirma que 2 lingotes consomem 4 moonglass + 2 moonrocknugget e deixam 2 moonglass; não há superávit de tag lunar para receitas futuras.
 
 ### 2. Overrides vanilla — assinatura atual MAM
 
@@ -126,12 +125,12 @@ Before changing either existing recipe, resolve the actual registered container 
 | `goldenpickaxe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
 | `goldenshovel` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
 | `golden_farm_hoe` | `twigs×4 + gold_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
-| `armormarble` | `marble×12 + rope×4 + iron_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
+| `armormarble` | `marble×6 + rope×2 + iron_ingot×1` | Mantém custo base vanilla e adiciona 1 lingote; Alchemy One/Mad Scientist Lab |
 | `portablecookpot_item` | `iron_ore×3 + charcoal×6 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
 | `portableblender_item` | `iron_ore×3 + transistor×2 + twigs×4` | Override vanilla protegido por assinatura e recipe guard |
 | `portablespicer_item` | `iron_ore×3 + cutstone×3 + twigs×6` | Override vanilla protegido por assinatura e recipe guard |
 | `glasscutter` | `boards×1 + moonglass_ingot×1` | Override vanilla protegido por assinatura e recipe guard |
-| `archive_resonator_item` | `thulecite×1 + moonglass_ingot×2` | Override vanilla protegido por assinatura e recipe guard |
+| `archive_resonator_item` | `thulecite×1 + moonglass_ingot×2` | Astral Detector de 10 usos; 4 moonglass + 2 moonrock + thulecite; migração substitui TECH.LOST/blueprint por Alchemy One |
 | `moondial` | `bluemooneye×1 + moonglass_ingot×1 + marble×5` | Override vanilla protegido por assinatura e recipe guard |
 | `moonrockcrater` | `moonglass_ingot×1 + moonrocknugget×2 + marble×1` | Override vanilla protegido por assinatura e recipe guard |
 | `moonglassaxe` | `moonglass_ingot×1 + twigs×2 + marble×1` | Override vanilla protegido por assinatura e recipe guard |
@@ -149,13 +148,13 @@ Before changing either existing recipe, resolve the actual registered container 
 | `nightsword` | `adamantium_ingot×2 + livinglog×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `marble_chest` | `marble×5 + gold_ingot×2 + cutstone×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `cold_safe` | `gears×1 + iron_ingot×3 + bluegem×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
-| `jagged_armor` | `houndstooth×4 + gold_ingot×3 + armormarble×1 + iron_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `jagged_armor` | `houndstooth×4 + gold_ingot×3 + armormarble×1 + iron_ingot×3` | `MAM_FORGE_ONE`/War Workbench; 1500 condição, 85% absorção, +10% velocidade |
 | `tfwp_luxury_nox_helm_hat` | `footballhat×1 + gold_ingot×3 + walrus_tusk×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `halberd` | `log×2 + iron_ingot×3 + rope×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `scepter` | `gold_ingot×3 + purplegem×1 + livinglog×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
-| `forkstick` | `gold_ingot×3 + sharkscale×3 + gnarwail_horn×1` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `forkstick` | `gold_ingot×3 + sharkscale×3 + gnarwail_horn×1` | `MAM_FORGE_ONE`; dano fixo 34 (`TUNING.SPEAR_DAMAGE`), sem rolagem 12–99 |
 | `shears` | `log×1 + flint×2 + iron_ingot×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
-| `donharpoon` | `marble×2 + flint×3 + iron_ingot×2` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
+| `donharpoon` | `marble×2 + flint×3 + iron_ingot×2` | `MAM_FORGE_ONE`; 68 dano/100 usos, alcance 12–14 e -20% velocidade |
 | `dst_willowdoll` | `beefalowool×4 + sewing_kit×1 + charcoal×10` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `forginghammer` | `hammer×1 + lightninggoathorn×1 + gold_ingot×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
 | `pithpike` | `lightninggoathorn×2 + gold_ingot×3 + houndstooth×3` | Receita própria/estação; conferir tier e utilidade antes de reequilibrar |
@@ -237,7 +236,7 @@ A implementação de `mam/tool_crafting.lua` acrescenta um requisito de ferramen
 | Compass / Razor | Compass usa 1 iron_ore; Razor usa 1 iron_ingot = mínimo 3 iron-value | Compass troca gold por iron; Razor troca flint por três unidades de ferro e precisa de comparação funcional |
 | Transistor / Lightning Rod | 1 copper_ingot = 3 copper ore; 1 gold_ingot = 3 gold nuggets (as mesmas 3 unidades satisfazem gold e metal) | Confirmar oferta de cobre/ouro; não contar lingote como 1 nugget nem dobrar tag sobreposta |
 | Ferramentas douradas | 1 gold_ingot cada = 3 goldnuggets (gold=3 e metal=3 pelas mesmas unidades), contra 2 goldnuggets vanilla | Aumenta o custo físico de ouro em 50%; revisar durabilidade/velocidade e concorrência de lingotes |
-| Marble Armor | 12 marble + 4 rope + 1 iron_ingot | Duplica marble/rope e adiciona 3 iron-value; comparar defesa/durabilidade e renovabilidade |
+| Marble Armor | 6 marble + 2 rope + 1 iron_ingot | Mantém materiais base vanilla e acrescenta 3 iron-value; permanece em Alchemy One, não é armadura MAM nova da War Workbench |
 | Cozinha portátil | Três itens exigem 3 iron_ore cada; blender também mantém 2 transistors | Avaliar o pacote junto: não cobrar ferro + transistores sem benefício proporcional |
 | Lunar | Moonglass ingot requer 2 moonglass + moon; vidro/arquivo/moondial/crater/axe adicionam marble/boards | Expandir conversão, confirmar disponibilidade de moonrock/moonglass e progressão lunar antes de alterar |
 | Estações MAM | Smelter 4 iron ore + 2 cutstone; War Workbench 3 iron_ingot + 5 cutstone + 5 charcoal; book 1 iron_ingot | Verificar soma acumulada e gargalo entre primeira forja, bancada e equipamento |
@@ -309,3 +308,46 @@ Esta tabela soma os rolls independentes de `AddChanceLoot` na configuração pad
 - Receitas próprias encontradas em `modmain.lua`, `modded_recipes.lua` e `modded_craftbook.lua`: 25.
 - Receitas migradas ao Craftbook: 35.
 - A cobertura é validada por `tests/test_mam_crafting_balance_contract.py`, que compara as assinaturas do código com esta documentação. Receita nova sem registro ou custo alterado sem atualização deliberada da matriz falha na CI.
+
+## 2026-11-20 — reavaliação de equipamentos, ligas e estação universal
+
+### Estação universal de Alquimia — correção de acesso
+
+A implementação anterior registrava `TECH.ALCHEMY_ONE`, mas o Mad Scientist Lab vanilla usa `TUNING.PROTOTYPER_TREES.MADSCIENCE`; nenhum prefab MAM atribuía a árvore ALCHEMY a essa bancada. Assim, mover receitas para Alchemy One não bastava para garantir que houvesse uma estação capaz de prototipá-las. A correção atual estende a própria tabela compartilhada `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1`, preservando a entrada vanilla `MADSCIENCE`. Isso é importante porque o prefab vanilla remove e recria seu componente `prototyper` durante os experimentos: modificar a árvore compartilhada mantém o acesso MAM após cada ciclo e não substitui o fluxo Hallowed Nights. A receita da bancada continua year-round, com custo vanilla, e todos os sobreviventes podem utilizá-la.
+
+**Efeito de progressão que precisa ficar explícito:** `archive_resonator_item` originalmente usa `TECH.LOST` e blueprint da Fountain of Knowledge. A migração de estação substitui seu `recipe.level` por `ALCHEMY_ONE`, removendo esse requisito de blueprint. O item é o Astral Detector, com 10 usos, que localiza peças do Celestial Sanctum e outros alvos; não é uma chave obrigatória para entrar no Ancient Archive. A alteração é um bypass de blueprint no código atual e precisa de validação de design/runtime antes do release.
+
+### Marble Suit, Jagged Armor e armas
+
+- `armormarble` passa de 12 marble + 4 rope + 1 iron ingot para **6 marble + 2 rope + 1 iron ingot**. Os 6 marble e 2 rope correspondem ao custo vanilla; o lingote adiciona 3 iron-value. Esta receita vanilla migrada permanece em `ALCHEMY_ONE`/Mad Scientist Lab. A regra de War Workbench vale para equipamentos MAM novos, como Jagged Armor, não para toda armadura vanilla migrada.
+- `jagged_armor` permanece com **1500 de condição, 85% de absorção e +10% de velocidade**. Sua durabilidade efetiva contra dano físico é 1500/0,85 = **1.765** de dano bruto absorvido até quebrar. O Thulecite Suit vanilla DST tem 1260 de condição, 90% de absorção e +3,3 sanity/min: 1260/0,90 = **1.400**. Jagged oferece aproximadamente 26% mais capacidade total de absorção e mobilidade, mas deixa passar 15% do dano por golpe (contra 10% da Thulecite) e não regenera sanidade. Seu custo de 4 houndstooth + 3 gold ingots + 1 Marble Suit + 3 iron ingots (4 iron ingots no total contando a Marble Suit) e a exigência `MAM_FORGE_ONE`/War Workbench são premium; manter stats e custo nesta rodada. A armadura MAM usa o asset `armor_hpdamager`, mas não deve ser confundida com a Jagged Grand Armor do evento Forge, que é outro item com atributos próprios.
+- `forkstick`: a rolagem aleatória 12–99 foi removida; agora usa `TUNING.SPEAR_DAMAGE` (34 no baseline DST), evitando cópias idênticas com dano radicalmente diferente.
+- `donharpoon`: passa de 80/150 para **68 dano/100 usos**, alinhando o dano à Dark Sword/Glass Cutter e os usos à Dark Sword; preserva o alcance 12–14, projétil e penalidade de movimento de 20%. É uma arma de alcance, não uma arma de dano superior.
+
+### Adamantium — custo e competição por Nightmare Fuel
+
+A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium_ingot**. O nightmarefuel fornece simultaneamente `steel=1`, `iron=2` e `metal=1`; os mesmos três itens pagam `steel=3`, e o lingote de ferro é um ingrediente nomeado separado. Não contar os tags de ferro/metal do nightmarefuel como itens extras. `armor_sanity` e `nightsword` usam 2 adamantium ingots cada: portanto, o custo físico por item é **6 nightmarefuel + 2 iron_ingot**, além de 3 papyrus ou 1 living log. Comparação vanilla: Night Armor = 5 nightmarefuel + 3 papyrus; Dark Sword = 5 nightmarefuel + 1 living log. O caminho MAM adiciona 1 nightmarefuel e 2 iron ingots para introduzir a progressão metalúrgica sem aumentar os atributos dos itens vanilla. É um custo alto, mas de fim de jogo e coerente com o papel de liga avançada; manter por enquanto, medindo se a demanda por Nightmare Fuel compete demais com armas, armaduras e combustível de sombra.
+
+### Economia lunar
+
+- Cada `moonglass_ingot` consome 2 moonglass + 1 moonrocknugget. A tag de saída foi alinhada a esse custo, sem alterar a receita física.
+- Moonglass tem rotas de renovação ligadas à Lunar Island/Vitreoasis e ciclos de lua; moonrock vem de meteoritos e fontes lunares periódicas. Ambos são renováveis, mas moonrock tem custo de oportunidade maior por concorrer com várias receitas e reparos lunares.
+- `archive_resonator_item`: 2 ingots + 1 thulecite = 4 moonglass + 2 moonrock + thulecite, contra 1 moonrock + thulecite vanilla. O Astral Detector tem 10 usos e é utilitário; o custo dobra moonrock e acrescenta 4 moonglass. Registrar como receita premium, sem reduzir até medir a quantidade de detecções por item e a taxa real de reposição.
+- `glasscutter`: 1 board + 1 ingot = 2 moonglass + 1 moonrock + board, contra 5 moonglass + log vanilla; reduz glass e adiciona moonrock.
+- `moondial`: 1 bluemooneye + 1 ingot + 5 marble; `moonrockcrater`: 1 ingot + 2 moonrock + 1 marble; `moonglassaxe`: 1 ingot + 2 twigs + 1 marble. Os custos adicionais de marble/boards devem ser avaliados contra a utilidade específica, não tratados como equivalentes diretos de moonrock.
+
+### Armazenamento — conclusão consolidada
+
+`makeChest()` cria 25 slots (5×5) para `marble_chest` e `cold_safe`, contra 9 slots no Chest/Ice Box vanilla (2,78×). A Cold Safe usa a tag `fridge`, que já ativa a taxa vanilla de 50% de deterioração e o resfriamento; não falta componente `preserver`. A Marble Chest não adiciona `burnable`/`propagator`, ao contrário do baú vanilla, mas resistência a fogo ainda requer teste no motor. Custos mantidos até validação de aquisição, fogo e martelamento.
+
+### Referências de jogo e comunidade
+
+- [Metals and more! (Reworked) — Workshop original, estatísticas e ligas](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184)
+- [Thulecite Suit/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Suit/DST) · [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST) · [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST)
+- [Jagged Grand Armor — item separado do evento Forge](https://dontstarve.wiki.gg/wiki/Jagged_Grand_Armor)
+- [Astral Detector](https://dontstarve.wiki.gg/wiki/Astral_Detector) · [Moon Glass](https://dontstarve.wiki.gg/wiki/Moon_Glass) · [Moon Rock](https://dontstarve.wiki.gg/wiki/Moon_Rock)
+- [Nightmare Fuel/DST](https://dontstarve.wiki.gg/wiki/Nightmare_Fuel/DST)
+- [Vanilla Mad Scientist Lab prefab source](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua) · [Mad Scientist Lab API notes](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/madscience_lab)
+- [Klei modding guidance](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together)
+
+**Limites:** contratos e harnesses validam a lógica estática; ainda não há sessão real no DST, teste host/cliente, multiplayer, save/load, UM Beta 6.0.4, água/umidade, fogo ou martelamento.
