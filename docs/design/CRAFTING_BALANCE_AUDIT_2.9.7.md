@@ -351,3 +351,18 @@ A receita de fundição continua **3 nightmarefuel + 1 iron_ingot por adamantium
 - [Klei modding guidance](https://support.klei.com/hc/en-us/articles/360029555992-Modding-Don-t-Starve-and-Don-t-Starve-Together)
 
 **Limites:** contratos e harnesses validam a lógica estática; ainda não há sessão real no DST, teste host/cliente, multiplayer, save/load, UM Beta 6.0.4, água/umidade, fogo ou martelamento.
+
+### Outros equipamentos MAM — revisão de stats e custos
+
+| Item | Código atual | Custo/estação | Avaliação nesta rodada |
+|---|---|---|---|
+| Resplendent Nox Helm | 1250 condição, 85% absorção, +15% dano físico, +10% velocidade | footballhat + 3 gold_ingot + walrus_tusk; MAM_FORGE_ONE | Capacete ofensivo premium. Thulecite Crown tem 840 condição/90% e chance de campo de força de 33% por 4 s (cooldown 9 s); Nox troca o proc defensivo por dano/mobilidade e maior condição. Manter, mas medir stacking com armadura corporal e bônus de personagem. |
+| Halberd | 51 dano, 150 usos, chop 7, -15% velocidade, dapperness -0,25/s (= -15 sanity/min), 2 hunger por chop; dano dobra contra Leif | 2 logs + 3 iron_ingot + rope; MAM_FORGE_ONE | Ferramenta/arma híbrida com custo alto e penalidades reais. 51×150 = 7650 dano bruto nominal; Dark Sword 68×100 = 6800, mas o Halberd tem dano por golpe menor e perde velocidade/sanidade/fome ao cortar. Manter em observação. |
+| Regal Scepter | 32 dano, alcance 1,6, cane speed, luz raio 6, fueltype OSSIFY + NIGHTMARE; reserva inicial = metade do tempo de Top Hat | 3 gold_ingot + purplegem + 2 livinglog; MAM_FORGE_ONE | Item multifunção (arma, mobilidade e luz) com consumo de combustível. Custo alto parece apropriado; medir duração real do combustível e utilidade em combate. |
+| Harvest Shears | 17 dano, 500 usos, areapicker raio 4; `SetConsumption(ACTIONS.AREAPICK, 1)` | log + 2 flint + 2 iron_ingot; ALCHEMY_ONE | Uma carga por ação AREAPICK concluída, não por planta individual. `BufferedAction:Do()` chama `invobject:OnUsedAsItem`; `FiniteUses:OnUsedAsItem` debita o consumo configurado. 500 ações de área é generoso; maior prioridade de medição de rendimento/ação, sem nerfar sem amostragem. |
+
+O Nox Helm MAM usa o build/asset do Forge, mas é uma variante craftável própria com componente de armadura; não confundir com o Nox Helm de evento, que é drop do Forge e não possui a mesma receita/armadura. A página original do MAM confirma os valores 1250/85%, +15% dano e +10% velocidade.
+
+**Leitura de balanceamento:** os maiores candidatos a teste de campo são Harvest Shears (500 usos por ação de área) e Nox Helm (armadura ofensiva no slot de cabeça). Halberd e Scepter são multifunção com custos e penalidades. Nenhum desses atributos foi alterado nesta etapa.
+
+Fontes: [Workshop original MAM](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184), [Thulecite Crown/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Crown/DST), [Resplendent Nox Helm — Forge event](https://dontstarve.wiki.gg/wiki/Resplendent_Nox_Helm), [FiniteUses component](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/finiteuses), [BufferedAction source](https://github.com/vietnd69/dst-scripts/blob/main/bufferedaction.lua).
