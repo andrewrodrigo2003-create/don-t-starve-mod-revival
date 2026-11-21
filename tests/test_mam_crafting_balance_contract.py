@@ -246,10 +246,17 @@ class CraftingBalanceCoverageTests(unittest.TestCase):
         for weapon in ("FORGINGHAMMER", "PITHPIKE", "SPIRALSPEAR", "BLACKSMITH_EDGE"):
             self.assertIn(f"if not TUNING.THE_FORGE_ITEM_PACK.{weapon}.DISABLE_RECIPE then", modmain)
             self.assertIn(f"{weapon}.DISABLE_RECIPE = GetModConfigData", forgepack)
-        legacy_at = modinfo.index('name = "legacy_forge_weapon_abilities"')
-        forge_at = modinfo.index('name = "forge_weapons"')
-        self.assertIn("default = false", modinfo[legacy_at:legacy_at + 500])
-        self.assertIn("default = false", modinfo[forge_at:forge_at + 500])
+        def option_block(option_name):
+            option_at = modinfo.index(f'name = "{option_name}"')
+            next_entry = re.search(
+                r'\n[ \t]{0,4}\},[ \t\r]*\n[ \t]{0,4}\{',
+                modinfo[option_at:],
+            )
+            self.assertIsNotNone(next_entry, f"Could not delimit config option {option_name}")
+            return modinfo[option_at:option_at + next_entry.start()]
+
+        self.assertIn("default = false", option_block("legacy_forge_weapon_abilities"))
+        self.assertIn("default = false", option_block("forge_weapons"))
         self.assertIn('GetModConfigData("FORGING_HAMMER_DURABILITY", 0)', forgepack)
         self.assertIn("DURABILITY.AMOUNT > 0", forgepack)
         self.assertIn("SetMaxUses", forgepack)
