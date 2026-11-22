@@ -19,7 +19,6 @@ def main():
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for path in files:
             z.write(path, f"dst_mod_inspector/{path.relative_to(HERE).as_posix()}")
-        z.write(HERE / "README.md", "dst_mod_inspector/README.md")
     with zipfile.ZipFile(archive) as z:
         bad = z.testzip()
         if bad:

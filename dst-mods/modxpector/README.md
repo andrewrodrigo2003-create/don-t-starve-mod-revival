@@ -13,7 +13,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - Workshop ID, metadados, classificação client/server e dependências.
 - Diagnóstico de servidor, sondagem opcional de TMI, snapshot de configurações e tela de inspeção.
 - Virtual Player observacional/simulador e contratos de teste.
-- Relatórios com distinção entre evidência confirmada e inferência.
+- Relatórios que distinguem evidência confirmada de inferência.
 
 ## Limites importantes
 
@@ -28,7 +28,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 Requer Lua 5.1.4. Na raiz do repositório:
 
 ```bash
-LUA_BIN=lua5.1 ./dst-mods/modxpector/tests/run-lua-tests.sh
+LUA_BIN=lua5.1 bash dst-mods/modxpector/tests/run-lua-tests.sh
 ```
 
 Os testes verificam inventário v2, integração do relatório, bootstrap e contratos estáticos da UI. Os testes completos do laboratório original também cobrem Virtual Player e estresse, mas dependem da infraestrutura `dst-lua-runtime` e não são reproduzidos apenas por este diretório.
@@ -44,4 +44,4 @@ Gera um ZIP de teste em `dist/modxpector/`, sem incluir relatórios temporários
 ## Documentação
 
 - [Contrato do inventário v2](docs/WORLD_INVENTORY_V2.md)
-- [Registro de desenvolvimento e estado operacional no Obsidian](https://github.com/andrewrodrigo2003-create/cerebro-secundario/tree/main/Universos%20e%20Jogos/Don't%20Starve%20Together/04%20-%20Projetos%20e%20Mods/DST%20Mod%20Inspector)
+- [Registro de desenvolvimento e estado operacional no Obsidian](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/Universos%20e%20Jogos/Don't%20Starve%20Together/04%20-%20Projetos%20e%20Mods/DST%20Mod%20Inspector/DST%20Mod%20Inspector%20%E2%80%94%20Desenvolvimento%20at%C3%A9%205.0.md)
