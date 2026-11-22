@@ -1,0 +1,550 @@
+-- Client-side virtual player. Uses the actual PlayerController/BufferedAction
+-- pipeline; it never creates a fake network player or bypasses server authority.
+-- DST mod environments may hide pcall; use the engine global table.
+local DST_GLOBAL = GLOBAL or _G
+local pcall = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
+local VirtualPlayer = {}
+VirtualPlayer.__index = VirtualPlayer
+
+local ACTION_ALLOWLIST = {
+    ATTACK = true, CHOP = true, MINE = true, DIG = true, HAMMER = true,
+    PICK = true, HARVEST = true, PICKUP = true, TILL = true, REPAIR = true,
+    WALKTO = true, EAT = true, USEITEM = true, CASTAOE = true, CASTSPELL = true,
+    RUMMAGE = true, DISMOUNT = true, MOUNT = true, TALKTO = true, DEPLOY = true,
+    PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
+    COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
+    LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
+    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
+}
+
+local function is_finite_number(value)
+    return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+local function as_array(value)
+    if value == nil then return nil end
+    if type(value) == "string" then return { value } end
+    return value
+end
+
+function VirtualPlayer.new(player, options)
+    assert(player ~= nil and player:IsValid(), "a live local player entity is required")
+    local self = setmetatable({}, VirtualPlayer)
+    self.player = player
+    self.options = options or {}
+    self.max_steps = math.max(1, math.min(self.options.max_steps or 100, 200))
+    self.poll_interval = 0.15
+    self.default_timeout = 20
+    self.queue = {}
+    self.index = 0
+    self.results = {}
+    self.running = false
+    self.active = nil
+    self.next_request_id = 0
+    self.send_rpc = self.options.send_rpc
+    self.on_finished = self.options.on_finished
+    self.allowed_actions = {}
+    self.allowed_prefabs = {}
+    for _, action_name in ipairs(self.options.allowed_actions or {}) do
+        if type(action_name) == "string" then self.allowed_actions[action_name] = true end
+    end
+    for _, prefab in ipairs(self.options.allowed_prefabs or {}) do
+        if type(prefab) == "string" then self.allowed_prefabs[prefab] = true end
+    end
+    self:_bind_events()
+    return self
+end
+
+function VirtualPlayer:_bind_events()
+    if self.player.ListenForEvent == nil then return end
+    self.player:ListenForEvent("onremove", function()
+        self:Stop("player entity removed")
+    end)
+end
+
+function VirtualPlayer:ResolveTarget(selector)
+    if selector == nil then return nil end
+    if type(selector) ~= "table" then error("target selector must be an object") end
+    if type(selector.prefab) ~= "string" or not self.allowed_prefabs[selector.prefab] then
+        error("target prefab is not in the test plan allowlist")
+    end
+    local x, y, z = self.player.Transform:GetWorldPosition()
+    local radius = math.max(1, math.min(tonumber(selector.radius) or 12, 40))
+    local must = as_array(selector.tags)
+    local cant = as_array(selector.notags)
+    local oneof = as_array(selector.oneoftags)
+    local candidates = TheSim:FindEntities(x, y, z, radius, must, cant, oneof) or {}
+    local matches = {}
+    for _, entity in ipairs(candidates) do
+        if entity ~= nil and entity:IsValid() and entity ~= self.player then
+            local prefab_ok = selector.prefab == nil or entity.prefab == selector.prefab
+            local tag_ok = selector.tag == nil or entity:HasTag(selector.tag)
+            if prefab_ok and tag_ok then
+                local ex, ey, ez = entity.Transform:GetWorldPosition()
+                local dx, dz = ex - x, ez - z
+                matches[#matches + 1] = { entity = entity, distance_sq = dx * dx + dz * dz }
+            end
+        end
+    end
+    table.sort(matches, function(a, b) return a.distance_sq < b.distance_sq end)
+    return matches[1] ~= nil and matches[1].entity or nil
+end
+
+function VirtualPlayer:BuildAction(step, target_override)
+    assert(type(step) == "table", "action step must be an object")
+    local action_name = step.action
+    assert(type(action_name) == "string" and (ACTION_ALLOWLIST[action_name] or self.allowed_actions[action_name]), "action is not allowed")
+    assert(ACTIONS ~= nil and ACTIONS[action_name] ~= nil, "action is not available in this DST build: " .. action_name)
+    assert(type(BufferedAction) == "function", "BufferedAction API unavailable")
+    local target = target_override ~= nil and target_override or self:ResolveTarget(step.target)
+    if step.target_required then assert(target ~= nil, "requested action target was not found") end
+    local position
+    if step.position ~= nil then
+        assert(type(step.position) == "table" and is_finite_number(step.position.x) and is_finite_number(step.position.z), "invalid action position")
+        position = Vector3(step.position.x, step.position.y or 0, step.position.z)
+    end
+    local invobject
+    if step.invobject ~= nil then
+        assert(self.allowed_prefabs[step.invobject], "action inventory item is not in the test plan prefab allowlist")
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil and type(inventory.FindItem) == "function", "inventory replica unavailable")
+        invobject = inventory:FindItem(function(item) return item ~= nil and item.prefab == step.invobject end)
+        assert(invobject ~= nil, "requested inventory item not found: " .. tostring(step.invobject))
+    end
+    return BufferedAction(self.player, target, ACTIONS[action_name], invobject, position)
+end
+
+function VirtualPlayer:_schedule(delay, fn)
+    if not self.running or self.player == nil or not self.player:IsValid() then return end
+    self.player:DoTaskInTime(math.max(0, delay or 0), function()
+        if self.running then fn() end
+    end)
+end
+
+function VirtualPlayer:_record(step, status, detail)
+    self.results[#self.results + 1] = {
+        index = self.index,
+        kind = step.kind,
+        action = step.action,
+        status = status,
+        detail = detail,
+    }
+end
+
+function VirtualPlayer:_finish(ok, message)
+    self.running = false
+    self.active = nil
+    self.run_failed = not ok
+    if ok then
+        self.failure = nil
+    else
+        self.failure = message
+    end
+    self:_record({ kind = "run" }, ok and "completed" or "failed", message)
+    if self.on_finished ~= nil then self.on_finished(self:GetReport()) end
+end
+
+function VirtualPlayer:Start(plan)
+    assert(not self.running, "virtual player is already running")
+    assert(type(plan) == "table" and plan.schema == "modxpector/test-plan/v1", "unsupported test plan schema")
+    assert(plan.enabled == true, "test plan is disabled")
+    assert(type(plan.steps) == "table" and #plan.steps <= self.max_steps, "test plan exceeds step limit")
+    self.queue = plan.steps
+    self.index = 0
+    self.results = {}
+    self.assertions_total = 0
+    self.assertions_passed = 0
+    self.running = true
+    self:_next()
+    return true
+end
+
+function VirtualPlayer:_is_target_entity_dead(target)
+    if target == nil then return true end
+    if type(target.IsValid) == "function" then
+        local ok, valid = pcall(target.IsValid, target)
+        if not ok then error("target validity check failed: " .. tostring(valid)) end
+        if valid ~= true then return true end
+    end
+    local health = target.replica ~= nil and target.replica.health or nil
+    assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
+    local current_health = health:GetCurrent()
+    assert(type(current_health) == "number" and current_health == current_health, "target health value unavailable")
+    return current_health <= 0
+end
+
+function VirtualPlayer:_evaluate_assertion(assertion)
+    assert(type(assertion) == "table", "assertion must be an object")
+    local kind = assertion.kind
+    local actual, expected
+    if kind == "player_has_item" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil and type(inventory.FindItem) == "function", "inventory replica unavailable")
+        local prefab = assert(assertion.prefab, "assertion prefab required")
+        assert(self.allowed_prefabs[prefab], "assertion item prefab is not in the test plan allowlist")
+        actual = inventory:FindItem(function(item) return item ~= nil and item.prefab == prefab end) ~= nil
+        expected = assertion.expected ~= false
+    elseif kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then
+        local replica_name = kind == "player_health_gte" and "health"
+            or kind == "player_hunger_gte" and "hunger" or "sanity"
+        local replica = self.player.replica ~= nil and self.player.replica[replica_name] or nil
+        assert(replica ~= nil and type(replica.GetCurrent) == "function", replica_name .. " replica unavailable")
+        actual, expected = replica:GetCurrent(), tonumber(assertion.value)
+        assert(expected ~= nil, replica_name .. " assertion value required")
+    elseif kind == "player_has_item_count_gte" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil and type(inventory.Has) == "function", "inventory replica Has unavailable")
+        local prefab = assert(assertion.prefab, "assertion prefab required")
+        assert(self.allowed_prefabs[prefab], "assertion item prefab is not in the test plan allowlist")
+        actual = inventory:Has(prefab, assertion.count, true)
+        expected = assertion.expected ~= false
+    elseif kind == "player_equipped" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil and type(inventory.GetEquippedItem) == "function", "inventory replica GetEquippedItem unavailable")
+        assert(EQUIPSLOTS ~= nil and EQUIPSLOTS[assertion.slot] ~= nil, "unknown equipment slot")
+        local item = inventory:GetEquippedItem(EQUIPSLOTS[assertion.slot])
+        actual = item ~= nil and item.prefab == assertion.prefab
+        expected = assertion.expected ~= false
+    elseif kind == "player_near_target" then
+        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        actual = false
+        if target ~= nil and self.player.Transform ~= nil and target.Transform ~= nil
+            and type(self.player.Transform.GetWorldPosition) == "function"
+            and type(target.Transform.GetWorldPosition) == "function" then
+            local px, _, pz = self.player.Transform:GetWorldPosition()
+            local tx, _, tz = target.Transform:GetWorldPosition()
+            local dx, dz = px - tx, pz - tz
+            local radius = assertion.radius or 5
+            actual = dx * dx + dz * dz <= radius * radius
+        end
+        expected = assertion.expected ~= false
+    elseif kind == "target_exists" then
+        actual = self:ResolveTarget(assert(assertion.target, "target selector required")) ~= nil
+        expected = assertion.expected ~= false
+    elseif kind == "target_health_lte" then
+        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        assert(target ~= nil, "health assertion target not found")
+        local health = target.replica ~= nil and target.replica.health or nil
+        assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
+        actual, expected = health:GetCurrent(), tonumber(assertion.value)
+        assert(expected ~= nil, "target health assertion value required")
+    elseif kind == "target_dead" then
+        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        actual = self:_is_target_entity_dead(target)
+        expected = assertion.expected ~= false
+    elseif kind == "target_has_tag" then
+        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        actual = target ~= nil and target:HasTag(assert(assertion.tag, "tag required")) or false
+        expected = assertion.expected ~= false
+    else
+        error("unsupported virtual-player assertion: " .. tostring(kind))
+    end
+    local passed
+    if kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then passed = actual >= expected
+    elseif kind == "target_health_lte" then passed = actual <= expected
+    else passed = actual == expected end
+    return { kind = kind, actual = actual, expected = expected, passed = passed }
+end
+
+function VirtualPlayer:_submit_craft(step)
+    assert(type(GetValidRecipe) == "function", "GetValidRecipe API unavailable")
+    local recipe = GetValidRecipe(step.recipe)
+    assert(recipe ~= nil, "recipe is not registered: " .. tostring(step.recipe))
+    local builder = self.player.replica ~= nil and self.player.replica.builder or nil
+    assert(builder ~= nil, "player builder replica unavailable")
+    assert(builder:KnowsRecipe(recipe), "player does not know recipe: " .. tostring(step.recipe))
+    assert(builder:HasIngredients(recipe), "player lacks ingredients for recipe: " .. tostring(step.recipe))
+    if step.kind == "craft" then
+        assert(recipe.placer == nil, "placer recipes must use craft_at_point")
+        assert(type(builder.MakeRecipeFromMenu) == "function", "BuilderReplica:MakeRecipeFromMenu unavailable")
+        builder:MakeRecipeFromMenu(recipe, step.skin)
+        return "submitted"
+    end
+
+    assert(recipe.placer ~= nil, "craft_at_point requires a recipe with a placer")
+    assert(type(step.position) == "table" and is_finite_number(step.position.x) and is_finite_number(step.position.z),
+           "craft_at_point requires a finite world position")
+    assert(type(builder.BufferBuild) == "function" and type(builder.IsBuildBuffered) == "function"
+           and type(builder.CanBuildAtPoint) == "function" and type(builder.MakeRecipeAtPoint) == "function",
+           "BuilderReplica buffered-placement API unavailable")
+    if not builder:IsBuildBuffered(step.recipe) then
+        builder:BufferBuild(step.recipe)
+    end
+    self.active = {
+        step = step,
+        started = GetTime(),
+        timeout = math.max(1, math.min(tonumber(step.timeout) or 10, 30)),
+        phase = "buffer",
+    }
+    self:_record(step, "started", "waiting for DST builder replica to buffer the placer recipe")
+    self:_schedule(self.poll_interval, function() self:_poll_craft_buffer() end)
+    return "buffering"
+end
+
+function VirtualPlayer:_poll_craft_buffer()
+    if not self.running or self.active == nil or self.active.phase ~= "buffer" then return end
+    local active = self.active
+    local step = active.step
+    local builder = self.player.replica ~= nil and self.player.replica.builder or nil
+    if builder == nil or type(builder.IsBuildBuffered) ~= "function" then
+        self:_record(step, "failed", "builder replica became unavailable while buffering the recipe")
+        self:_finish(false, "builder replica unavailable")
+        return
+    end
+
+    if builder:IsBuildBuffered(step.recipe) then
+        local recipe = GetValidRecipe(step.recipe)
+        local pos = step.position
+        local point = Vector3(pos.x, pos.y or 0, pos.z)
+        if not builder:CanBuildAtPoint(point, recipe, step.rotation or 0) then
+            self:_record(step, "failed", "DST rejected the requested placement position")
+            self:_finish(false, "placement position is not deployable")
+            return
+        end
+        if type(builder.MakeRecipeAtPoint) ~= "function" then
+            self:_record(step, "failed", "BuilderReplica:MakeRecipeAtPoint unavailable")
+            self:_finish(false, "placement API unavailable")
+            return
+        end
+        builder:MakeRecipeAtPoint(recipe, point, step.rotation or 0, step.skin)
+        self:_record(step, "submitted_unverified", "buffered placer recipe submitted through BuilderReplica; verify placement with a target_exists assertion")
+        self.active = nil
+        self:_schedule(0.5, function() self:_next() end)
+    elseif GetTime() - active.started >= active.timeout then
+        self:_record(step, "failed", "builder replica did not buffer the recipe; inventory may be hidden or ingredients/recipe unavailable")
+        self:_finish(false, "craft_at_point buffer timeout")
+    else
+        self:_schedule(self.poll_interval, function() self:_poll_craft_buffer() end)
+    end
+end
+
+function VirtualPlayer:_next()
+    if not self.running then return end
+    self.index = self.index + 1
+    local step = self.queue[self.index]
+    if step == nil then self:_finish(true, "all steps processed"); return end
+    if type(step) ~= "table" then self:_finish(false, "invalid step " .. tostring(self.index)); return end
+
+    if step.kind == "wait" then
+        local seconds = tonumber(step.seconds) or 1
+        if not is_finite_number(seconds) or seconds < 0 or seconds > 120 then
+            self:_finish(false, "invalid wait duration")
+            return
+        end
+        self:_record(step, "started", "waiting")
+        self:_schedule(seconds, function() self:_record(step, "completed", "wait elapsed"); self:_next() end)
+    elseif step.kind == "action" then
+        local repeat_until_target_dead = step.repeat_until_target_dead == true
+        local max_repeats = tonumber(step.max_repeats)
+        local repeat_timeout = tonumber(step.repeat_timeout) or 120
+        if step.repeat_until_target_dead ~= nil and type(step.repeat_until_target_dead) ~= "boolean" then
+            self:_finish(false, "repeat_until_target_dead must be boolean")
+            return
+        end
+        if repeat_until_target_dead then
+            if step.action ~= "ATTACK" or step.target_required ~= true
+                or not is_finite_number(max_repeats) or max_repeats ~= math.floor(max_repeats)
+                or max_repeats < 1 or max_repeats > 20
+                or not is_finite_number(repeat_timeout) or repeat_timeout < 1 or repeat_timeout > 600 then
+                self:_finish(false, "repeat-until-dead requires ATTACK, a required target, max_repeats 1..20, and repeat_timeout 1..600")
+                return
+            end
+        elseif step.max_repeats ~= nil or step.repeat_timeout ~= nil then
+            self:_finish(false, "max_repeats/repeat_timeout require repeat_until_target_dead")
+            return
+        end
+        local ok, action_or_error = pcall(function() return self:BuildAction(step) end)
+        if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
+        local target_entity = action_or_error.target
+        if repeat_until_target_dead then
+            local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity) end)
+            if not alive_ok or target_dead ~= false then
+                self:_finish(false, "attack target is missing, already dead, or has no readable health")
+                return
+            end
+        end
+        local controller = self.player.components ~= nil and self.player.components.playercontroller or nil
+        if controller == nil or type(controller.DoAction) ~= "function" then
+            self:_finish(false, "PlayerController:DoAction unavailable")
+            return
+        end
+        local action = action_or_error
+        controller:DoAction(action)
+        self.active = {
+            step = step, action = action, started = GetTime(),
+            timeout = math.max(1, math.min(tonumber(step.timeout) or self.default_timeout, 120)),
+            repeat_count = 0, max_repeats = repeat_until_target_dead and max_repeats or nil,
+            repeat_started = repeat_until_target_dead and GetTime() or nil,
+            repeat_timeout = repeat_until_target_dead and repeat_timeout or nil,
+            target_entity = repeat_until_target_dead and target_entity or nil,
+        }
+        self:_record(step, "started", repeat_until_target_dead
+            and "ATTACK submitted; bounded repetition will stop when target is dead"
+            or "BufferedAction submitted to PlayerController")
+        self:_schedule(self.poll_interval, function() self:_poll_action() end)
+    elseif step.kind == "unlock_recipe" then
+        if type(self.send_rpc) ~= "function" then self:_finish(false, "server RPC bridge unavailable"); return end
+        self.next_request_id = self.next_request_id + 1
+        self.active = { step = step, request_id = self.next_request_id, started = GetTime(), timeout = 15 }
+        self:_record(step, "started", "requesting server-authoritative recipe unlock")
+        self.send_rpc("unlock_recipe", self.active.request_id, step.recipe)
+        self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
+    elseif step.kind == "craft" or step.kind == "craft_at_point" then
+        local ok, result = pcall(function() return self:_submit_craft(step) end)
+        if not ok then
+            self:_record(step, "failed", tostring(result))
+            self:_finish(false, tostring(result))
+        elseif result == "buffering" then
+            return
+        else
+            self:_record(step, "submitted_unverified", "BuilderReplica submitted the craft request; verify the result with an assertion step")
+            self:_schedule(0.5, function() self:_next() end)
+        end
+    elseif step.kind == "assert" then
+        local ok, result = pcall(function() return self:_evaluate_assertion(step.assertion) end)
+        self.assertions_total = (self.assertions_total or 0) + 1
+        if ok and result.passed then
+            self.assertions_passed = (self.assertions_passed or 0) + 1
+            self:_record(step, "passed", "assertion passed: " .. tostring(result.kind))
+            self:_next()
+        else
+            self:_record(step, "failed", ok and ("assertion failed: " .. tostring(result.kind)) or tostring(result))
+            self:_finish(false, ok and "assertion failed" or tostring(result))
+        end
+    elseif step.kind == "spawn_item" or step.kind == "spawn_entity" then
+        if type(self.send_rpc) ~= "function" then self:_finish(false, "server RPC bridge unavailable"); return end
+        assert(type(step.prefab) == "string" and #step.prefab <= 128, "invalid prefab")
+        local count = math.max(1, math.min(tonumber(step.count) or 1, 20))
+        local x, y, z = self.player.Transform:GetWorldPosition()
+        if step.position ~= nil then
+            assert(is_finite_number(step.position.x) and is_finite_number(step.position.z), "invalid spawn position")
+            x, z = step.position.x, step.position.z
+        end
+        self.next_request_id = self.next_request_id + 1
+        self.active = { step = step, request_id = self.next_request_id, started = GetTime(), timeout = 15 }
+        self:_record(step, "started", "requesting server-authoritative spawn")
+        self.send_rpc(step.kind, self.active.request_id, step.prefab, count, x, z)
+        self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
+    else
+        self:_finish(false, "unsupported virtual-player step kind: " .. tostring(step.kind))
+    end
+end
+
+function VirtualPlayer:_poll_action()
+    if not self.running or self.active == nil then return end
+    local active = self.active
+    local current = self.player:GetBufferedAction()
+    if current == active.action then
+        if active.step.repeat_until_target_dead == true
+            and GetTime() - (active.repeat_started or active.started) > (active.repeat_timeout or 120) then
+            self:_record(active.step, "timeout", "target remained alive or attack action stayed buffered beyond the total repeat time budget")
+            self:_finish(false, "attack repeat timeout")
+        elseif GetTime() - active.started > active.timeout then
+            self:_record(active.step, "timeout", "BufferedAction did not finish before timeout")
+            self:_finish(false, "action timeout at step " .. tostring(self.index))
+        else
+            self:_schedule(self.poll_interval, function() self:_poll_action() end)
+        end
+        return
+    end
+    if active.step.repeat_until_target_dead == true then
+        local repeat_count = (active.repeat_count or 0) + 1
+        local check_ok, target_dead = pcall(function()
+            return self:_is_target_entity_dead(active.target_entity)
+        end)
+        if not check_ok then
+            self:_record(active.step, "failed", tostring(target_dead))
+            self:_finish(false, "could not verify attack target death: " .. tostring(target_dead))
+            return
+        end
+        if target_dead == true then
+            self:_record(active.step, "completed", "target defeated after " .. tostring(repeat_count) .. " attack(s)")
+            self.active = nil
+            self:_next()
+        elseif GetTime() - (active.repeat_started or active.started) > (active.repeat_timeout or 120) then
+            self:_record(active.step, "timeout", "target remained alive beyond the repeat attack time budget")
+            self:_finish(false, "attack repeat timeout")
+        elseif repeat_count >= (active.max_repeats or 1) then
+            self:_record(active.step, "failed", "target still alive after " .. tostring(repeat_count) .. " attack(s)")
+            self:_finish(false, "target not defeated within max_repeats")
+        else
+            self:_record(active.step, "attack_attempt", "target still alive after " .. tostring(repeat_count) .. " attack(s); repeating")
+            local step, timeout, max_repeats = active.step, active.timeout, active.max_repeats
+            local repeat_started, total_repeat_timeout = active.repeat_started, active.repeat_timeout
+            local target_entity = active.target_entity
+            self.active = nil
+            self:_schedule(self.poll_interval, function()
+                if not self.running then return end
+                local ok, next_action = pcall(function() return self:BuildAction(step, target_entity) end)
+                if not ok then
+                    self:_record(step, "failed", tostring(next_action))
+                    self:_finish(false, tostring(next_action))
+                    return
+                end
+                local controller = self.player.components ~= nil and self.player.components.playercontroller or nil
+                if controller == nil or type(controller.DoAction) ~= "function" then
+                    self:_finish(false, "PlayerController:DoAction unavailable during repeated attack")
+                    return
+                end
+                controller:DoAction(next_action)
+                self.active = {
+                    step = step, action = next_action, started = GetTime(), timeout = timeout,
+                    repeat_count = repeat_count, max_repeats = max_repeats,
+                    repeat_started = repeat_started, repeat_timeout = total_repeat_timeout,
+                    target_entity = target_entity,
+                }
+                self:_schedule(self.poll_interval, function() self:_poll_action() end)
+            end)
+        end
+        return
+    end
+    self:_record(active.step, "cleared_unverified", "buffered action cleared; verify the expected world change with an assertion step")
+    self.active = nil
+    self:_next()
+end
+
+function VirtualPlayer:_poll_rpc()
+    if not self.running or self.active == nil then return end
+    local active = self.active
+    if GetTime() - active.started > active.timeout then
+        self:_finish(false, "server spawn RPC timeout")
+    else
+        self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
+    end
+end
+
+function VirtualPlayer:OnRPCResult(request_id, success, message)
+    if not self.running or self.active == nil or self.active.request_id ~= request_id then return false end
+    local step = self.active.step
+    self:_record(step, success and "completed" or "failed", tostring(message or "server response"))
+    self.active = nil
+    if success then
+        self:_schedule(0.35, function() self:_next() end)
+    else
+        self:_finish(false, tostring(message or "server rejected test operation"))
+    end
+    return true
+end
+
+function VirtualPlayer:Stop(reason)
+    if not self.running then return false end
+    self:_finish(false, reason or "stopped")
+    return true
+end
+
+function VirtualPlayer:GetReport()
+    return {
+        schema = "modxpector/live-virtual-player/v1",
+        evidence_level = "in-game-runner-unvalidated",
+        player = self.player ~= nil and self.player:IsValid() and self.player.prefab or nil,
+        running = self.running,
+        steps_completed = #self.results,
+        assertions_total = self.assertions_total or 0,
+        assertions_passed = self.assertions_passed or 0,
+        outcome = self.run_failed and "failed" or ((self.assertions_total or 0) == 0 and "inconclusive" or ((self.assertions_passed or 0) == (self.assertions_total or 0) and "passed" or "failed")),
+        failure = self.failure,
+        results = self.results,
+    }
+end
+
+return VirtualPlayer
