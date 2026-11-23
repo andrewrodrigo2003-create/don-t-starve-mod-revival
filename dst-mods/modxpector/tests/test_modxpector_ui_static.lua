@@ -316,6 +316,16 @@ assert(ui:find('self.content_prefabs_button = make_button(self.content, "Prefabs
 assert(ui:find('self.content_first_button:SetDisabled(self.content_page <= 1)', 1, true)
     and ui:find('self.content_last_button:SetDisabled(self.content_page >= page_count)', 1, true),
     "Prefab navigation must disable boundary controls")
+assert(ui:find('"Somente ativos", -270, -185', 1, true)
+    and ui:find('"Anterior", -90, -185', 1, true)
+    and ui:find('"Próxima", 90, -185', 1, true)
+    and ui:find('"Atualizar", 270, -185', 1, true),
+    "Mod navigation controls must have non-overlapping horizontal spacing")
+assert(ui:find('"Anterior", -270, -215', 1, true)
+    and ui:find('"Próxima", -90, -215', 1, true)
+    and ui:find('"Atualizar", 90, -215', 1, true)
+    and ui:find('"Voltar", 270, -215', 1, true),
+    "Nearby entity controls must have non-overlapping horizontal spacing")
 
 -- Local bridge is fail-closed when configuration is missing or unset.
 assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then', 1, true)
