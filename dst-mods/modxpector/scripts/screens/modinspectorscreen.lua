@@ -245,7 +245,7 @@ end
 function InspectorScreen:RunScenario(scenario)
     local checks = {}
     local tmi_info = nil
-    local tmi_control, tmi_data, tmi_control_source, tmi_list_state = nil, nil, nil, nil
+    local tmi_control, tmi_data, tmi_control_source, tmi_list_state, tmi_menu_open = nil, nil, nil, nil, nil
     local function check(label, passed)
         local sequence = #checks + 1
         checks[#checks + 1] = {
