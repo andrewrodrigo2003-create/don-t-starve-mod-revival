@@ -74,6 +74,7 @@ local controller
 controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
     allowed_prefabs = { "cutgrass", "axe", "tree" },
+    allowed_recipes = { "axe", "structure" },
     send_rpc = function(kind, request_id, value, count, _x, _z)
         if kind == "unlock_recipe" then
             assert(value == "axe")
@@ -88,6 +89,7 @@ controller = VirtualPlayer.new(player, {
 local plan = {
     schema = "modxpector/test-plan/v1",
     enabled = true,
+    allowed_recipes = { "axe", "structure" },
     steps = {
         { kind = "action", action = "CHOP", timeout = 5 },
         { kind = "wait", seconds = 0 },
@@ -158,3 +160,35 @@ assert(timeout_finished ~= nil and timeout_finished.outcome == "failed")
 assert(timeout_finished.failure == "craft_at_point buffer timeout")
 player.replica.builder.BufferBuild = original_buffer_build
 print("MODXPECTOR_PLACER_TIMEOUT_CONTRACT_OK")
+
+
+-- Craft and placer-craft must fail closed when the recipe is absent from the plan allowlist.
+local denied_craft_report
+local denied_craft = VirtualPlayer.new(player, {
+    allowed_recipes = { "axe" },
+    on_finished = function(report) denied_craft_report = report end,
+})
+assert(denied_craft:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "craft", recipe = "structure" } },
+}))
+assert(denied_craft_report ~= nil and denied_craft_report.outcome == "failed")
+assert(string.find(denied_craft_report.failure, "allowlist", 1, true))
+assert(player.crafted_recipe == "axe", "disallowed recipe must not be crafted")
+
+local denied_placer_report
+local denied_placer = VirtualPlayer.new(player, {
+    allowed_recipes = { "axe" },
+    on_finished = function(report) denied_placer_report = report end,
+})
+assert(denied_placer:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "craft_at_point", recipe = "structure", position = { x = 2, z = 3 } } },
+}))
+assert(denied_placer_report ~= nil and denied_placer_report.outcome == "failed")
+assert(string.find(denied_placer_report.failure, "allowlist", 1, true))
+assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure",
+    "disallowed placer recipe must not be submitted again")
+print("MODXPECTOR_CRAFT_RECIPE_ALLOWLIST_CONTRACT_OK")
