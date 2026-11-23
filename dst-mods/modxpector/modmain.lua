@@ -255,6 +255,7 @@ start_virtual_player = function(inst, plan, token, port)
         max_steps = 200,
         allowed_actions = plan.allowed_actions or {},
         allowed_prefabs = plan.allowed_prefabs or {},
+        allowed_recipes = plan.allowed_recipes or {},
         send_rpc = function(kind, request_id, value, count, x, z)
             if kind == "unlock_recipe" then
                 SendModRPCToServer(MOD_RPC[MODNAME].unlock_recipe, request_id, value)
@@ -437,7 +438,7 @@ local bridge_probe_started = false
 local bridge_probe_attempts = 0
 local function probe_local_ai_bridge(inst)
     if bridge_probe_started or inst == nil or inst ~= ThePlayer then return end
-    if GetModConfigData("ai_bridge_enabled") == false then return end
+    if GetModConfigData("ai_bridge_enabled") ~= true then return end
     if TheSim == nil or type(TheSim.QueryServer) ~= "function" then
         print("[ModXpector] LOCAL_AI_BRIDGE_UNAVAILABLE reason=queryserver_missing")
         return
