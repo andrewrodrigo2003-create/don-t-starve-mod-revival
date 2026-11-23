@@ -19,8 +19,8 @@ class PackageBuilderSecurityTests(unittest.TestCase):
             mod_root = root / "mod"
             dist_root = root / "dist"
             mod_root.mkdir()
-            (mod_root / "modinfo.lua").write_text('version = "test"\\n', encoding="utf-8")
-            (mod_root / "modmain.lua").write_text("-- runtime\\n", encoding="utf-8")
+            (mod_root / "modinfo.lua").write_text('version = "test"\n', encoding="utf-8")
+            (mod_root / "modmain.lua").write_text("-- runtime\n", encoding="utf-8")
             (mod_root / "bridge_token.txt").write_text("synthetic-not-a-real-secret", encoding="utf-8")
 
             original_here, original_dist = BUILDER.HERE, BUILDER.DIST
