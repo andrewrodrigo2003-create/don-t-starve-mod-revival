@@ -2,7 +2,6 @@ local root = os.getenv("DST_RUNTIME_ROOT") or "."
 local module_path = root .. "/dst-mods/modxpector/scripts/modxpector/world_inventory.lua"
 local module_chunk = assert(loadfile(module_path))
 local restricted_env = setmetatable({
-    GLOBAL = { pcall = pcall },
     type = type,
     tostring = tostring,
     tonumber = tonumber,
@@ -66,6 +65,7 @@ local index = {
     end,
 }
 local globals = {
+    pcall = pcall,
     KnownModIndex = index,
     ModManager = {
         enabledmods = { "workshop-100" },
@@ -118,12 +118,13 @@ assert(disabled.enabled == false and disabled.load_candidate == false)
 assert(disabled.load_state == "disabled")
 assert(disabled.server_classified == true)
 
-local unknown = inventory.Collect({})
+local unknown = inventory.Collect({ pcall = pcall })
 assert(unknown.counts.known == 0)
 assert(not unknown.capabilities.known_mod_list)
 assert(not unknown.capabilities.loaded_mod_list)
 
 local broken = inventory.Collect({
+    pcall = pcall,
     KnownModIndex = {
         GetModNames = function() return { "broken-mod" } end,
         IsModEnabledAny = function() error("index unavailable") end,
@@ -136,6 +137,7 @@ assert(broken.mods[1].enabled == nil and broken.mods[1].load_candidate == nil)
 assert(broken.mods[1].loaded == nil and broken.mods[1].load_state == "unknown")
 
 local unverified = inventory.Collect({
+    pcall = pcall,
     KnownModIndex = {
         GetModNames = function() return { "workshop-owner" } end,
         IsModEnabledAny = function() return true end,
