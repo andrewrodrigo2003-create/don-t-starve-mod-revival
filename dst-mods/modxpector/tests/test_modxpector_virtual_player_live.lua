@@ -154,6 +154,7 @@ player.replica.builder.BufferBuild = function() end
 player.replica.builder.buffered = nil
 local timeout_controller = VirtualPlayer.new(player, {
     allowed_prefabs = { "cutgrass" },
+    allowed_recipes = { "structure" },
     on_finished = function(report) timeout_finished = report end,
 })
 assert(timeout_controller:Start({
