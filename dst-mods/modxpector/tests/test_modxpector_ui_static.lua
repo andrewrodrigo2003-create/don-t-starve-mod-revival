@@ -318,8 +318,9 @@ assert(ui:find('self.content_first_button:SetDisabled(self.content_page <= 1)', 
     "Prefab navigation must disable boundary controls")
 
 -- Local bridge is fail-closed when configuration is missing or unset.
-assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then return end', 1, true),
-    "local bridge probe must require explicit opt-in")
+assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then', 1, true)
+    and main:find('set_ai_bridge_status("desativada"', 1, true),
+    "local bridge probe must require explicit opt-in and report its disabled state")
 assert(info:find('name = "ai_bridge_enabled"', 1, true))
 assert(info:find('Ativar IA local para executar testes automáticos', 1, true))
 assert(info:find('Permitir execução de testes controlados', 1, true))
@@ -327,7 +328,7 @@ assert(main:find('set_ai_bridge_status("token_ausente"', 1, true))
 assert(main:find('set_ai_bridge_status("conectada"', 1, true))
 assert(main:find('set_ai_bridge_status("plano_aceito"', 1, true))
 assert(screen_source:find('Agente local:', 1, true))
-assert(screen_source:find('O mod não instala/inicia a IA', 1, true))
+assert(screen_source:find('O mod não inicia nem instala o agente automaticamente.', 1, true))
 print("MODXPECTOR_LOCAL_BRIDGE_OPT_IN_STATIC_OK")
 
 -- Token access must remain read-only and bound to the fixed local file.
