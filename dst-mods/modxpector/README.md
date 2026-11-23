@@ -20,6 +20,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - `GetModsToLoad(true)` fornece candidatos; não prova que o carregamento terminou.
 - `ModManager.enabledmods` e `ModManager.failedmods` são estruturas internas e opcionais. Se ausentes, o scanner registra estado desconhecido/não confirmado.
 - A coleta é passiva: não modifica configurações nem arquivos dos mods analisados.
+- A ponte local é opcional e desativada por padrão; só é consultada quando `ai_bridge_enabled` é ativado explicitamente. Quando ativa, envia o inventário do mundo e pode receber planos de teste do serviço local.
 - Conflito suspeito não é falha confirmada.
 - Testes Lua automatizados não substituem validação no jogo real, em multiplayer ou em servidores dedicados.
 
