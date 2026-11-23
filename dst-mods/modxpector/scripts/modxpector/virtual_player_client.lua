@@ -45,11 +45,15 @@ function VirtualPlayer.new(player, options)
     self.on_finished = self.options.on_finished
     self.allowed_actions = {}
     self.allowed_prefabs = {}
+    self.allowed_recipes = {}
     for _, action_name in ipairs(self.options.allowed_actions or {}) do
         if type(action_name) == "string" then self.allowed_actions[action_name] = true end
     end
     for _, prefab in ipairs(self.options.allowed_prefabs or {}) do
         if type(prefab) == "string" then self.allowed_prefabs[prefab] = true end
+    end
+    for _, recipe_name in ipairs(self.options.allowed_recipes or {}) do
+        if type(recipe_name) == "string" then self.allowed_recipes[recipe_name] = true end
     end
     self:_bind_events()
     return self
@@ -247,6 +251,9 @@ function VirtualPlayer:_evaluate_assertion(assertion)
 end
 
 function VirtualPlayer:_submit_craft(step)
+    assert(type(step.recipe) == "string" and #step.recipe > 0 and #step.recipe <= 128
+        and step.recipe:match("^[%w_%-]+$"), "invalid recipe name")
+    assert(self.allowed_recipes[step.recipe] == true, "recipe is not in the test plan allowlist")
     assert(type(GetValidRecipe) == "function", "GetValidRecipe API unavailable")
     local recipe = GetValidRecipe(step.recipe)
     assert(recipe ~= nil, "recipe is not registered: " .. tostring(step.recipe))
