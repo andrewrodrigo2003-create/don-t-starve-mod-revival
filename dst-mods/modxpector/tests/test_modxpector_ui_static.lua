@@ -312,6 +312,6 @@ assert(main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "r")', 1, true)
     "bridge token must be read-only")
 assert(main:find('token_value:match("^([%w_%-]+)")', 1, true),
     "bridge token must reject non-token characters")
-assert(not main:find('io.open(MODROOT .. "/bridge_token.txt", "w")', 1, true),
+assert(not main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "w")', 1, true),
     "ModXpector must never write the bridge token from inside DST")
 print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
