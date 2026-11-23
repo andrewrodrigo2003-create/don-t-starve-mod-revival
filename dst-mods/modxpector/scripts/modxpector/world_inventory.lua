@@ -53,7 +53,7 @@ local function collect_failures(manager)
 end
 
 local function dependency_list(index, mod_id, known_set, protected_call)
-    local ok, dependencies = safe_call(protected_call, protected_call, index, "GetModDependencies", mod_id, false)
+    local ok, dependencies = safe_call(protected_call, index, "GetModDependencies", mod_id, false)
     if not ok or type(dependencies) ~= "table" then return {}, {}, {}, {}, false end
 
     local normalized, missing, disabled, unverified, seen = {}, {}, {}, {}, {}
