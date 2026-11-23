@@ -15,7 +15,7 @@ end
 local CONFIG_SNAPSHOT_OK, CONFIG_SNAPSHOT = pcall(require, "inspector/config_snapshot")
 if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNAPSHOT.Read) ~= "function" then
     CONFIG_SNAPSHOT = { Read = function() return {
-        open_key = "KEY_F6", show_debug_info = true, ai_bridge_enabled = true,
+        open_key = "KEY_F6", show_debug_info = true, ai_bridge_enabled = false,
         test_mode = false, max_spawn_count = 10,
     } end }
 end
