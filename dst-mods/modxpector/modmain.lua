@@ -5,8 +5,16 @@ local pcall = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
 local MODNAME = modname or "modxpector"
 local MOD_VERSION = "5.0.14-dev"
 local INVENTORY_OK, WORLD_INVENTORY = pcall(require, "modxpector/world_inventory")
-if not INVENTORY_OK or type(WORLD_INVENTORY) ~= "table" then
-    WORLD_INVENTORY = { Collect = function() return { schema = "modxpector/world-inventory/v1", mods = {}, error = "inventory module unavailable" } end }
+local INVENTORY_LOAD_ERROR
+if not INVENTORY_OK then
+    INVENTORY_LOAD_ERROR = tostring(WORLD_INVENTORY)
+elseif type(WORLD_INVENTORY) ~= "table" or type(WORLD_INVENTORY.Collect) ~= "function" then
+    INVENTORY_LOAD_ERROR = "module returned an invalid inventory interface"
+    INVENTORY_OK = false
+end
+if not INVENTORY_OK then
+    print("[ModXpector] WORLD_INVENTORY_MODULE_LOAD_FAILED " .. tostring(INVENTORY_LOAD_ERROR))
+    WORLD_INVENTORY = nil
 end
 local PLAN_OK, TEST_PLAN = pcall(require, "modxpector/test_plan")
 if not PLAN_OK or type(TEST_PLAN) ~= "table" then
@@ -562,10 +570,12 @@ local function install_server_rpc()
             log("Não foi possível carregar o diagnóstico do servidor: " .. tostring(Diagnostics))
             return
         end
-        local inventory_ok, WorldInventory = ui_pcall(require, "modxpector/world_inventory")
-        if not inventory_ok or type(WorldInventory) ~= "table" then
-            log("Inventário detalhado indisponível; mantendo diagnóstico básico: " .. tostring(WorldInventory))
-            WorldInventory = nil
+        -- Reuse the single startup load. Retrying a failed require can hide the
+        -- original module error behind Lua's "loop or previous error loading module".
+        local WorldInventory = INVENTORY_OK and WORLD_INVENTORY or nil
+        if WorldInventory == nil then
+            log("Inventário detalhado indisponível; causa original: "
+                .. tostring(INVENTORY_LOAD_ERROR or "módulo não carregado"))
         end
         local collected, report = ui_pcall(Diagnostics.Collect, GLOBAL, WorldInventory)
         if not collected or type(report) ~= "table" then
