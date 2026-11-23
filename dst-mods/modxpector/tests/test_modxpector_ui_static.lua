@@ -306,3 +306,12 @@ assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then return e
     "local bridge probe must require explicit opt-in")
 assert(info:find('name = "ai_bridge_enabled"', 1, true))
 print("MODXPECTOR_LOCAL_BRIDGE_OPT_IN_STATIC_OK")
+
+-- Token access must remain read-only and bound to the fixed local file.
+assert(main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "r")', 1, true),
+    "bridge token must be read-only")
+assert(main:find('token_value:match("^([%w_%-]+)")', 1, true),
+    "bridge token must reject non-token characters")
+assert(not main:find('io.open(MODROOT .. "/bridge_token.txt", "w")', 1, true),
+    "ModXpector must never write the bridge token from inside DST")
+print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
