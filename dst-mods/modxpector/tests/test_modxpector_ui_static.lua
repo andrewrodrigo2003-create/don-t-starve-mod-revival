@@ -27,6 +27,10 @@ local tmi_probe_source = read(root .. "scripts/inspector/tmi_probe.lua")
 local config_snapshot_source = read(root .. "scripts/inspector/config_snapshot.lua")
 assert(info:find('version = "5.0.14-dev"', 1, true))
 assert(main:find('require, "modxpector/world_inventory"', 1, true))
+assert(main:find("WORLD_INVENTORY_MODULE_LOAD_FAILED", 1, true))
+assert(main:find("local WorldInventory = INVENTORY_OK and WORLD_INVENTORY or nil", 1, true))
+assert(not main:find('ui_pcall(require, "modxpector/world_inventory")', 1, true),
+    "Server report must reuse the one startup load and preserve its original error")
 assert(main:find("Diagnostics.Collect, GLOBAL, WorldInventory", 1, true))
 assert(serverdiagnostics:find("function M.Collect(globals, inventory_module)", 1, true))
 assert(serverdiagnostics:find("Load states: known=", 1, true))
@@ -100,6 +104,8 @@ for _, tab in ipairs(tabs) do
 end
 assert(screen_source:find("SetOnClick", 1, true))
 assert(screen_source:find("get_tmi_controls", 1, true))
+assert(screen_source:find("local tmi_control, tmi_data, tmi_control_source, tmi_list_state, tmi_menu_open", 1, true),
+    "TMI scenario must declare menu_open locally under DST strict.lua")
 assert(screen_source:find("tmi_control.Show", 1, true))
 assert(screen_source:find("TOOMANYITEMS", 1, true))
 assert(screen_source:find("PopScreen", 1, true))
