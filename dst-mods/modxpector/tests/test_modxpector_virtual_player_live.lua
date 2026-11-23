@@ -28,6 +28,7 @@ GetValidRecipe = function(name)
     }
 end
 
+local crafted_calls, placed_calls = 0, 0
 local player
 player = {
     prefab = "wilson",
@@ -49,13 +50,17 @@ player = {
         builder = {
             KnowsRecipe = function() return true end,
             HasIngredients = function() return true end,
-            MakeRecipeFromMenu = function(_, recipe) player.crafted_recipe = recipe.name end,
+            MakeRecipeFromMenu = function(_, recipe)
+                crafted_calls = crafted_calls + 1
+                player.crafted_recipe = recipe.name
+            end,
             BufferBuild = function(self, recipe) self.buffered = self.buffered or {}; self.buffered[recipe] = true end,
             IsBuildBuffered = function(self, recipe) return self.buffered ~= nil and self.buffered[recipe] == true end,
             CanBuildAtPoint = function(_, point, _, rotation)
                 return point.x == 2 and point.z == 3 and rotation == 0
             end,
             MakeRecipeAtPoint = function(_, recipe, point, rotation)
+                placed_calls = placed_calls + 1
                 player.placed_recipe = {
                     name = recipe.name, point = point, rotation = rotation,
                 }
@@ -117,8 +122,8 @@ assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
 assert(finished.assertions_total == 11 and finished.assertions_passed == 11)
 assert(finished.outcome == "passed")
-assert(player.crafted_recipe == "axe")
-assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure")
+assert(player.crafted_recipe == "axe" and crafted_calls == 1)
+assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
 target.replica.health.GetCurrent = function() return 0 end
 local dead_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
@@ -175,7 +180,7 @@ assert(denied_craft:Start({
 }))
 assert(denied_craft_report ~= nil and denied_craft_report.outcome == "failed")
 assert(string.find(denied_craft_report.failure, "allowlist", 1, true))
-assert(player.crafted_recipe == "axe", "disallowed recipe must not be crafted")
+assert(player.crafted_recipe == "axe" and crafted_calls == 1, "disallowed recipe must not be crafted")
 
 local denied_placer_report
 local denied_placer = VirtualPlayer.new(player, {
@@ -189,6 +194,6 @@ assert(denied_placer:Start({
 }))
 assert(denied_placer_report ~= nil and denied_placer_report.outcome == "failed")
 assert(string.find(denied_placer_report.failure, "allowlist", 1, true))
-assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure",
+assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1,
     "disallowed placer recipe must not be submitted again")
 print("MODXPECTOR_CRAFT_RECIPE_ALLOWLIST_CONTRACT_OK")
