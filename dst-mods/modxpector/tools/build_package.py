@@ -15,7 +15,15 @@ def main():
     version = match.group(1)
     DIST.mkdir(parents=True, exist_ok=True)
     archive = DIST / f"ModXpector-{version}-test.zip"
-    files = sorted(p for p in HERE.rglob("*") if p.is_file() and "tests" not in p.parts and "tools" not in p.parts and "docs" not in p.parts)
+    # The localhost bridge token is user-local secret material and must never ship.
+    files = sorted(
+        p for p in HERE.rglob("*")
+        if p.is_file()
+        and "tests" not in p.parts
+        and "tools" not in p.parts
+        and "docs" not in p.parts
+        and p.name != "bridge_token.txt"
+    )
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for path in files:
             z.write(path, f"dst_mod_inspector/{path.relative_to(HERE).as_posix()}")
