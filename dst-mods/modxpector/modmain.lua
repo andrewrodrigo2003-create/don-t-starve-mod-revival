@@ -15,7 +15,7 @@ end
 local CONFIG_SNAPSHOT_OK, CONFIG_SNAPSHOT = pcall(require, "inspector/config_snapshot")
 if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNAPSHOT.Read) ~= "function" then
     CONFIG_SNAPSHOT = { Read = function() return {
-        open_key = "KEY_F6", show_debug_info = true, ai_bridge_enabled = true,
+        open_key = "KEY_F6", show_debug_info = true, ai_bridge_enabled = false,
         test_mode = false, max_spawn_count = 10,
     } end }
 end
@@ -429,7 +429,7 @@ local bridge_probe_started = false
 local bridge_probe_attempts = 0
 local function probe_local_ai_bridge(inst)
     if bridge_probe_started or inst == nil or inst ~= ThePlayer then return end
-    if GetModConfigData("ai_bridge_enabled") == false then return end
+    if GetModConfigData("ai_bridge_enabled") ~= true then return end
     if TheSim == nil or type(TheSim.QueryServer) ~= "function" then
         print("[ModXpector] LOCAL_AI_BRIDGE_UNAVAILABLE reason=queryserver_missing")
         return
