@@ -1,0 +1,44 @@
+name: ModXpector Lua checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "dst-mods/modxpector/**"
+      - ".github/workflows/modxpector-lua-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  modxpector:
+    name: ModXpector Lua 5.1 contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends lua5.1
+
+      - name: Parse all ModXpector Lua files
+        run: |
+          set -euo pipefail
+          find dst-mods/modxpector -type f -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do
+              luac5.1 -p "$file"
+            done
+
+      - name: Run ModXpector Lua contracts
+        run: |
+          LUA_BIN=lua5.1 bash dst-mods/modxpector/tests/run-lua-tests.sh
+
+      - name: Verify package excludes local bridge credentials
+        run: |
+          python3 dst-mods/modxpector/tests/test_package_builder.py
