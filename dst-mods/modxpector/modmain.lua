@@ -388,7 +388,7 @@ local function send_world_inventory(inst, token, port, callback)
         })
         return false
     end
-    local collect_ok, inventory = pcall(WORLD_INVENTORY.Collect, _G)
+    local collect_ok, inventory = pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)
     if not collect_ok or type(inventory) ~= "table" then
         print("[ModXpector] WORLD_INVENTORY_FAILED reason=collect")
         finish(false, { error = "inventory_collect_failed" })
