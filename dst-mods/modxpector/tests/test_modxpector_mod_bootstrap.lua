@@ -4,6 +4,7 @@ local rpc_server, rpc_client, player_postinit = {}, {}, nil
 MOD_RPC = {}
 local admin = false
 local now = 1
+local configured_max_spawn_count = 20
 local responses = {}
 local spawned_items = 0
 local query_calls = 0
@@ -22,7 +23,7 @@ end
 AddPlayerPostInit = function(fn) player_postinit = fn end
 GetModConfigData = function(name)
     if name == "test_mode" then return true end
-    if name == "max_spawn_count" then return 20 end
+    if name == "max_spawn_count" then return configured_max_spawn_count end
     return nil
 end
 TheNet = {
@@ -106,4 +107,15 @@ rpc_server.spawn_item(player, 3, "cutgrass", 2, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == true)
 rpc_server.spawn_item(player, 4, "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false and string.find(responses[#responses].message, "rate limit", 1, true))
+
+-- The configured per-request limit must be enforced by the master, not only displayed in the UI.
+configured_max_spawn_count = 5
+now = 1.6
+rpc_server.spawn_item(player, 5, "cutgrass", 6, 0, 0)
+assert(spawned_items == 2 and responses[#responses].success == false)
+assert(string.find(responses[#responses].message, "configured limit", 1, true))
+now = 1.8
+rpc_server.spawn_item(player, 6, "cutgrass", 5, 0, 0)
+assert(spawned_items == 7 and responses[#responses].success == true)
+print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
