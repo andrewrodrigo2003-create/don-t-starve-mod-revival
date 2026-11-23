@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "modxpector/5.0.14-dev"
+      - "security/modxpector-5.0.14-opt-in-2026-11-23"
     paths:
       - "dst-mods/modxpector/**"
       - ".github/workflows/modxpector-package.yml"
