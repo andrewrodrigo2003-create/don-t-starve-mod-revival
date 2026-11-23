@@ -166,6 +166,20 @@ local InspectorScreen = Class(Screen, function(self, global_env, show_debug_info
     self.root = self:AddChild(TEMPLATES.ScreenRoot("inspector_root"))
     self.root:SetPosition(0, 0)
 
+    -- Scale the complete dashboard to the actual viewport. The previous fixed
+    -- 1280x720 coordinate layout overflowed or looked oversized at smaller resolutions.
+    local frontend = rawget(global_env, "TheFrontEnd")
+    local size_ok, screen_width, screen_height = pcall(function()
+        return frontend:GetScreenSize()
+    end)
+    local viewport_scale = 1
+    if size_ok and type(screen_width) == "number" and type(screen_height) == "number"
+        and screen_width > 0 and screen_height > 0 then
+        viewport_scale = math.max(0.70, math.min(1, screen_width / 1600, screen_height / 900))
+    end
+    self.viewport_scale = viewport_scale
+    self.root:SetScale(viewport_scale)
+
     -- Reuse the game's actual Redux settings background and left navigation rail.
     self.backdrop = self.root:AddChild(TEMPLATES.LeftSideBarBackground())
 
@@ -194,7 +208,7 @@ local InspectorScreen = Class(Screen, function(self, global_env, show_debug_info
     self.nav_buttons = {}
     local tabs = {
         { "Início", "inicio" }, { "Mods", "mods" }, { "Compatibilidade", "compat" },
-        { "Conteúdo", "conteudo" }, { "Receitas", "receitas" }, { "Testes", "testes" },
+        { "Conteúdo", "conteudo" }, { "Receitas", "receitas" }, { "IA / Testes", "testes" },
         { "TMI", "tmi" }, { "Servidor", "servidor" }, { "Ferramentas", "ferramentas" },
         { "Configuração", "config" }, { "Ajuda", "ajuda" },
     }
@@ -497,27 +511,43 @@ function InspectorScreen:Refresh()
         end
         self:AddLine((self.content_kind == "prefabs" and "Prefabs" or "Ações")
             .. ": " .. tostring(#names), 165, 20)
-        local page_size = 8
+        local page_size = 7
         local page_count = math.max(1, math.ceil(#names / page_size))
         self.content_page = math.max(1, math.min(self.content_page, page_count))
         local first = (self.content_page - 1) * page_size + 1
         local last = math.min(#names, first + page_size - 1)
         for index = first, last do
-            self:AddLine(names[index], 120 - (index - first) * 33, 17)
+            self:AddLine(names[index], 112 - (index - first) * 29, 17)
         end
-        self:AddLine("Página " .. self.content_page .. "/" .. page_count .. " • somente leitura", -155, 18)
-        self.content_prefabs_button = make_button(self.content, "Prefabs", -250, -205, function()
+        self:AddLine("Página " .. self.content_page .. "/" .. page_count .. " • " .. tostring(#names)
+            .. " registros • somente leitura", -100, 17)
+
+        -- Category selectors occupy their own row; pagination is separated below.
+        -- This prevents the four controls from overlapping on common resolutions.
+        self.content_prefabs_button = make_button(self.content, "Prefabs", -130, -145, function()
             self.content_kind = "prefabs"; self.content_page = 1; self:Refresh()
         end, 0.58)
-        self.content_actions_button = make_button(self.content, "Ações", -80, -205, function()
+        self.content_actions_button = make_button(self.content, "Ações", 130, -145, function()
             self.content_kind = "actions"; self.content_page = 1; self:Refresh()
         end, 0.58)
-        self.content_prev_button = make_button(self.content, "Anterior", 80, -205, function()
+        self.content_first_button = make_button(self.content, "« Início", -300, -210, function()
+            self.content_page = 1; self:Refresh()
+        end, 0.58)
+        self.content_prev_button = make_button(self.content, "‹ Anterior", -100, -210, function()
             self.content_page = math.max(1, self.content_page - 1); self:Refresh()
         end, 0.58)
-        self.content_next_button = make_button(self.content, "Próxima", 250, -205, function()
+        self.content_next_button = make_button(self.content, "Próxima ›", 100, -210, function()
             self.content_page = math.min(page_count, self.content_page + 1); self:Refresh()
         end, 0.58)
+        self.content_last_button = make_button(self.content, "Fim »", 300, -210, function()
+            self.content_page = page_count; self:Refresh()
+        end, 0.58)
+        if type(self.content_first_button.SetDisabled) == "function" then
+            self.content_first_button:SetDisabled(self.content_page <= 1)
+            self.content_prev_button:SetDisabled(self.content_page <= 1)
+            self.content_next_button:SetDisabled(self.content_page >= page_count)
+            self.content_last_button:SetDisabled(self.content_page >= page_count)
+        end
     elseif self.active_tab == "receitas" then
         self:AddLine("INSPEÇÃO DE RECEITAS", 210, 27)
         if type(recipes) ~= "table" then
@@ -535,7 +565,7 @@ function InspectorScreen:Refresh()
             self:AddLine("Leitura somente; nenhuma receita é criada ou modificada.", -145, 18)
         end
     elseif self.active_tab == "testes" then
-        self:AddLine("VERIFICAÇÕES DISPONÍVEIS", 210, 27)
+        self:AddLine("VERIFICAÇÕES E AUTOMAÇÃO", 210, 26)
         local checks = {
             { "Player carregado", player ~= nil },
             { "World carregado", world ~= nil },
@@ -545,16 +575,28 @@ function InspectorScreen:Refresh()
             { "Prefabs acessível", type(prefabs) == "table" },
         }
         for i, check in ipairs(checks) do
-            self:AddLine((check[2] and "[OK] " or "[--] ") .. check[1], 155 - (i - 1) * 39, 20)
+            self:AddLine((check[2] and "[OK] " or "[--] ") .. check[1], 160 - (i - 1) * 25, 17)
         end
-        self:AddLine("Essas verificações detectam disponibilidade, não provam compatibilidade completa.", -105, 18)
+        local config = self.runtime_config or {}
+        local bridge_state = rawget(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS")
+        local bridge_label = type(bridge_state) == "table" and tostring(bridge_state.status or "não verificado")
+            or "não verificado nesta sessão"
+        self:AddLine("IA local: " .. (config.ai_bridge_enabled == true and "permitida" or "desativada nas opções"), 0, 18)
+        self:AddLine("Modo de testes: " .. (config.test_mode == true and "ativado" or "desativado nas opções"), -28, 18)
+        self:AddLine("Agente local: " .. bridge_label, -56, 18)
+        self:AddLine("Para executar: ative IA local + Modo de testes em Mods > ModXpector > Configurar.", -88, 16)
+        self:AddLine("Também exige o agente local ativo e bridge_token.txt válido; o mod não instala/inicia a IA.", -113, 15)
+        if type(bridge_state) == "table" and type(bridge_state.detail) == "string" and bridge_state.detail ~= "" then
+            self:AddLine("Detalhe: " .. bridge_state.detail, -138, 14)
+        end
+        self:AddLine("Pré-testes abaixo verificam APIs; não executam o agente de IA.", -164, 15)
         if self.last_scenario_report ~= nil then
             self:AddLine("Último cenário: " .. tostring(self.last_scenario) .. " — "
-                .. tostring(self.last_scenario_passed) .. "/" .. tostring(self.last_scenario_total), -105, 18)
+                .. tostring(self.last_scenario_passed) .. "/" .. tostring(self.last_scenario_total), -185, 14)
         end
-        self.world_preflight_button = make_button(self.content, "Pré-teste mundo", -270, -165, function() self:RunScenario("world") end, 0.58)
-        self.tmi_preflight_button = make_button(self.content, "Pré-teste TMI", 0, -165, function() self:RunScenario("tmi") end, 0.58)
-        self.content_preflight_button = make_button(self.content, "Pré-teste conteúdo", 270, -165, function() self:RunScenario("content") end, 0.58)
+        self.world_preflight_button = make_button(self.content, "Pré-teste mundo", -270, -235, function() self:RunScenario("world") end, 0.58)
+        self.tmi_preflight_button = make_button(self.content, "Pré-teste TMI", 0, -235, function() self:RunScenario("tmi") end, 0.58)
+        self.content_preflight_button = make_button(self.content, "Pré-teste conteúdo", 270, -235, function() self:RunScenario("content") end, 0.58)
     elseif self.active_tab == "tmi" then
         self:AddLine("INTEGRAÇÃO TOO MANY ITEMS", 210, 27)
         self:AddLine(tmi and ("Detectado: " .. tmi.name) or "Não detectado automaticamente.", 155, 22)
@@ -849,13 +891,15 @@ function InspectorScreen:Refresh()
         self:AddLine("CONFIGURAÇÕES ATIVAS DO MOD", 210, 25)
         self:AddLine("Abrir/fechar painel: " .. key_name, 165, 21)
         self:AddLine("Informações técnicas: " .. (config.show_debug_info and "Ativadas" or "Desativadas"), 125, 19)
-        self:AddLine("Ponte com laboratório/IA: " .. (config.ai_bridge_enabled and "Ativada" or "Desativada"), 90, 19)
-        self:AddLine("Modo de teste: " .. (config.test_mode and "Ativado" or "Desativado"), 55, 19)
-        self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), 20, 19)
-        self:AddLine("Entrada ModXpector no menu de pausa: integrada", -35, 18)
-        self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -80, 18)
-        self:AddLine("Atalho/detalhes são locais; ponte, teste e limite seguem o servidor.", -120, 18)
-        self:AddLine("ESC fecha o painel; o atalho configurado abre/fecha.", -155, 18)
+        self:AddLine("IA local para testes automáticos: " .. (config.ai_bridge_enabled and "Permitida" or "Desativada"), 90, 19)
+        self:AddLine("Modo de testes controlados: " .. (config.test_mode and "Ativado" or "Desativado"), 55, 19)
+        local bridge_state = rawget(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS")
+        self:AddLine("Estado do agente: " .. (type(bridge_state) == "table" and tostring(bridge_state.status or "não verificado") or "não verificado"), 20, 18)
+        self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), -15, 18)
+        self:AddLine("Entrada ModXpector no menu de pausa: registrada pelo jogo", -55, 17)
+        self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -90, 17)
+        self:AddLine("IA + Modo de testes precisam estar ativados; o agente local e o token também são obrigatórios.", -125, 15)
+        self:AddLine("O mod não inicia nem instala o agente automaticamente.", -150, 15)
         make_button(self.content, "Capturar logs agora", 0, -215, function()
             local capture = rawget(DST_GLOBAL, "MODXPECTOR_CAPTURE_LOGS")
             if type(capture) ~= "function" then
