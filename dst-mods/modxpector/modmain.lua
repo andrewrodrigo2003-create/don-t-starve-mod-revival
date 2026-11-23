@@ -115,6 +115,14 @@ local function allow_spawn_request(player)
     return true
 end
 
+local function get_max_spawn_count()
+    local configured = tonumber(GetModConfigData("max_spawn_count"))
+    if configured ~= 5 and configured ~= 10 and configured ~= 20 then
+        return 10
+    end
+    return configured
+end
+
 local function handle_set_test_plan(player, run_id, plan_json)
     if TheWorld == nil or not TheWorld.ismastersim then return end
     local function reply(ok, message)
@@ -160,8 +168,9 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
     if not is_admin_player(player) then send_result(player, request_id, false, "administrator permission required"); return end
     if not allow_spawn_request(player) then send_result(player, request_id, false, "test spawn rate limit exceeded"); return end
     count = tonumber(count)
-    if not prefab_is_allowed(prefab, plan) or type(count) ~= "number" or count ~= math.floor(count) or count < 1 or count > 20 then
-        send_result(player, request_id, false, "prefab or spawn count is outside the test plan allowlist")
+    if not prefab_is_allowed(prefab, plan) or type(count) ~= "number" or count ~= math.floor(count)
+        or count < 1 or count > get_max_spawn_count() then
+        send_result(player, request_id, false, "prefab or spawn count is outside the test plan allowlist or configured limit")
         return
     end
     x, z = tonumber(x), tonumber(z)
