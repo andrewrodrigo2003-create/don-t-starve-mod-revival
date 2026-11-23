@@ -269,8 +269,8 @@ assert(screen_source:find("Configuração", 1, true))
 assert(screen_source:find("CONFIGURAÇÕES ATIVAS DO MOD", 1, true))
 assert(screen_source:find("Abrir/fechar painel:", 1, true))
 assert(screen_source:find("Informações técnicas:", 1, true))
-assert(screen_source:find("Ponte com laboratório/IA:", 1, true))
-assert(screen_source:find("Modo de teste:", 1, true))
+assert(screen_source:find("IA local para testes automáticos:", 1, true))
+assert(screen_source:find("Modo de testes controlados:", 1, true))
 assert(screen_source:find("Limite de geração por ação:", 1, true))
 assert(screen_source:find("MODXPECTOR — DST MOD INSPECTOR", 1, true))
 assert(screen_source:find("self.active_tab == \"config\"", 1, true))
@@ -296,15 +296,38 @@ local ui = read("dst-mods/modxpector/scripts/screens/modinspectorscreen.lua")
 assert(ui:find('TEMPLATES.ScreenRoot', 1, true), "Inspector must use the native centered Redux screen root")
 assert(ui:find('TEMPLATES.LeftSideBarBackground', 1, true), "Inspector must use the native Redux settings background")
 assert(ui:find('self.root:SetPosition(0, 0)', 1, true), "Inspector must be anchored to viewport center")
+assert(ui:find('self.root:SetScale(viewport_scale)', 1, true), "Inspector must scale to the active viewport")
+assert(ui:find('screen_width / 1600', 1, true) and ui:find('screen_height / 900', 1, true),
+    "Inspector must derive a bounded scale from screen dimensions")
 assert(ui:find('TEMPLATES.MenuButton', 1, true), "Navigation must use native clickable Redux menu buttons")
 assert(not ui:find('panel_saveslots.tex', 1, true), "Inspector must not use the save-slot panel texture")
 assert(not ui:find('GetScreenPos', 1, true), "Panel placement must not depend on world projection or cursor")
 assert(ui:find('self.nav:SetPosition(-465, 10)', 1, true), "Inspector must use left navigation rail")
+assert(ui:find('{ "IA / Testes", "testes" }', 1, true), "AI and test controls must be discoverable as a named tab")
+assert(ui:find('MODXPECTOR_AI_BRIDGE_STATUS', 1, true), "Dashboard must display live local AI bridge status")
+assert(ui:find('content_first_button', 1, true) and ui:find('content_last_button', 1, true),
+    "Prefab catalog must expose first/previous/next/last navigation")
+assert(ui:find('« Início', 1, true) and ui:find('‹ Anterior', 1, true)
+    and ui:find('Próxima ›', 1, true) and ui:find('Fim »', 1, true),
+    "Prefab pagination controls must have explicit labels")
+assert(ui:find('self.content_prefabs_button = make_button(self.content, "Prefabs", -130, -145', 1, true)
+    and ui:find('self.content_actions_button = make_button(self.content, "Ações", 130, -145', 1, true),
+    "Content category selectors must use their own row separate from pagination")
+assert(ui:find('self.content_first_button:SetDisabled(self.content_page <= 1)', 1, true)
+    and ui:find('self.content_last_button:SetDisabled(self.content_page >= page_count)', 1, true),
+    "Prefab navigation must disable boundary controls")
 
 -- Local bridge is fail-closed when configuration is missing or unset.
 assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then return end', 1, true),
     "local bridge probe must require explicit opt-in")
 assert(info:find('name = "ai_bridge_enabled"', 1, true))
+assert(info:find('Ativar IA local para executar testes automáticos', 1, true))
+assert(info:find('Permitir execução de testes controlados', 1, true))
+assert(main:find('set_ai_bridge_status("token_ausente"', 1, true))
+assert(main:find('set_ai_bridge_status("conectada"', 1, true))
+assert(main:find('set_ai_bridge_status("plano_aceito"', 1, true))
+assert(screen_source:find('Agente local:', 1, true))
+assert(screen_source:find('O mod não instala/inicia a IA', 1, true))
 print("MODXPECTOR_LOCAL_BRIDGE_OPT_IN_STATIC_OK")
 
 -- Token access must remain read-only and bound to the fixed local file.
