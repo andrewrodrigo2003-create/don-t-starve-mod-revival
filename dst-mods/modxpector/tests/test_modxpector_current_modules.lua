@@ -167,5 +167,6 @@ assert(calls.open_key == true and calls.show_debug_info == true)
 assert(calls.ai_bridge_enabled == false and calls.test_mode == false and calls.max_spawn_count == false)
 local defaults = config.Read(function(key) return ({ open_key = "INVALID", max_spawn_count = 999 })[key] end, pcall)
 assert(defaults.open_key == "KEY_F6" and defaults.max_spawn_count == 10)
+assert(defaults.ai_bridge_enabled == false, "local bridge must be opt-in when no saved setting exists")
 
 print("MODXPECTOR_CURRENT_MODULES_OK")
