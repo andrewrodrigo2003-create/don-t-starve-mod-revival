@@ -300,3 +300,9 @@ assert(ui:find('TEMPLATES.MenuButton', 1, true), "Navigation must use native cli
 assert(not ui:find('panel_saveslots.tex', 1, true), "Inspector must not use the save-slot panel texture")
 assert(not ui:find('GetScreenPos', 1, true), "Panel placement must not depend on world projection or cursor")
 assert(ui:find('self.nav:SetPosition(-465, 10)', 1, true), "Inspector must use left navigation rail")
+
+-- Local bridge is fail-closed when configuration is missing or unset.
+assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then return end', 1, true),
+    "local bridge probe must require explicit opt-in")
+assert(info:find('name = "ai_bridge_enabled"', 1, true))
+print("MODXPECTOR_LOCAL_BRIDGE_OPT_IN_STATIC_OK")
