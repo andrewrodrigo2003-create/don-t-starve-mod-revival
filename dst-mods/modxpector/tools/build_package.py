@@ -21,7 +21,7 @@ def runtime_files():
 
 def main():
     info = (HERE / "modinfo.lua").read_text(encoding="utf-8")
-    match = re.search(r'version\\s*=\\s*"([^"]+)"', info)
+    match = re.search(r'version\s*=\s*"([^"]+)"', info)
     if not match:
         raise SystemExit("Versão não encontrada em modinfo.lua")
     version = match.group(1)
