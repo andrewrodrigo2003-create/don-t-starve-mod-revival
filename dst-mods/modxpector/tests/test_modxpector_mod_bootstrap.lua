@@ -6,6 +6,7 @@ local admin = false
 local now = 1
 local responses = {}
 local spawned_items = 0
+local query_calls = 0
 local unlocked = {}
 
 AddModRPCHandler = function(mod, name, fn)
@@ -25,10 +26,11 @@ GetModConfigData = function(name)
     return nil
 end
 TheNet = {
-    IsDedicated = function() return true end,
+    IsDedicated = function() return false end,
     GetClientTableForUser = function() return { admin = admin } end,
 }
 TheWorld = { ismastersim = true }
+local TheSim = { QueryServer = function() query_calls = query_calls + 1 end }
 Prefabs = { cutgrass = true }
 AllRecipes = { axe = { name = "axe" } }
 GetTime = function() return now end
@@ -45,6 +47,8 @@ end
 
 local player = {
     userid = "KU_TEST_USER",
+    IsValid = function() return true end,
+    DoTaskInTime = function(_, _, callback) callback() end,
     components = {
         builder = { UnlockRecipe = function(_, recipe) unlocked[recipe] = true end },
         inventory = { GiveItem = function() spawned_items = spawned_items + 1 end },
@@ -65,7 +69,8 @@ local env = setmetatable({
     type = type, tostring = tostring, tonumber = tonumber, math = math,
     GetModConfigData = GetModConfigData, AddModRPCHandler = AddModRPCHandler,
     AddClientModRPCHandler = AddClientModRPCHandler, AddPlayerPostInit = AddPlayerPostInit,
-    TheNet = TheNet, TheWorld = TheWorld, Prefabs = Prefabs, AllRecipes = AllRecipes,
+    TheNet = TheNet, TheWorld = TheWorld, TheSim = TheSim, ThePlayer = player,
+    Prefabs = Prefabs, AllRecipes = AllRecipes,
     GetTime = GetTime, SendModRPCToClient = SendModRPCToClient, SpawnPrefab = SpawnPrefab,
     MOD_RPC = MOD_RPC, modname = "modxpector_agent_test", print = function() end,
 }, { __index = function(_, name)
@@ -79,6 +84,10 @@ file:close()
 local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
 chunk()
+
+-- Missing saved config must fail closed: joining a world cannot probe localhost.
+player_postinit(player)
+assert(query_calls == 0, "local bridge must not probe localhost when ai_bridge_enabled is unset")
 
 assert(type(rpc_server.spawn_item) == "function")
 assert(type(rpc_server.spawn_entity) == "function")
