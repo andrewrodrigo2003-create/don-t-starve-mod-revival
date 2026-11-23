@@ -82,11 +82,16 @@ end })
 local file = assert(io.open("dst-mods/modxpector/modmain.lua", "r"))
 local source = file:read("*a")
 local inventory_guard = source:find('if not INVENTORY_OK or type(WORLD_INVENTORY) ~= "table"', 1, true)
-local inventory_collect = source:find('pcall(WORLD_INVENTORY.Collect, _G)', 1, true)
+local inventory_collect = source:find('pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)', 1, true)
 assert(inventory_guard ~= nil and inventory_collect ~= nil and inventory_guard < inventory_collect,
     "world inventory must fail closed before calling Collect when its module failed to load")
 assert(source:find('world_inventory_module_unavailable', 1, true),
     "inventory failure must return an explicit unavailable status")
+local inventory_file = assert(io.open("dst-mods/modxpector/scripts/modxpector/world_inventory.lua", "r"))
+local inventory_source = inventory_file:read("*a")
+inventory_file:close()
+assert(not inventory_source:find("GLOBAL or _G", 1, true),
+    "inventory module must not resolve undeclared GLOBAL while it is required")
 file:close()
 local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
