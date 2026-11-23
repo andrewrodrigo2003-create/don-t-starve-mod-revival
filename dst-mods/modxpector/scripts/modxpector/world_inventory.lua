@@ -1,12 +1,12 @@
 -- Read-only inventory of mods known to and participating in the current DST session.
 -- It never reads/writes other mods' source files or changes mod settings.
 -- GetModsToLoad is called with usecached=true to avoid a disk rescan/mutation.
-local DST_GLOBAL = GLOBAL or _G
-local protected_call = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
+-- Do not resolve GLOBAL/_G while requiring this module: DST strict sandbox
+-- environments differ. Engine globals and pcall are injected into Collect().
 local M = {}
 local MAX_MODS = 400
 
-local function safe_call(object, method, ...)
+local function safe_call(protected_call, object, method, ...)
     if object == nil or type(object[method]) ~= "function"
         or type(protected_call) ~= "function" then
         return false, nil
@@ -52,8 +52,8 @@ local function collect_failures(manager)
     return result
 end
 
-local function dependency_list(index, mod_id, known_set)
-    local ok, dependencies = safe_call(index, "GetModDependencies", mod_id, false)
+local function dependency_list(index, mod_id, known_set, protected_call)
+    local ok, dependencies = safe_call(protected_call, protected_call, index, "GetModDependencies", mod_id, false)
     if not ok or type(dependencies) ~= "table" then return {}, {}, {}, {}, false end
 
     local normalized, missing, disabled, unverified, seen = {}, {}, {}, {}, {}
@@ -61,18 +61,18 @@ local function dependency_list(index, mod_id, known_set)
         if type(dependency) == "string" and not seen[dependency] then
             seen[dependency] = true
             normalized[#normalized + 1] = dependency
-            local exists_ok, exists = safe_call(index, "DoesModExistAnyVersion", dependency)
+            local exists_ok, exists = safe_call(protected_call, index, "DoesModExistAnyVersion", dependency)
             if exists_ok then
                 if exists ~= true then
                     missing[#missing + 1] = dependency
                 else
-                    local enabled_ok, is_enabled = safe_call(index, "IsModEnabledAny", dependency)
+                    local enabled_ok, is_enabled = safe_call(protected_call, index, "IsModEnabledAny", dependency)
                     if enabled_ok and is_enabled ~= true then
                         disabled[#disabled + 1] = dependency
                     end
                 end
             elseif known_set[dependency] == true then
-                local enabled_ok, is_enabled = safe_call(index, "IsModEnabledAny", dependency)
+                local enabled_ok, is_enabled = safe_call(protected_call, index, "IsModEnabledAny", dependency)
                 if enabled_ok and is_enabled ~= true then
                     disabled[#disabled + 1] = dependency
                 end
@@ -89,12 +89,13 @@ local function dependency_list(index, mod_id, known_set)
 end
 
 function M.Collect(globals)
-    globals = globals or _G
+    globals = type(globals) == "table" and globals or {}
+    local protected_call = type(globals.pcall) == "function" and globals.pcall or nil
     local index = globals.KnownModIndex
-    local names_ok, all_names = safe_call(index, "GetModNames")
-    local server_names_ok, server_names = safe_call(index, "GetServerModNames")
-    local client_names_ok, client_names = safe_call(index, "GetClientModNames")
-    local load_names_ok, load_names = safe_call(index, "GetModsToLoad", true)
+    local names_ok, all_names = safe_call(protected_call, index, "GetModNames")
+    local server_names_ok, server_names = safe_call(protected_call, index, "GetServerModNames")
+    local client_names_ok, client_names = safe_call(protected_call, index, "GetClientModNames")
+    local load_names_ok, load_names = safe_call(protected_call, index, "GetModsToLoad", true)
     local server_set = to_set(server_names)
     local client_set = to_set(client_names)
     local load_set = to_set(load_names)
@@ -125,9 +126,9 @@ function M.Collect(globals)
                 seen[mod_id] = true
                 counts.known = counts.known + 1
 
-                local enabled_ok, enabled_value = safe_call(index, "IsModEnabledAny", mod_id)
+                local enabled_ok, enabled_value = safe_call(protected_call, index, "IsModEnabledAny", mod_id)
                 local enabled = enabled_ok and enabled_value == true or false
-                local info_ok, info = safe_call(index, "GetModInfo", mod_id)
+                local info_ok, info = safe_call(protected_call, index, "GetModInfo", mod_id)
                 local metadata_available = info_ok and type(info) == "table"
                 if not metadata_available then info = {} end
 
@@ -137,7 +138,7 @@ function M.Collect(globals)
                     and load_set[mod_id] == true or false
                 local loaded = loaded_observable and loaded_set[mod_id] == true or false
                 local failure = failures[mod_id]
-                local dependencies, missing_dependencies, disabled_dependencies, unverified_dependencies, dependencies_known = dependency_list(index, mod_id, known_set)
+                local dependencies, missing_dependencies, disabled_dependencies, unverified_dependencies, dependencies_known = dependency_list(index, mod_id, known_set, protected_call)
                 local id = workshop_id(mod_id)
 
                 if enabled then counts.enabled = counts.enabled + 1 end
@@ -228,8 +229,8 @@ function M.Collect(globals)
         world = {
             prefab = world_name,
             is_master_sim = is_master,
-            is_dedicated = select(2, safe_call(net, "IsDedicated")) == true,
-            is_server = select(2, safe_call(net, "GetIsServer")) == true,
+            is_dedicated = select(2, safe_call(protected_call, net, "IsDedicated")) == true,
+            is_server = select(2, safe_call(protected_call, net, "GetIsServer")) == true,
         },
         capabilities = {
             known_mod_list = names_ok and type(all_names) == "table",
