@@ -71,12 +71,12 @@ configuration_options = {
     {
         name = "ai_bridge_enabled",
         label = "Conectar ao serviço local do ModXpector",
-        hover = "Permite usar a ponte local opcional. Não exige internet.",
+        hover = "Desativada por padrão. Ative somente se você autorizar o serviço local do ModXpector.",
         options = {
             { description = "Ativado", data = true },
             { description = "Desativado", data = false },
         },
-        default = true,
+        default = false,
     },
     {
         name = "test_mode",
