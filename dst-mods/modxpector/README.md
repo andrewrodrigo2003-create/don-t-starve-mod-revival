@@ -22,6 +22,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - A coleta é passiva: não modifica configurações nem arquivos dos mods analisados.
 - A ponte local é opcional e desativada por padrão; só é consultada quando ai_bridge_enabled é ativado explicitamente.
 - bridge_token.txt é uma credencial local: não a versione nem a distribua. O empacotador e o .gitignore excluem esse arquivo.
+- O token é aberto apenas em modo de leitura (`io.open(..., \"r\")`); o mod não grava arquivos. As notas de modders da Klei para os hotfixes [651415](https://kleiforums.com/forums/topic/163362-game-update-651415/) e [653007](https://kleiforums.com/game-updates/dst/653007-r2465/) documentam a restrição de escrita e a exceção limitada a `unsafedata`.
 - Conflito suspeito não é falha confirmada.
 - Testes Lua automatizados não substituem validação no jogo real, em multiplayer ou em servidores dedicados.
 
