@@ -14,7 +14,8 @@ def runtime_files():
     for path in required:
         if not path.is_file():
             raise SystemExit(f"Arquivo obrigatório ausente: {path.relative_to(HERE)}")
-    files = required + sorted((HERE / "scripts").rglob("*.lua"))
+    files = [path for path in required + sorted((HERE / "scripts").rglob("*.lua"))
+             if path.name != "bridge_token.txt"]
     if not any(path.is_file() for path in files[2:]):
         raise SystemExit("Nenhum script de runtime encontrado.")
     return files
