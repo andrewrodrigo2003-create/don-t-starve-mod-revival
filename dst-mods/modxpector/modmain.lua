@@ -218,6 +218,17 @@ local bridge_polling = false
 local bridge_poll_enabled = false
 local poll_game_test_plan
 
+local function set_ai_bridge_status(status, detail)
+    local snapshot = { status = tostring(status or "unknown"), detail = tostring(detail or "") }
+    if type(DST_GLOBAL.rawset) == "function" then
+        DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS", snapshot)
+    else
+        DST_GLOBAL.MODXPECTOR_AI_BRIDGE_STATUS = snapshot
+    end
+end
+
+set_ai_bridge_status(GetModConfigData("ai_bridge_enabled") == true and "aguardando_verificacao" or "desativada")
+
 local function schedule_game_poll(inst, delay)
     if inst ~= nil and inst:IsValid() and bridge_poll_enabled and inst == ThePlayer and poll_game_test_plan ~= nil then
         inst:DoTaskInTime(delay or 5, function() poll_game_test_plan(inst) end)
@@ -274,6 +285,7 @@ start_virtual_player = function(inst, plan, token, port)
             end
         end,
         on_finished = function(report)
+            set_ai_bridge_status("teste_finalizado", tostring(report.outcome or "unknown"))
             print("[ModXpector] VIRTUAL_PLAYER_FINISHED run_id=" .. tostring(plan.run_id or "none")
                 .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed))
             for _, result in ipairs(report.results or {}) do
@@ -301,11 +313,13 @@ if type(AddClientModRPCHandler) == "function" then
     AddClientModRPCHandler(MODNAME, "plan_ready", function(run_id, success, message)
         if pending_plan == nil or pending_plan.run_id ~= run_id then return end
         if success == true then
+            set_ai_bridge_status("plano_aceito", "Plano recebido do agente local.")
             print("[ModXpector] GAME_TEST_PLAN_ACCEPTED run_id=" .. tostring(run_id))
             local plan = pending_plan
             pending_plan = nil
             start_virtual_player(ThePlayer, plan, bridge_token, bridge_port)
         else
+            set_ai_bridge_status("plano_rejeitado", tostring(message))
             print("[ModXpector] GAME_TEST_PLAN_REJECTED reason=" .. tostring(message))
             pending_plan = nil
             schedule_game_poll(ThePlayer, 10)
@@ -437,6 +451,7 @@ local function capture_modxpector_logs(callback)
         if type(callback) == "function" then pcall(callback, success == true, payload) end
     end
     if GetModConfigData("ai_bridge_enabled") ~= true then
+        set_ai_bridge_status("desativada", "Ative IA local nas opções do ModXpector.")
         finish(false, { error = "local_bridge_disabled" })
         return false
     end
@@ -454,8 +469,13 @@ local bridge_probe_started = false
 local bridge_probe_attempts = 0
 local function probe_local_ai_bridge(inst)
     if bridge_probe_started or inst == nil or inst ~= ThePlayer then return end
-    if GetModConfigData("ai_bridge_enabled") ~= true then return end
+    if GetModConfigData("ai_bridge_enabled") ~= true then
+        set_ai_bridge_status("desativada", "Ative IA local nas opções do ModXpector.")
+        return
+    end
+    set_ai_bridge_status("verificando", "Verificando serviço local em 127.0.0.1:" .. tostring(bridge_port))
     if TheSim == nil or type(TheSim.QueryServer) ~= "function" then
+        set_ai_bridge_status("api_indisponivel", "TheSim:QueryServer não está disponível no cliente.")
         print("[ModXpector] LOCAL_AI_BRIDGE_UNAVAILABLE reason=queryserver_missing")
         return
     end
@@ -464,6 +484,7 @@ local function probe_local_ai_bridge(inst)
     bridge_probe_started = true
     bridge_probe_attempts = bridge_probe_attempts + 1
     local function retry_probe()
+        set_ai_bridge_status("servico_offline", "O serviço local não respondeu. Nova tentativa automática limitada.")
         bridge_probe_started = false
         if bridge_probe_attempts < 3 and inst:IsValid() then
             inst:DoTaskInTime(15, function() probe_local_ai_bridge(inst) end)
@@ -471,6 +492,7 @@ local function probe_local_ai_bridge(inst)
     end
     bridge_token = read_bridge_token()
     if bridge_token == nil then
+        set_ai_bridge_status("token_ausente", "bridge_token.txt não foi encontrado ou não pôde ser lido.")
         print("[ModXpector] LOCAL_AI_BRIDGE_TOKEN_MISSING")
         retry_probe()
         return
@@ -480,6 +502,7 @@ local function probe_local_ai_bridge(inst)
     local ok, err = pcall(function()
         TheSim:QueryServer(url, function(body, is_successful, result_code)
             if not is_successful or result_code ~= 200 or type(body) ~= "string" then
+                set_ai_bridge_status("servico_offline", "Resposta HTTP " .. tostring(result_code))
                 print("[ModXpector] LOCAL_AI_BRIDGE_OFFLINE code=" .. tostring(result_code))
                 retry_probe()
                 return
@@ -488,18 +511,21 @@ local function probe_local_ai_bridge(inst)
             if not decoded_ok or type(payload) ~= "table"
                 or payload.protocol ~= "modxpector-dst-bridge/v1"
                 or payload.bridge ~= "ready" then
+                set_ai_bridge_status("resposta_invalida", "O serviço respondeu, mas não reconheceu o protocolo ModXpector.")
                 print("[ModXpector] LOCAL_AI_BRIDGE_INVALID_RESPONSE")
                 retry_probe()
                 return
             end
             local agent_status = "unknown"
             if type(payload.agent) == "table" then agent_status = tostring(payload.agent.status or "unknown") end
+            set_ai_bridge_status("conectada", "Agente: " .. agent_status .. " | porta " .. tostring(bridge_port))
             print("[ModXpector] LOCAL_AI_BRIDGE_READY port=" .. tostring(bridge_port) .. " agent=" .. agent_status)
             bridge_poll_enabled = true
             send_world_inventory(inst, bridge_token, bridge_port)
             if GetModConfigData("test_mode") == true then
                 inst:DoTaskInTime(3, function() poll_game_test_plan(inst) end)
             else
+                set_ai_bridge_status("conectada_modo_teste_desativado", "Ative também Modo de testes nas opções do ModXpector.")
                 print("[ModXpector] Enable Test Mode in the mod configuration to allow approved live test plans")
             end
         end, "GET", nil, 10)
