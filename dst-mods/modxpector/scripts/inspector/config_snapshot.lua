@@ -26,7 +26,7 @@ function M.Read(getter, safe_pcall)
     return {
         open_key = open_key,
         show_debug_info = read("show_debug_info", true, true) ~= false,
-        ai_bridge_enabled = read("ai_bridge_enabled", true, false) ~= false,
+        ai_bridge_enabled = read("ai_bridge_enabled", false, false) == true,
         test_mode = read("test_mode", false, false) == true,
         max_spawn_count = max_spawn_count,
     }
