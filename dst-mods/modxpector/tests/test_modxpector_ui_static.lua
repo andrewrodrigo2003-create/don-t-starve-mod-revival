@@ -242,7 +242,7 @@ assert(config_sources.open_key == true and config_sources.show_debug_info == tru
 assert(config_sources.ai_bridge_enabled == false and config_sources.test_mode == false and config_sources.max_spawn_count == false)
 local defaults = config_snapshot.Read(function() return nil end)
 assert(defaults.open_key == "KEY_F6" and defaults.show_debug_info == true)
-assert(defaults.ai_bridge_enabled == true and defaults.test_mode == false and defaults.max_spawn_count == 10)
+assert(defaults.ai_bridge_enabled == false and defaults.test_mode == false and defaults.max_spawn_count == 10)
 local invalid = config_snapshot.Read(function(key, get_local_config)
     if key == "open_key" and get_local_config == true then return "bad" end
     if key == "max_spawn_count" and get_local_config == false then return 99 end
