@@ -381,6 +381,13 @@ local function send_world_inventory(inst, token, port, callback)
         finish(false, { error = "local_bridge_token_missing" })
         return false
     end
+    if not INVENTORY_OK or type(WORLD_INVENTORY) ~= "table" or type(WORLD_INVENTORY.Collect) ~= "function" then
+        finish(false, {
+            error = "world_inventory_module_unavailable",
+            detail = tostring(INVENTORY_LOAD_ERROR or "inventory module unavailable"),
+        })
+        return false
+    end
     local collect_ok, inventory = pcall(WORLD_INVENTORY.Collect, _G)
     if not collect_ok or type(inventory) ~= "table" then
         print("[ModXpector] WORLD_INVENTORY_FAILED reason=collect")
