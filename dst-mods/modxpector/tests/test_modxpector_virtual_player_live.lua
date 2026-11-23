@@ -28,6 +28,7 @@ GetValidRecipe = function(name)
     }
 end
 
+local crafted_calls, placed_calls = 0, 0
 local player
 player = {
     prefab = "wilson",
@@ -49,13 +50,17 @@ player = {
         builder = {
             KnowsRecipe = function() return true end,
             HasIngredients = function() return true end,
-            MakeRecipeFromMenu = function(_, recipe) player.crafted_recipe = recipe.name end,
+            MakeRecipeFromMenu = function(_, recipe)
+                crafted_calls = crafted_calls + 1
+                player.crafted_recipe = recipe.name
+            end,
             BufferBuild = function(self, recipe) self.buffered = self.buffered or {}; self.buffered[recipe] = true end,
             IsBuildBuffered = function(self, recipe) return self.buffered ~= nil and self.buffered[recipe] == true end,
             CanBuildAtPoint = function(_, point, _, rotation)
                 return point.x == 2 and point.z == 3 and rotation == 0
             end,
             MakeRecipeAtPoint = function(_, recipe, point, rotation)
+                placed_calls = placed_calls + 1
                 player.placed_recipe = {
                     name = recipe.name, point = point, rotation = rotation,
                 }
@@ -74,6 +79,7 @@ local controller
 controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
     allowed_prefabs = { "cutgrass", "axe", "tree" },
+    allowed_recipes = { "axe", "structure" },
     send_rpc = function(kind, request_id, value, count, _x, _z)
         if kind == "unlock_recipe" then
             assert(value == "axe")
@@ -88,6 +94,7 @@ controller = VirtualPlayer.new(player, {
 local plan = {
     schema = "modxpector/test-plan/v1",
     enabled = true,
+    allowed_recipes = { "axe", "structure" },
     steps = {
         { kind = "action", action = "CHOP", timeout = 5 },
         { kind = "wait", seconds = 0 },
@@ -115,8 +122,8 @@ assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
 assert(finished.assertions_total == 11 and finished.assertions_passed == 11)
 assert(finished.outcome == "passed")
-assert(player.crafted_recipe == "axe")
-assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure")
+assert(player.crafted_recipe == "axe" and crafted_calls == 1)
+assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
 target.replica.health.GetCurrent = function() return 0 end
 local dead_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
@@ -147,6 +154,7 @@ player.replica.builder.BufferBuild = function() end
 player.replica.builder.buffered = nil
 local timeout_controller = VirtualPlayer.new(player, {
     allowed_prefabs = { "cutgrass" },
+    allowed_recipes = { "structure" },
     on_finished = function(report) timeout_finished = report end,
 })
 assert(timeout_controller:Start({
@@ -158,3 +166,35 @@ assert(timeout_finished ~= nil and timeout_finished.outcome == "failed")
 assert(timeout_finished.failure == "craft_at_point buffer timeout")
 player.replica.builder.BufferBuild = original_buffer_build
 print("MODXPECTOR_PLACER_TIMEOUT_CONTRACT_OK")
+
+
+-- Craft and placer-craft must fail closed when the recipe is absent from the plan allowlist.
+local denied_craft_report
+local denied_craft = VirtualPlayer.new(player, {
+    allowed_recipes = { "axe" },
+    on_finished = function(report) denied_craft_report = report end,
+})
+assert(denied_craft:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "craft", recipe = "structure" } },
+}))
+assert(denied_craft_report ~= nil and denied_craft_report.outcome == "failed")
+assert(string.find(denied_craft_report.failure, "allowlist", 1, true))
+assert(player.crafted_recipe == "axe" and crafted_calls == 1, "disallowed recipe must not be crafted")
+
+local denied_placer_report
+local denied_placer = VirtualPlayer.new(player, {
+    allowed_recipes = { "axe" },
+    on_finished = function(report) denied_placer_report = report end,
+})
+assert(denied_placer:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "craft_at_point", recipe = "structure", position = { x = 2, z = 3 } } },
+}))
+assert(denied_placer_report ~= nil and denied_placer_report.outcome == "failed")
+assert(string.find(denied_placer_report.failure, "allowlist", 1, true))
+assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1,
+    "disallowed placer recipe must not be submitted again")
+print("MODXPECTOR_CRAFT_RECIPE_ALLOWLIST_CONTRACT_OK")
