@@ -29,6 +29,16 @@ GetValidRecipe = function(name)
 end
 
 local crafted_calls, placed_calls = 0, 0
+local open_container = {
+    replica = {
+        container = {
+            Has = function(_, prefab)
+                if prefab == "goldnugget" then return true, 3 end
+                return false, 0
+            end,
+        },
+    },
+}
 local player
 player = {
     prefab = "wilson",
@@ -45,7 +55,12 @@ player = {
                 end
                 return nil
             end,
-            Has = function(_, prefab, count) return prefab == "cutgrass" and count <= 2 end,
+            Has = function(_, prefab, count)
+                local found = prefab == "cutgrass" and 2 or 0
+                return found >= count, found
+            end,
+            GetOpenContainers = function() return { [open_container] = true } end,
+            GetOverflowContainer = function() return nil end,
             GetEquippedItem = function(_, slot)
                 return slot == "hands" and { prefab = "axe" } or nil
             end,
@@ -95,7 +110,7 @@ local finished
 local controller
 controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
-    allowed_prefabs = { "cutgrass", "axe", "tree", "structure" },
+    allowed_prefabs = { "cutgrass", "axe", "tree", "structure", "goldnugget" },
     allowed_recipes = { "axe", "structure" },
     send_rpc = function(kind, request_id, value, count, _x, _z)
         if kind == "unlock_recipe" then
@@ -121,6 +136,8 @@ local plan = {
         { kind = "craft", recipe = "axe" },
         { kind = "craft_at_point", recipe = "structure", position = { x = 2, z = 3 }, rotation = 0 },
         { kind = "assert", assertion = { kind = "player_has_item", prefab = "cutgrass" } },
+        { kind = "assert", assertion = { kind = "player_has_item", prefab = "goldnugget" } },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "goldnugget", count = 3 } },
         { kind = "assert", assertion = { kind = "player_health_gte", value = 100 } },
         { kind = "assert", assertion = { kind = "player_hunger_gte", value = 70 } },
         { kind = "assert", assertion = { kind = "player_sanity_gte", value = 80 } },
@@ -159,7 +176,7 @@ assert(saw_spawn_metadata and saw_recipe_metadata,
 assert(player.components.playercontroller.last_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
-assert(finished.assertions_total == 14 and finished.assertions_passed == 14)
+assert(finished.assertions_total == 16 and finished.assertions_passed == 16)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
