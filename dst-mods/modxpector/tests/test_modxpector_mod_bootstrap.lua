@@ -186,6 +186,13 @@ assert(virtual_player_started.suite_id == "community_grass_smoke"
 assert(type(pending_master_timeout) == "function", "Master validation must have a bounded timeout")
 pending_master_timeout() -- accepted plans must ignore the stale timeout callback
 
+now = 2
+local rejected_request_ok = engine_globals.MODXPECTOR_RUN_AI_SUITE("community_grass_smoke", "approach_grass")
+assert(rejected_request_ok == true and sent_plan_rpc ~= nil)
+rpc_client.plan_ready(sent_plan_rpc.run_id, false, "permission denied")
+assert(engine_globals.MODXPECTOR_EMBEDDED_AI_LAST_SUITE_RESULT.status == "inconclusive",
+    "Master rejection must be recorded as inconclusive, not as a passed test")
+
 assert(type(rpc_server.spawn_item) == "function")
 assert(type(rpc_server.spawn_entity) == "function")
 assert(type(rpc_server.unlock_recipe) == "function")
