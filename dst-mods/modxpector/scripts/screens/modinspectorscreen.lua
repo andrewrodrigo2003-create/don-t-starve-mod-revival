@@ -599,18 +599,21 @@ function InspectorScreen:Refresh()
             local finding = findings[i]
             self:AddLine("[" .. tostring(finding.severity) .. "] "
                 .. tostring(finding.mod_name or finding.mod_id)
-                .. ": " .. tostring(finding.title), -65 - (i - 1) * 27, 13)
+                .. ": " .. tostring(finding.title) .. " (" .. tostring(finding.confidence) .. ")", -65 - (i - 1) * 27, 12)
         end
         local plan = type(ai_report) == "table" and ai_report.plan or nil
         local next_task = type(ai_report) == "table" and ai_report.next_task or nil
-        self:AddLine("Próxima investigação: " .. (next_task ~= nil and tostring(next_task.kind) or "nenhuma pendente"), -210, 14)
+        local last_suite_result = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_LAST_SUITE_RESULT")
+        local last_suite_status = type(last_suite_result) == "table" and tostring(last_suite_result.status or "desconhecido") or "nenhum"
+        self:AddLine("Próxima investigação: " .. (next_task ~= nil and tostring(next_task.kind) or "nenhuma")
+            .. " | último teste: " .. last_suite_status, -210, 12)
         local selected_suites = type(ai_report) == "table" and ai_report.selected_suites or {}
         local first_suite = selected_suites[1] ~= nil and selected_suites[1].suite or nil
         local first_scenario = type(first_suite) == "table" and first_suite.scenarios[1] or nil
         self:AddLine("Suites comunitárias prontas: " .. tostring(#selected_suites), -238, 14)
         if first_suite ~= nil and first_scenario ~= nil then
             self:AddLine("Próxima suite: " .. tostring(first_suite.title), -260, 13)
-            make_button(self.content, "Executar suite", 160, -285, function()
+            make_button(self.content, "Executar suite", 160, -280, function()
                 local run_suite = rawget(DST_GLOBAL, "MODXPECTOR_RUN_AI_SUITE")
                 if type(run_suite) ~= "function" then
                     self:SetStatus("Executor de suites da IA não disponível.")
@@ -626,7 +629,7 @@ function InspectorScreen:Refresh()
         else
             self:AddLine("Nenhum mod ativo declarou uma suite compatível; só o diagnóstico passivo está disponível.", -260, 12)
         end
-        make_button(self.content, "Analisar IA", -160, -285, function()
+        make_button(self.content, "Analisar IA", -160, -280, function()
             local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
             if type(run) ~= "function" then
                 self:SetStatus("Motor de IA embarcada não disponível.")
