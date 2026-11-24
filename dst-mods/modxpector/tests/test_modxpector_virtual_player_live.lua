@@ -573,7 +573,8 @@ assert(multi_verification:Start({
 }))
 assert(multi_verification_report ~= nil and multi_verification_report.outcome == "passed")
 assert(multi_verification_report.steps_verified == 2 and multi_verification_report.steps_unverified == 0)
-assert(multi_verification_report.verification_assertions_passed == 2)
+assert(multi_verification_report.verification_assertions_passed == 1,
+    "one assertion linked to two steps must count as one verification assertion")
 print("MODXPECTOR_VIRTUAL_PLAYER_MULTI_STEP_VERIFICATION_CONTRACT_OK")
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STEP_FAILURE_EVIDENCE_CONTRACT_OK")
