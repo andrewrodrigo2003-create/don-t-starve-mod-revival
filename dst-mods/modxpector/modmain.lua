@@ -927,10 +927,20 @@ probe_local_ai_bridge = function(inst)
                 retry_probe()
                 return
             end
-            local agent_status = "unknown"
-            if type(payload.agent) == "table" then agent_status = tostring(payload.agent.status or "unknown") end
+            local agent_status = type(payload.agent) == "table" and tostring(payload.agent.status or "unknown") or "unknown"
+            local agent_message = type(payload.agent) == "table" and tostring(payload.agent.message or "") or ""
+            if agent_status ~= "ready" then
+                bridge_poll_enabled = false
+                bridge_probe_started = false
+                set_ai_bridge_status("agente_indisponivel", agent_message ~= "" and agent_message or "Ollama/modelo local indisponível.")
+                print("[ModXpector] LOCAL_AI_BRIDGE_AGENT_UNAVAILABLE status=" .. agent_status)
+                if inst:IsValid() then
+                    inst:DoTaskInTime(30, function() probe_local_ai_bridge(inst) end)
+                end
+                return
+            end
             bridge_probe_attempts = 0
-            set_ai_bridge_status("conectada", "Agente: " .. agent_status .. " | porta " .. tostring(bridge_port))
+            set_ai_bridge_status("conectada", "Agente local pronto: " .. agent_status .. " | porta " .. tostring(bridge_port))
             print("[ModXpector] LOCAL_AI_BRIDGE_READY port=" .. tostring(bridge_port) .. " agent=" .. agent_status)
             bridge_poll_enabled = true
             send_world_inventory(inst, bridge_token, bridge_port)
