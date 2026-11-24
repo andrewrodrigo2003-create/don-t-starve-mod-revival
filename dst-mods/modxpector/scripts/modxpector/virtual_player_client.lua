@@ -196,6 +196,20 @@ function VirtualPlayer:_mark_step_verified(step_index)
 end
 
 function VirtualPlayer:_finish(ok, message)
+    if not ok then
+        local current_step = self.queue[self.index]
+        if current_step ~= nil then
+            local last = self.results[#self.results]
+            local terminal_status = {
+                completed = true, passed = true, failed = true, timeout = true,
+                submitted_unverified = true, cleared_unverified = true,
+            }
+            if last == nil or last.index ~= self.index or terminal_status[last.status] ~= true then
+                local failed_step = type(current_step) == "table" and current_step or { kind = "invalid" }
+                self:_record(failed_step, "failed", tostring(message or "step failed"))
+            end
+        end
+    end
     self.running = false
     self.active = nil
     self.finished_at = safe_get_time()
