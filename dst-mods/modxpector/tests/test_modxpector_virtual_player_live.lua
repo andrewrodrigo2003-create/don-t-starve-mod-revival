@@ -111,6 +111,7 @@ controller = VirtualPlayer.new(player, {
 local plan = {
     schema = "modxpector/test-plan/v1",
     enabled = true,
+    run_id = "live-vp-contract-001",
     allowed_recipes = { "axe", "structure" },
     steps = {
         { kind = "action", action = "CHOP", timeout = 5 },
@@ -137,6 +138,12 @@ local plan = {
 }
 assert(controller:Start(plan))
 assert(finished ~= nil and finished.running == false)
+assert(finished.run_id == plan.run_id)
+assert(type(finished.started_at) == "number" and type(finished.finished_at) == "number")
+assert(type(finished.duration_seconds) == "number" and finished.duration_seconds >= 0)
+assert(finished.results[1].run_id == plan.run_id)
+assert(type(finished.results[1].timestamp) == "number")
+assert(type(finished.results[1].elapsed_seconds) == "number")
 assert(player.components.playercontroller.last_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
