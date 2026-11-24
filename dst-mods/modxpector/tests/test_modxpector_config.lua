@@ -19,7 +19,7 @@ assert(enabled.collect_runtime_components == true,
 
 local modinfo_path = root .. "/dst-mods/modxpector/modinfo.lua"
 local modinfo_chunk = assert(loadfile(modinfo_path))
-local env = {}
+local env = { string = string, table = table }
 setfenv(modinfo_chunk, env)
 modinfo_chunk()
 local option
