@@ -417,6 +417,7 @@ function M.RecordTaskResult(session, task_id, status, evidence)
         return false, "invalid_task_status"
     end
     session.completed[task_id] = status
+    if #session.results >= 200 then table.remove(session.results, 1) end
     session.results[#session.results + 1] = {
         task_id = task_id,
         status = status,
