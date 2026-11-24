@@ -346,6 +346,8 @@ assert(main:find('DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagno
     "modmain must expose the embedded analysis action to the dashboard")
 assert(main:find('DST_GLOBAL.MODXPECTOR_REGISTER_TEST_SUITE = register_embedded_test_suite', 1, true),
     "community mods must be able to register declarative test suites")
+assert(main:find('DST_GLOBAL.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT = report_community_diagnostic_event', 1, true),
+    "community mods must be able to submit opt-in structured diagnostic events")
 assert(main:find('DST_GLOBAL.MODXPECTOR_RUN_AI_SUITE = run_embedded_ai_suite', 1, true),
     "embedded AI must expose a controlled Virtual Player suite runner")
 assert(main:find('AddClientModRPCHandler(MODNAME, "plan_ready"', 1, true),
@@ -364,6 +366,10 @@ assert(screen_source:find("Investigações:", 1, true),
     "dashboard must show read-only diagnostic task execution")
 assert(screen_source:find("observador:", 1, true) and screen_source:find("componentes:", 1, true),
     "dashboard must show runtime component observation state")
+assert(screen_source:find("eventos comunitários:", 1, true),
+    "dashboard must show unverified community diagnostic events")
+assert(screen_source:find("Receber eventos de mods comunitários:", 1, true),
+    "configuration UI must expose community event ingestion as opt-in")
 assert(screen_source:find('Executar análise da IA embarcada', 1, true),
     "dashboard must expose a button for the offline reasoning engine")
 assert(not screen_source:find('Ollama local', 1, true),
