@@ -177,6 +177,9 @@ assert(devtools_missing_finding ~= nil and devtools_missing_finding.confidence =
 
 local analysis = AI.Analyze(snapshot)
 assert(analysis.schema == AI.SCHEMA, "analysis schema missing")
+assert(analysis.registry.runtime_components.enabled == false
+    and analysis.registry.runtime_components.available == false,
+    "analysis should report the opt-in runtime component observer as disabled when no data is supplied")
 assert(analysis.registry.prefabs.available == false and analysis.registry.prefabs.count == nil,
     "analysis should report registry evidence as unavailable when the snapshot omitted it")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
