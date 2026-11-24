@@ -413,3 +413,10 @@ assert(main:find('local AI_ACTION_ALLOWLIST = { WALKTO = true }', 1, true),
 assert(main:find('parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, AI_ACTION_ALLOWLIST)', 1, true),
     "AI action input must be restricted to the dedicated non-destructive allowlist")
 print("MODXPECTOR_AI_NON_DESTRUCTIVE_ALLOWLIST_OK")
+
+
+assert(main:find('if agent_status ~= "ready" then', 1, true)
+    and main:find('set_ai_bridge_status("agente_indisponivel"', 1, true)
+    and main:find('inst:DoTaskInTime(30, function() probe_local_ai_bridge(inst) end)', 1, true),
+    "the game must not enable automatic polling until the local Ollama model is ready")
+print("MODXPECTOR_AI_MODEL_READINESS_RETRY_CONTRACT_OK")
