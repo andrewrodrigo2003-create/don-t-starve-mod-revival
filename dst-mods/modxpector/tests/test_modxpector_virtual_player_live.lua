@@ -404,3 +404,23 @@ assert(unverified_controller:Start({
 assert(unverified_report ~= nil and unverified_report.outcome == "inconclusive")
 assert(unverified_report.steps_unverified == 1 and unverified_report.unverified_step_indices[1] == 1)
 print("MODXPECTOR_VIRTUAL_PLAYER_POST_ACTION_VERIFICATION_CONTRACT_OK")
+
+-- A broken entity validity accessor must not prevent the final failure report.
+local original_is_valid = player.IsValid
+local invalid_player_report
+local invalid_player_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) invalid_player_report = report end,
+})
+player.IsValid = function()
+    error("simulated player validity failure")
+end
+assert(invalid_player_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "wait", seconds = 1 } },
+}))
+assert(invalid_player_report ~= nil and invalid_player_report.running == false)
+assert(invalid_player_report.outcome == "failed")
+assert(invalid_player_report.player == nil)
+player.IsValid = original_is_valid
+print("MODXPECTOR_VIRTUAL_PLAYER_FINAL_REPORT_GUARD_CONTRACT_OK")
