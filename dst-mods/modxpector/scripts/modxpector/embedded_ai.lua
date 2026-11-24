@@ -502,6 +502,41 @@ function M.Analyze(snapshot)
         status = "incomplete_evidence"
     end
 
+    local runtime_component_counts = {}
+    local runtime_observed_events = {}
+    local runtime_observed_prefabs = {}
+    local runtime_prefab_seen = {}
+    for _, item in ipairs(type(runtime_components.components) == "table" and runtime_components.components or {}) do
+        if #runtime_component_counts >= 12 then break end
+        if type(item) == "table" and is_string(item.name)
+            and type(item.count) == "number" and item.count >= 0 then
+            runtime_component_counts[#runtime_component_counts + 1] = {
+                name = safe_text(item.name, 40),
+                count = item.count,
+            }
+        end
+    end
+    for _, event in ipairs(type(runtime_components.events) == "table" and runtime_components.events or {}) do
+        if #runtime_observed_events >= 64 then break end
+        if type(event) == "table" then
+            local component_name = safe_text(event.component, 40)
+            local prefab_name = safe_text(event.prefab, 80)
+            if component_name ~= nil and prefab_name ~= nil then
+                runtime_observed_events[#runtime_observed_events + 1] = {
+                    component = component_name,
+                    prefab = prefab_name,
+                    time = type(event.time) == "number" and event.time or 0,
+                }
+                if prefab_name ~= "unknown" and not runtime_prefab_seen[prefab_name] then
+                    runtime_prefab_seen[prefab_name] = true
+                    runtime_observed_prefabs[#runtime_observed_prefabs + 1] = prefab_name
+                end
+            end
+        end
+    end
+    table.sort(runtime_observed_prefabs)
+    while #runtime_observed_prefabs > 64 do table.remove(runtime_observed_prefabs) end
+
     local registry = type(snapshot.registry) == "table" and snapshot.registry or {}
     local analysis = {
         schema = M.SCHEMA,
@@ -532,6 +567,9 @@ function M.Analyze(snapshot)
                 callback_errors = tonumber(runtime_components.callback_errors) or 0,
                 event_count = type(runtime_components.events) == "table" and #runtime_components.events or 0,
                 dropped = tonumber(runtime_components.dropped) or 0,
+                component_counts = runtime_component_counts,
+                observed_prefabs = runtime_observed_prefabs,
+                event_sample = runtime_observed_events,
             },
         },
         engine_version = M.VERSION,
