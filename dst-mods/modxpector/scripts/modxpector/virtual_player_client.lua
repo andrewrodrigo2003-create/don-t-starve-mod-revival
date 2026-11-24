@@ -118,11 +118,30 @@ function VirtualPlayer:BuildAction(step, target_override)
     return BufferedAction(self.player, target, ACTIONS[action_name], invobject, position)
 end
 
+function VirtualPlayer:_handle_runtime_error(err, step)
+    if not self.running then return false end
+    local failed_step = step or (self.active ~= nil and self.active.step) or self.queue[self.index]
+    if type(failed_step) ~= "table" then failed_step = { kind = "run" } end
+    local detail = "unhandled Virtual Player runtime error: " .. tostring(err)
+    self:_record(failed_step, "failed", detail)
+    self:_finish(false, "virtual player runtime error at step " .. tostring(self.index) .. ": " .. tostring(err))
+    return true
+end
+
 function VirtualPlayer:_schedule(delay, fn)
-    if not self.running or self.player == nil or not self.player:IsValid() then return end
-    self.player:DoTaskInTime(math.max(0, delay or 0), function()
-        if self.running then fn() end
+    if not self.running or self.player == nil then return end
+    local ok, err = pcall(function()
+        if not self.player:IsValid() then
+            self:_finish(false, "player entity is no longer valid")
+            return
+        end
+        self.player:DoTaskInTime(math.max(0, delay or 0), function()
+            if not self.running then return end
+            local callback_ok, callback_error = pcall(fn)
+            if not callback_ok then self:_handle_runtime_error(callback_error) end
+        end)
     end)
+    if not ok then self:_handle_runtime_error(err) end
 end
 
 function VirtualPlayer:_record(step, status, detail)
@@ -149,7 +168,10 @@ function VirtualPlayer:_finish(ok, message)
         self.failure = message
     end
     self:_record({ kind = "run" }, ok and "completed" or "failed", message)
-    if self.on_finished ~= nil then self.on_finished(self:GetReport()) end
+    if self.on_finished ~= nil then
+        local callback_ok, callback_error = pcall(self.on_finished, self:GetReport())
+        if not callback_ok then self.on_finished_error = tostring(callback_error) end
+    end
 end
 
 function VirtualPlayer:Start(plan)
@@ -330,7 +352,7 @@ function VirtualPlayer:_poll_craft_buffer()
     end
 end
 
-function VirtualPlayer:_next()
+function VirtualPlayer:_next_impl()
     if not self.running then return end
     self.index = self.index + 1
     local step = self.queue[self.index]
@@ -468,6 +490,13 @@ function VirtualPlayer:_next()
     end
 end
 
+
+function VirtualPlayer:_next()
+    if not self.running then return end
+    local ok, err = pcall(function() self:_next_impl() end)
+    if not ok then self:_handle_runtime_error(err, self.queue[self.index]) end
+end
+
 function VirtualPlayer:_poll_action()
     if not self.running or self.active == nil then return end
     local active = self.active
@@ -582,6 +611,7 @@ function VirtualPlayer:GetReport()
         assertions_passed = self.assertions_passed or 0,
         outcome = self.run_failed and "failed" or ((self.assertions_total or 0) == 0 and "inconclusive" or ((self.assertions_passed or 0) == (self.assertions_total or 0) and "passed" or "failed")),
         failure = self.failure,
+        on_finished_error = self.on_finished_error,
         results = self.results,
     }
 end
