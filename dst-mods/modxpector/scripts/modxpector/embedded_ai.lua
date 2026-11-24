@@ -467,6 +467,15 @@ function M.Analyze(snapshot)
     if snapshot.truncated == true then
         limitations[#limitations + 1] = "O inventário foi truncado pelo limite de coleta; a análise é parcial."
     end
+    local runtime_components = type(snapshot.runtime_components) == "table" and snapshot.runtime_components or {}
+    if runtime_components.enabled ~= true then
+        limitations[#limitations + 1] = "A observação opt-in de componentes em runtime está desativada."
+    elseif runtime_components.available ~= true then
+        limitations[#limitations + 1] = "A observação de componentes foi solicitada, mas os hooks não ficaram disponíveis."
+    end
+    if (tonumber(runtime_components.dropped) or 0) > 0 then
+        limitations[#limitations + 1] = "O buffer de observação de componentes descartou eventos por atingir o limite."
+    end
 
     sort_findings(findings)
     local summary = { total = #findings, critical = 0, errors = 0, warnings = 0, info = 0 }
@@ -509,6 +518,15 @@ function M.Analyze(snapshot)
                 sample_count = type(registry.player_components.names) == "table" and #registry.player_components.names or 0,
                 truncated = registry.player_components.truncated == true,
             } or { available = false, count = nil, sample_count = 0, truncated = false },
+            runtime_components = {
+                enabled = runtime_components.enabled == true,
+                available = runtime_components.available == true,
+                hooks_registered = tonumber(runtime_components.hooks_registered) or 0,
+                hook_failures = tonumber(runtime_components.hook_failures) or 0,
+                callback_errors = tonumber(runtime_components.callback_errors) or 0,
+                event_count = type(runtime_components.events) == "table" and #runtime_components.events or 0,
+                dropped = tonumber(runtime_components.dropped) or 0,
+            },
         },
         engine_version = M.VERSION,
         status = status,
