@@ -602,7 +602,7 @@ function InspectorScreen:Refresh()
                 .. ": " .. tostring(finding.title), -65 - (i - 1) * 27, 13)
         end
         local plan = type(ai_report) == "table" and ai_report.plan or nil
-        local next_task = type(plan) == "table" and type(plan.tasks) == "table" and plan.tasks[1] or nil
+        local next_task = type(ai_report) == "table" and ai_report.next_task or nil
         self:AddLine("Próxima investigação: " .. (next_task ~= nil and tostring(next_task.kind) or "nenhuma pendente"), -210, 14)
         make_button(self.content, "Executar análise da IA embarcada", 0, -260, function()
             local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
