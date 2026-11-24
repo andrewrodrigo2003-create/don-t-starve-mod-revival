@@ -919,33 +919,18 @@ function InspectorScreen:Refresh()
         self:AddLine("Entrada ModXpector no menu de pausa: registrada pelo jogo", -55, 17)
         self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -90, 17)
         self:AddLine("A análise principal funciona offline, sem Ollama, Python ou servidor.", -125, 15)
-        make_button(self.content, "Capturar logs agora", 0, -215, function()
-            local capture = rawget(DST_GLOBAL, "MODXPECTOR_CAPTURE_LOGS")
-            if type(capture) ~= "function" then
-                self:SetStatus("Ponte local indisponível. Verifique o backend ModXpector.")
+        make_button(self.content, "Executar análise da IA embarcada", 0, -215, function()
+            local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
+            if type(run) ~= "function" then
+                self:SetStatus("Motor de IA embarcada não disponível.")
                 return
             end
-            self:SetStatus("Solicitando cópia dos logs do cliente e dos shards...")
-            local started = capture(function(success, payload)
-                if success then
-                    local log_result = type(payload.logs) == "table" and payload.logs or {}
-                    local copied = type(log_result.copied) == "table" and #log_result.copied or 0
-                    local run_id = tostring(payload.inventory_id or "sessão")
-                    if log_result.status == "no_logs_found" then
-                        self:SetStatus("Nenhum log encontrado. Verifique Documents/Klei/DoNotStarveTogether.")
-                    elseif log_result.status == "partial" then
-                        self:SetStatus("Captura parcial: " .. tostring(copied) .. " arquivo(s). Execução " .. run_id)
-                    elseif log_result.status == "collected" then
-                        self:SetStatus("Logs capturados: " .. tostring(copied) .. " arquivo(s). Execução " .. run_id)
-                    else
-                        self:SetStatus("Inventário enviado; estado da captura de logs: " .. tostring(log_result.status or "indisponível"))
-                    end
-                else
-                    local reason = type(payload) == "table" and payload.error or payload
-                    self:SetStatus("Falha ao capturar logs: " .. tostring(reason))
-                end
+            self:SetStatus("Atualizando diagnóstico local...")
+            run(function(success, message)
+                self:Refresh()
+                self:SetStatus(message)
+                print("[ModXpector] EMBEDDED_AI_CONFIG_RESULT success=" .. tostring(success))
             end)
-            if not started then return end
         end, 0.72)
     else
         self:AddLine("AJUDA E LIMITES", 210, 27)
@@ -954,7 +939,7 @@ function InspectorScreen:Refresh()
         self:AddLine("O painel é local; o diagnóstico principal também roda no servidor/mestre.", 70, 20)
         self:AddLine("Testes simulados no laboratório não substituem o teste no DST real.", 30, 20)
         self:AddLine("Relatórios são separados em DST Mod Inspector dentro da pasta de logs.", -10, 20)
-        self:AddLine("Use Configuração > Capturar logs agora para criar o pacote de diagnóstico.", -40, 18)
+        self:AddLine("Use IA / Testes para executar a análise offline e ver os achados.", -40, 18)
     end
 end
 
