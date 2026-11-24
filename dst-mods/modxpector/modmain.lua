@@ -91,6 +91,7 @@ local SERVER_ACTION_ALLOWLIST = {
     LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
     ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
 }
+local AI_ACTION_ALLOWLIST = { WALKTO = true }
 local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
     player_has_item = true, player_has_item_count_gte = true, player_equipped = true,
@@ -816,7 +817,7 @@ local function request_ai_test_plan(goal, prefabs_csv, actions_csv, callback)
         finish(false, prefab_error or "Informe pelo menos um prefab permitido.")
         return false
     end
-    local actions, action_error = parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, SERVER_ACTION_ALLOWLIST)
+    local actions, action_error = parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, AI_ACTION_ALLOWLIST)
     if actions == nil or #actions == 0 then
         finish(false, action_error or "Informe pelo menos uma ação permitida.")
         return false
