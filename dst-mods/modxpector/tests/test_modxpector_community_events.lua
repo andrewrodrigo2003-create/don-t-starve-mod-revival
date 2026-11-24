@@ -63,6 +63,21 @@ for _, event in ipairs(invalid_cases) do
     local accepted_invalid = Events.Report(event)
     assert(accepted_invalid == false, "invalid community event must be rejected")
 end
+local hostile = setmetatable({}, {
+    __index = function() error("untrusted event metatable must not execute") end,
+})
+local hostile_ok, hostile_reason = Events.Report(hostile)
+assert(hostile_ok == false and hostile_reason == "invalid_event_schema",
+    "event ingestion must read raw fields and ignore hostile metatables")
+local oversized = {
+    schema = "modxpector/community-diagnostic-events/v1",
+    mod_id = "workshop-12345",
+    kind = "runtime_error",
+    severity = "error",
+    message = string.rep("x", 1000000),
+}
+assert(Events.Report(oversized) == true,
+    "oversized text must be bounded and truncated rather than causing unbounded processing")
 
 local rate = fresh()
 rate.Configure(true)
