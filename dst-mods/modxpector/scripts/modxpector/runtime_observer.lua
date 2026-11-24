@@ -1,6 +1,7 @@
 -- Opt-in, read-only observation of selected DST component post-initializers.
 -- This module never wraps/replaces component methods and keeps a bounded event buffer.
 local M = {}
+local runtime_state
 
 local MAX_EVENTS = 256
 local COMPONENT_ALLOWLIST = {
@@ -16,14 +17,6 @@ local function clean(value, limit)
     return value
 end
 
-local function store_state(globals, state)
-    if type(globals.rawset) == "function" then
-        globals.rawset(globals, "MODXPECTOR_RUNTIME_COMPONENTS", state)
-    else
-        globals.MODXPECTOR_RUNTIME_COMPONENTS = state
-    end
-end
-
 function M.GetAllowlist()
     local result = {}
     for i, name in ipairs(COMPONENT_ALLOWLIST) do result[i] = name end
@@ -31,7 +24,6 @@ function M.GetAllowlist()
 end
 
 function M.Register(add_component_post_init, globals, enabled, protected_call, get_time)
-    globals = type(globals) == "table" and globals or {}
     protected_call = type(protected_call) == "function" and protected_call or pcall
     local state = {
         schema = "modxpector/runtime-component-observations/v1",
@@ -49,7 +41,7 @@ function M.Register(add_component_post_init, globals, enabled, protected_call, g
 
     if enabled ~= true then
         state.reason = "disabled_by_configuration"
-        store_state(globals, state)
+        runtime_state = state
         return false, state
     end
     if type(add_component_post_init) ~= "function" then
@@ -58,10 +50,9 @@ function M.Register(add_component_post_init, globals, enabled, protected_call, g
         return false, state
     end
 
-    local existing = globals.MODXPECTOR_RUNTIME_COMPONENTS
-    if type(existing) == "table" and existing.schema == state.schema
-        and existing.enabled == true and existing.registered == true then
-        return existing.available == true, existing
+    if type(runtime_state) == "table" and runtime_state.schema == state.schema
+        and runtime_state.enabled == true and runtime_state.registered == true then
+        return runtime_state.available == true, runtime_state
     end
 
     state.registered = true
@@ -105,13 +96,12 @@ function M.Register(add_component_post_init, globals, enabled, protected_call, g
 
     state.available = state.hooks_registered > 0
     if not state.available then state.reason = "no_component_hooks_registered" end
-    store_state(globals, state)
+    runtime_state = state
     return state.available, state
 end
 
 function M.Snapshot(globals)
-    globals = type(globals) == "table" and globals or {}
-    local state = globals.MODXPECTOR_RUNTIME_COMPONENTS
+    local state = runtime_state
     if type(state) ~= "table" or state.schema ~= "modxpector/runtime-component-observations/v1" then
         return {
             schema = "modxpector/runtime-component-observations/v1",
