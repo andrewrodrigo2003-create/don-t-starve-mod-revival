@@ -553,4 +553,27 @@ assert(malformed_step_controller:Start({
 assert(malformed_step_report ~= nil and malformed_step_report.outcome == "failed")
 assert(malformed_step_report.results[1].kind == "invalid")
 assert(malformed_step_report.results[1].status == "failed")
+local multi_verification_report
+local multi_verification
+multi_verification = VirtualPlayer.new(player, {
+    allowed_prefabs = { "cutgrass" },
+    send_rpc = function(kind, request_id, prefab, count)
+        multi_verification:OnRPCResult(request_id, true, "spawned " .. tostring(count) .. " " .. tostring(prefab))
+    end,
+    on_finished = function(report) multi_verification_report = report end,
+})
+assert(multi_verification:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = {
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_steps = { 1, 2 } },
+    },
+}))
+assert(multi_verification_report ~= nil and multi_verification_report.outcome == "passed")
+assert(multi_verification_report.steps_verified == 2 and multi_verification_report.steps_unverified == 0)
+assert(multi_verification_report.verification_assertions_passed == 2)
+print("MODXPECTOR_VIRTUAL_PLAYER_MULTI_STEP_VERIFICATION_CONTRACT_OK")
+
 print("MODXPECTOR_VIRTUAL_PLAYER_STEP_FAILURE_EVIDENCE_CONTRACT_OK")
