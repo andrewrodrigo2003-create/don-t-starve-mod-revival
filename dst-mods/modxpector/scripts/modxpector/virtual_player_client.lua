@@ -17,6 +17,11 @@ local ACTION_ALLOWLIST = {
     ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
 }
 
+local SIDE_EFFECT_STEPS = {
+    action = true, craft = true, craft_at_point = true,
+    unlock_recipe = true, spawn_item = true, spawn_entity = true,
+}
+
 local function is_finite_number(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
@@ -156,6 +161,24 @@ function VirtualPlayer:_record(step, status, detail)
         or status == "submitted_unverified" or status == "cleared_unverified") then
         self.steps_completed = (self.steps_completed or 0) + 1
     end
+    if SIDE_EFFECT_STEPS[step.kind] == true
+        and (status == "completed" or status == "submitted_unverified" or status == "cleared_unverified") then
+        self.unverified_steps = self.unverified_steps or {}
+        self.unverified_steps[self.index] = { index = self.index, kind = step.kind }
+    end
+end
+
+function VirtualPlayer:_mark_step_verified(step_index)
+    local index = tonumber(step_index)
+    if not is_finite_number(index) or index ~= math.floor(index)
+        or index < 1 or index >= self.index then
+        error("verifies_step must reference a previous plan step")
+    end
+    if self.unverified_steps == nil or self.unverified_steps[index] == nil then
+        error("verifies_step does not reference an unverified action step")
+    end
+    self.unverified_steps[index] = nil
+    self.steps_verified = (self.steps_verified or 0) + 1
 end
 
 function VirtualPlayer:_finish(ok, message)
@@ -183,6 +206,8 @@ function VirtualPlayer:Start(plan)
     self.index = 0
     self.results = {}
     self.steps_completed = 0
+    self.steps_verified = 0
+    self.unverified_steps = {}
     self.assertions_total = 0
     self.assertions_passed = 0
     self.running = true
@@ -447,6 +472,16 @@ function VirtualPlayer:_next_impl()
         local ok, result = pcall(function() return self:_evaluate_assertion(step.assertion) end)
         self.assertions_total = (self.assertions_total or 0) + 1
         if ok and result.passed then
+            if step.verifies_step ~= nil then
+                local verify_ok, verify_error = pcall(function()
+                    self:_mark_step_verified(step.verifies_step)
+                end)
+                if not verify_ok then
+                    self:_record(step, "failed", tostring(verify_error))
+                    self:_finish(false, tostring(verify_error))
+                    return
+                end
+            end
             self.assertions_passed = (self.assertions_passed or 0) + 1
             self:_record(step, "passed", "assertion passed: " .. tostring(result.kind))
             self:_next()
@@ -601,15 +636,33 @@ function VirtualPlayer:Stop(reason)
 end
 
 function VirtualPlayer:GetReport()
+    local unverified_step_indices = {}
+    for index = 1, self.index do
+        if self.unverified_steps ~= nil and self.unverified_steps[index] ~= nil then
+            unverified_step_indices[#unverified_step_indices + 1] = index
+        end
+    end
+    local assertions_total = self.assertions_total or 0
+    local assertions_passed = self.assertions_passed or 0
+    local all_assertions_passed = assertions_total > 0 and assertions_passed == assertions_total
+    local outcome = "inconclusive"
+    if self.run_failed then
+        outcome = "failed"
+    elseif all_assertions_passed and #unverified_step_indices == 0 then
+        outcome = "passed"
+    end
     return {
         schema = "modxpector/live-virtual-player/v1",
         evidence_level = "in-game-runner-unvalidated",
         player = self.player ~= nil and self.player:IsValid() and self.player.prefab or nil,
         running = self.running,
         steps_completed = self.steps_completed or 0,
-        assertions_total = self.assertions_total or 0,
-        assertions_passed = self.assertions_passed or 0,
-        outcome = self.run_failed and "failed" or ((self.assertions_total or 0) == 0 and "inconclusive" or ((self.assertions_passed or 0) == (self.assertions_total or 0) and "passed" or "failed")),
+        steps_verified = self.steps_verified or 0,
+        steps_unverified = #unverified_step_indices,
+        unverified_step_indices = unverified_step_indices,
+        assertions_total = assertions_total,
+        assertions_passed = assertions_passed,
+        outcome = outcome,
         failure = self.failure,
         on_finished_error = self.on_finished_error,
         results = self.results,
