@@ -48,3 +48,17 @@ Gera um ZIP de teste em `dist/modxpector/`, sem incluir relatórios temporários
 
 - [Contrato do inventário v2](docs/WORLD_INVENTORY_V2.md)
 - [Registro de desenvolvimento e estado operacional no Obsidian](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/Universos%20e%20Jogos/Don't%20Starve%20Together/04%20-%20Projetos%20e%20Mods/DST%20Mod%20Inspector/DST%20Mod%20Inspector%20%E2%80%94%20Desenvolvimento%20at%C3%A9%205.0.md)
+
+
+## IA local e Virtual Player
+
+O fluxo de teste assistido por IA usa o backend local do Cérebro Secundário e Ollama em loopback. A integração permanece desativada por padrão.
+
+1. Configure a ponte local seguindo [a documentação da ponte no Cérebro Secundário](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/docs/modxpector-local-ai-bridge.md).
+2. Nas opções do ModXpector, ative **IA local para executar testes automáticos** e **Modo de testes controlados**.
+3. Entre no mundo, abra o ModXpector com F6 e selecione **IA / Testes**.
+4. Informe o objetivo e revise as allowlists de prefabs e ações.
+5. Clique em **Gerar plano com IA e executar**. O Ollama gera um plano, o Master valida o esquema/allowlists e o Virtual Player executa as etapas no cliente local.
+6. Consulte o relatório retornado pelo backend e os marcadores AI_TEST_PLAN_QUEUED, GAME_TEST_PLAN_ACCEPTED, VIRTUAL_PLAYER_FINISHED e GAME_REPORT_SAVED nos logs.
+
+O perfil inicial é limitado a coletar grama (grass, cutgrass, PICKUP) e confirmar o item no inventário. Isso é um teste funcional de ponta a ponta, não uma suíte completa de compatibilidade de mods. O plano é rejeitado se uma ação, prefab, receita ou pós-condição não passar pelas validações. O usuário deve revisar o objetivo e as permissões antes de executar; não use o modo automático em um mundo principal sem backup.
