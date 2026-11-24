@@ -206,17 +206,30 @@ function VirtualPlayer:_record(step, status, detail)
     end
 end
 
-function VirtualPlayer:_mark_step_verified(step_index)
-    local index = tonumber(step_index)
-    if not is_finite_number(index) or index ~= math.floor(index)
-        or index < 1 or index >= self.index then
-        error("verifies_step must reference a previous plan step")
+function VirtualPlayer:_mark_step_verified(step_references)
+    local indices = type(step_references) == "table" and step_references or { step_references }
+    local seen = {}
+    for _, step_index in ipairs(indices) do
+        local index = tonumber(step_index)
+        if not is_finite_number(index) or index ~= math.floor(index)
+            or index < 1 or index >= self.index then
+            error("verifies_step must reference a previous plan step")
+        end
+        if seen[index] then error("verification references must not contain duplicates") end
+        seen[index] = true
+        if self.unverified_steps == nil or self.unverified_steps[index] == nil then
+            error("verifies_step does not reference an unverified action step")
+        end
+        local required = self.verification_requirements[index] or 1
+        local passed = (self.verification_assertions[index] or 0) + 1
+        if passed > required then error("too many postconditions reference the same action step") end
+        self.verification_assertions[index] = passed
+        self.verification_assertions_passed = (self.verification_assertions_passed or 0) + 1
+        if passed >= required then
+            self.unverified_steps[index] = nil
+            self.steps_verified = (self.steps_verified or 0) + 1
+        end
     end
-    if self.unverified_steps == nil or self.unverified_steps[index] == nil then
-        error("verifies_step does not reference an unverified action step")
-    end
-    self.unverified_steps[index] = nil
-    self.steps_verified = (self.steps_verified or 0) + 1
 end
 
 function VirtualPlayer:_finish(ok, message)
@@ -271,6 +284,28 @@ function VirtualPlayer:Start(plan)
     self.results = {}
     self.steps_completed = 0
     self.steps_verified = 0
+    self.verification_assertions_passed = 0
+    self.verification_requirements = {}
+    self.verification_assertions = {}
+    for _, candidate in ipairs(plan.steps) do
+        if type(candidate) == "table" and candidate.kind == "assert" then
+            if candidate.verifies_step ~= nil then
+                local index = tonumber(candidate.verifies_step)
+                if is_finite_number(index) and index == math.floor(index) then
+                    self.verification_requirements[index] = (self.verification_requirements[index] or 0) + 1
+                end
+            elseif candidate.verifies_steps ~= nil and type(candidate.verifies_steps) == "table" then
+                local seen = {}
+                for _, reference in ipairs(candidate.verifies_steps) do
+                    local index = tonumber(reference)
+                    if is_finite_number(index) and index == math.floor(index) and not seen[index] then
+                        seen[index] = true
+                        self.verification_requirements[index] = (self.verification_requirements[index] or 0) + 1
+                    end
+                end
+            end
+        end
+    end
     self.unverified_steps = {}
     self.step_targets = {}
     self.target_death_events = {}
@@ -657,9 +692,15 @@ function VirtualPlayer:_next_impl()
         local ok, result = pcall(function() return self:_evaluate_assertion(step.assertion) end)
         self.assertions_total = (self.assertions_total or 0) + 1
         if ok and result.passed then
-            if step.verifies_step ~= nil then
+            if step.verifies_step ~= nil or step.verifies_steps ~= nil then
+                if step.verifies_step ~= nil and step.verifies_steps ~= nil then
+                    self:_record(step, "failed", "use verifies_step or verifies_steps, not both")
+                    self:_finish(false, "assertion has conflicting verification references")
+                    return
+                end
+                local references = step.verifies_steps ~= nil and step.verifies_steps or step.verifies_step
                 local verify_ok, verify_error = pcall(function()
-                    self:_mark_step_verified(step.verifies_step)
+                    self:_mark_step_verified(references)
                 end)
                 if not verify_ok then
                     self:_record(step, "failed", tostring(verify_error))
@@ -871,6 +912,7 @@ function VirtualPlayer:GetReport()
         running = self.running,
         steps_completed = self.steps_completed or 0,
         steps_verified = self.steps_verified or 0,
+        verification_assertions_passed = self.verification_assertions_passed or 0,
         steps_unverified = #unverified_step_indices,
         unverified_step_indices = unverified_step_indices,
         assertions_total = assertions_total,
