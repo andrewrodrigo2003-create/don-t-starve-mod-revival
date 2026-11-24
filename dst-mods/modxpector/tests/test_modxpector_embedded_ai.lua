@@ -180,6 +180,43 @@ assert(analysis.schema == AI.SCHEMA, "analysis schema missing")
 assert(analysis.registry.runtime_components.enabled == false
     and analysis.registry.runtime_components.available == false,
     "analysis should report the opt-in runtime component observer as disabled when no data is supplied")
+
+local observed_snapshot = {
+    schema = "modxpector/world-inventory/v2",
+    capabilities = { known_mod_list = true, loaded_mod_list = true, failed_mod_list = true },
+    mods = {},
+    runtime_components = {
+        enabled = true, available = true, hooks_registered = 12,
+        hook_failures = 0, callback_errors = 0, dropped = 0,
+        components = {
+            { name = "health", count = 10 },
+            { name = "inventory", count = 2 },
+        },
+        events = {
+            { component = "health", prefab = "skeletonservant", time = 42 },
+            { component = "inventory", prefab = "skeletonservant", time = 43 },
+            { component = "combat", prefab = "unknown", time = 44 },
+        },
+    },
+}
+local observed_analysis = AI.Analyze(observed_snapshot)
+local observed_registry = observed_analysis.registry.runtime_components
+assert(observed_registry.enabled and observed_registry.available and observed_registry.hooks_registered == 12)
+assert(observed_registry.event_count == 3 and observed_registry.dropped == 0)
+assert(observed_registry.component_counts[1].name == "health"
+    and observed_registry.component_counts[1].count == 10)
+assert(observed_registry.observed_prefabs[1] == "skeletonservant"
+    and #observed_registry.observed_prefabs == 1)
+assert(#observed_registry.event_sample == 3
+    and observed_registry.event_sample[1].component == "health",
+    "AI analysis should expose a bounded, sanitized component/prefab evidence sample")
+observed_snapshot.runtime_components.dropped = 5
+observed_analysis = AI.Analyze(observed_snapshot)
+local dropped_limitation = false
+for _, limitation in ipairs(observed_analysis.limitations) do
+    if limitation:find("buffer", 1, true) then dropped_limitation = true end
+end
+assert(dropped_limitation, "dropped runtime component events must be reported as an evidence limitation")
 assert(analysis.registry.prefabs.available == false and analysis.registry.prefabs.count == nil,
     "analysis should report registry evidence as unavailable when the snapshot omitted it")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
