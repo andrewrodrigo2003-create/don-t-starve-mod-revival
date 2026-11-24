@@ -578,3 +578,67 @@ assert(multi_verification_report.verification_assertions_passed == 1,
 print("MODXPECTOR_VIRTUAL_PLAYER_MULTI_STEP_VERIFICATION_CONTRACT_OK")
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STEP_FAILURE_EVIDENCE_CONTRACT_OK")
+
+
+-- EQUIP and UNEQUIP must use the allowlisted carried item as BufferedAction.invobject,
+-- then require an explicit equipment-state postcondition before the run can pass.
+ACTIONS.EQUIP = { name = "EQUIP" }
+ACTIONS.UNEQUIP = { name = "UNEQUIP" }
+local equipment_item = { prefab = "axe" }
+local equipped_item
+local equipment_player
+equipment_player = {
+    prefab = "wilson",
+    IsValid = function() return true end,
+    ListenForEvent = function() end,
+    DoTaskInTime = function(_, delay, callback)
+        current_time = current_time + (delay or 0)
+        callback()
+    end,
+    GetBufferedAction = function() return nil end,
+    components = {
+        playercontroller = {
+            DoAction = function(_, action)
+                if action.action == ACTIONS.EQUIP then
+                    assert(action.invobject == equipment_item, "EQUIP must receive the selected carried item")
+                    equipped_item = action.invobject
+                elseif action.action == ACTIONS.UNEQUIP then
+                    assert(action.invobject == equipment_item, "UNEQUIP must receive the selected equipped item")
+                    equipped_item = nil
+                end
+            end,
+        },
+    },
+    replica = {
+        inventory = {
+            FindItem = function(_, predicate)
+                return predicate(equipment_item) and equipment_item or nil
+            end,
+            GetEquippedItem = function(_, slot)
+                return slot == EQUIPSLOTS.HANDS and equipped_item or nil
+            end,
+        },
+    },
+}
+local equipment_report
+local equipment_controller = VirtualPlayer.new(equipment_player, {
+    allowed_prefabs = { "axe" },
+    on_finished = function(report) equipment_report = report end,
+})
+local equipment_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = {
+        { kind = "action", action = "EQUIP", invobject = "axe" },
+        { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe" }, verifies_step = 1 },
+        { kind = "action", action = "UNEQUIP", invobject = "axe" },
+        { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe", expected = false }, verifies_step = 3 },
+    },
+}
+assert(equipment_controller:Start(equipment_plan))
+assert(equipment_report ~= nil and equipment_report.outcome == "passed")
+assert(equipment_report.steps_verified == 2 and equipment_report.steps_unverified == 0)
+assert(equipment_report.assertions_total == 2 and equipment_report.assertions_passed == 2)
+assert(equipment_report.verification_assertions_passed == 2)
+assert(equipped_item == nil, "UNEQUIP must leave the hands slot empty in this contract")
+print("MODXPECTOR_VIRTUAL_PLAYER_EQUIP_UNEQUIP_CONTRACT_OK")
