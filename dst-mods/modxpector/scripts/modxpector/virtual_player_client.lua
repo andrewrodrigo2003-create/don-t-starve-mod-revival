@@ -553,6 +553,11 @@ function VirtualPlayer:_poll_action()
     if not self.running or self.active == nil then return end
     local active = self.active
     local current = self.player:GetBufferedAction()
+    if current ~= active.action and current ~= nil then
+        self:_record(active.step, "failed", "a different BufferedAction replaced the Virtual Player action before it was verified")
+        self:_finish(false, "buffered action replaced at step " .. tostring(self.index))
+        return
+    end
     if current == active.action then
         if active.step.repeat_until_target_dead == true
             and GetTime() - (active.repeat_started or active.started) > (active.repeat_timeout or 120) then
