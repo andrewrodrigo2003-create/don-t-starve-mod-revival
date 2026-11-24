@@ -167,7 +167,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
-        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 3 }, verifies_step = 23 },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 3 }, verifies_step = 24 },
     },
 }
 assert(controller:Start(plan))
@@ -193,16 +193,6 @@ assert(saw_spawn_metadata and saw_recipe_metadata,
 assert(player.last_chop_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
-print("VP_DEBUG assertions_total=" .. tostring(finished.assertions_total)
-    .. " passed=" .. tostring(finished.assertions_passed)
-    .. " outcome=" .. tostring(finished.outcome)
-    .. " failure=" .. tostring(finished.failure))
-for _, result in ipairs(finished.results) do
-    if result.status == "failed" or result.status == "inconclusive" then
-        print("VP_DEBUG step=" .. tostring(result.index) .. " kind=" .. tostring(result.kind)
-            .. " status=" .. tostring(result.status) .. " detail=" .. tostring(result.detail))
-    end
-end
 assert(finished.assertions_total == 18 and finished.assertions_passed == 18)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
