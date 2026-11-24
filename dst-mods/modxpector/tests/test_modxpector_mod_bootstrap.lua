@@ -145,10 +145,6 @@ file:close()
 local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
 chunk()
-assert(type(engine_globals.MODXPECTOR_RUNTIME_COMPONENTS) == "table"
-    and engine_globals.MODXPECTOR_RUNTIME_COMPONENTS.enabled == false,
-    "runtime component observation must remain disabled by default in the game bootstrap")
-
 local suite_registered, suite_message = engine_globals.MODXPECTOR_REGISTER_TEST_SUITE({
     schema = "modxpector/test-suite/v1",
     id = "community_grass_smoke",
@@ -172,8 +168,11 @@ assert(query_calls == 0, "embedded AI must not make localhost HTTP calls")
 assert(type(engine_globals.MODXPECTOR_RUN_EMBEDDED_AI) == "function")
 assert(type(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT) == "table",
     "the embedded AI should produce a diagnostic report during player initialization")
-assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.analysis.status == "no_known_issues",
-    "the synthetic inventory should produce a clean, evidence-backed analysis")
+assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.analysis.status == "incomplete_evidence",
+    "the synthetic inventory should report the disabled optional component observer as a limitation")
+assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.runtime_components.enabled == false
+    and engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.runtime_components.available == false,
+    "runtime component observation must remain disabled by default in the game bootstrap")
 assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 1,
     "active community suites should be selected by the embedded AI")
 
