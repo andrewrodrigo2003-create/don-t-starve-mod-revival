@@ -47,6 +47,7 @@ Gera um ZIP de teste em `dist/modxpector/`, sem incluir relatórios temporários
 ## Documentação
 
 - [Contrato do inventário v2](docs/WORLD_INVENTORY_V2.md)
+- [API declarativa de suites comunitárias](docs/COMMUNITY_TEST_SUITE_API.md)
 - [Registro de desenvolvimento e estado operacional no Obsidian](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/Universos%20e%20Jogos/Don't%20Starve%20Together/04%20-%20Projetos%20e%20Mods/DST%20Mod%20Inspector/DST%20Mod%20Inspector%20%E2%80%94%20Desenvolvimento%20at%C3%A9%205.0.md)
 
 
@@ -58,6 +59,7 @@ A IA principal está dentro do próprio mod, em Lua. Ela observa o inventário d
 2. Selecione **IA / Testes**.
 3. Clique em **Executar análise da IA embarcada**.
 4. Consulte os achados, a confiança de cada diagnóstico e a próxima investigação priorizada.
-5. O Virtual Player continua sendo o executor de cenários de teste controlados; a integração automática entre o planejador embarcado e o executor está em desenvolvimento.
+5. Mods comunitários podem registrar suites declarativas pela API documentada em [COMMUNITY_TEST_SUITE_API.md](docs/COMMUNITY_TEST_SUITE_API.md). O ModXpector só seleciona suites de mods ativos e carregados.
+6. Se houver uma suite compatível, ative **Modo de testes controlados** e clique em **Executar suite**. O Master valida permissões, allowlists e pós-condições antes de iniciar o Virtual Player.
 
-A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
+A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. As suites são dados declarativos, sem callbacks ou código arbitrário; o perfil atual só permite WALKTO e verificações observacionais. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
