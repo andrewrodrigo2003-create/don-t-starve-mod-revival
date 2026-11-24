@@ -546,6 +546,7 @@ function VirtualPlayer:_next_impl()
                 return
             elseif target_dead == nil then
                 self.run_inconclusive = true
+                self:_record(step, "inconclusive", "attack target state is unavailable; death cannot be confirmed")
                 self:_finish(false, "attack target state is unavailable; death cannot be confirmed")
                 return
             elseif target_dead == true then
