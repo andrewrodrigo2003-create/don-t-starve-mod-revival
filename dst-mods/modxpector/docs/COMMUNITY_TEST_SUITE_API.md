@@ -177,3 +177,6 @@ A opção de configuração `collect_runtime_components` permite registrar obser
 - Falhas de registro e de callback são contadas; cada hook é registrado sob proteção de erro.
 - A coleta não enumera todas as entidades, não lê código de mods, não modifica entidades/componentes e não faz polling.
 - Os eventos não provam qual mod criou o prefab; a origem do código não é inferida apenas pelo nome do prefab.
+
+
+O estado interno do observador permanece privado no módulo; o snapshot entregue à IA é uma cópia sanitizada e limitada. Nenhum buffer mutável é publicado em `GLOBAL`.
