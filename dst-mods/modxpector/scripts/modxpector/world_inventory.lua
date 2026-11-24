@@ -138,6 +138,13 @@ function M.Collect(globals)
     end
 
 
+    local prefab_registry = collect_registry_names(globals.Prefabs, MAX_REGISTRY_NAMES)
+    local recipe_registry = collect_registry_names(globals.AllRecipes, MAX_REGISTRY_NAMES)
+    local player = globals.ThePlayer
+    local player_components = collect_registry_names(
+        type(player) == "table" and player.components or nil,
+        MAX_PLAYER_COMPONENT_NAMES)
+
     local mods, seen = {}, {}
     local counts = {
         known = 0,
@@ -249,13 +256,6 @@ function M.Collect(globals)
     table.sort(mods, function(a, b) return a.id < b.id end)
     local truncated = #mods > MAX_MODS
     while #mods > MAX_MODS do table.remove(mods) end
-
-    local prefab_registry = collect_registry_names(globals.Prefabs, MAX_REGISTRY_NAMES)
-    local recipe_registry = collect_registry_names(globals.AllRecipes, MAX_REGISTRY_NAMES)
-    local player = globals.ThePlayer
-    local player_components = collect_registry_names(
-        type(player) == "table" and player.components or nil,
-        MAX_PLAYER_COMPONENT_NAMES)
 
     local world = globals.TheWorld
     local net = globals.TheNet
