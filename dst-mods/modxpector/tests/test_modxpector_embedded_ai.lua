@@ -100,6 +100,93 @@ for _, task in ipairs(plan.tasks) do
     assert(task.changes_world == false, "diagnostic task must never mutate world")
 end
 
+local community_suite = {
+    schema = "modxpector/test-suite/v1",
+    id = "community_grass_smoke",
+    owner_mod_id = "workshop-100",
+    title = "Community mod grass smoke test",
+    priority = 80,
+    allowed_prefabs = { "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "WALKTO" },
+    scenarios = {
+        {
+            id = "approach_grass",
+            title = "Approach a grass tuft",
+            steps = {
+                { kind = "action", action = "WALKTO", target = { prefab = "grass", radius = 12 }, target_required = true },
+                { kind = "assert", assertion = { kind = "player_near_target", target_step = 1, radius = 4 }, verifies_step = 1 },
+            },
+        },
+    },
+}
+local suite_ok, normalized_suite = AI.ValidateSuite(community_suite)
+assert(suite_ok == true and normalized_suite.id == "community_grass_smoke", "valid declarative community suite should be accepted")
+local selected = AI.SelectSuites({ community_suite }, {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "workshop-100", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
+    },
+})
+assert(#selected == 1 and selected[1].confidence == "confirmed", "suite should be selected only for a loaded owner mod")
+local vp_plan, vp_error = AI.BuildVirtualPlayerPlan(community_suite, "approach_grass", "suite_run_1")
+assert(vp_plan ~= nil and vp_error == nil, "valid suite should compile into a Virtual Player plan")
+assert(vp_plan.schema == "modxpector/test-plan/v1" and vp_plan.enabled == true)
+assert(vp_plan.steps[1].action == "WALKTO" and vp_plan.steps[2].assertion.target_step == 1)
+assert(vp_plan.owner_mod_id == "workshop-100" and vp_plan.scenario_id == "approach_grass")
+
+local unsafe_suite = {
+    schema = "modxpector/test-suite/v1",
+    id = "unsafe_suite",
+    owner_mod_id = "workshop-100",
+    title = "Unsafe",
+    allowed_prefabs = { "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "SPAWN_ITEM" },
+    scenarios = {
+        { id = "unsafe", title = "Unsafe action", steps = {
+            { kind = "action", action = "SPAWN_ITEM", target = { prefab = "grass" }, target_required = true },
+        } },
+    },
+}
+suite_ok = AI.ValidateSuite(unsafe_suite)
+assert(suite_ok == false, "community suites must not introduce actions outside the safe allowlist")
+local no_postcondition = {
+    schema = "modxpector/test-suite/v1",
+    id = "unverified_suite",
+    owner_mod_id = "workshop-100",
+    title = "Unverified",
+    allowed_prefabs = { "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "WALKTO" },
+    scenarios = {
+        { id = "unverified", title = "No postcondition", steps = {
+            { kind = "action", action = "WALKTO", target = { prefab = "grass" }, target_required = true },
+        } },
+    },
+}
+suite_ok = AI.ValidateSuite(no_postcondition)
+assert(suite_ok == false, "every action must have an explicit postcondition")
+local wrong_target = {
+    schema = "modxpector/test-suite/v1",
+    id = "wrong_target_suite",
+    owner_mod_id = "workshop-100",
+    title = "Wrong target",
+    allowed_prefabs = { "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "WALKTO" },
+    scenarios = {
+        { id = "wrong_target", title = "Wrong target", steps = {
+            { kind = "action", action = "WALKTO", target = { prefab = "grass" }, target_required = true },
+            { kind = "assert", assertion = { kind = "player_near_target", target_step = 1 }, verifies_step = 2 },
+        } },
+    },
+}
+suite_ok = AI.ValidateSuite(wrong_target)
+assert(suite_ok == false, "postcondition must reference the same action target")
+suite_ok = AI.ValidateSuite({ schema = "modxpector/test-suite/v1", id = "broken", owner_mod_id = "workshop-100", title = "Broken" })
+assert(suite_ok == false, "malformed suite data must be rejected without throwing")
+
 local session = AI.NewSession("test-session")
 local next_task = AI.NextTask(plan, session)
 assert(next_task ~= nil and next_task.id == plan.tasks[1].id, "session should select highest-priority task")
