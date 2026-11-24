@@ -25,8 +25,11 @@ if not RUNTIME_OBSERVER_OK or type(RUNTIME_OBSERVER) ~= "table"
     RUNTIME_OBSERVER = nil
 end
 
-local runtime_component_observation_enabled = type(GetModConfigData) == "function"
-    and GetModConfigData("collect_runtime_components") == true
+local runtime_component_observation_enabled = false
+if type(GetModConfigData) == "function" then
+    local config_ok, config_value = pcall(GetModConfigData, "collect_runtime_components")
+    runtime_component_observation_enabled = config_ok and config_value == true
+end
 if RUNTIME_OBSERVER_OK then
     local registered, observer_state = pcall(RUNTIME_OBSERVER.Register,
         AddComponentPostInit, DST_GLOBAL, runtime_component_observation_enabled, pcall, GetTime)
@@ -51,7 +54,7 @@ local CONFIG_SNAPSHOT_OK, CONFIG_SNAPSHOT = pcall(require, "inspector/config_sna
 if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNAPSHOT.Read) ~= "function" then
     CONFIG_SNAPSHOT = { Read = function() return {
         open_key = "KEY_F6", show_debug_info = true,
-        test_mode = false, max_spawn_count = 10,
+        test_mode = false, collect_runtime_components = false, max_spawn_count = 10,
     } end }
 end
 
