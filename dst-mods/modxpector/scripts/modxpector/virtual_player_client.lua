@@ -394,8 +394,11 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
         assert(inventory ~= nil and type(inventory.GetEquippedItem) == "function", "inventory replica GetEquippedItem unavailable")
         assert(EQUIPSLOTS ~= nil and EQUIPSLOTS[assertion.slot] ~= nil, "unknown equipment slot")
+        local prefab = assert(assertion.prefab, "equipped item prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "equipped item prefab is not in the test plan allowlist")
         local item = inventory:GetEquippedItem(EQUIPSLOTS[assertion.slot])
-        actual = item ~= nil and item.prefab == assertion.prefab
+        actual = item ~= nil and item.prefab == prefab
         expected = assertion.expected ~= false
     elseif kind == "player_near_target" then
         local target = self:_resolve_assertion_target(assertion)
