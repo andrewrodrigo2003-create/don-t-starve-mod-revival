@@ -149,6 +149,11 @@ local devtools_api_snapshot = {
     community_apis = { dev_tools = { available = true, version = 0.1, version_observed = true } },
 }
 local devtools_analysis = AI.Analyze(devtools_api_snapshot)
+local devtools_plan = AI.BuildPlan(devtools_analysis)
+local devtools_session = AI.NewSession("devtools-task-test")
+local devtools_execution = AI.RunReadOnlyPlan(devtools_plan, devtools_session, devtools_api_snapshot, 20)
+assert(devtools_execution.executed == 1 and devtools_execution.results[1].status == "passed",
+    "Dev Tools major API change task should record the observed version")
 assert(find_code(devtools_analysis, "DEVTOOLS_API_NOT_OBSERVED") == nil,
     "a supported DevToolsAPI version should not produce an unavailable finding")
 assert(find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED") == nil,
@@ -189,6 +194,32 @@ assert(plan.mode == "read_only", "plan must remain read-only")
 assert(plan.total == #analysis.findings, "each finding should map to a unique diagnostic task")
 assert(plan.tasks[1].kind == "inspect_load_error", "highest priority diagnostic should be first")
 assert(plan.tasks[1].utility > plan.tasks[2].utility, "utility scoring must rank critical evidence above lower-severity findings")
+local diagnostic_session = AI.NewSession("diagnostic-worker-test")
+local task_execution = AI.RunReadOnlyPlan(plan, diagnostic_session, snapshot, 200)
+assert(task_execution.executed == plan.total and task_execution.complete == true,
+    "read-only worker should execute every supported diagnostic task")
+assert(task_execution.next_task == nil and #diagnostic_session.results == plan.total,
+    "read-only worker should record each task and expose no remaining task")
+local task_outcomes = {}
+for _, result in ipairs(task_execution.results) do
+    task_outcomes[result.kind] = result
+end
+assert(task_outcomes.inspect_load_error.status == "passed"
+    and task_outcomes.inspect_load_error.evidence.diagnostic_outcome == "load_error_confirmed",
+    "load error investigation should record confirmed read-only evidence")
+assert(task_outcomes.verify_missing_dependency.status == "passed",
+    "missing dependency investigation should confirm the inventory evidence")
+assert(task_outcomes.verify_dependency_enabled.status == "passed",
+    "disabled dependency investigation should confirm the inventory evidence")
+assert(task_outcomes.review_mod_flags.status == "passed",
+    "mod flag investigation should confirm the conflicting metadata")
+assert(task_outcomes.confirm_load_state.status == "passed",
+    "load state investigation should confirm an unobserved candidate")
+assert(task_outcomes.collect_dependency_evidence.status == "inconclusive",
+    "unverifiable dependencies must remain inconclusive")
+local repeated_execution = AI.RunReadOnlyPlan(plan, diagnostic_session, snapshot, 200)
+assert(repeated_execution.executed == 0 and repeated_execution.complete == true,
+    "completed diagnostic tasks must not be repeated in the same session")
 assert(AI.BuildPlan(analysis).tasks[1].id == plan.tasks[1].id, "task identifiers must remain stable across identical analyses")
 for _, task in ipairs(plan.tasks) do
     assert(task.execution == "internal_read_only", "diagnostic task must not execute game actions")
