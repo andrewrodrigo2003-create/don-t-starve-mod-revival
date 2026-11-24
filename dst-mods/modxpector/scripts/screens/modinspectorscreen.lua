@@ -160,6 +160,9 @@ local InspectorScreen = Class(Screen, function(self, global_env, show_debug_info
     self.last_scenario = nil
     self.last_scenario_report = nil
     self.status = "Painel híbrido: diagnóstico mestre + interface local."
+    self.ai_goal_text = "Colete um tufo de grama próximo e confirme que cutgrass entrou no inventário."
+    self.ai_prefabs_text = "grass,cutgrass"
+    self.ai_actions_text = "PICKUP"
     -- The DST camera keeps the local player near the center of the viewport.
     -- Use the same proportional, middle-anchored root as native Redux screens;
     -- world-to-screen projection added no useful movement and was resolution fragile.
@@ -566,6 +569,9 @@ function InspectorScreen:Refresh()
         end
     elseif self.active_tab == "testes" then
         self:AddLine("VERIFICAÇÕES E AUTOMAÇÃO", 210, 26)
+        self.world_preflight_button = make_button(self.content, "Pré-teste mundo", -270, 265, function() self:RunScenario("world") end, 0.52)
+        self.tmi_preflight_button = make_button(self.content, "Pré-teste TMI", 0, 265, function() self:RunScenario("tmi") end, 0.52)
+        self.content_preflight_button = make_button(self.content, "Pré-teste conteúdo", 270, 265, function() self:RunScenario("content") end, 0.52)
         local checks = {
             { "Player carregado", player ~= nil },
             { "World carregado", world ~= nil },
@@ -575,28 +581,52 @@ function InspectorScreen:Refresh()
             { "Prefabs acessível", type(prefabs) == "table" },
         }
         for i, check in ipairs(checks) do
-            self:AddLine((check[2] and "[OK] " or "[--] ") .. check[1], 160 - (i - 1) * 25, 17)
+            self:AddLine((check[2] and "[OK] " or "[--] ") .. check[1], 165 - (i - 1) * 21, 16)
         end
         local config = self.runtime_config or {}
         local bridge_state = rawget(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS")
         local bridge_label = type(bridge_state) == "table" and tostring(bridge_state.status or "não verificado")
             or "não verificado nesta sessão"
-        self:AddLine("IA local: " .. (config.ai_bridge_enabled == true and "permitida" or "desativada nas opções"), 0, 18)
-        self:AddLine("Modo de testes: " .. (config.test_mode == true and "ativado" or "desativado nas opções"), -28, 18)
-        self:AddLine("Agente local: " .. bridge_label, -56, 18)
-        self:AddLine("Para executar: ative IA local + Modo de testes em Mods > ModXpector > Configurar.", -88, 16)
-        self:AddLine("Também exige o agente local ativo e bridge_token.txt válido; o mod não instala/inicia a IA.", -113, 15)
+        self:AddLine("IA local: " .. (config.ai_bridge_enabled == true and "permitida" or "desativada nas opções"), 15, 17)
+        self:AddLine("Modo de testes: " .. (config.test_mode == true and "ativado" or "desativado nas opções"), -10, 17)
+        self:AddLine("Agente local: " .. bridge_label, -35, 17)
         if type(bridge_state) == "table" and type(bridge_state.detail) == "string" and bridge_state.detail ~= "" then
-            self:AddLine("Detalhe: " .. bridge_state.detail, -138, 14)
+            self:AddLine("Detalhe: " .. bridge_state.detail, -58, 14)
         end
-        self:AddLine("Pré-testes abaixo verificam APIs; não executam o agente de IA.", -164, 15)
-        if self.last_scenario_report ~= nil then
-            self:AddLine("Último cenário: " .. tostring(self.last_scenario) .. " — "
-                .. tostring(self.last_scenario_passed) .. "/" .. tostring(self.last_scenario_total), -185, 14)
-        end
-        self.world_preflight_button = make_button(self.content, "Pré-teste mundo", -270, -235, function() self:RunScenario("world") end, 0.58)
-        self.tmi_preflight_button = make_button(self.content, "Pré-teste TMI", 0, -235, function() self:RunScenario("tmi") end, 0.58)
-        self.content_preflight_button = make_button(self.content, "Pré-teste conteúdo", 270, -235, function() self:RunScenario("content") end, 0.58)
+        self:AddLine("Objetivo do teste", -82, 16)
+        self.ai_goal_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
+            self.ai_goal_text, 720, 36, CHATFONT, 20, "Descreva o que o Virtual Player deve testar"))
+        self.ai_goal_entry:SetPosition(0, -110)
+        self.ai_goal_entry.textbox:SetTextLengthLimit(220)
+        self:AddLine("Prefabs permitidos (separados por vírgula)", -145, 16)
+        self.ai_prefabs_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
+            self.ai_prefabs_text, 720, 36, CHATFONT, 20, "Ex.: grass,cutgrass"))
+        self.ai_prefabs_entry:SetPosition(0, -173)
+        self.ai_prefabs_entry.textbox:SetTextLengthLimit(420)
+        self:AddLine("Ações permitidas (separadas por vírgula)", -208, 16)
+        self.ai_actions_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
+            self.ai_actions_text, 720, 36, CHATFONT, 20, "Ex.: PICKUP"))
+        self.ai_actions_entry:SetPosition(0, -236)
+        self.ai_actions_entry.textbox:SetTextLengthLimit(420)
+        make_button(self.content, "Gerar plano com IA e executar", 0, -286, function()
+            self.ai_goal_text = self.ai_goal_entry.textbox:GetString()
+            self.ai_prefabs_text = self.ai_prefabs_entry.textbox:GetString()
+            self.ai_actions_text = self.ai_actions_entry.textbox:GetString()
+            local request = rawget(DST_GLOBAL, "MODXPECTOR_REQUEST_AI_TEST")
+            if type(request) ~= "function" then
+                self:SetStatus("Solicitador de testes da IA não está disponível nesta versão.")
+                return
+            end
+            self:SetStatus("Enviando objetivo ao Ollama local...")
+            request(self.ai_goal_text, self.ai_prefabs_text, self.ai_actions_text, function(success, message)
+                self:SetStatus(message)
+                if success then
+                    print("[ModXpector] AI_TEST_REQUEST_ACCEPTED " .. tostring(message))
+                else
+                    print("[ModXpector] AI_TEST_REQUEST_REJECTED " .. tostring(message))
+                end
+            end)
+        end, 0.76)
     elseif self.active_tab == "tmi" then
         self:AddLine("INTEGRAÇÃO TOO MANY ITEMS", 210, 27)
         self:AddLine(tmi and ("Detectado: " .. tmi.name) or "Não detectado automaticamente.", 155, 22)
