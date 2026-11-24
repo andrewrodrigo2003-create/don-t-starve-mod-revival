@@ -149,11 +149,6 @@ local devtools_api_snapshot = {
     community_apis = { dev_tools = { available = true, version = 0.1, version_observed = true } },
 }
 local devtools_analysis = AI.Analyze(devtools_api_snapshot)
-local devtools_plan = AI.BuildPlan(devtools_analysis)
-local devtools_session = AI.NewSession("devtools-task-test")
-local devtools_execution = AI.RunReadOnlyPlan(devtools_plan, devtools_session, devtools_api_snapshot, 20)
-assert(devtools_execution.executed == 1 and devtools_execution.results[1].status == "passed",
-    "Dev Tools major API change task should record the observed version")
 assert(find_code(devtools_analysis, "DEVTOOLS_API_NOT_OBSERVED") == nil,
     "a supported DevToolsAPI version should not produce an unavailable finding")
 assert(find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED") == nil,
@@ -162,6 +157,11 @@ assert(find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED") ==
 devtools_api_snapshot.community_apis.dev_tools.version = 2
 devtools_analysis = AI.Analyze(devtools_api_snapshot)
 local devtools_version_finding = find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED")
+local devtools_plan = AI.BuildPlan(devtools_analysis)
+local devtools_session = AI.NewSession("devtools-task-test")
+local devtools_execution = AI.RunReadOnlyPlan(devtools_plan, devtools_session, devtools_api_snapshot, 20)
+assert(devtools_execution.executed == 1 and devtools_execution.results[1].status == "passed",
+    "Dev Tools major API change task should record the observed version")
 assert(devtools_version_finding ~= nil and devtools_version_finding.confidence == "probable",
     "a major DevToolsAPI version change should request compatibility review, not assert failure")
 
