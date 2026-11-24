@@ -24,7 +24,9 @@ local state = {
 
 local function clean(value, limit)
     if type(value) ~= "string" then return nil end
-    value = value:gsub("[%z\\1-\\8\\11\\12\\14-\\31]", " ")
+    value = value:gsub("[%z\1-\8\11\12\14-\31]", " ")
+    value = value:gsub("([Tt][Oo][Kk][Ee][Nn]%s*=%s*)[%w_%-]+", "%1[redacted]")
+    value = value:gsub("([Aa]uthorization:%s*[Bb]earer%s+)[%w%._%-]+", "%1[redacted]")
     value = value:gsub("^%s+", ""):gsub("%s+$", "")
     if #value == 0 then return nil end
     if #value > limit then value = value:sub(1, limit) end
