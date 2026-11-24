@@ -9,6 +9,8 @@ local responses = {}
 local spawned_items = 0
 local inventory_accepts_items = true
 local query_calls = 0
+local sent_plan_rpc
+local virtual_player_started
 local unlocked = {}
 local decoded_plan
 
@@ -82,7 +84,21 @@ local env = setmetatable({
                         loaded_mod_list = true,
                         failed_mod_list = true,
                     },
-                    mods = {},
+                    mods = {
+                        { id = "workshop-100", name = "Community Test Mod", enabled = true,
+                            loaded = true, loaded_known = true, load_state = "loaded" },
+                    },
+                }
+            end }
+        elseif path == "modxpector/virtual_player_client" then
+            return { new = function(_, options)
+                return {
+                    Start = function(self, plan)
+                        virtual_player_started = plan
+                        return true
+                    end,
+                    OnRPCResult = function() end,
+                    running = false,
                 }
             end }
         end
@@ -95,7 +111,8 @@ local env = setmetatable({
     Prefabs = Prefabs, AllRecipes = AllRecipes,
     GetTime = GetTime, SendModRPCToClient = SendModRPCToClient, SpawnPrefab = SpawnPrefab,
     MOD_RPC = MOD_RPC, modname = "modxpector_agent_test", print = function() end,
-    json = { decode = function() return decoded_plan end },
+    json = { decode = function() return decoded_plan end, encode = function() return "{}" end },
+    SendModRPCToServer = function(rpc, run_id, encoded) sent_plan_rpc = { rpc = rpc, run_id = run_id, encoded = encoded } end,
 }, { __index = function(_, name)
     if name == "pcall" then return nil end
     return _G[name]
@@ -123,6 +140,23 @@ local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
 chunk()
 
+local suite_registered, suite_message = engine_globals.MODXPECTOR_REGISTER_TEST_SUITE({
+    schema = "modxpector/test-suite/v1",
+    id = "community_grass_smoke",
+    owner_mod_id = "workshop-100",
+    title = "Community grass smoke test",
+    allowed_prefabs = { "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "WALKTO" },
+    scenarios = {
+        { id = "approach_grass", title = "Approach grass", steps = {
+            { kind = "action", action = "WALKTO", target = { prefab = "grass", radius = 12 }, target_required = true },
+            { kind = "assert", assertion = { kind = "player_near_target", target_step = 1, radius = 4 }, verifies_step = 1 },
+        } },
+    },
+})
+assert(suite_registered == true and suite_message == "registered", "valid community suite must register")
+
 -- Joining a world starts the embedded read-only analysis and never contacts localhost.
 player_postinit(player)
 assert(query_calls == 0, "embedded AI must not make localhost HTTP calls")
@@ -130,7 +164,22 @@ assert(type(engine_globals.MODXPECTOR_RUN_EMBEDDED_AI) == "function")
 assert(type(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT) == "table",
     "the embedded AI should produce a diagnostic report during player initialization")
 assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.analysis.status == "no_known_issues",
-    "the empty synthetic inventory should produce a clean, evidence-backed analysis")
+    "the synthetic inventory should produce a clean, evidence-backed analysis")
+assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 1,
+    "active community suites should be selected by the embedded AI")
+
+local suite_request_ok, suite_request_message = engine_globals.MODXPECTOR_RUN_AI_SUITE(
+    "community_grass_smoke", "approach_grass")
+assert(suite_request_ok == true and sent_plan_rpc ~= nil,
+    "embedded AI should compile and send the selected suite to the Master")
+assert(sent_plan_rpc.encoded == "{}" and string.match(sent_plan_rpc.run_id, "^[%w_%-]+$") ~= nil,
+    "suite plan RPC must use a serialized payload and safe run identifier")
+rpc_client.plan_ready(sent_plan_rpc.run_id, true, "accepted")
+assert(virtual_player_started ~= nil and virtual_player_started.schema == "modxpector/test-plan/v1",
+    "Master acceptance must start the Virtual Player with the generated plan")
+assert(virtual_player_started.suite_id == "community_grass_smoke"
+    and virtual_player_started.scenario_id == "approach_grass",
+    "Virtual Player plan must retain suite provenance")
 
 assert(type(rpc_server.spawn_item) == "function")
 assert(type(rpc_server.spawn_entity) == "function")
