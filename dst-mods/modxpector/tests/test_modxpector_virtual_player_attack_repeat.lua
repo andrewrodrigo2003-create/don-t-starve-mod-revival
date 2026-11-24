@@ -69,9 +69,11 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
                 repeat_until_target_dead = true, max_repeats = max_repeats, repeat_timeout = repeat_timeout, timeout = 5 },
         },
     }
-    if not two_targets then
-        plan.steps[#plan.steps + 1] = { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "spider" } } }
-    end
+    plan.steps[#plan.steps + 1] = {
+        kind = "assert",
+        assertion = { kind = "target_dead", target = { prefab = "spider" } },
+        verifies_step = 2,
+    }
     assert(controller:Start(plan))
     assert(report ~= nil, "Virtual Player did not finish")
     return report, health, attacks, controller, second_health
