@@ -144,6 +144,18 @@ assert(type(finished.duration_seconds) == "number" and finished.duration_seconds
 assert(finished.results[1].run_id == plan.run_id)
 assert(type(finished.results[1].timestamp) == "number")
 assert(type(finished.results[1].elapsed_seconds) == "number")
+local saw_spawn_metadata, saw_recipe_metadata = false, false
+for _, result in ipairs(finished.results) do
+    if result.kind == "spawn_item" and result.status == "completed" then
+        assert(result.target_prefab == "cutgrass" and result.recipe == nil)
+        saw_spawn_metadata = true
+    elseif result.kind == "craft" and result.status == "submitted_unverified" then
+        assert(result.recipe == "axe" and result.target_prefab == nil)
+        saw_recipe_metadata = true
+    end
+end
+assert(saw_spawn_metadata and saw_recipe_metadata,
+    "step reports must distinguish spawned prefabs from recipe identifiers")
 assert(player.components.playercontroller.last_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
