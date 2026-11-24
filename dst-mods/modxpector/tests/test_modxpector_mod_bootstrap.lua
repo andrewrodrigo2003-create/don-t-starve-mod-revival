@@ -87,6 +87,16 @@ assert(inventory_guard ~= nil and inventory_collect ~= nil and inventory_guard <
     "world inventory must fail closed before calling Collect when its module failed to load")
 assert(source:find('world_inventory_module_unavailable', 1, true),
     "inventory failure must return an explicit unavailable status")
+assert(source:find('steps_verified = tonumber(report.steps_verified) or 0', 1, true),
+    "transported reports must include the number of verified side-effect steps")
+assert(source:find('steps_unverified = tonumber(report.steps_unverified) or 0', 1, true),
+    "transported reports must expose unresolved side-effect steps")
+assert(source:find('unverified_step_indices = report.unverified_step_indices or {}', 1, true),
+    "transported reports must include exact unresolved step indices")
+assert(source:find('evidence_level = tostring(report.evidence_level or "unknown")', 1, true),
+    "transported reports must preserve their evidence level")
+assert(source:find('duration_seconds = tonumber(report.duration_seconds)', 1, true),
+    "transported reports must include run duration when available")
 local inventory_file = assert(io.open("dst-mods/modxpector/scripts/modxpector/world_inventory.lua", "r"))
 local inventory_source = inventory_file:read("*a")
 inventory_file:close()
