@@ -160,9 +160,9 @@ local InspectorScreen = Class(Screen, function(self, global_env, show_debug_info
     self.last_scenario = nil
     self.last_scenario_report = nil
     self.status = "Painel híbrido: diagnóstico mestre + interface local."
-    self.ai_goal_text = "Colete um tufo de grama próximo e confirme que cutgrass entrou no inventário."
-    self.ai_prefabs_text = "grass,cutgrass"
-    self.ai_actions_text = "PICKUP"
+    self.ai_goal_text = "Aproxime-se de um tufo de grama próximo e confirme que está a até 4 unidades dele."
+    self.ai_prefabs_text = "grass"
+    self.ai_actions_text = "WALKTO"
     -- The DST camera keeps the local player near the center of the viewport.
     -- Use the same proportional, middle-anchored root as native Redux screens;
     -- world-to-screen projection added no useful movement and was resolution fragile.
@@ -603,7 +603,7 @@ function InspectorScreen:Refresh()
             self.ai_prefabs_text, 720, 36, CHATFONT, 20, "Ex.: grass,cutgrass"))
         self.ai_prefabs_entry:SetPosition(0, -173)
         self.ai_prefabs_entry.textbox:SetTextLengthLimit(420)
-        self:AddLine("Ações permitidas (separadas por vírgula)", -208, 16)
+        self:AddLine("Ações não destrutivas permitidas (neste perfil: WALKTO)", -208, 16)
         self.ai_actions_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
             self.ai_actions_text, 720, 36, CHATFONT, 20, "Ex.: PICKUP"))
         self.ai_actions_entry:SetPosition(0, -236)
