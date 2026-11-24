@@ -82,11 +82,14 @@ local function run_embedded_ai_diagnostics(callback)
         finish(false, "Falha ao priorizar a investigação.")
         return false
     end
+    local next_task = EMBEDDED_AI.NextTask(plan, embedded_ai_session)
     local report = {
         schema = "modxpector/embedded-ai-report/v1",
         snapshot = snapshot,
         analysis = analysis,
         plan = plan,
+        next_task = next_task,
+        session = embedded_ai_session,
     }
     if type(DST_GLOBAL.rawset) == "function" then
         DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_REPORT", report)
@@ -94,9 +97,9 @@ local function run_embedded_ai_diagnostics(callback)
         DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_REPORT = report
     end
     local summary = analysis.summary or {}
-    local next_task = plan.tasks ~= nil and plan.tasks[1] or nil
     set_embedded_ai_status("analisada", tostring(analysis.statement or "Análise concluída."), summary)
     print("[ModXpector] EMBEDDED_AI_ANALYSIS status=" .. tostring(analysis.status)
+        .. " decision=" .. tostring(analysis.decision)
         .. " findings=" .. tostring(summary.total or 0)
         .. " tasks=" .. tostring(plan.total or 0))
     for index, finding in ipairs(analysis.findings or {}) do
