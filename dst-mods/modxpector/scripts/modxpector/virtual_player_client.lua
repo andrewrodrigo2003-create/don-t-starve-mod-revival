@@ -26,6 +26,12 @@ local function is_finite_number(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function safe_get_time()
+    if type(GetTime) ~= "function" then return nil end
+    local ok, value = pcall(GetTime)
+    return ok and is_finite_number(value) and value or nil
+end
+
 local function as_array(value)
     if value == nil then return nil end
     if type(value) == "string" then return { value } end
@@ -150,12 +156,20 @@ function VirtualPlayer:_schedule(delay, fn)
 end
 
 function VirtualPlayer:_record(step, status, detail)
+    local timestamp = safe_get_time()
+    local target_prefab = type(step.target) == "table" and step.target.prefab or nil
+    target_prefab = target_prefab or step.prefab or step.recipe
     self.results[#self.results + 1] = {
+        run_id = self.run_id,
         index = self.index,
         kind = step.kind,
         action = step.action,
+        target_prefab = target_prefab,
         status = status,
         detail = detail,
+        timestamp = timestamp,
+        elapsed_seconds = timestamp ~= nil and self.step_started_at ~= nil
+            and math.max(0, timestamp - self.step_started_at) or nil,
     }
     if step.kind ~= "run" and (status == "completed" or status == "passed"
         or status == "submitted_unverified" or status == "cleared_unverified") then
@@ -184,6 +198,8 @@ end
 function VirtualPlayer:_finish(ok, message)
     self.running = false
     self.active = nil
+    self.finished_at = safe_get_time()
+    self.step_started_at = nil
     self.run_failed = not ok
     if ok then
         self.failure = nil
@@ -209,6 +225,10 @@ function VirtualPlayer:Start(plan)
     assert(type(plan.steps) == "table" and #plan.steps <= self.max_steps, "test plan exceeds step limit")
     self.queue = plan.steps
     self.index = 0
+    self.run_id = type(plan.run_id) == "string" and plan.run_id or nil
+    self.started_at = safe_get_time()
+    self.finished_at = nil
+    self.step_started_at = nil
     self.results = {}
     self.steps_completed = 0
     self.steps_verified = 0
@@ -397,6 +417,7 @@ end
 function VirtualPlayer:_next_impl()
     if not self.running then return end
     self.index = self.index + 1
+    self.step_started_at = safe_get_time()
     local step = self.queue[self.index]
     if step == nil then self:_finish(true, "all steps processed"); return end
     if type(step) ~= "table" then self:_finish(false, "invalid step " .. tostring(self.index)); return end
@@ -666,6 +687,9 @@ function VirtualPlayer:GetReport()
     end
     local assertions_total = self.assertions_total or 0
     local assertions_passed = self.assertions_passed or 0
+    local report_time = self.finished_at or safe_get_time()
+    local duration_seconds = self.started_at ~= nil and report_time ~= nil
+        and math.max(0, report_time - self.started_at) or nil
     local all_assertions_passed = assertions_total > 0 and assertions_passed == assertions_total
     local outcome = "inconclusive"
     if self.run_failed then
@@ -681,6 +705,10 @@ function VirtualPlayer:GetReport()
     return {
         schema = "modxpector/live-virtual-player/v1",
         evidence_level = "in-game-runner-unvalidated",
+        run_id = self.run_id,
+        started_at = self.started_at,
+        finished_at = self.finished_at,
+        duration_seconds = duration_seconds,
         player = player_prefab,
         running = self.running,
         steps_completed = self.steps_completed or 0,
