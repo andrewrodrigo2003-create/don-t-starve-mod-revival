@@ -71,21 +71,28 @@ end
 
 function M.Report(event)
     if state.enabled ~= true then return false, "disabled_by_configuration" end
-    if type(event) ~= "table" or event.schema ~= state.schema then
-        return false, "invalid_event_schema"
-    end
-    if not safe_mod_id(event.mod_id) then return false, "invalid_source_mod_id" end
-    if not ALLOWED_KINDS[event.kind] then return false, "unsupported_event_kind" end
-    if not ALLOWED_SEVERITIES[event.severity] then return false, "unsupported_event_severity" end
+    if type(event) ~= "table" then return false, "invalid_event_schema" end
+    local schema = rawget(event, "schema")
+    local mod_id = rawget(event, "mod_id")
+    local kind = rawget(event, "kind")
+    local severity = rawget(event, "severity")
+    local raw_message = rawget(event, "message")
+    local raw_stack = rawget(event, "stack")
+    local prefab = rawget(event, "prefab")
+    local component = rawget(event, "component")
+    if schema ~= state.schema then return false, "invalid_event_schema" end
+    if not safe_mod_id(mod_id) then return false, "invalid_source_mod_id" end
+    if not ALLOWED_KINDS[kind] then return false, "unsupported_event_kind" end
+    if not ALLOWED_SEVERITIES[severity] then return false, "unsupported_event_severity" end
 
-    local message = clean(event.message, 500)
+    local message = clean(raw_message, 500)
     if message == nil then return false, "invalid_event_message" end
-    local stack = event.stack == nil and nil or clean(event.stack, 2000)
-    if event.stack ~= nil and stack == nil then return false, "invalid_event_stack" end
-    if event.prefab ~= nil and not safe_identifier(event.prefab, 80) then
+    local stack = raw_stack == nil and nil or clean(raw_stack, 2000)
+    if raw_stack ~= nil and stack == nil then return false, "invalid_event_stack" end
+    if prefab ~= nil and not safe_identifier(prefab, 80) then
         return false, "invalid_event_prefab"
     end
-    if event.component ~= nil and not safe_identifier(event.component, 40) then
+    if component ~= nil and not safe_identifier(component, 40) then
         return false, "invalid_event_component"
     end
 
@@ -106,7 +113,7 @@ function M.Report(event)
         end
     end
 
-    local source_count = state.source_counts[event.mod_id] or 0
+    local source_count = state.source_counts[mod_id] or 0
     if source_count >= MAX_EVENTS_PER_SOURCE then
         state.dropped = state.dropped + 1
         return false, "source_rate_limit"
@@ -119,20 +126,20 @@ function M.Report(event)
     local timestamp = now()
     local record = {
         id = state.next_id,
-        mod_id = event.mod_id,
+        mod_id = mod_id,
         source_verified = false,
-        kind = event.kind,
-        severity = event.severity,
+        kind = kind,
+        severity = severity,
         message = message,
         stack = stack,
-        prefab = event.prefab,
-        component = event.component,
+        prefab = prefab,
+        component = component,
         first_seen = timestamp,
         last_seen = timestamp,
         repeat_count = 1,
     }
     state.next_id = state.next_id + 1
-    state.source_counts[event.mod_id] = source_count + 1
+    state.source_counts[mod_id] = source_count + 1
     state.events[#state.events + 1] = record
     state.dedupe[key] = record.id
     return true, record.id, "recorded"
