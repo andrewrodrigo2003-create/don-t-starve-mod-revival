@@ -164,3 +164,16 @@ O inventário inclui uma amostra somente de leitura dos registros que o runtime 
 - A coleta não chama hooks, não enumera entidades do mundo, não modifica tabelas e não faz polling contínuo.
 - A ausência de uma tabela é registrada como indisponível; não é tratada como zero nem como erro do mod.
 - As listas são amostras limitadas para diagnóstico e planejamento; não são prova de que todos os recursos de um mod funcionam.
+
+
+## Observador opt-in de componentes
+
+A opção de configuração `collect_runtime_components` permite registrar observações de componentes sem interceptar nem substituir seus métodos.
+
+- Padrão: **desativado**. Alterar a opção requer recarregar o mundo para registrar os hooks.
+- Hook: `AddComponentPostInit`, somente para a allowlist `health`, `hunger`, `sanity`, `inventory`, `container`, `builder`, `combat`, `workable`, `pickable`, `harvestable`, `growable` e `follower`.
+- Evidência: nome do componente, prefab associado e tempo relativo quando `GetTime` está disponível.
+- Limites: até 256 eventos; contadores continuam acumulando e eventos excedentes incrementam `dropped`.
+- Falhas de registro e de callback são contadas; cada hook é registrado sob proteção de erro.
+- A coleta não enumera todas as entidades, não lê código de mods, não modifica entidades/componentes e não faz polling.
+- Os eventos não provam qual mod criou o prefab; a origem do código não é inferida apenas pelo nome do prefab.
