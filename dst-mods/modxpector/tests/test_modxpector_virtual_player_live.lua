@@ -219,3 +219,60 @@ assert(partial_failure_report.steps_completed == 1,
     "a failed current step must not increment steps_completed")
 assert(partial_failure_report.assertions_total == 2 and partial_failure_report.assertions_passed == 1)
 print("MODXPECTOR_VIRTUAL_PLAYER_STEP_COUNT_CONTRACT_OK")
+
+-- Client-side RPC steps must obey the same plan allowlists before reaching the master.
+local denied_rpc_calls = 0
+local denied_unlock_report
+local denied_unlock
+denied_unlock = VirtualPlayer.new(player, {
+    allowed_recipes = {},
+    send_rpc = function(kind, request_id)
+        denied_rpc_calls = denied_rpc_calls + 1
+        denied_unlock:OnRPCResult(request_id, false, "unexpected unlock RPC")
+    end,
+    on_finished = function(report) denied_unlock_report = report end,
+})
+assert(denied_unlock:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "unlock_recipe", recipe = "axe" } },
+}))
+assert(denied_unlock_report ~= nil and denied_unlock_report.outcome == "failed")
+assert(string.find(denied_unlock_report.failure, "allowlist", 1, true))
+assert(denied_rpc_calls == 0, "disallowed unlock must not reach the master RPC")
+
+local denied_spawn_report
+local denied_spawn
+denied_spawn = VirtualPlayer.new(player, {
+    allowed_prefabs = {},
+    send_rpc = function(kind, request_id)
+        denied_rpc_calls = denied_rpc_calls + 1
+        denied_spawn:OnRPCResult(request_id, false, "unexpected spawn RPC")
+    end,
+    on_finished = function(report) denied_spawn_report = report end,
+})
+assert(denied_spawn:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "spawn_item", prefab = "cutgrass", count = 1 } },
+}))
+assert(denied_spawn_report ~= nil and denied_spawn_report.outcome == "failed")
+assert(string.find(denied_spawn_report.failure, "allowlist", 1, true))
+assert(denied_rpc_calls == 0, "disallowed spawn must not reach the master RPC")
+
+local invalid_count_report
+local invalid_count_calls = 0
+local invalid_count = VirtualPlayer.new(player, {
+    allowed_prefabs = { "cutgrass" },
+    send_rpc = function() invalid_count_calls = invalid_count_calls + 1 end,
+    on_finished = function(report) invalid_count_report = report end,
+})
+assert(invalid_count:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "spawn_item", prefab = "cutgrass", count = 1.5 } },
+}))
+assert(invalid_count_report ~= nil and invalid_count_report.outcome == "failed")
+assert(invalid_count_report.failure == "invalid spawn count")
+assert(invalid_count_calls == 0, "fractional spawn count must not reach the master RPC")
+print("MODXPECTOR_VIRTUAL_PLAYER_RPC_ALLOWLIST_CONTRACT_OK")
