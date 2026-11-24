@@ -450,3 +450,41 @@ assert(replaced_action_report ~= nil and replaced_action_report.outcome == "fail
 assert(replaced_action_report.failure == "buffered action replaced at step 1")
 player.GetBufferedAction = original_buffer_reader
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
+
+-- Interrupted and malformed steps must leave a step-level failure event in the report.
+local original_scheduler_for_stop = player.DoTaskInTime
+local pending_task
+player.DoTaskInTime = function(_, _delay, callback)
+    pending_task = callback
+end
+local stopped_report
+local stopped_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) stopped_report = report end,
+})
+assert(stopped_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "action", action = "CHOP" } },
+}))
+assert(stopped_controller.running == true and type(pending_task) == "function")
+assert(stopped_controller:Stop("contract cancellation"))
+assert(stopped_report ~= nil and stopped_report.outcome == "failed")
+assert(stopped_report.results[2].status == "failed")
+assert(stopped_report.results[2].detail == "contract cancellation")
+pending_task()
+assert(stopped_controller.running == false)
+player.DoTaskInTime = original_scheduler_for_stop
+
+local malformed_step_report
+local malformed_step_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) malformed_step_report = report end,
+})
+assert(malformed_step_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { "not-an-object" },
+}))
+assert(malformed_step_report ~= nil and malformed_step_report.outcome == "failed")
+assert(malformed_step_report.results[1].kind == "invalid")
+assert(malformed_step_report.results[1].status == "failed")
+print("MODXPECTOR_VIRTUAL_PLAYER_STEP_FAILURE_EVIDENCE_CONTRACT_OK")
