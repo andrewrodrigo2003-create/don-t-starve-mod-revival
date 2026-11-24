@@ -599,9 +599,11 @@ function InspectorScreen:Refresh()
         local runtime_label = runtime.enabled ~= true and "Desativada"
             or (runtime.available == true and "Ativa" or "Indisponível")
         local task_execution = type(ai_report) == "table" and ai_report.task_execution or {}
+        local community_events = type(analysis) == "table" and analysis.community_events or {}
         self:AddLine("Investigações: " .. tostring(task_execution.executed or 0)
-            .. " | componentes: " .. tostring(runtime.event_count or 0) .. " eventos"
-            .. " | observador: " .. runtime_label, -55, 13)
+            .. " | componentes: " .. tostring(runtime.event_count or 0)
+            .. " | eventos comunitários: " .. tostring(community_events.event_count or 0)
+            .. " (não verificados)", -55, 13)
         local findings = type(analysis) == "table" and analysis.findings or {}
         for i = 1, math.min(#findings, 5) do
             local finding = findings[i]
@@ -947,14 +949,16 @@ function InspectorScreen:Refresh()
         self:AddLine("Modo de testes controlados: " .. (config.test_mode and "Ativado" or "Desativado"), 55, 19)
         self:AddLine("Observação de componentes em runtime: "
             .. (config.collect_runtime_components and "Ativada" or "Desativada"), -15, 18)
+        self:AddLine("Receber eventos de mods comunitários: "
+            .. (config.accept_community_events and "Ativado" or "Desativado"), -35, 18)
         local ai_state = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS")
         self:AddLine("Estado da IA: " .. (type(ai_state) == "table" and tostring(ai_state.status or "não verificada") or "aguardando análise"), 20, 18)
-        self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), -45, 18)
-        self:AddLine("Entrada ModXpector no menu de pausa: registrada pelo jogo", -80, 17)
-        self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -115, 17)
-        self:AddLine("A análise principal funciona offline, sem Ollama, Python ou servidor.", -150, 15)
-        self:AddLine("A observação de componentes é opcional, limitada e somente leitura.", -175, 14)
-        make_button(self.content, "Executar análise da IA embarcada", 0, -215, function()
+        self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), -65, 18)
+        self:AddLine("Entrada ModXpector no menu de pausa: registrada pelo jogo", -100, 17)
+        self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -135, 17)
+        self:AddLine("A análise principal funciona offline, sem Ollama, Python ou servidor.", -170, 15)
+        self:AddLine("Observadores e eventos comunitários são opt-in, limitados e somente leitura.", -195, 14)
+        make_button(self.content, "Executar análise da IA embarcada", 0, -235, function()
             local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
             if type(run) ~= "function" then
                 self:SetStatus("Motor de IA embarcada não disponível.")
