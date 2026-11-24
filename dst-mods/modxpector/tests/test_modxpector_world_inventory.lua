@@ -66,6 +66,7 @@ local index = {
 }
 local globals = {
     pcall = pcall,
+    DevToolsAPI = { GetAPIVersion = function() return 0.1 end },
     KnownModIndex = index,
     ModManager = {
         enabledmods = { "workshop-100" },
@@ -92,6 +93,9 @@ assert(result.counts.client_classified == 1)
 assert(result.capabilities.load_candidates and result.capabilities.loaded_mod_list)
 assert(result.world.prefab == "forest" and result.world.is_master_sim)
 assert(result.world.is_dedicated == false and result.world.is_server == true)
+assert(result.community_apis.dev_tools.available == true)
+assert(result.community_apis.dev_tools.version_observed == true)
+assert(result.community_apis.dev_tools.version == 0.1)
 assert(#result.mods == 4, "disabled known mods must remain visible in the inventory")
 
 local alpha = result.mods[1]
@@ -122,6 +126,8 @@ local unknown = inventory.Collect({ pcall = pcall })
 assert(unknown.counts.known == 0)
 assert(not unknown.capabilities.known_mod_list)
 assert(not unknown.capabilities.loaded_mod_list)
+assert(unknown.community_apis.dev_tools.available == false)
+assert(unknown.community_apis.dev_tools.version_observed == false)
 
 local broken = inventory.Collect({
     pcall = pcall,
