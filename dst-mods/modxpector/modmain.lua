@@ -334,7 +334,7 @@ local function read_bridge_token()
     local token_ok, token_value = pcall(function() return file:read("*a") end)
     pcall(function() file:close() end)
     if not token_ok or type(token_value) ~= "string" then return nil end
-    local token = token_value:match("^([%w_%-]+)")
+    local token = token_value:match("^([%w_%-]+)%s*$")
     if token == nil or #token < 32 or #token > 128 then return nil end
     return token
 end
