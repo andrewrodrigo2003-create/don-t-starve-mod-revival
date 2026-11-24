@@ -20,9 +20,9 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - `GetModsToLoad(true)` fornece candidatos; não prova que o carregamento terminou.
 - `ModManager.enabledmods` e `ModManager.failedmods` são estruturas internas e opcionais. Se ausentes, o scanner registra estado desconhecido/não confirmado.
 - A coleta é passiva: não modifica configurações nem arquivos dos mods analisados.
-- A ponte local é opcional e desativada por padrão; só é consultada quando ai_bridge_enabled é ativado explicitamente.
-- bridge_token.txt é uma credencial local: não a versione nem a distribua. O empacotador e o .gitignore excluem esse arquivo.
-- O token é aberto apenas em modo de leitura (`io.open(..., "r")`); o mod não grava arquivos. As notas de modders da Klei para os hotfixes [651415](https://kleiforums.com/forums/topic/163362-game-update-651415/) e [653007](https://kleiforums.com/game-updates/dst/653007-r2465/) documentam a restrição de escrita e a exceção limitada a `unsafedata`.
+- A IA principal é embarcada em Lua e funciona offline, sem Ollama, Python, FastAPI, servidor, modelo local, token ou serviço externo.
+- O primeiro núcleo analisa inventário e estados dos mods, identifica falhas/dependências/flags e cria uma fila determinística de investigação somente leitura.
+- O Virtual Player é um executor separado. A integração do planejador de testes com ele está em desenvolvimento; a IA ainda não deve ser descrita como completa.
 - Conflito suspeito não é falha confirmada.
 - Testes Lua automatizados não substituem validação no jogo real, em multiplayer ou em servidores dedicados.
 
@@ -50,15 +50,14 @@ Gera um ZIP de teste em `dist/modxpector/`, sem incluir relatórios temporários
 - [Registro de desenvolvimento e estado operacional no Obsidian](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/Universos%20e%20Jogos/Don't%20Starve%20Together/04%20-%20Projetos%20e%20Mods/DST%20Mod%20Inspector/DST%20Mod%20Inspector%20%E2%80%94%20Desenvolvimento%20at%C3%A9%205.0.md)
 
 
-## IA local e Virtual Player
+## IA embarcada e Virtual Player
 
-O fluxo de teste assistido por IA usa o backend local do Cérebro Secundário e Ollama em loopback. A integração permanece desativada por padrão.
+A IA principal está dentro do próprio mod, em Lua. Ela observa o inventário de mods e os diagnósticos disponíveis, aplica regras e heurísticas auditáveis, classifica evidências e prioriza investigações. Não requer Ollama, Python, servidor local, modelo, chave ou conexão externa.
 
-1. Configure a ponte local seguindo [a documentação da ponte no Cérebro Secundário](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/feature/modxpector-local-ai-bridge-2026-11-24/docs/modxpector-local-ai-bridge.md).
-2. Nas opções do ModXpector, ative **IA local para executar testes automáticos** e **Modo de testes controlados**.
-3. Entre no mundo, abra o ModXpector com F6 e selecione **IA / Testes**.
-4. Informe o objetivo e revise as allowlists de prefabs e ações.
-5. Clique em **Gerar plano com IA e executar**. O Ollama gera um plano, o Master valida o esquema/allowlists e o Virtual Player executa as etapas no cliente local.
-6. Consulte o relatório retornado pelo backend e os marcadores AI_TEST_PLAN_QUEUED, GAME_TEST_PLAN_ACCEPTED, VIRTUAL_PLAYER_FINISHED e GAME_REPORT_SAVED nos logs.
+1. Entre no mundo e abra o ModXpector com F6.
+2. Selecione **IA / Testes**.
+3. Clique em **Executar análise da IA embarcada**.
+4. Consulte os achados, a confiança de cada diagnóstico e a próxima investigação priorizada.
+5. O Virtual Player continua sendo o executor de cenários de teste controlados; a integração automática entre o planejador embarcado e o executor está em desenvolvimento.
 
-O perfil inicial é limitado a aproximar o personagem de um tufo de grama (grass, WALKTO) e confirmar a distância ao alvo, sem spawn, coleta, ataque, consumo, drop, craft ou alteração do mundo. Isso é um teste funcional não destrutivo de ponta a ponta, não uma suíte completa de compatibilidade de mods. O plano é rejeitado se uma ação, prefab, receita ou pós-condição não passar pelas validações. O usuário deve revisar o objetivo e as permissões antes de executar; não use o modo automático em um mundo principal sem backup.
+A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
