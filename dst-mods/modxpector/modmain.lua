@@ -704,7 +704,13 @@ local function run_embedded_ai_suite(suite_id, scenario_id, callback)
         finish(false, "A suite não está registrada para um mod ativo e carregado.")
         return false
     end
-    local run_id = "embedded_ai_" .. tostring(math.floor((GetTime and GetTime() or 0) * 1000))
+    local clock = 0
+    if type(GetTime) == "function" then
+        local clock_ok, value = pcall(GetTime)
+        if clock_ok and finite_number(value) then clock = value end
+    end
+    local sequence = embedded_ai_session ~= nil and #embedded_ai_session.results or 0
+    local run_id = "embedded_ai_" .. tostring(math.floor(clock * 1000)) .. "_" .. tostring(sequence + 1)
     local plan, reason = EMBEDDED_AI.BuildVirtualPlayerPlan(suite, scenario_id, run_id)
     if plan == nil then
         finish(false, "Plano rejeitado pelo validador local: " .. tostring(reason))
@@ -723,7 +729,29 @@ local function run_embedded_ai_suite(suite_id, scenario_id, callback)
     end
     pending_ai_plan = plan
     set_embedded_ai_status("aguardando_master", "Plano seguro enviado ao Master para validação.")
-    SendModRPCToServer(MOD_RPC[MODNAME].set_test_plan, run_id, encoded)
+    local send_ok, send_error = pcall(SendModRPCToServer, MOD_RPC[MODNAME].set_test_plan, run_id, encoded)
+    if not send_ok then
+        pending_ai_plan = nil
+        set_embedded_ai_status("falha_rpc", tostring(send_error))
+        finish(false, "Não foi possível enviar o plano ao Master.")
+        return false
+    end
+    if ThePlayer ~= nil and type(ThePlayer.DoTaskInTime) == "function" then
+        ThePlayer:DoTaskInTime(25, function()
+            if pending_ai_plan == plan then
+                pending_ai_plan = nil
+                record_embedded_suite_result(plan, "inconclusive", {
+                    run_id = run_id,
+                    timeout = true,
+                    reason = "Master validation response timed out",
+                })
+                if type(SendModRPCToServer) == "function" and MOD_RPC[MODNAME].clear_test_plan ~= nil then
+                    SendModRPCToServer(MOD_RPC[MODNAME].clear_test_plan, run_id)
+                end
+                set_embedded_ai_status("timeout_master", "O Master não respondeu dentro do prazo; nenhuma execução foi iniciada.")
+            end
+        end)
+    end
     finish(true, "Plano enviado ao Master; aguardando validação antes da execução.", plan)
     return true
 end
