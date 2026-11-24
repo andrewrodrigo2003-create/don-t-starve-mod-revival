@@ -122,6 +122,8 @@ assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
 assert(finished.assertions_total == 11 and finished.assertions_passed == 11)
 assert(finished.outcome == "passed")
+assert(finished.steps_completed == #plan.steps,
+    "steps_completed must count plan steps, not result events")
 assert(player.crafted_recipe == "axe" and crafted_calls == 1)
 assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
@@ -198,3 +200,22 @@ assert(string.find(denied_placer_report.failure, "allowlist", 1, true))
 assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1,
     "disallowed placer recipe must not be submitted again")
 print("MODXPECTOR_CRAFT_RECIPE_ALLOWLIST_CONTRACT_OK")
+
+-- Reports count terminally processed plan steps, not the detailed result events.
+local partial_failure_report
+local partial_failure = VirtualPlayer.new(player, {
+    on_finished = function(report) partial_failure_report = report end,
+})
+assert(partial_failure:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = {
+        { kind = "assert", assertion = { kind = "player_health_gte", value = 100 } },
+        { kind = "assert", assertion = { kind = "player_health_gte", value = 200 } },
+    },
+}))
+assert(partial_failure_report ~= nil and partial_failure_report.outcome == "failed")
+assert(partial_failure_report.steps_completed == 1,
+    "a failed current step must not increment steps_completed")
+assert(partial_failure_report.assertions_total == 2 and partial_failure_report.assertions_passed == 1)
+print("MODXPECTOR_VIRTUAL_PLAYER_STEP_COUNT_CONTRACT_OK")
