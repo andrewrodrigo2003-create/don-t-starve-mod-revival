@@ -67,6 +67,92 @@ local function sort_findings(findings)
     end)
 end
 
+local BehaviorTree = {}
+BehaviorTree.SUCCESS = "success"
+BehaviorTree.FAILURE = "failure"
+BehaviorTree.RUNNING = "running"
+
+function BehaviorTree.Condition(predicate, result)
+    return function(context)
+        local ok, matches = pcall(predicate, context)
+        if not ok then return BehaviorTree.FAILURE, nil, tostring(matches) end
+        return matches and BehaviorTree.SUCCESS or BehaviorTree.FAILURE, result
+    end
+end
+
+function BehaviorTree.Action(action)
+    return function(context)
+        local ok, result = pcall(action, context)
+        if not ok then return BehaviorTree.FAILURE, nil, tostring(result) end
+        return BehaviorTree.SUCCESS, result
+    end
+end
+
+function BehaviorTree.Selector(children)
+    return function(context)
+        for _, child in ipairs(children or {}) do
+            local status, result, reason = child(context)
+            if status ~= BehaviorTree.FAILURE then return status, result, reason end
+        end
+        return BehaviorTree.FAILURE, nil, "all selector branches failed"
+    end
+end
+
+function BehaviorTree.Sequence(children)
+    return function(context)
+        local last_result
+        for _, child in ipairs(children or {}) do
+            local status, result, reason = child(context)
+            if status ~= BehaviorTree.SUCCESS then return status, result, reason end
+            last_result = result
+        end
+        return BehaviorTree.SUCCESS, last_result
+    end
+end
+
+function BehaviorTree.Tick(tree, context)
+    if type(tree) ~= "function" then
+        return BehaviorTree.FAILURE, nil, "invalid behavior tree"
+    end
+    local ok, status, result, reason = pcall(tree, context)
+    if not ok then return BehaviorTree.FAILURE, nil, tostring(status) end
+    if status ~= BehaviorTree.SUCCESS and status ~= BehaviorTree.FAILURE
+        and status ~= BehaviorTree.RUNNING then
+        return BehaviorTree.FAILURE, nil, "behavior tree returned an invalid status"
+    end
+    return status, result, reason
+end
+
+M.BehaviorTree = BehaviorTree
+
+function M.EvaluatePolicy(analysis)
+    local summary = type(analysis) == "table" and analysis.summary or {}
+    local tree = BehaviorTree.Selector({
+        BehaviorTree.Condition(function() return (summary.critical or 0) > 0 end,
+            "investigate_critical_load_failures"),
+        BehaviorTree.Condition(function() return (summary.errors or 0) > 0 end,
+            "resolve_confirmed_configuration_issues"),
+        BehaviorTree.Condition(function() return (summary.warnings or 0) > 0 end,
+            "confirm_probable_issues"),
+        BehaviorTree.Condition(function() return #(analysis.limitations or {}) > 0 end,
+            "collect_missing_evidence"),
+        BehaviorTree.Action(function() return "baseline_monitoring" end),
+    })
+    local status, decision, reason = BehaviorTree.Tick(tree, analysis)
+    if status ~= BehaviorTree.SUCCESS then return "policy_error", reason end
+    return decision
+end
+
+local function stable_task_id(kind, mod_id, related_id)
+    local function slug(value)
+        return tostring(value or "none"):gsub("[^%w_%-]", "_"):sub(1, 56)
+    end
+    return "diag-" .. slug(kind) .. "-" .. slug(mod_id) .. "-" .. slug(related_id)
+end
+
+local SEVERITY_UTILITY = { critical = 100, error = 80, warning = 45, info = 15 }
+local CONFIDENCE_UTILITY = { confirmed = 25, probable = 10, unknown = 0 }
+
 local function analyze_mod(mod, findings)
     local id = safe_text(mod.id, 180) or "unknown"
     local name = safe_text(mod.name, 180) or id
@@ -237,7 +323,7 @@ function M.Analyze(snapshot)
         status = "incomplete_evidence"
     end
 
-    return {
+    local analysis = {
         schema = M.SCHEMA,
         engine_version = M.VERSION,
         status = status,
@@ -249,6 +335,8 @@ function M.Analyze(snapshot)
             and "Nenhum problema conhecido foi identificado nos dados disponíveis; isso não comprova compatibilidade."
             or "A análise encontrou achados ou limitações que exigem investigação.",
     }
+    analysis.decision = M.EvaluatePolicy(analysis)
+    return analysis
 end
 
 local TASK_PRIORITY = {
@@ -272,10 +360,14 @@ function M.BuildPlan(analysis)
         local key = tostring(kind) .. "|" .. tostring(finding.mod_id) .. "|" .. tostring(finding.related_id or "")
         if type(kind) == "string" and not seen[key] then
             seen[key] = true
+            local utility = (TASK_PRIORITY[kind] or 0)
+                + (SEVERITY_UTILITY[finding.severity] or 0)
+                + (CONFIDENCE_UTILITY[finding.confidence] or 0)
             tasks[#tasks + 1] = {
-                id = "diag-" .. tostring(#tasks + 1),
+                id = stable_task_id(kind, finding.mod_id, finding.related_id),
                 kind = kind,
-                priority = TASK_PRIORITY[kind] or 0,
+                priority = utility,
+                utility = utility,
                 mod_id = finding.mod_id,
                 related_id = finding.related_id,
                 finding_code = finding.code,
@@ -300,6 +392,7 @@ function M.BuildPlan(analysis)
         engine_version = M.VERSION,
         mode = "read_only",
         generated_from = analysis.schema,
+        decision = analysis.decision or M.EvaluatePolicy(analysis),
         tasks = tasks,
         total = #tasks,
         statement = "Plano diagnóstico interno; não executa ações no mundo nem substitui um plano do Virtual Player.",
