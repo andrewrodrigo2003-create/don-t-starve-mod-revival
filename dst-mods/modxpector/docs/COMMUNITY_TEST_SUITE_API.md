@@ -1,0 +1,113 @@
+# ModXpector — API declarativa de suites comunitárias
+
+## Objetivo
+
+Mods da comunidade podem declarar cenários de teste para o ModXpector sem instalar um modelo, servidor ou biblioteca externa. A IA embarcada lê a declaração como dados, seleciona suites pertencentes a mods ativos e pode converter um cenário aprovado em um plano do Virtual Player.
+
+A API é opcional. Um mod sem suite continua sendo analisado pelo inventário e pelas regras passivas do ModXpector.
+
+## Registro
+
+O ModXpector publica no ambiente global:
+
+- `MODXPECTOR_TEST_SUITE_API_VERSION = 1`
+- `MODXPECTOR_REGISTER_TEST_SUITE(suite)`
+
+Registre em `AddSimPostInit`, para que o ModXpector já tenha publicado a API independentemente da ordem de carregamento dos arquivos `modmain.lua`:
+
+```lua
+AddSimPostInit(function()
+    local globals = GLOBAL or _G
+    local register = globals.MODXPECTOR_REGISTER_TEST_SUITE
+    if type(register) ~= "function" then
+        return -- ModXpector não está instalado/ativo
+    end
+
+    local ok, result = register({
+        schema = "modxpector/test-suite/v1",
+        id = "my_mod_smoke",
+        owner_mod_id = "workshop-123456789",
+        title = "My Mod — smoke test",
+        priority = 50,
+        allowed_prefabs = { "my_mod_test_prefab" },
+        allowed_recipes = {},
+        allowed_actions = { "WALKTO" },
+        scenarios = {
+            {
+                id = "approach_test_prefab",
+                title = "Approach the test prefab",
+                steps = {
+                    {
+                        kind = "action",
+                        action = "WALKTO",
+                        target = { prefab = "my_mod_test_prefab", radius = 12 },
+                        target_required = true,
+                    },
+                    {
+                        kind = "assert",
+                        assertion = {
+                            kind = "player_near_target",
+                            target_step = 1,
+                            radius = 4,
+                        },
+                        verifies_step = 1,
+                    },
+                },
+            },
+        },
+    })
+
+    print("[MyMod] ModXpector suite registration: " .. tostring(ok) .. " / " .. tostring(result))
+end)
+```
+
+Substitua o Workshop ID e o prefab pelo identificador real do mod. O proprietário é autodeclarado; o ModXpector só seleciona a suite se esse ID aparecer no inventário local como mod habilitado e não observado em falha.
+
+## Schema e limites atuais
+
+- `schema`: obrigatório, `modxpector/test-suite/v1`.
+- `id`, `owner_mod_id`: identificadores de 1–64 caracteres alfanuméricos, underscore ou hífen.
+- `title`: 1–160 caracteres.
+- `priority`: 0–100; maior valor ganha prioridade em caso de empate de seleção.
+- `allowed_prefabs`: até 40 identificadores.
+- `allowed_recipes`: até 40 identificadores.
+- `allowed_actions`: até 10; o perfil inicial permite somente `WALKTO`.
+- `scenarios`: 1–20 cenários, cada um com 1–20 etapas.
+
+### Etapas aceitas
+
+O perfil inicial é intencionalmente não destrutivo:
+
+- `action: WALKTO` com `target_required=true` e prefab incluído em `allowed_prefabs`.
+- `assert: player_near_target`, `target_exists` ou `target_has_tag`, referenciando uma ação anterior.
+- As asserções de estado do jogador aceitas pelo validador podem ser usadas como pós-condições observacionais.
+- Toda ação deve ter uma asserção com `verifies_step` apontando para ela.
+- Para asserções de alvo, `target_step` deve ser a mesma etapa indicada em `verifies_step`.
+
+São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coordenadas arbitrárias, funções, callbacks, strings de código e tipos de etapa desconhecidos. A suite é copiada para uma estrutura normalizada; o ModXpector não executa código Lua fornecido por outro mod.
+
+## Seleção e execução
+
+1. O ModXpector coleta o inventário local.
+2. A IA seleciona suites cujo `owner_mod_id` corresponde a um mod habilitado e não observado em falha.
+3. A interface mostra as suites compatíveis.
+4. O usuário precisa ativar **Modo de testes controlados**.
+5. Ao executar, o plano é enviado ao Master do DST.
+6. O Master verifica permissão de administrador, configuração, schema, allowlists, referências e pós-condições.
+7. Só após resposta positiva do Master o cliente inicia o Virtual Player.
+8. O resultado é guardado na sessão local e exibido no painel.
+
+A execução pode falhar por ausência do prefab, condições do mundo ou limitações do jogo. Isso é registrado como resultado do cenário, não como prova automática de que o mod inteiro está incompatível.
+
+## Responsabilidade do mod autor
+
+- Use um prefab de teste que já exista naturalmente no mundo ou em uma área de teste controlada.
+- Declare somente prefabs e ações estritamente necessários.
+- Garanta que a pós-condição realmente verifique o comportamento declarado.
+- Não inclua ações destrutivas no perfil inicial.
+- Não envie dados pessoais, tokens ou segredos na suite.
+- A suite é uma declaração de teste, não uma certificação de compatibilidade.
+
+## Estado atual
+
+O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. A cobertura atual limita-se ao perfil seguro com `WALKTO` e verificações observacionais. É necessário ampliar os adaptadores de ação e pós-condição gradualmente, com testes e evidências por subsistema.
