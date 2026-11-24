@@ -46,7 +46,7 @@ function M.Register(add_component_post_init, _globals, enabled, protected_call, 
     end
     if type(add_component_post_init) ~= "function" then
         state.reason = "component_post_init_api_unavailable"
-        store_state(globals, state)
+        runtime_state = state
         return false, state
     end
 
