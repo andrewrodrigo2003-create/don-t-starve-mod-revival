@@ -176,7 +176,8 @@ local alive_result = controller:_evaluate_assertion({ kind = "target_dead", targ
 assert(alive_result.actual == false and alive_result.passed == true)
 TheSim.FindEntities = function() return {} end
 local removed_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
-assert(removed_result.actual == true and removed_result.passed == true)
+assert(removed_result.actual == nil and removed_result.inconclusive == true and removed_result.passed == false,
+    "a missing target without a death event must not be reported as confirmed dead")
 assert(finished.results[#finished.results].status == "completed")
 
 local target_ok, target_err = pcall(function() controller:ResolveTarget({ prefab = "modxpector_unapproved_test_prefab" }) end)
