@@ -484,6 +484,9 @@ local bridge_port = 8765
 local bridge_polling = false
 local bridge_poll_enabled = false
 local poll_game_test_plan
+local bridge_probe_started = false
+local bridge_probe_attempts = 0
+local probe_local_ai_bridge
 
 local function set_ai_bridge_status(status, detail)
     local snapshot = { status = tostring(status or "unknown"), detail = tostring(detail or "") }
@@ -631,7 +634,13 @@ poll_game_test_plan = function(inst)
             bridge_polling = false
             if not success or code ~= 200 or type(body) ~= "string" then
                 print("[ModXpector] GAME_TEST_POLL_FAILED code=" .. tostring(code))
-                inst:DoTaskInTime(15, function() poll_game_test_plan(inst) end)
+                bridge_poll_enabled = false
+                bridge_probe_started = false
+                if probe_local_ai_bridge ~= nil then
+                    inst:DoTaskInTime(5, function() probe_local_ai_bridge(inst) end)
+                else
+                    inst:DoTaskInTime(15, function() poll_game_test_plan(inst) end)
+                end
                 return
             end
             local decoded_ok, payload = pcall(function() return json.decode(body) end)
@@ -658,7 +667,13 @@ poll_game_test_plan = function(inst)
     if not ok then
         bridge_polling = false
         print("[ModXpector] GAME_TEST_POLL_ERROR " .. tostring(err))
-        inst:DoTaskInTime(15, function() poll_game_test_plan(inst) end)
+        bridge_poll_enabled = false
+        bridge_probe_started = false
+        if probe_local_ai_bridge ~= nil then
+            inst:DoTaskInTime(5, function() probe_local_ai_bridge(inst) end)
+        else
+            inst:DoTaskInTime(15, function() poll_game_test_plan(inst) end)
+        end
     end
 end
 
@@ -861,9 +876,7 @@ end
 
 DST_GLOBAL.MODXPECTOR_REQUEST_AI_TEST = request_ai_test_plan
 
-local bridge_probe_started = false
-local bridge_probe_attempts = 0
-local function probe_local_ai_bridge(inst)
+probe_local_ai_bridge = function(inst)
     if bridge_probe_started or inst == nil or inst ~= ThePlayer then return end
     if GetModConfigData("ai_bridge_enabled") ~= true then
         set_ai_bridge_status("desativada", "Ative IA local nas opções do ModXpector.")
@@ -882,8 +895,9 @@ local function probe_local_ai_bridge(inst)
     local function retry_probe()
         set_ai_bridge_status("servico_offline", "O serviço local não respondeu. Nova tentativa automática limitada.")
         bridge_probe_started = false
-        if bridge_probe_attempts < 3 and inst:IsValid() then
-            inst:DoTaskInTime(15, function() probe_local_ai_bridge(inst) end)
+        if GetModConfigData("ai_bridge_enabled") == true and inst:IsValid() then
+            local retry_delay = math.min(60, 5 * (2 ^ math.min(bridge_probe_attempts, 4)))
+            inst:DoTaskInTime(retry_delay, function() probe_local_ai_bridge(inst) end)
         end
     end
     bridge_token = read_bridge_token()
@@ -914,6 +928,7 @@ local function probe_local_ai_bridge(inst)
             end
             local agent_status = "unknown"
             if type(payload.agent) == "table" then agent_status = tostring(payload.agent.status or "unknown") end
+            bridge_probe_attempts = 0
             set_ai_bridge_status("conectada", "Agente: " .. agent_status .. " | porta " .. tostring(bridge_port))
             print("[ModXpector] LOCAL_AI_BRIDGE_READY port=" .. tostring(bridge_port) .. " agent=" .. agent_status)
             bridge_poll_enabled = true
