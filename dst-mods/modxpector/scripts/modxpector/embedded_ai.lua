@@ -473,6 +473,12 @@ function M.Analyze(snapshot)
     elseif runtime_components.available ~= true then
         limitations[#limitations + 1] = "A observação de componentes foi solicitada, mas os hooks não ficaram disponíveis."
     end
+    if (tonumber(runtime_components.hook_failures) or 0) > 0 then
+        limitations[#limitations + 1] = "Alguns hooks de observação de componentes não puderam ser registrados."
+    end
+    if (tonumber(runtime_components.callback_errors) or 0) > 0 then
+        limitations[#limitations + 1] = "O observador de componentes encontrou erros ao registrar eventos."
+    end
     if (tonumber(runtime_components.dropped) or 0) > 0 then
         limitations[#limitations + 1] = "O buffer de observação de componentes descartou eventos por atingir o limite."
     end
