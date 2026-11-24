@@ -18,6 +18,8 @@ local ok, state = Observer.Register(function(name, callback)
 end, globals, true, pcall, function() return now end)
 assert(ok == true and state.available == true and state.registered == true)
 assert(state.hooks_registered == #Observer.GetAllowlist())
+assert(globals.MODXPECTOR_RUNTIME_COMPONENTS == nil,
+    "observer state must remain private and not be writable through shared globals")
 assert(state.hook_failures == 0)
 
 local original = { prefab = "skeletonservant" }
