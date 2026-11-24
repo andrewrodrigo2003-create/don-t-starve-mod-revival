@@ -180,3 +180,35 @@ A opção de configuração `collect_runtime_components` permite registrar obser
 
 
 O estado interno do observador permanece privado no módulo; o snapshot entregue à IA é uma cópia sanitizada e limitada. Nenhum buffer mutável é publicado em `GLOBAL`.
+
+
+## API opcional de eventos de diagnóstico comunitários
+
+Mods comunitários podem enviar observações estruturadas sem compartilhar código ou executar callbacks no ModXpector. A recepção fica desativada por padrão e precisa ser habilitada em **Configuração → Receber diagnósticos de mods comunitários**.
+
+Exemplo de chamada:
+
+```lua
+if type(MODXPECTOR_REPORT_DIAGNOSTIC_EVENT) == "function" then
+    MODXPECTOR_REPORT_DIAGNOSTIC_EVENT({
+        schema = "modxpector/community-diagnostic-events/v1",
+        mod_id = "workshop-1234567890",
+        kind = "runtime_error",
+        severity = "error",
+        message = "Descrição curta do erro",
+        stack = "scripts/modmain.lua:123",
+        prefab = "my_mod_prefab",
+        component = "workable",
+    })
+end
+```
+
+- Tipos aceitos: `runtime_error`, `compatibility_warning`, `capability_observed`, `test_result`.
+- Severidades aceitas: `error`, `warning`, `info`. A IA nunca promove severidade declarada a crítico.
+- `mod_id` é uma alegação do remetente; `source_verified` permanece sempre `false`, mesmo se o mod estiver ativo.
+- Mensagem limitada a 500 caracteres; stack a 2.000; prefab/componente exigem identificadores simples.
+- Buffer global limitado a 128 eventos e 20 eventos únicos por origem alegada; duplicatas são agregadas por contador.
+- Padrões comuns de credenciais (`token=` e `Authorization: Bearer`) são redigidos antes do armazenamento.
+- Payloads são tratados como dados, nunca executados. Eventos de erro/compatibilidade aparecem como aviso com confiança `unknown`.
+- A API não substitui `print`, `error`, `pcall` ou `xpcall`, nem intercepta chamadas globais.
+- Esta API é uma extensão para mods comunitários que venham a adotá-la; não implica que os mods já catalogados a implementem.
