@@ -89,6 +89,16 @@ configuration_options = {
         default = false,
     },
     {
+        name = "accept_community_events",
+        label = "Receber diagnósticos de mods comunitários",
+        hover = "Permite que mods compatíveis enviem eventos estruturados ao ModXpector. Origem não verificada; eventos limitados e sem execução de código. Desativado por padrão.",
+        options = {
+            { description = "Desativado", data = false },
+            { description = "Ativado", data = true },
+        },
+        default = false,
+    },
+    {
         name = "max_spawn_count",
         label = "Limite de itens por solicitação de teste",
         hover = "Limita a quantidade de itens criados por uma única solicitação.",
