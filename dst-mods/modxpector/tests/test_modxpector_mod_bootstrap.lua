@@ -78,6 +78,8 @@ local env = setmetatable({
                 allowed_recipes = { "axe" }, steps = {} }
         elseif path == "modxpector/runtime_observer" then
             return dofile("dst-mods/modxpector/scripts/modxpector/runtime_observer.lua")
+        elseif path == "modxpector/community_events" then
+            return dofile("dst-mods/modxpector/scripts/modxpector/community_events.lua")
         elseif path == "modxpector/embedded_ai" then
             return dofile("dst-mods/modxpector/scripts/modxpector/embedded_ai.lua")
         elseif path == "modxpector/world_inventory" then
@@ -135,6 +137,8 @@ assert(source:find('inventario_indisponivel', 1, true),
     "embedded AI must report when the read-only inventory is unavailable")
 assert(source:find('DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT', 1, true),
     "Virtual Player reports must remain available in the game session")
+assert(source:find('DST_GLOBAL.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT = report_community_diagnostic_event', 1, true),
+    "community mods must receive the opt-in diagnostic event API")
 assert(source:find('DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics', 1, true),
     "the embedded diagnostic engine must be exposed to the dashboard")
 local inventory_file = assert(io.open("dst-mods/modxpector/scripts/modxpector/world_inventory.lua", "r"))
@@ -174,6 +178,13 @@ assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.analysis.status == "incomple
 assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.runtime_components.enabled == false
     and engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.runtime_components.available == false,
     "runtime component observation must remain disabled by default in the game bootstrap")
+assert(type(engine_globals.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT) == "function",
+    "community mods must receive a bounded diagnostic event API")
+local community_event_ok, community_event_reason = engine_globals.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT({})
+assert(community_event_ok == false and community_event_reason == "disabled_by_configuration",
+    "community event ingestion must remain opt-in by default")
+assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.community_events.enabled == false,
+    "the embedded AI report must expose community event ingestion as disabled by default")
 assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 1,
     "active community suites should be selected by the embedded AI")
 
