@@ -61,7 +61,7 @@ local player = {
     },
 }
 
-local engine_globals = { pcall = pcall }
+local engine_globals = { pcall = pcall, rawset = rawset }
 local env = setmetatable({
     GLOBAL = engine_globals,
     require = function(path)
@@ -69,6 +69,22 @@ local env = setmetatable({
             return { schema = "modxpector/test-plan/v1", enabled = true, run_id = "run_1",
                 allow_non_admin_test_player = false, allowed_prefabs = { "cutgrass" },
                 allowed_recipes = { "axe" }, steps = {} }
+        elseif path == "modxpector/embedded_ai" then
+            return dofile("dst-mods/modxpector/scripts/modxpector/embedded_ai.lua")
+        elseif path == "modxpector/world_inventory" then
+            return { Collect = function()
+                return {
+                    schema = "modxpector/world-inventory/v2",
+                    captured_at = 1,
+                    truncated = false,
+                    capabilities = {
+                        known_mod_list = true,
+                        loaded_mod_list = true,
+                        failed_mod_list = true,
+                    },
+                    mods = {},
+                }
+            end }
         end
         return require(path)
     end,
@@ -93,18 +109,10 @@ assert(inventory_guard ~= nil and inventory_collect ~= nil and inventory_guard <
     "world inventory must fail closed before calling Collect when its module failed to load")
 assert(source:find('world_inventory_module_unavailable', 1, true),
     "inventory failure must return an explicit unavailable status")
-assert(source:find('steps_verified = tonumber(report.steps_verified) or 0', 1, true),
-    "transported reports must include the number of verified side-effect steps")
-assert(source:find('verification_assertions_passed = tonumber(report.verification_assertions_passed) or 0', 1, true),
-    "transported reports must include the number of passed postconditions")
-assert(source:find('steps_unverified = tonumber(report.steps_unverified) or 0', 1, true),
-    "transported reports must expose unresolved side-effect steps")
-assert(source:find('unverified_step_indices = report.unverified_step_indices or {}', 1, true),
-    "transported reports must include exact unresolved step indices")
-assert(source:find('evidence_level = tostring(report.evidence_level or "unknown")', 1, true),
-    "transported reports must preserve their evidence level")
-assert(source:find('duration_seconds = tonumber(report.duration_seconds)', 1, true),
-    "transported reports must include run duration when available")
+assert(source:find('DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT', 1, true),
+    "Virtual Player reports must remain available in the game session")
+assert(source:find('DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics', 1, true),
+    "the embedded diagnostic engine must be exposed to the dashboard")
 local inventory_file = assert(io.open("dst-mods/modxpector/scripts/modxpector/world_inventory.lua", "r"))
 local inventory_source = inventory_file:read("*a")
 inventory_file:close()
@@ -115,9 +123,14 @@ local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
 chunk()
 
--- Missing saved config must fail closed: joining a world cannot probe localhost.
+-- Joining a world starts the embedded read-only analysis and never contacts localhost.
 player_postinit(player)
-assert(query_calls == 0, "local bridge must not probe localhost when ai_bridge_enabled is unset")
+assert(query_calls == 0, "embedded AI must not make localhost HTTP calls")
+assert(type(engine_globals.MODXPECTOR_RUN_EMBEDDED_AI) == "function")
+assert(type(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT) == "table",
+    "the embedded AI should produce a diagnostic report during player initialization")
+assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.analysis.status == "no_known_issues",
+    "the empty synthetic inventory should produce a clean, evidence-backed analysis")
 
 assert(type(rpc_server.spawn_item) == "function")
 assert(type(rpc_server.spawn_entity) == "function")
