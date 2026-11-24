@@ -158,7 +158,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_step = 3 },
         { kind = "assert", assertion = { kind = "player_knows_recipe", recipe = "axe" }, verifies_step = 4 },
         { kind = "assert", assertion = { kind = "player_has_item", prefab = "axe" }, verifies_step = 5 },
-        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "axe", count = 1 } },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "axe", count = 1 }, verifies_step = 5 },
         { kind = "assert", assertion = { kind = "target_exists", target = { prefab = "structure" } }, verifies_step = 6 },
         { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe" } },
         { kind = "assert", assertion = { kind = "player_near_target", target = { prefab = "tree" }, radius = 5 } },
@@ -198,7 +198,9 @@ assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
 assert(finished.steps_verified == 6 and finished.steps_unverified == 0,
-    "all five side-effect steps must have explicit post-action verification")
+    "all six side-effect steps must have explicit post-action verification")
+assert(finished.verification_assertions_passed == 7,
+    "craft must remain pending until both postconditions pass")
 assert(player.last_pickup_action.action == ACTIONS.PICKUP and player.picked_up == true)
 local equipped_invobject_action = controller:BuildAction({ kind = "action", action = "MOD_ACTION", invobject = "axe" })
 assert(equipped_invobject_action.invobject ~= nil and equipped_invobject_action.invobject.prefab == "axe",
