@@ -81,6 +81,227 @@ local function safe_name_list(values, pattern, maximum)
     return true
 end
 
+local SERVER_ACTION_ALLOWLIST = {
+    ATTACK = true, CHOP = true, MINE = true, DIG = true, HAMMER = true,
+    PICK = true, HARVEST = true, PICKUP = true, TILL = true, REPAIR = true,
+    WALKTO = true, EAT = true, USEITEM = true, CASTAOE = true, CASTSPELL = true,
+    RUMMAGE = true, DISMOUNT = true, MOUNT = true, TALKTO = true, DEPLOY = true,
+    PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
+    COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
+    LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
+    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
+}
+local ASSERTION_ALLOWLIST = {
+    player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
+    player_has_item = true, player_has_item_count_gte = true, player_equipped = true,
+    player_near_target = true, player_knows_recipe = true,
+    target_exists = true, target_health_lte = true, target_dead = true, target_has_tag = true,
+}
+local TARGET_ASSERTION_ALLOWLIST = {
+    player_near_target = true, target_exists = true, target_health_lte = true,
+    target_dead = true, target_has_tag = true,
+}
+local SIDE_EFFECT_STEP_ALLOWLIST = {
+    action = true, craft = true, craft_at_point = true,
+    unlock_recipe = true, spawn_item = true, spawn_entity = true,
+}
+
+local function finite_number(value)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+end
+
+local function integer_in_range(value, minimum, maximum)
+    return finite_number(value) and value == math.floor(value)
+        and value >= minimum and value <= maximum
+end
+
+local function safe_tag(value)
+    return type(value) == "string" and #value >= 1 and #value <= 64
+        and value:match("^[%w_%-]+$") ~= nil
+end
+
+local function safe_tag_list(value)
+    if value == nil then return true end
+    if type(value) == "string" then return safe_tag(value) end
+    if type(value) ~= "table" or #value > 32 then return false end
+    for _, tag in ipairs(value) do
+        if not safe_tag(tag) then return false end
+    end
+    return true
+end
+
+local function valid_target_selector(selector, plan)
+    if type(selector) ~= "table" or not prefab_is_allowed(selector.prefab, plan) then return false end
+    if selector.radius ~= nil and (not finite_number(selector.radius)
+        or selector.radius < 1 or selector.radius > 40) then return false end
+    if selector.tag ~= nil and not safe_tag(selector.tag) then return false end
+    return safe_tag_list(selector.tags) and safe_tag_list(selector.notags)
+        and safe_tag_list(selector.oneoftags)
+end
+
+local function valid_position(position)
+    return type(position) == "table"
+        and finite_number(position.x) and finite_number(position.z)
+        and math.abs(position.x) <= 100000 and math.abs(position.z) <= 100000
+        and (position.y == nil or finite_number(position.y))
+end
+
+local function validate_postcondition_reference(plan, index, reference)
+    if not integer_in_range(reference, 1, index - 1) then
+        return false, "invalid postcondition reference"
+    end
+    local previous = plan.steps[reference]
+    if type(previous) ~= "table" or SIDE_EFFECT_STEP_ALLOWLIST[previous.kind] ~= true then
+        return false, "postcondition must reference a previous side-effect step"
+    end
+    return true
+end
+
+local function validate_target_reference(plan, index, reference)
+    if not integer_in_range(reference, 1, index - 1) then
+        return false, "invalid target_step reference"
+    end
+    local previous = plan.steps[reference]
+    if type(previous) ~= "table" or previous.kind ~= "action"
+        or type(previous.target) ~= "table" then
+        return false, "target_step must reference a previous action with a target selector"
+    end
+    return true
+end
+
+local function validate_plan_assertion(plan, index, step)
+    local assertion = step.assertion
+    if type(assertion) ~= "table" or ASSERTION_ALLOWLIST[assertion.kind] ~= true then
+        return false, "unsupported assertion kind"
+    end
+    if assertion.expected ~= nil and type(assertion.expected) ~= "boolean" then
+        return false, "assertion expected must be boolean"
+    end
+    if assertion.kind == "player_health_gte" or assertion.kind == "player_hunger_gte"
+        or assertion.kind == "player_sanity_gte" or assertion.kind == "target_health_lte" then
+        if not finite_number(assertion.value) or assertion.value < 0 or assertion.value > 100000 then
+            return false, "invalid assertion numeric value"
+        end
+    elseif assertion.kind == "player_has_item" or assertion.kind == "player_has_item_count_gte"
+        or assertion.kind == "player_equipped" then
+        if not prefab_is_allowed(assertion.prefab, plan) then
+            return false, "assertion prefab is not in the plan allowlist"
+        end
+        if assertion.kind == "player_has_item_count_gte"
+            and not integer_in_range(assertion.count, 1, 10000) then
+            return false, "inventory assertion count must be an integer from 1 to 10000"
+        end
+        if assertion.kind == "player_equipped" and (type(assertion.slot) ~= "string"
+            or #assertion.slot < 1 or #assertion.slot > 32) then
+            return false, "invalid equipment slot"
+        end
+    elseif assertion.kind == "player_knows_recipe" then
+        if not recipe_is_allowed(assertion.recipe, plan) then
+            return false, "assertion recipe is not in the plan allowlist"
+        end
+    elseif assertion.kind == "player_near_target" then
+        if assertion.radius ~= nil and (not finite_number(assertion.radius)
+            or assertion.radius < 0 or assertion.radius > 100) then
+            return false, "invalid target distance radius"
+        end
+    elseif assertion.kind == "target_has_tag" then
+        if not safe_tag(assertion.tag) then return false, "invalid target tag" end
+    end
+
+    if TARGET_ASSERTION_ALLOWLIST[assertion.kind] then
+        if assertion.target_step ~= nil then
+            if assertion.target ~= nil then return false, "use target or target_step, not both" end
+            local ok, reason = validate_target_reference(plan, index, assertion.target_step)
+            if not ok then return false, reason end
+        elseif not valid_target_selector(assertion.target, plan) then
+            return false, "invalid target selector"
+        end
+    elseif assertion.target_step ~= nil or assertion.target ~= nil then
+        return false, "this assertion does not accept a target selector"
+    end
+
+    if step.verifies_step ~= nil and step.verifies_steps ~= nil then
+        return false, "use verifies_step or verifies_steps, not both"
+    end
+    if step.verifies_step ~= nil then
+        return validate_postcondition_reference(plan, index, step.verifies_step)
+    elseif step.verifies_steps ~= nil then
+        if type(step.verifies_steps) ~= "table" or #step.verifies_steps < 1 or #step.verifies_steps > 20 then
+            return false, "verifies_steps must contain 1 to 20 references"
+        end
+        local seen = {}
+        for _, reference in ipairs(step.verifies_steps) do
+            if seen[reference] then return false, "duplicate verifies_steps reference" end
+            seen[reference] = true
+            local ok, reason = validate_postcondition_reference(plan, index, reference)
+            if not ok then return false, reason end
+        end
+    end
+    return true
+end
+
+local function validate_plan_step(plan, index, step)
+    if type(step) ~= "table" then return false, "step must be an object" end
+    if step.timeout ~= nil and (not finite_number(step.timeout) or step.timeout < 1 or step.timeout > 120) then
+        return false, "invalid step timeout"
+    end
+    if step.kind == "wait" then
+        local seconds = step.seconds == nil and 1 or step.seconds
+        return finite_number(seconds) and seconds >= 0 and seconds <= 120,
+            "invalid wait duration"
+    elseif step.kind == "action" then
+        if type(step.action) ~= "string"
+            or (SERVER_ACTION_ALLOWLIST[step.action] ~= true and not contains_value(plan.allowed_actions, step.action)) then
+            return false, "action is not in the server allowlist"
+        end
+        if step.target ~= nil and not valid_target_selector(step.target, plan) then
+            return false, "invalid action target selector"
+        end
+        if step.target_required ~= nil and type(step.target_required) ~= "boolean" then
+            return false, "target_required must be boolean"
+        end
+        if step.invobject ~= nil and not prefab_is_allowed(step.invobject, plan) then
+            return false, "action inventory object is not in the plan allowlist"
+        end
+        if step.position ~= nil and not valid_position(step.position) then
+            return false, "invalid action position"
+        end
+        if step.repeat_until_target_dead ~= nil and type(step.repeat_until_target_dead) ~= "boolean" then
+            return false, "repeat_until_target_dead must be boolean"
+        end
+        if step.repeat_until_target_dead == true then
+            if step.action ~= "ATTACK" or step.target_required ~= true
+                or not valid_target_selector(step.target, plan)
+                or not integer_in_range(step.max_repeats, 1, 20)
+                or not finite_number(step.repeat_timeout) or step.repeat_timeout < 1 or step.repeat_timeout > 600 then
+                return false, "invalid bounded attack repeat configuration"
+            end
+        elseif step.max_repeats ~= nil or step.repeat_timeout ~= nil then
+            return false, "repeat limits require repeat_until_target_dead"
+        end
+        return true
+    elseif step.kind == "craft" or step.kind == "craft_at_point" or step.kind == "unlock_recipe" then
+        if not recipe_is_allowed(step.recipe, plan) then return false, "recipe is not in the plan allowlist" end
+        if step.kind == "craft_at_point" then
+            if not valid_position(step.position) then return false, "invalid placer position" end
+            if step.rotation ~= nil and (not finite_number(step.rotation) or math.abs(step.rotation) > 360) then
+                return false, "invalid placer rotation"
+            end
+        end
+        return true
+    elseif step.kind == "spawn_item" or step.kind == "spawn_entity" then
+        if not prefab_is_allowed(step.prefab, plan) then return false, "spawn prefab is not in the plan allowlist" end
+        local count = step.count == nil and 1 or step.count
+        if not integer_in_range(count, 1, 20) then return false, "invalid spawn count" end
+        if step.position ~= nil and not valid_position(step.position) then return false, "invalid spawn position" end
+        return true
+    elseif step.kind == "assert" then
+        return validate_plan_assertion(plan, index, step)
+    end
+    return false, "unsupported test step kind"
+end
+
 local function validate_incoming_plan(plan, requested_run_id)
     if type(plan) ~= "table" or plan.schema ~= "modxpector/test-plan/v1" or plan.enabled ~= true then
         return false, "invalid test plan schema or disabled plan"
@@ -96,6 +317,10 @@ local function validate_incoming_plan(plan, requested_run_id)
     end
     if type(plan.steps) ~= "table" or #plan.steps < 1 or #plan.steps > 200 then
         return false, "test plan must contain 1 to 200 steps"
+    end
+    for index, step in ipairs(plan.steps) do
+        local valid, reason = validate_plan_step(plan, index, step)
+        if not valid then return false, "step " .. tostring(index) .. ": " .. tostring(reason) end
     end
     return true, "accepted"
 end
