@@ -583,48 +583,38 @@ function InspectorScreen:Refresh()
         for i, check in ipairs(checks) do
             self:AddLine((check[2] and "[OK] " or "[--] ") .. check[1], 165 - (i - 1) * 21, 16)
         end
-        local config = self.runtime_config or {}
-        local bridge_state = rawget(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS")
-        local bridge_label = type(bridge_state) == "table" and tostring(bridge_state.status or "não verificado")
-            or "não verificado nesta sessão"
-        self:AddLine("IA local: " .. (config.ai_bridge_enabled == true and "permitida" or "desativada nas opções"), 15, 17)
-        self:AddLine("Modo de testes: " .. (config.test_mode == true and "ativado" or "desativado nas opções"), -10, 17)
-        self:AddLine("Agente local: " .. bridge_label, -35, 17)
-        if type(bridge_state) == "table" and type(bridge_state.detail) == "string" and bridge_state.detail ~= "" then
-            self:AddLine("Detalhe: " .. bridge_state.detail, -58, 14)
+        local ai_state = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS")
+        local ai_report = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_REPORT")
+        local ai_label = type(ai_state) == "table" and tostring(ai_state.status or "não verificada") or "aguardando análise"
+        self:AddLine("IA embarcada: " .. ai_label, 15, 17)
+        self:AddLine("Execução offline em Lua; nenhum modelo ou serviço externo é necessário.", -10, 15)
+        local analysis = type(ai_report) == "table" and ai_report.analysis or nil
+        local summary = type(analysis) == "table" and analysis.summary or {}
+        self:AddLine("Achados: " .. tostring(summary.total or 0)
+            .. " | críticos: " .. tostring(summary.critical or 0)
+            .. " | erros: " .. tostring(summary.errors or 0)
+            .. " | avisos: " .. tostring(summary.warnings or 0), -35, 15)
+        local findings = type(analysis) == "table" and analysis.findings or {}
+        for i = 1, math.min(#findings, 5) do
+            local finding = findings[i]
+            self:AddLine("[" .. tostring(finding.severity) .. "] "
+                .. tostring(finding.mod_name or finding.mod_id)
+                .. ": " .. tostring(finding.title), -65 - (i - 1) * 27, 13)
         end
-        self:AddLine("Objetivo do teste", -82, 16)
-        self.ai_goal_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
-            self.ai_goal_text, 720, 36, CHATFONT, 20, "Descreva o que o Virtual Player deve testar"))
-        self.ai_goal_entry:SetPosition(0, -110)
-        self.ai_goal_entry.textbox:SetTextLengthLimit(220)
-        self:AddLine("Prefabs permitidos (separados por vírgula)", -145, 16)
-        self.ai_prefabs_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
-            self.ai_prefabs_text, 720, 36, CHATFONT, 20, "Ex.: grass,cutgrass"))
-        self.ai_prefabs_entry:SetPosition(0, -173)
-        self.ai_prefabs_entry.textbox:SetTextLengthLimit(420)
-        self:AddLine("Ações não destrutivas permitidas (neste perfil: WALKTO)", -208, 16)
-        self.ai_actions_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
-            self.ai_actions_text, 720, 36, CHATFONT, 20, "Ex.: WALKTO"))
-        self.ai_actions_entry:SetPosition(0, -236)
-        self.ai_actions_entry.textbox:SetTextLengthLimit(420)
-        make_button(self.content, "Gerar plano com IA e executar", 0, -286, function()
-            self.ai_goal_text = self.ai_goal_entry.textbox:GetString()
-            self.ai_prefabs_text = self.ai_prefabs_entry.textbox:GetString()
-            self.ai_actions_text = self.ai_actions_entry.textbox:GetString()
-            local request = rawget(DST_GLOBAL, "MODXPECTOR_REQUEST_AI_TEST")
-            if type(request) ~= "function" then
-                self:SetStatus("Solicitador de testes da IA não está disponível nesta versão.")
+        local plan = type(ai_report) == "table" and ai_report.plan or nil
+        local next_task = type(plan) == "table" and type(plan.tasks) == "table" and plan.tasks[1] or nil
+        self:AddLine("Próxima investigação: " .. (next_task ~= nil and tostring(next_task.kind) or "nenhuma pendente"), -210, 14)
+        make_button(self.content, "Executar análise da IA embarcada", 0, -260, function()
+            local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
+            if type(run) ~= "function" then
+                self:SetStatus("Motor de IA embarcada não disponível.")
                 return
             end
-            self:SetStatus("Enviando objetivo ao Ollama local...")
-            request(self.ai_goal_text, self.ai_prefabs_text, self.ai_actions_text, function(success, message)
+            self:SetStatus("Analisando inventário e evidências dos mods...")
+            run(function(success, message)
+                self:Refresh()
                 self:SetStatus(message)
-                if success then
-                    print("[ModXpector] AI_TEST_REQUEST_ACCEPTED " .. tostring(message))
-                else
-                    print("[ModXpector] AI_TEST_REQUEST_REJECTED " .. tostring(message))
-                end
+                print("[ModXpector] EMBEDDED_AI_UI_RESULT success=" .. tostring(success))
             end)
         end, 0.76)
     elseif self.active_tab == "tmi" then
@@ -921,15 +911,14 @@ function InspectorScreen:Refresh()
         self:AddLine("CONFIGURAÇÕES ATIVAS DO MOD", 210, 25)
         self:AddLine("Abrir/fechar painel: " .. key_name, 165, 21)
         self:AddLine("Informações técnicas: " .. (config.show_debug_info and "Ativadas" or "Desativadas"), 125, 19)
-        self:AddLine("IA local para testes automáticos: " .. (config.ai_bridge_enabled and "Permitida" or "Desativada"), 90, 19)
+        self:AddLine("IA embarcada: incluída no próprio ModXpector", 90, 19)
         self:AddLine("Modo de testes controlados: " .. (config.test_mode and "Ativado" or "Desativado"), 55, 19)
-        local bridge_state = rawget(DST_GLOBAL, "MODXPECTOR_AI_BRIDGE_STATUS")
-        self:AddLine("Estado do agente: " .. (type(bridge_state) == "table" and tostring(bridge_state.status or "não verificado") or "não verificado"), 20, 18)
+        local ai_state = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS")
+        self:AddLine("Estado da IA: " .. (type(ai_state) == "table" and tostring(ai_state.status or "não verificada") or "aguardando análise"), 20, 18)
         self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), -15, 18)
         self:AddLine("Entrada ModXpector no menu de pausa: registrada pelo jogo", -55, 17)
         self:AddLine("Para editar: menu principal > Mods > ModXpector > Configurar", -90, 17)
-        self:AddLine("IA + Modo de testes precisam estar ativados; o agente local e o token também são obrigatórios.", -125, 15)
-        self:AddLine("O mod não inicia nem instala o agente automaticamente.", -150, 15)
+        self:AddLine("A análise principal funciona offline, sem Ollama, Python ou servidor.", -125, 15)
         make_button(self.content, "Capturar logs agora", 0, -215, function()
             local capture = rawget(DST_GLOBAL, "MODXPECTOR_CAPTURE_LOGS")
             if type(capture) ~= "function" then
