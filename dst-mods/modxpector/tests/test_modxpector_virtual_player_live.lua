@@ -668,7 +668,8 @@ local walk_player = {
             DoAction = function(_, action)
                 assert(action.action == ACTIONS.WALKTO)
                 assert(action.target == walk_target)
-                walk_x, _, walk_z = walk_target.Transform.GetWorldPosition()
+                local target_x, _, target_z = walk_target.Transform.GetWorldPosition()
+                walk_x, walk_z = target_x, target_z
             end,
         },
     },
