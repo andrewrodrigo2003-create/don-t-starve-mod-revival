@@ -5,6 +5,7 @@ package.path = ROOT .. "/dst-mods/modxpector/scripts/?.lua;" .. package.path
 ACTIONS = {
     CHOP = { name = "CHOP" }, ATTACK = { name = "ATTACK" },
     WALKTO = { name = "WALKTO" }, MOD_ACTION = { name = "MOD_ACTION" },
+    PICKUP = { name = "PICKUP" },
 }
 Vector3 = function(x, y, z) return { x = x, y = y, z = z } end
 BufferedAction = function(doer, target, action, invobject, position)
@@ -42,7 +43,14 @@ local open_container = {
 local player
 player = {
     prefab = "wilson",
-    components = { playercontroller = { DoAction = function(self, action) self.last_action = action end } },
+    components = { playercontroller = { DoAction = function(self, action)
+        self.last_action = action
+        if action.action == ACTIONS.CHOP then player.last_chop_action = action end
+        if action.action == ACTIONS.PICKUP then
+            player.last_pickup_action = action
+            player.picked_up = true
+        end
+    end } },
     replica = {
         inventory = {
             FindItem = function(_, fn)
@@ -56,7 +64,7 @@ player = {
                 return nil
             end,
             Has = function(_, prefab, count)
-                local found = prefab == "cutgrass" and 2 or 0
+                local found = prefab == "cutgrass" and (player.picked_up and 3 or 2) or 0
                 return found >= count, found
             end,
             GetOpenContainers = function() return { [open_container] = true } end,
@@ -100,8 +108,14 @@ local structure_target = {
     HasTag = function() return false end,
     Transform = { GetWorldPosition = function() return 2, 0, 3 end },
 }
+local pickup_target = {
+    prefab = "cutgrass",
+    IsValid = function() return true end,
+    HasTag = function() return false end,
+    Transform = { GetWorldPosition = function() return 1, 0, 0 end },
+}
 TheSim.FindEntities = function()
-    local found = { target }
+    local found = { target, pickup_target }
     if player ~= nil and player.placed_recipe ~= nil then found[#found + 1] = structure_target end
     return found
 end
@@ -151,6 +165,8 @@ local plan = {
         { kind = "assert", assertion = { kind = "target_health_lte", target = { prefab = "tree" }, value = 30 }, verifies_step = 1 },
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
+        { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 3 }, verifies_step = 23 },
     },
 }
 assert(controller:Start(plan))
@@ -173,15 +189,16 @@ for _, result in ipairs(finished.results) do
 end
 assert(saw_spawn_metadata and saw_recipe_metadata,
     "step reports must distinguish spawned prefabs from recipe identifiers")
-assert(player.components.playercontroller.last_action.action == ACTIONS.CHOP)
+assert(player.last_chop_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
-assert(finished.assertions_total == 16 and finished.assertions_passed == 16)
+assert(finished.assertions_total == 17 and finished.assertions_passed == 17)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
-assert(finished.steps_verified == 5 and finished.steps_unverified == 0,
+assert(finished.steps_verified == 6 and finished.steps_unverified == 0,
     "all five side-effect steps must have explicit post-action verification")
+assert(player.last_pickup_action.action == ACTIONS.PICKUP and player.picked_up == true)
 assert(player.crafted_recipe == "axe" and crafted_calls == 1)
 assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
