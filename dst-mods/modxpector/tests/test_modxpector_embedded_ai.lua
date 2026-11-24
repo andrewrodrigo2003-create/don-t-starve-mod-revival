@@ -245,6 +245,9 @@ assert(community_finding.evidence.source_verified == false
     and community_finding.evidence.claimed_mod_active == true
     and community_finding.evidence.repeat_count == 2,
     "claimed mod identity must remain unverified even if the mod is active")
+assert(community_finding.evidence.signature == "nil_index"
+    and community_finding.detail:find("referência nil", 1, true),
+    "AI should classify known error signatures without upgrading source confidence")
 assert(community_event_analysis.community_events.unverified == true
     and community_event_analysis.community_events.event_count == 2
     and #community_event_analysis.community_events.event_sample == 2,
