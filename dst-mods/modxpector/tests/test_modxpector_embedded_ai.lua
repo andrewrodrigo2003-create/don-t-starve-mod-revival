@@ -408,6 +408,11 @@ local incomplete = AI.Analyze({
     mods = {},
 })
 assert(incomplete.status == "incomplete_evidence", "missing observability must be explicit")
-assert(#incomplete.limitations == 2, "missing capabilities should produce limitations")
+assert(#incomplete.limitations >= 3, "missing capabilities and disabled optional observers should produce limitations")
+local runtime_observer_limitation = false
+for _, limitation in ipairs(incomplete.limitations) do
+    if limitation:find("observação opt-in", 1, true) then runtime_observer_limitation = true end
+end
+assert(runtime_observer_limitation, "disabled runtime component observation must be an explicit limitation")
 
 print("ModXpector embedded AI tests passed")
