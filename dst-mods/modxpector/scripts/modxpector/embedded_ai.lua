@@ -662,7 +662,7 @@ function M.SelectSuites(suites, snapshot, available_prefabs)
     local selected = {}
     for _, candidate in ipairs(type(suites) == "table" and suites or {}) do
         local valid, suite = M.ValidateSuite(candidate)
-        local prefabs_available = type(available_prefabs) == "table"
+        local prefabs_available = valid and type(available_prefabs) == "table"
         if prefabs_available then
             for _, prefab in ipairs(suite.allowed_prefabs) do
                 if available_prefabs[prefab] == nil then
