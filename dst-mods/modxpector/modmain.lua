@@ -593,6 +593,7 @@ end
 
 local virtual_player
 local start_virtual_player
+local pending_ai_plan
 
 start_virtual_player = function(inst, plan)
     plan = plan or TEST_PLAN
@@ -630,6 +631,9 @@ start_virtual_player = function(inst, plan)
                 print("[ModXpector] step=" .. tostring(result.index) .. " status=" .. tostring(result.status)
                     .. " detail=" .. tostring(result.detail))
             end
+            if plan.run_id ~= nil and type(SendModRPCToServer) == "function" then
+                SendModRPCToServer(MOD_RPC[MODNAME].clear_test_plan, plan.run_id)
+            end
             virtual_player = nil
         end,
     })
@@ -640,9 +644,76 @@ start_virtual_player = function(inst, plan)
     end
 end
 
+local function run_embedded_ai_suite(suite_id, scenario_id, callback)
+    local function finish(success, message, plan)
+        if type(callback) == "function" then pcall(callback, success == true, tostring(message or ""), plan) end
+    end
+    if GetModConfigData("test_mode") ~= true then
+        finish(false, "Ative Modo de testes controlados nas opções do ModXpector.")
+        return false
+    end
+    if pending_ai_plan ~= nil then
+        finish(false, "Já existe um plano aguardando validação do servidor.")
+        return false
+    end
+    if virtual_player ~= nil and virtual_player.running then
+        finish(false, "O Virtual Player já está executando um teste.")
+        return false
+    end
+    local report = DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_REPORT
+    local selected = type(report) == "table" and report.selected_suites or {}
+    local suite
+    for _, entry in ipairs(selected or {}) do
+        if type(entry) == "table" and type(entry.suite) == "table" and entry.suite.id == suite_id then
+            suite = entry.suite
+            break
+        end
+    end
+    if suite == nil then
+        finish(false, "A suite não está registrada para um mod ativo e carregado.")
+        return false
+    end
+    local run_id = "embedded_ai_" .. tostring(math.floor((GetTime and GetTime() or 0) * 1000))
+    local plan, reason = EMBEDDED_AI.BuildVirtualPlayerPlan(suite, scenario_id, run_id)
+    if plan == nil then
+        finish(false, "Plano rejeitado pelo validador local: " .. tostring(reason))
+        return false
+    end
+    if type(json) ~= "table" or type(json.encode) ~= "function"
+        or type(SendModRPCToServer) ~= "function" or MOD_RPC[MODNAME] == nil
+        or MOD_RPC[MODNAME].set_test_plan == nil then
+        finish(false, "A comunicação segura com o Master não está disponível.")
+        return false
+    end
+    local encode_ok, encoded = pcall(json.encode, plan)
+    if not encode_ok or type(encoded) ~= "string" or #encoded > 48 * 1024 then
+        finish(false, "Não foi possível serializar o plano de teste.")
+        return false
+    end
+    pending_ai_plan = plan
+    set_embedded_ai_status("aguardando_master", "Plano seguro enviado ao Master para validação.")
+    SendModRPCToServer(MOD_RPC[MODNAME].set_test_plan, run_id, encoded)
+    finish(true, "Plano enviado ao Master; aguardando validação antes da execução.", plan)
+    return true
+end
+
+DST_GLOBAL.MODXPECTOR_RUN_AI_SUITE = run_embedded_ai_suite
+
 if type(AddClientModRPCHandler) == "function" then
     AddClientModRPCHandler(MODNAME, "action_result", function(request_id, success, message)
         if virtual_player ~= nil then virtual_player:OnRPCResult(request_id, success, message) end
+    end)
+    AddClientModRPCHandler(MODNAME, "plan_ready", function(run_id, success, message)
+        if pending_ai_plan == nil or pending_ai_plan.run_id ~= run_id then return end
+        local plan = pending_ai_plan
+        pending_ai_plan = nil
+        if success == true then
+            set_embedded_ai_status("plano_aceito", "Master validou a suite; iniciando Virtual Player.")
+            start_virtual_player(ThePlayer, plan)
+        else
+            set_embedded_ai_status("plano_rejeitado", tostring(message or "Master rejeitou o plano."))
+            print("[ModXpector] EMBEDDED_AI_PLAN_REJECTED reason=" .. tostring(message))
+        end
     end)
 end
 
