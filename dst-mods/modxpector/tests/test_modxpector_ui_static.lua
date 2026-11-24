@@ -398,3 +398,11 @@ assert(screen_source:find('self.ai_prefabs_text = "grass,cutgrass"', 1, true)
     and screen_source:find('self.ai_actions_text = "PICKUP"', 1, true),
     "the initial collection test must use explicit minimal allowlists")
 print("MODXPECTOR_AI_TEST_REQUEST_UI_CONTRACT_OK")
+
+
+-- A transient local service failure must trigger bounded automatic reconnection.
+assert(main:find('local probe_local_ai_bridge', 1, true))
+assert(main:find('bridge_poll_enabled = false', 1, true))
+assert(main:find('math.min(60, 5 * (2 ^ math.min(bridge_probe_attempts, 4)))', 1, true))
+assert(main:find('GAME_TEST_POLL_FAILED', 1, true))
+print("MODXPECTOR_AI_BRIDGE_RECONNECT_CONTRACT_OK")
