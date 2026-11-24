@@ -424,3 +424,22 @@ assert(invalid_player_report.outcome == "failed")
 assert(invalid_player_report.player == nil)
 player.IsValid = original_is_valid
 print("MODXPECTOR_VIRTUAL_PLAYER_FINAL_REPORT_GUARD_CONTRACT_OK")
+
+-- A foreign BufferedAction must not be mistaken for completion of the Virtual Player action.
+local original_buffer_reader = player.GetBufferedAction
+local replaced_action_report
+player.GetBufferedAction = function()
+    return { action = ACTIONS.WALKTO }
+end
+local replaced_action_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) replaced_action_report = report end,
+})
+assert(replaced_action_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "action", action = "CHOP" } },
+}))
+assert(replaced_action_report ~= nil and replaced_action_report.outcome == "failed")
+assert(replaced_action_report.failure == "buffered action replaced at step 1")
+player.GetBufferedAction = original_buffer_reader
+print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
