@@ -240,6 +240,9 @@ local function send_game_report(inst, plan, report, token, port)
     local body = {
         run_id = tostring(report.run_id or plan.run_id or ""),
         outcome = tostring(report.outcome or "unknown"),
+        failure = report.failure ~= nil and tostring(report.failure) or nil,
+        evidence_level = tostring(report.evidence_level or "unknown"),
+        player = report.player ~= nil and tostring(report.player) or nil,
         started_at = tonumber(report.started_at),
         finished_at = tonumber(report.finished_at),
         duration_seconds = tonumber(report.duration_seconds),
