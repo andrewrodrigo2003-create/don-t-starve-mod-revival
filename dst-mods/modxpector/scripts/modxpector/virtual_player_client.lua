@@ -224,7 +224,6 @@ function VirtualPlayer:_mark_step_verified(step_references)
         local passed = (self.verification_assertions[index] or 0) + 1
         if passed > required then error("too many postconditions reference the same action step") end
         self.verification_assertions[index] = passed
-        self.verification_assertions_passed = (self.verification_assertions_passed or 0) + 1
         if passed >= required then
             self.unverified_steps[index] = nil
             self.steps_verified = (self.steps_verified or 0) + 1
@@ -707,6 +706,7 @@ function VirtualPlayer:_next_impl()
                     self:_finish(false, tostring(verify_error))
                     return
                 end
+                self.verification_assertions_passed = (self.verification_assertions_passed or 0) + 1
             end
             self.assertions_passed = (self.assertions_passed or 0) + 1
             self:_record(step, "passed", "assertion passed: " .. tostring(result.kind))
