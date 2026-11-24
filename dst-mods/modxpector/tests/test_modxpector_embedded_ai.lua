@@ -217,6 +217,45 @@ for _, limitation in ipairs(observed_analysis.limitations) do
     if limitation:find("buffer", 1, true) then dropped_limitation = true end
 end
 assert(dropped_limitation, "dropped runtime component events must be reported as an evidence limitation")
+
+local community_event_snapshot = {
+    schema = "modxpector/world-inventory/v2",
+    capabilities = { known_mod_list = true, loaded_mod_list = true, failed_mod_list = true },
+    mods = {
+        { id = "workshop-12345", name = "Community Agent Mod", enabled = true, loaded = true },
+    },
+    community_events = {
+        enabled = true, available = true, event_count = 2, dropped = 0,
+        events = {
+            { id = 1, mod_id = "workshop-12345", source_verified = true,
+                kind = "runtime_error", severity = "error", message = "attempt to index nil",
+                stack = "scripts/community.lua:10", prefab = "skeletonservant",
+                component = "combat", repeat_count = 2 },
+            { id = 2, mod_id = "workshop-12345", kind = "capability_observed",
+                severity = "info", message = "new prefab registered", repeat_count = 1 },
+        },
+    },
+}
+local community_event_analysis = AI.Analyze(community_event_snapshot)
+local community_finding = find_code(community_event_analysis, "COMMUNITY_EVENT_UNVERIFIED")
+assert(community_finding ~= nil and community_finding.severity == "warning"
+    and community_finding.confidence == "unknown",
+    "community runtime errors must be shown as warnings with unknown confidence")
+assert(community_finding.evidence.source_verified == false
+    and community_finding.evidence.claimed_mod_active == true
+    and community_finding.evidence.repeat_count == 2,
+    "claimed mod identity must remain unverified even if the mod is active")
+assert(community_event_analysis.community_events.unverified == true
+    and community_event_analysis.community_events.event_count == 2
+    and #community_event_analysis.community_events.event_sample == 2,
+    "analysis must expose a bounded community event summary")
+community_event_snapshot.community_events.dropped = 3
+community_event_analysis = AI.Analyze(community_event_snapshot)
+local event_drop_limitation = false
+for _, limitation in ipairs(community_event_analysis.limitations) do
+    if limitation:find("eventos comunitários", 1, true) then event_drop_limitation = true end
+end
+assert(event_drop_limitation, "dropped community events must reduce evidence completeness")
 assert(analysis.registry.prefabs.available == false and analysis.registry.prefabs.count == nil,
     "analysis should report registry evidence as unavailable when the snapshot omitted it")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
