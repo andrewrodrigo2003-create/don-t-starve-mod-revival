@@ -320,17 +320,18 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab)
 
     assert(type(inventory.GetOpenContainers) == "function",
         "inventory replica GetOpenContainers unavailable")
-    local open_containers = inventory:GetOpenContainers() or {}
+    local open_containers = inventory:GetOpenContainers()
+    assert(type(open_containers) == "table", "inventory open-container state unavailable")
     local overflow = type(inventory.GetOverflowContainer) == "function"
         and inventory:GetOverflowContainer() or nil
     for container_inst in pairs(open_containers) do
         if container_inst ~= nil and (overflow == nil or container_inst ~= overflow.inst) then
             local replica = container_inst.replica ~= nil
                 and (container_inst.replica.container or container_inst.replica.inventory) or nil
-            if replica ~= nil and replica ~= overflow and type(replica.Has) == "function" then
-                local _, found = replica:Has(prefab, 1, false)
-                total = total + (tonumber(found) or 0)
-            end
+            assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
+                "an open container does not expose an item-count replica")
+            local _, found = replica:Has(prefab, 1, false)
+            total = total + (tonumber(found) or 0)
         end
     end
 
