@@ -459,6 +459,9 @@ function M.Analyze(snapshot)
         if type(event) == "table"
             and (event.kind == "runtime_error" or event.kind == "compatibility_warning") then
             local source_mod_id = safe_text(event.mod_id, 80)
+            local event_message = safe_text(event.message, 500) or "Um mod enviou um evento sem mensagem legível."
+            local event_stack = safe_text(event.stack, 1200)
+            local signature, interpretation = classify_error(event_message .. " " .. (event_stack or ""))
             local source_mod_name
             local source_mod_active = false
             for _, candidate in ipairs(type(snapshot.mods) == "table" and snapshot.mods or {}) do
@@ -475,17 +478,19 @@ function M.Analyze(snapshot)
                 mod_id = source_mod_id,
                 mod_name = source_mod_name or source_mod_id or "Mod comunitário",
                 title = "Evento comunitário relatado, origem não verificada",
-                detail = safe_text(event.message, 500) or "Um mod enviou um evento sem mensagem legível.",
+                detail = signature ~= "unclassified" and interpretation or event_message,
                 evidence = {
                     event_id = tonumber(event.id),
                     event_kind = event.kind,
+                    signature = signature,
+                    interpretation = interpretation,
                     source_claimed = source_mod_id,
                     source_verified = false,
                     claimed_mod_active = source_mod_active,
                     repeat_count = tonumber(event.repeat_count) or 1,
                     prefab = safe_text(event.prefab, 80),
                     component = safe_text(event.component, 40),
-                    stack_excerpt = safe_text(event.stack, 1200),
+                    stack_excerpt = event_stack,
                 },
             })
         end
