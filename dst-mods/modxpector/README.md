@@ -54,7 +54,7 @@ Gera um ZIP de teste em `dist/modxpector/`, sem incluir relatórios temporários
 
 O fluxo de teste assistido por IA usa o backend local do Cérebro Secundário e Ollama em loopback. A integração permanece desativada por padrão.
 
-1. Configure a ponte local seguindo [a documentação da ponte no Cérebro Secundário](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/main/docs/modxpector-local-ai-bridge.md).
+1. Configure a ponte local seguindo [a documentação da ponte no Cérebro Secundário](https://github.com/andrewrodrigo2003-create/cerebro-secundario/blob/feature/modxpector-local-ai-bridge-2026-11-24/docs/modxpector-local-ai-bridge.md).
 2. Nas opções do ModXpector, ative **IA local para executar testes automáticos** e **Modo de testes controlados**.
 3. Entre no mundo, abra o ModXpector com F6 e selecione **IA / Testes**.
 4. Informe o objetivo e revise as allowlists de prefabs e ações.
