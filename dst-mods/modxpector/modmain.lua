@@ -55,16 +55,20 @@ if type(GetModConfigData) == "function" then
     local config_ok, config_value = pcall(GetModConfigData, "accept_community_events")
     community_event_ingestion_enabled = config_ok and config_value == true
 end
+local COMMUNITY_EVENTS_CONFIGURED = false
 if COMMUNITY_EVENTS_OK then
     local configure_ok, configure_error = pcall(COMMUNITY_EVENTS.Configure,
         community_event_ingestion_enabled, GetTime)
+    COMMUNITY_EVENTS_CONFIGURED = configure_ok
     if not configure_ok then
         print("[ModXpector] COMMUNITY_EVENT_CONFIGURE_FAILED " .. tostring(configure_error))
     end
 end
 
 local function report_community_diagnostic_event(event)
-    if not COMMUNITY_EVENTS_OK then return false, "community_event_module_unavailable" end
+    if not COMMUNITY_EVENTS_OK or not COMMUNITY_EVENTS_CONFIGURED then
+        return false, "community_event_module_unavailable"
+    end
     return COMMUNITY_EVENTS.Report(event)
 end
 DST_GLOBAL.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT = report_community_diagnostic_event
@@ -160,7 +164,7 @@ local function run_embedded_ai_diagnostics(callback)
                 reason = RUNTIME_OBSERVER_OK and "observer_snapshot_unavailable" or "observer_module_unavailable",
             }
         end
-        if COMMUNITY_EVENTS_OK then
+        if COMMUNITY_EVENTS_OK and COMMUNITY_EVENTS_CONFIGURED then
             local events_ok, event_snapshot = pcall(COMMUNITY_EVENTS.Snapshot)
             if events_ok and type(event_snapshot) == "table" then
                 snapshot.community_events = event_snapshot
@@ -174,7 +178,8 @@ local function run_embedded_ai_diagnostics(callback)
                 events = {},
                 event_count = 0,
                 dropped = 0,
-                reason = COMMUNITY_EVENTS_OK and "event_snapshot_unavailable" or "event_module_unavailable",
+                reason = COMMUNITY_EVENTS_OK and COMMUNITY_EVENTS_CONFIGURED
+                    and "event_snapshot_unavailable" or "event_module_unavailable",
             }
         end
     end
