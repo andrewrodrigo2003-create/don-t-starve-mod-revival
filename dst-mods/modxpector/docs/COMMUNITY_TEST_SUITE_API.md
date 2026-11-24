@@ -144,3 +144,10 @@ O inventário faz uma sondagem somente de leitura à API pública `DevToolsAPI:G
 O motor oferece agora `MemorySelector`, `MemorySequence`, `AsyncAction` e `ResetMemory`. Os composites mantêm o índice do filho que retornou `RUNNING`, retomam desse ponto no próximo tick e limpam o cursor quando terminam ou falham. Cada composite exige uma chave de memória única no contexto.
 
 Essa evolução é uma implementação original inspirada conceitualmente no uso de comportamentos stateful do Artificial Wilson; nenhum código desse repositório foi copiado. Ela prepara a IA para tarefas de vários ticks sem reiniciar precondições e ramos já concluídos.
+
+
+## Executor interno de tarefas diagnósticas
+
+O motor executa automaticamente tarefas `internal_read_only` geradas pelo plano: inspecionar erro de carregamento, confirmar dependências ausentes/desativadas, revisar flags, confirmar estado de carregamento e registrar limites de evidência das APIs comunitárias. Cada execução grava status e evidência na sessão. `passed` significa que a investigação confirmou o achado, não que o mod passou em compatibilidade; `failed` significa que a evidência contradisse o achado; `inconclusive` preserva ausência de prova.
+
+O executor não altera o mundo, não executa código de outros mods e não inicia o Virtual Player. Ações do mundo permanecem restritas às suites aprovadas pelo Master.
