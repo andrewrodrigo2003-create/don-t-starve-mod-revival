@@ -126,3 +126,14 @@ O catálogo interno inclui um smoke test opcional para o Workshop **2323760467**
 - O teste verifica existência do alvo e capacidade de aproximação; **não certifica** coleta, combate, mineração, persistência nem compatibilidade geral do mod.
 
 O catálogo só apresenta suites quando o mod proprietário está ativo e todos os prefabs declarados existem no registro local. Isso evita oferecer um teste cujo alvo não está registrado.
+
+
+## Integração opcional com Dev Tools (Workshop 2220506640)
+
+O inventário faz uma sondagem somente de leitura à API pública `DevToolsAPI:GetAPIVersion()`, descrita pelo projeto comunitário `dstmodders/mod-dev-tools` (licença MIT). O ModXpector não carrega nem depende do Dev Tools.
+
+- Se a API estiver disponível em versão documentada `<= 1`, não é criado alerta de incompatibilidade.
+- Se a versão principal observada for maior que 1, a IA cria um achado **provável** para revisão da integração.
+- Se o mod estiver carregado mas a API não for observada, o achado é **desconhecido/informativo**; ausência de API não é tratada como falha confirmada.
+- A chamada é protegida por `pcall`; ausência da API não interrompe o inventário nem o carregamento do ModXpector.
+- A integração não copia código do Dev Tools e não adiciona dependência de Workshop.
