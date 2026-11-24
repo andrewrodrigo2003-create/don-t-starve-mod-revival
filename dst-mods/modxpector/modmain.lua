@@ -617,62 +617,73 @@ end
 
 start_virtual_player = function(inst, plan)
     plan = plan or TEST_PLAN
-    if inst == nil or inst ~= ThePlayer or TheNet == nil then return end
+    if inst == nil or inst ~= ThePlayer or TheNet == nil then return false end
     local dedicated_ok, is_dedicated = pcall(function() return TheNet:IsDedicated() end)
-    if not dedicated_ok or is_dedicated then return end
+    if not dedicated_ok or is_dedicated then return false end
     if GetModConfigData("test_mode") ~= true or not is_test_mode_enabled(plan)
-        or type(plan.steps) ~= "table" or #plan.steps == 0 then return end
-    if virtual_player ~= nil and virtual_player.running then return end
+        or type(plan.steps) ~= "table" or #plan.steps == 0 then return false end
+    if virtual_player ~= nil and virtual_player.running then return false end
 
-    local VirtualPlayer = require("modxpector/virtual_player_client")
-    virtual_player = VirtualPlayer.new(inst, {
-        max_steps = 200,
-        allowed_actions = plan.allowed_actions or {},
-        allowed_prefabs = plan.allowed_prefabs or {},
-        allowed_recipes = plan.allowed_recipes or {},
-        send_rpc = function(kind, request_id, value, count, x, z)
-            if kind == "unlock_recipe" then
-                SendModRPCToServer(MOD_RPC[MODNAME].unlock_recipe, request_id, value)
-            else
-                local rpc = kind == "spawn_item" and MOD_RPC[MODNAME].spawn_item or MOD_RPC[MODNAME].spawn_entity
-                SendModRPCToServer(rpc, request_id, value, count, x, z)
-            end
-        end,
-        on_finished = function(report)
-            if type(DST_GLOBAL.rawset) == "function" then
-                DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT", report)
-            else
-                DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT = report
-            end
-            local result_status = report.outcome == "passed" and "passed"
-                or report.outcome == "failed" and "failed" or "inconclusive"
-            record_embedded_suite_result(plan, result_status, {
-                run_id = plan.run_id,
-                outcome = report.outcome,
-                steps_completed = report.steps_completed,
-                steps_verified = report.steps_verified,
-                steps_unverified = report.steps_unverified,
-                assertions_total = report.assertions_total,
-                assertions_passed = report.assertions_passed,
-            })
-            set_embedded_ai_status("teste_finalizado", tostring(report.outcome or "unknown"))
-            print("[ModXpector] VIRTUAL_PLAYER_FINISHED run_id=" .. tostring(plan.run_id or "none")
-                .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed))
-            for _, result in ipairs(report.results or {}) do
-                print("[ModXpector] step=" .. tostring(result.index) .. " status=" .. tostring(result.status)
-                    .. " detail=" .. tostring(result.detail))
-            end
-            if plan.run_id ~= nil and type(SendModRPCToServer) == "function" then
-                SendModRPCToServer(MOD_RPC[MODNAME].clear_test_plan, plan.run_id)
-            end
-            virtual_player = nil
-        end,
-    })
-    local ok, err = pcall(function() virtual_player:Start(plan) end)
-    if not ok then
-        print("[ModXpector] Virtual Player could not start: " .. tostring(err))
+    local create_ok, controller = pcall(function()
+        local VirtualPlayer = require("modxpector/virtual_player_client")
+        return VirtualPlayer.new(inst, {
+            max_steps = 200,
+            allowed_actions = plan.allowed_actions or {},
+            allowed_prefabs = plan.allowed_prefabs or {},
+            allowed_recipes = plan.allowed_recipes or {},
+            send_rpc = function(kind, request_id, value, count, x, z)
+                if kind == "unlock_recipe" then
+                    SendModRPCToServer(MOD_RPC[MODNAME].unlock_recipe, request_id, value)
+                else
+                    local rpc = kind == "spawn_item" and MOD_RPC[MODNAME].spawn_item or MOD_RPC[MODNAME].spawn_entity
+                    SendModRPCToServer(rpc, request_id, value, count, x, z)
+                end
+            end,
+            on_finished = function(report)
+                if type(DST_GLOBAL.rawset) == "function" then
+                    DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT", report)
+                else
+                    DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT = report
+                end
+                local result_status = report.outcome == "passed" and "passed"
+                    or report.outcome == "failed" and "failed" or "inconclusive"
+                record_embedded_suite_result(plan, result_status, {
+                    run_id = plan.run_id,
+                    outcome = report.outcome,
+                    steps_completed = report.steps_completed,
+                    steps_verified = report.steps_verified,
+                    steps_unverified = report.steps_unverified,
+                    assertions_total = report.assertions_total,
+                    assertions_passed = report.assertions_passed,
+                })
+                set_embedded_ai_status("teste_finalizado", tostring(report.outcome or "unknown"))
+                print("[ModXpector] VIRTUAL_PLAYER_FINISHED run_id=" .. tostring(plan.run_id or "none")
+                    .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed))
+                for _, result in ipairs(report.results or {}) do
+                    print("[ModXpector] step=" .. tostring(result.index) .. " status=" .. tostring(result.status)
+                        .. " detail=" .. tostring(result.detail))
+                end
+                if plan.run_id ~= nil and type(SendModRPCToServer) == "function"
+                    and MOD_RPC[MODNAME].clear_test_plan ~= nil then
+                    SendModRPCToServer(MOD_RPC[MODNAME].clear_test_plan, plan.run_id)
+                end
+                virtual_player = nil
+            end,
+        })
+    end)
+    if not create_ok or type(controller) ~= "table" or type(controller.Start) ~= "function" then
+        print("[ModXpector] Virtual Player creation failed: " .. tostring(controller))
         virtual_player = nil
+        return false
     end
+    virtual_player = controller
+    local start_ok, start_result = pcall(function() return virtual_player:Start(plan) end)
+    if not start_ok or start_result == false then
+        print("[ModXpector] Virtual Player could not start: " .. tostring(start_result))
+        virtual_player = nil
+        return false
+    end
+    return true
 end
 
 local function run_embedded_ai_suite(suite_id, scenario_id, callback)
@@ -768,7 +779,18 @@ if type(AddClientModRPCHandler) == "function" then
         pending_ai_plan = nil
         if success == true then
             set_embedded_ai_status("plano_aceito", "Master validou a suite; iniciando Virtual Player.")
-            start_virtual_player(ThePlayer, plan)
+            local started = start_virtual_player(ThePlayer, plan)
+            if not started then
+                record_embedded_suite_result(plan, "inconclusive", {
+                    run_id = plan.run_id,
+                    executor_started = false,
+                    reason = "Virtual Player could not start after Master acceptance",
+                })
+                if type(SendModRPCToServer) == "function" and MOD_RPC[MODNAME].clear_test_plan ~= nil then
+                    SendModRPCToServer(MOD_RPC[MODNAME].clear_test_plan, plan.run_id)
+                end
+                set_embedded_ai_status("executor_indisponivel", "Master aceitou, mas o Virtual Player não conseguiu iniciar.")
+            end
         else
             record_embedded_suite_result(plan, "inconclusive", {
                 run_id = plan.run_id,
