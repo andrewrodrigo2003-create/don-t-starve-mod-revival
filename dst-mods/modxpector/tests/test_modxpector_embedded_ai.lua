@@ -7,6 +7,22 @@ local function find_code(analysis, code)
     end
 end
 
+local BT = AI.BehaviorTree
+local selector = BT.Selector({
+    BT.Condition(function(context) return context.critical == true end, "critical_branch"),
+    BT.Action(function() return "fallback_branch" end),
+})
+local bt_status, bt_value = BT.Tick(selector, { critical = true })
+assert(bt_status == BT.SUCCESS and bt_value == "critical_branch", "selector must choose the first successful branch")
+local sequence = BT.Sequence({
+    BT.Condition(function(context) return context.allowed == true end, "precondition"),
+    BT.Action(function(context) return context.value end),
+})
+bt_status, bt_value = BT.Tick(sequence, { allowed = true, value = "sequence_complete" })
+assert(bt_status == BT.SUCCESS and bt_value == "sequence_complete", "sequence must stop only when a child fails")
+bt_status = BT.Tick(BT.Action(function() error("synthetic policy fault") end), {})
+assert(bt_status == BT.FAILURE, "behavior tree errors must fail closed")
+
 local invalid = AI.Analyze({ schema = "wrong" })
 assert(invalid.status == "invalid_input", "invalid schema must fail closed")
 
@@ -58,6 +74,7 @@ local snapshot = {
 local analysis = AI.Analyze(snapshot)
 assert(analysis.schema == AI.SCHEMA, "analysis schema missing")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
+assert(analysis.decision == "investigate_critical_load_failures", "behavior tree must prioritize critical load failures")
 assert(analysis.summary.critical == 1, "load failure should be critical")
 assert(analysis.summary.errors == 2, "missing dependency and invalid flags should be errors")
 assert(analysis.summary.warnings == 2, "disabled dependency and unobserved load should be warnings")
@@ -75,6 +92,8 @@ assert(plan.schema == AI.PLAN_SCHEMA, "diagnostic plan schema missing")
 assert(plan.mode == "read_only", "plan must remain read-only")
 assert(plan.total == #analysis.findings, "each finding should map to a unique diagnostic task")
 assert(plan.tasks[1].kind == "inspect_load_error", "highest priority diagnostic should be first")
+assert(plan.tasks[1].utility > plan.tasks[2].utility, "utility scoring must rank critical evidence above lower-severity findings")
+assert(AI.BuildPlan(analysis).tasks[1].id == plan.tasks[1].id, "task identifiers must remain stable across identical analyses")
 for _, task in ipairs(plan.tasks) do
     assert(task.execution == "internal_read_only", "diagnostic task must not execute game actions")
     assert(task.requires_virtual_player == false, "diagnostic task must not claim Virtual Player execution")
