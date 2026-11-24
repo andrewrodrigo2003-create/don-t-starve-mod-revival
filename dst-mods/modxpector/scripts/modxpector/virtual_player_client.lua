@@ -254,6 +254,18 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         assert(self.allowed_prefabs[prefab], "assertion item prefab is not in the test plan allowlist")
         actual = inventory:Has(prefab, assertion.count, true)
         expected = assertion.expected ~= false
+    elseif kind == "player_knows_recipe" then
+        local recipe_name = assert(assertion.recipe, "assertion recipe required")
+        assert(type(recipe_name) == "string" and #recipe_name > 0 and #recipe_name <= 128
+            and recipe_name:match("^[%w_%-]+$"), "invalid assertion recipe name")
+        assert(self.allowed_recipes[recipe_name], "assertion recipe is not in the test plan allowlist")
+        assert(type(GetValidRecipe) == "function", "GetValidRecipe API unavailable")
+        local recipe = GetValidRecipe(recipe_name)
+        assert(recipe ~= nil, "assertion recipe is not registered: " .. recipe_name)
+        local builder = self.player.replica ~= nil and self.player.replica.builder or nil
+        assert(builder ~= nil and type(builder.KnowsRecipe) == "function", "player builder replica unavailable")
+        actual = builder:KnowsRecipe(recipe)
+        expected = assertion.expected ~= false
     elseif kind == "player_equipped" then
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
         assert(inventory ~= nil and type(inventory.GetEquippedItem) == "function", "inventory replica GetEquippedItem unavailable")
