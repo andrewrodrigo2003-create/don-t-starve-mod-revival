@@ -358,6 +358,10 @@ assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_STATUS', 1, true),
     "dashboard must show embedded AI status")
 assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_REPORT', 1, true),
     "dashboard must show diagnostic findings")
+assert(screen_source:find("Investigações:", 1, true),
+    "dashboard must show read-only diagnostic task execution")
+assert(screen_source:find("Componentes runtime:", 1, true),
+    "dashboard must show runtime component observation state")
 assert(screen_source:find('Executar análise da IA embarcada', 1, true),
     "dashboard must expose a button for the offline reasoning engine")
 assert(not screen_source:find('Ollama local', 1, true),
