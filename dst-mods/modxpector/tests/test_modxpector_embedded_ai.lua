@@ -129,6 +129,40 @@ local selected = AI.SelectSuites({ community_suite }, {
     },
 })
 assert(#selected == 1 and selected[1].confidence == "confirmed", "suite should be selected only for a loaded owner mod")
+local selected_without_prefab = AI.SelectSuites({ community_suite }, {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "workshop-100", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
+    },
+}, {})
+assert(#selected_without_prefab == 0, "suite must not be offered when its declared prefab is not registered")
+local selected_with_prefab = AI.SelectSuites({ community_suite }, {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "workshop-100", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
+    },
+}, { grass = true })
+assert(#selected_with_prefab == 1, "suite should be offered when its owner and prefab are both present")
+
+local builtin_suites = AI.GetBuiltinSuites()
+assert(#builtin_suites == 1 and builtin_suites[1].owner_mod_id == "workshop-2323760467",
+    "built-in community catalog should include the verified Friendly Skeleton Workshop entry")
+local friendly_skeleton_snapshot = {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "workshop-2323760467", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
+    },
+}
+local friendly_selected = AI.SelectSuites(builtin_suites, friendly_skeleton_snapshot, { skeletonservant = true })
+assert(#friendly_selected == 1 and friendly_selected[1].suite.id == "friendly_skeleton_servant_smoke",
+    "Friendly Skeleton smoke suite should require the active mod and registered servant prefab")
+local friendly_plan = AI.BuildVirtualPlayerPlan(friendly_selected[1].suite,
+    "approach_existing_servant", "friendly_skeleton_run_1")
+assert(friendly_plan ~= nil and friendly_plan.steps[1].target.prefab == "skeletonservant",
+    "Friendly Skeleton smoke suite should compile to a Virtual Player plan")
+local friendly_missing_prefab = AI.SelectSuites(builtin_suites, friendly_skeleton_snapshot, {})
+assert(#friendly_missing_prefab == 0,
+    "Friendly Skeleton suite must stay hidden if the mod prefab is not registered")
 local vp_plan, vp_error = AI.BuildVirtualPlayerPlan(community_suite, "approach_grass", "suite_run_1")
 assert(vp_plan ~= nil and vp_error == nil, "valid suite should compile into a Virtual Player plan")
 assert(vp_plan.schema == "modxpector/test-plan/v1" and vp_plan.enabled == true)
