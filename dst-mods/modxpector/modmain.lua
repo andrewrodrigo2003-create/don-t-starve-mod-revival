@@ -595,6 +595,26 @@ local virtual_player
 local start_virtual_player
 local pending_ai_plan
 
+local function record_embedded_suite_result(plan, status, evidence)
+    if not EMBEDDED_AI_OK or embedded_ai_session == nil or type(plan) ~= "table"
+        or type(plan.suite_id) ~= "string" or type(plan.scenario_id) ~= "string" then return end
+    local task_id = "suite-" .. plan.suite_id .. "-" .. plan.scenario_id .. "-" .. tostring(plan.run_id or "unknown")
+    EMBEDDED_AI.RecordTaskResult(embedded_ai_session, task_id, status, evidence)
+    local result = { suite_id = plan.suite_id, scenario_id = plan.scenario_id, status = status, evidence = evidence or {} }
+    if type(DST_GLOBAL.rawset) == "function" then
+        DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_LAST_SUITE_RESULT", result)
+        DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_SESSION", embedded_ai_session)
+    else
+        DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_LAST_SUITE_RESULT = result
+        DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_SESSION = embedded_ai_session
+    end
+    local current_report = DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_REPORT
+    if type(current_report) == "table" then
+        current_report.session = embedded_ai_session
+        current_report.last_suite_result = result
+    end
+end
+
 start_virtual_player = function(inst, plan)
     plan = plan or TEST_PLAN
     if inst == nil or inst ~= ThePlayer or TheNet == nil then return end
@@ -624,6 +644,17 @@ start_virtual_player = function(inst, plan)
             else
                 DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT = report
             end
+            local result_status = report.outcome == "passed" and "passed"
+                or report.outcome == "failed" and "failed" or "inconclusive"
+            record_embedded_suite_result(plan, result_status, {
+                run_id = plan.run_id,
+                outcome = report.outcome,
+                steps_completed = report.steps_completed,
+                steps_verified = report.steps_verified,
+                steps_unverified = report.steps_unverified,
+                assertions_total = report.assertions_total,
+                assertions_passed = report.assertions_passed,
+            })
             set_embedded_ai_status("teste_finalizado", tostring(report.outcome or "unknown"))
             print("[ModXpector] VIRTUAL_PLAYER_FINISHED run_id=" .. tostring(plan.run_id or "none")
                 .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed))
@@ -711,6 +742,11 @@ if type(AddClientModRPCHandler) == "function" then
             set_embedded_ai_status("plano_aceito", "Master validou a suite; iniciando Virtual Player.")
             start_virtual_player(ThePlayer, plan)
         else
+            record_embedded_suite_result(plan, "inconclusive", {
+                run_id = plan.run_id,
+                master_rejected = true,
+                reason = tostring(message or "Master rejeitou o plano."),
+            })
             set_embedded_ai_status("plano_rejeitado", tostring(message or "Master rejeitou o plano."))
             print("[ModXpector] EMBEDDED_AI_PLAN_REJECTED reason=" .. tostring(message))
         end
