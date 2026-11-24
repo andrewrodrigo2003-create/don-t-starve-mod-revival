@@ -127,7 +127,7 @@ local selected = AI.SelectSuites({ community_suite }, {
     mods = {
         { id = "workshop-100", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
     },
-})
+}, { grass = true })
 assert(#selected == 1 and selected[1].confidence == "confirmed", "suite should be selected only for a loaded owner mod")
 local selected_without_prefab = AI.SelectSuites({ community_suite }, {
     schema = "modxpector/world-inventory/v2",
