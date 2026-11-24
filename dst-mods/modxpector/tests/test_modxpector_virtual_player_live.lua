@@ -36,8 +36,14 @@ player = {
     replica = {
         inventory = {
             FindItem = function(_, fn)
-                local item = { prefab = "cutgrass" }
-                return fn(item) and item or nil
+                local items = { { prefab = "cutgrass" } }
+                if player ~= nil and player.crafted_recipe == "axe" then
+                    items[#items + 1] = { prefab = "axe" }
+                end
+                for _, item in ipairs(items) do
+                    if fn(item) then return item end
+                end
+                return nil
             end,
             Has = function(_, prefab, count) return prefab == "cutgrass" and count <= 2 end,
             GetEquippedItem = function(_, slot)
@@ -73,12 +79,23 @@ player = {
     DoTaskInTime = function(_, delay, fn) current_time = current_time + (delay or 0); fn() end,
     GetBufferedAction = function() return nil end,
 }
+local structure_target = {
+    prefab = "structure",
+    IsValid = function() return true end,
+    HasTag = function() return false end,
+    Transform = { GetWorldPosition = function() return 2, 0, 3 end },
+}
+TheSim.FindEntities = function()
+    local found = { target }
+    if player ~= nil and player.placed_recipe ~= nil then found[#found + 1] = structure_target end
+    return found
+end
 local VirtualPlayer = require("modxpector/virtual_player_client")
 local finished
 local controller
 controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
-    allowed_prefabs = { "cutgrass", "axe", "tree" },
+    allowed_prefabs = { "cutgrass", "axe", "tree", "structure" },
     allowed_recipes = { "axe", "structure" },
     send_rpc = function(kind, request_id, value, count, _x, _z)
         if kind == "unlock_recipe" then
@@ -106,11 +123,14 @@ local plan = {
         { kind = "assert", assertion = { kind = "player_health_gte", value = 100 } },
         { kind = "assert", assertion = { kind = "player_hunger_gte", value = 70 } },
         { kind = "assert", assertion = { kind = "player_sanity_gte", value = 80 } },
-        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 } },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_step = 3 },
+        { kind = "assert", assertion = { kind = "player_knows_recipe", recipe = "axe" }, verifies_step = 4 },
+        { kind = "assert", assertion = { kind = "player_has_item", prefab = "axe" }, verifies_step = 5 },
+        { kind = "assert", assertion = { kind = "target_exists", target = { prefab = "structure" } }, verifies_step = 6 },
         { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe" } },
         { kind = "assert", assertion = { kind = "player_near_target", target = { prefab = "tree" }, radius = 5 } },
         { kind = "assert", assertion = { kind = "target_exists", target = { prefab = "tree" } } },
-        { kind = "assert", assertion = { kind = "target_health_lte", target = { prefab = "tree" }, value = 30 } },
+        { kind = "assert", assertion = { kind = "target_health_lte", target = { prefab = "tree" }, value = 30 }, verifies_step = 1 },
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
     },
@@ -124,6 +144,8 @@ assert(finished.assertions_total == 11 and finished.assertions_passed == 11)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
+assert(finished.steps_verified == 5 and finished.steps_unverified == 0,
+    "all five side-effect steps must have explicit post-action verification")
 assert(player.crafted_recipe == "axe" and crafted_calls == 1)
 assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
@@ -364,3 +386,21 @@ callback_runtime_report = callback_runtime_controller:GetReport()
 assert(callback_runtime_report.running == false and callback_runtime_report.outcome == "passed")
 assert(string.find(callback_runtime_report.on_finished_error, "simulated report callback failure", 1, true))
 print("MODXPECTOR_VIRTUAL_PLAYER_RUNTIME_GUARD_CONTRACT_OK")
+
+-- A passing unrelated assertion must not turn an unverified action into a passed run.
+local unverified_report
+local unverified_controller = VirtualPlayer.new(player, {
+    allowed_prefabs = { "tree" },
+    on_finished = function(report) unverified_report = report end,
+})
+assert(unverified_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = {
+        { kind = "action", action = "CHOP" },
+        { kind = "assert", assertion = { kind = "player_health_gte", value = 100 } },
+    },
+}))
+assert(unverified_report ~= nil and unverified_report.outcome == "inconclusive")
+assert(unverified_report.steps_unverified == 1 and unverified_report.unverified_step_indices[1] == 1)
+print("MODXPECTOR_VIRTUAL_PLAYER_POST_ACTION_VERIFICATION_CONTRACT_OK")
