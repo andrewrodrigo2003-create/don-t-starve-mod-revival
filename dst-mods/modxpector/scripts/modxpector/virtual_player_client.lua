@@ -192,8 +192,13 @@ function VirtualPlayer:_finish(ok, message)
     end
     self:_record({ kind = "run" }, ok and "completed" or "failed", message)
     if self.on_finished ~= nil then
-        local callback_ok, callback_error = pcall(self.on_finished, self:GetReport())
-        if not callback_ok then self.on_finished_error = tostring(callback_error) end
+        local report_ok, report_or_error = pcall(function() return self:GetReport() end)
+        if report_ok then
+            local callback_ok, callback_error = pcall(self.on_finished, report_or_error)
+            if not callback_ok then self.on_finished_error = tostring(callback_error) end
+        else
+            self.on_finished_error = "could not build final report: " .. tostring(report_or_error)
+        end
     end
 end
 
@@ -663,10 +668,15 @@ function VirtualPlayer:GetReport()
     elseif all_assertions_passed and #unverified_step_indices == 0 then
         outcome = "passed"
     end
+    local player_prefab
+    if self.player ~= nil and type(self.player.IsValid) == "function" then
+        local player_ok, player_valid = pcall(self.player.IsValid, self.player)
+        if player_ok and player_valid == true then player_prefab = self.player.prefab end
+    end
     return {
         schema = "modxpector/live-virtual-player/v1",
         evidence_level = "in-game-runner-unvalidated",
-        player = self.player ~= nil and self.player:IsValid() and self.player.prefab or nil,
+        player = player_prefab,
         running = self.running,
         steps_completed = self.steps_completed or 0,
         steps_verified = self.steps_verified or 0,
