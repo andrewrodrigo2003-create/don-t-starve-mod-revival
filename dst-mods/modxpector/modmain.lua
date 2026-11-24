@@ -31,7 +31,7 @@ if type(GetModConfigData) == "function" then
     runtime_component_observation_enabled = config_ok and config_value == true
 end
 if RUNTIME_OBSERVER_OK then
-    local register_call_ok, observer_available, observer_error = pcall(RUNTIME_OBSERVER.Register,
+    local register_call_ok, observer_available = pcall(RUNTIME_OBSERVER.Register,
         AddComponentPostInit, DST_GLOBAL, runtime_component_observation_enabled, pcall, GetTime)
     if not register_call_ok then
         print("[ModXpector] RUNTIME_COMPONENT_OBSERVER_REGISTER_FAILED " .. tostring(observer_available))
