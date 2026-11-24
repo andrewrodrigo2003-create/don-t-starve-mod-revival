@@ -330,8 +330,13 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         expected = assertion.expected ~= false
     elseif kind == "player_near_target" then
         local target = self:_resolve_assertion_target(assertion)
+        local target_valid = target ~= nil
+        if target_valid and type(target.IsValid) == "function" then
+            local valid_ok, valid = pcall(target.IsValid, target)
+            target_valid = valid_ok and valid == true
+        end
         actual = false
-        if target ~= nil and self.player.Transform ~= nil and target.Transform ~= nil
+        if target_valid and self.player.Transform ~= nil and target.Transform ~= nil
             and type(self.player.Transform.GetWorldPosition) == "function"
             and type(target.Transform.GetWorldPosition) == "function" then
             local px, _, pz = self.player.Transform:GetWorldPosition()
@@ -352,6 +357,10 @@ function VirtualPlayer:_evaluate_assertion(assertion)
     elseif kind == "target_health_lte" then
         local target = self:_resolve_assertion_target(assertion)
         assert(target ~= nil, "health assertion target not found")
+        if type(target.IsValid) == "function" then
+            local valid_ok, valid = pcall(target.IsValid, target)
+            assert(valid_ok and valid == true, "health assertion target is no longer valid")
+        end
         local health = target.replica ~= nil and target.replica.health or nil
         assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
         actual, expected = health:GetCurrent(), tonumber(assertion.value)
