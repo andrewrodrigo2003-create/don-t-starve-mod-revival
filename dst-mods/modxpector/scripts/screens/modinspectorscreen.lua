@@ -594,12 +594,20 @@ function InspectorScreen:Refresh()
             .. " | críticos: " .. tostring(summary.critical or 0)
             .. " | erros: " .. tostring(summary.errors or 0)
             .. " | avisos: " .. tostring(summary.warnings or 0), -35, 15)
+        local runtime = type(analysis) == "table" and type(analysis.registry) == "table"
+            and analysis.registry.runtime_components or {}
+        local runtime_label = runtime.enabled ~= true and "Desativada"
+            or (runtime.available == true and "Ativa" or "Indisponível")
+        self:AddLine("Componentes runtime: " .. runtime_label
+            .. " | eventos: " .. tostring(runtime.event_count or 0)
+            .. " | prefabs: " .. tostring(type(runtime.observed_prefabs) == "table" and #runtime.observed_prefabs or 0)
+            .. " | descartados: " .. tostring(runtime.dropped or 0), -55, 13)
         local findings = type(analysis) == "table" and analysis.findings or {}
         for i = 1, math.min(#findings, 5) do
             local finding = findings[i]
             self:AddLine("[" .. tostring(finding.severity) .. "] "
                 .. tostring(finding.mod_name or finding.mod_id)
-                .. ": " .. tostring(finding.title) .. " (" .. tostring(finding.confidence) .. ")", -65 - (i - 1) * 27, 12)
+                .. ": " .. tostring(finding.title) .. " (" .. tostring(finding.confidence) .. ")", -82 - (i - 1) * 27, 12)
         end
         local plan = type(ai_report) == "table" and ai_report.plan or nil
         local next_task = type(ai_report) == "table" and ai_report.next_task or nil
