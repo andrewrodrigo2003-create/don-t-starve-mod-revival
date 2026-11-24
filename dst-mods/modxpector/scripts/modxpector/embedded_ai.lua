@@ -130,8 +130,15 @@ function BehaviorTree.MemorySelector(children, memory_key)
         if memory == nil then
             return BehaviorTree.FAILURE, nil, "memory selector requires a context and unique key"
         end
-        local index = memory[memory_key] or 1
-        while index <= #(children or {}) do
+        if type(children) ~= "table" then
+            memory[memory_key] = nil
+            return BehaviorTree.FAILURE, nil, "memory selector children must be a table"
+        end
+        local index = memory[memory_key]
+        if type(index) ~= "number" or index ~= math.floor(index) or index < 1 or index > #children then
+            index = 1
+        end
+        while index <= #children do
             local child = children[index]
             if type(child) ~= "function" then
                 memory[memory_key] = nil
@@ -162,9 +169,16 @@ function BehaviorTree.MemorySequence(children, memory_key)
         if memory == nil then
             return BehaviorTree.FAILURE, nil, "memory sequence requires a context and unique key"
         end
-        local index = memory[memory_key] or 1
+        if type(children) ~= "table" then
+            memory[memory_key] = nil
+            return BehaviorTree.FAILURE, nil, "memory sequence children must be a table"
+        end
+        local index = memory[memory_key]
+        if type(index) ~= "number" or index ~= math.floor(index) or index < 1 or index > #children then
+            index = 1
+        end
         local last_result
-        while index <= #(children or {}) do
+        while index <= #children do
             local child = children[index]
             if type(child) ~= "function" then
                 memory[memory_key] = nil
