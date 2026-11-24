@@ -103,7 +103,11 @@ local function run_embedded_ai_diagnostics(callback)
         return false
     end
     local next_task = EMBEDDED_AI.NextTask(plan, embedded_ai_session)
-    local selected_suites = EMBEDDED_AI.SelectSuites(embedded_ai_test_suites, snapshot)
+    local candidate_suites = EMBEDDED_AI.GetBuiltinSuites()
+    for _, suite in ipairs(embedded_ai_test_suites) do
+        candidate_suites[#candidate_suites + 1] = suite
+    end
+    local selected_suites = EMBEDDED_AI.SelectSuites(candidate_suites, snapshot, DST_GLOBAL.Prefabs)
     local report = {
         schema = "modxpector/embedded-ai-report/v1",
         snapshot = snapshot,
