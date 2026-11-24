@@ -72,6 +72,9 @@ local globals = {
         enabledmods = { "workshop-100" },
         failedmods = { { name = "workshop-300", error = "modmain.lua: failed to initialize" } },
     },
+    Prefabs = { grass = true, skeletonservant = true, modded_prefab = true },
+    AllRecipes = { spear = {}, modded_recipe = {} },
+    ThePlayer = { components = { health = {}, inventory = {}, modded_component = {} } },
     TheWorld = { prefab = "forest", ismastersim = true },
     TheNet = {
         IsDedicated = function() return false end,
@@ -93,6 +96,12 @@ assert(result.counts.client_classified == 1)
 assert(result.capabilities.load_candidates and result.capabilities.loaded_mod_list)
 assert(result.world.prefab == "forest" and result.world.is_master_sim)
 assert(result.world.is_dedicated == false and result.world.is_server == true)
+assert(result.capabilities.prefab_registry and result.capabilities.recipe_registry)
+assert(result.capabilities.player_component_list)
+assert(result.counts.prefabs == 3 and result.counts.recipes == 2 and result.counts.player_components == 3)
+assert(result.registry.prefabs.names[1] == "grass" and result.registry.prefabs.names[2] == "modded_prefab")
+assert(result.registry.recipes.names[1] == "modded_recipe" and result.registry.recipes.names[2] == "spear")
+assert(result.registry.player_components.names[1] == "health")
 assert(result.community_apis.dev_tools.available == true)
 assert(result.community_apis.dev_tools.version_observed == true)
 assert(result.community_apis.dev_tools.version == 0.1)
@@ -128,6 +137,10 @@ assert(not unknown.capabilities.known_mod_list)
 assert(not unknown.capabilities.loaded_mod_list)
 assert(unknown.community_apis.dev_tools.available == false)
 assert(unknown.community_apis.dev_tools.version_observed == false)
+assert(unknown.capabilities.prefab_registry == false)
+assert(unknown.capabilities.recipe_registry == false)
+assert(unknown.capabilities.player_component_list == false)
+assert(unknown.registry.prefabs.available == false and unknown.registry.recipes.available == false)
 
 local broken = inventory.Collect({
     pcall = pcall,
