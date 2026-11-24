@@ -113,6 +113,11 @@ local function run_embedded_ai_diagnostics(callback)
         if RUNTIME_OBSERVER_OK then
             local observer_ok, observer_snapshot = pcall(RUNTIME_OBSERVER.Snapshot, DST_GLOBAL)
             if observer_ok and type(observer_snapshot) == "table" then
+                if runtime_component_observation_enabled and observer_snapshot.enabled ~= true then
+                    observer_snapshot.enabled = true
+                    observer_snapshot.available = false
+                    observer_snapshot.reason = observer_snapshot.reason or "registration_failed"
+                end
                 snapshot.runtime_components = observer_snapshot
             end
         end
