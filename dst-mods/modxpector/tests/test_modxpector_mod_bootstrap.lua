@@ -37,7 +37,7 @@ TheNet = {
 }
 TheWorld = { ismastersim = true }
 local TheSim = { QueryServer = function() query_calls = query_calls + 1 end }
-Prefabs = { cutgrass = true }
+Prefabs = { cutgrass = true, grass = true }
 AllRecipes = { axe = { name = "axe" } }
 GetTime = function() return now end
 SendModRPCToClient = function(rpc, userid, request_id, success, message)
@@ -67,6 +67,7 @@ local player = {
 }
 
 local engine_globals = { pcall = pcall, rawset = rawset }
+engine_globals.Prefabs = Prefabs
 local env = setmetatable({
     GLOBAL = engine_globals,
     require = function(path)
