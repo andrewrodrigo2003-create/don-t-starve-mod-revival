@@ -598,10 +598,10 @@ function InspectorScreen:Refresh()
             and analysis.registry.runtime_components or {}
         local runtime_label = runtime.enabled ~= true and "Desativada"
             or (runtime.available == true and "Ativa" or "Indisponível")
-        self:AddLine("Componentes runtime: " .. runtime_label
-            .. " | eventos: " .. tostring(runtime.event_count or 0)
-            .. " | prefabs: " .. tostring(type(runtime.observed_prefabs) == "table" and #runtime.observed_prefabs or 0)
-            .. " | descartados: " .. tostring(runtime.dropped or 0), -55, 13)
+        local task_execution = type(ai_report) == "table" and ai_report.task_execution or {}
+        self:AddLine("Investigações: " .. tostring(task_execution.executed or 0)
+            .. " | componentes: " .. tostring(runtime.event_count or 0) .. " eventos"
+            .. " | observador: " .. runtime_label, -55, 13)
         local findings = type(analysis) == "table" and analysis.findings or {}
         for i = 1, math.min(#findings, 5) do
             local finding = findings[i]
