@@ -479,6 +479,19 @@ assert(replaced_action_controller:Start({
 assert(replaced_action_report ~= nil and replaced_action_report.outcome == "failed")
 assert(replaced_action_report.failure == "buffered action replaced at step 1")
 player.GetBufferedAction = original_buffer_reader
+local invalid_inventory_count_report
+local invalid_inventory_count_controller = VirtualPlayer.new(player, {
+    allowed_prefabs = { "cutgrass" },
+    on_finished = function(report) invalid_inventory_count_report = report end,
+})
+assert(invalid_inventory_count_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 1.5 } } },
+}))
+assert(invalid_inventory_count_report ~= nil and invalid_inventory_count_report.outcome == "failed")
+assert(string.find(invalid_inventory_count_report.failure, "integer between 1 and 10000", 1, true))
+
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
 
 -- Interrupted and malformed steps must leave a step-level failure event in the report.
