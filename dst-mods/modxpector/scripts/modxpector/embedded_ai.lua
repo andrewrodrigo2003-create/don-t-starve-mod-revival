@@ -443,9 +443,7 @@ local SUITE_ASSERTION_ALLOWLIST = {
     player_sanity_gte = true,
     player_has_item = true,
     player_has_item_count_gte = true,
-    player_equipped = true,
     player_near_target = true,
-    player_knows_recipe = true,
     target_exists = true,
     target_has_tag = true,
 }
@@ -496,22 +494,6 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
         or kind == "target_health_lte" then
         if not finite_in_range(assertion.value, 0, 100000) then return nil end
         result.value = assertion.value
-    elseif kind == "player_has_item" or kind == "player_equipped" then
-        if not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true then return nil end
-        result.prefab = assertion.prefab
-        if kind == "player_equipped" then
-            if assertion.slot ~= "HANDS" and assertion.slot ~= "BODY" and assertion.slot ~= "HEAD" then return nil end
-            result.slot = assertion.slot
-        end
-    elseif kind == "player_has_item_count_gte" then
-        if not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true
-            or not finite_in_range(assertion.count, 1, 10000)
-            or assertion.count ~= math.floor(assertion.count) then return nil end
-        result.prefab = assertion.prefab
-        result.count = assertion.count
-    elseif kind == "player_knows_recipe" then
-        if not safe_identifier(assertion.recipe) or recipe_set[assertion.recipe] ~= true then return nil end
-        result.recipe = assertion.recipe
     elseif kind == "player_near_target" or kind == "target_exists" or kind == "target_has_tag" then
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
@@ -547,7 +529,7 @@ function M.ValidateSuite(suite)
     for _, action in ipairs(actions) do
         if SUITE_ACTION_ALLOWLIST[action] ~= true then return false, "action_not_allowed:" .. action end
     end
-    if #suite.scenarios < 1 or #suite.scenarios > 20 or type(suite.scenarios) ~= "table" then
+    if type(suite.scenarios) ~= "table" or #suite.scenarios < 1 or #suite.scenarios > 20 then
         return false, "invalid_scenario_list"
     end
 
@@ -599,6 +581,9 @@ function M.ValidateSuite(suite)
                     or verifies_step ~= math.floor(verifies_step) or previous_actions[verifies_step] ~= true then
                     return false, "assertion_must_verify_prior_action:" .. tostring(index)
                 end
+                if assertion.target_step ~= nil and assertion.target_step ~= verifies_step then
+                    return false, "assertion_target_must_match_verified_action:" .. tostring(index)
+                end
                 verified[verifies_step] = true
                 steps[#steps + 1] = {
                     kind = "assert",
@@ -623,7 +608,8 @@ end
 
 function M.SelectSuites(suites, snapshot)
     local active = {}
-    for _, mod in ipairs(type(snapshot) == "table" and snapshot.mods or {}) do
+    local mods = type(snapshot) == "table" and type(snapshot.mods) == "table" and snapshot.mods or {}
+    for _, mod in ipairs(mods) do
         if type(mod) == "table" and mod.enabled == true
             and not (mod.loaded_known == true and mod.loaded ~= true)
             and mod.load_state ~= "failed" then
