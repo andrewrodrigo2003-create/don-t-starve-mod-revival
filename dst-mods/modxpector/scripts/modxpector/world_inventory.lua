@@ -34,6 +34,23 @@ local function to_set(values)
     return result
 end
 
+local MAX_REGISTRY_NAMES = 256
+local MAX_PLAYER_COMPONENT_NAMES = 128
+
+local function collect_registry_names(value, limit)
+    if type(value) ~= "table" then
+        return { available = false, count = nil, names = {}, truncated = false }
+    end
+    local names = {}
+    for key in pairs(value) do
+        if type(key) == "string" then names[#names + 1] = key end
+    end
+    table.sort(names)
+    local count = #names
+    while #names > limit do table.remove(names) end
+    return { available = true, count = count, names = names, truncated = count > #names }
+end
+
 local function workshop_id(mod_id)
     if type(mod_id) ~= "string" then return nil end
     return mod_id:match("^workshop%-(%d+)$")
@@ -128,6 +145,9 @@ function M.Collect(globals)
         load_candidates = 0,
         loaded = 0,
         failed = 0,
+        prefabs = prefab_registry.count,
+        recipes = recipe_registry.count,
+        player_components = player_components.count,
         server_enabled = 0,
         client_enabled = 0,
         server_classified = server_names_ok and type(server_names) == "table" and #server_names or 0,
@@ -232,6 +252,12 @@ function M.Collect(globals)
 
     local world = globals.TheWorld
     local net = globals.TheNet
+    local prefab_registry = collect_registry_names(globals.Prefabs, MAX_REGISTRY_NAMES)
+    local recipe_registry = collect_registry_names(globals.AllRecipes, MAX_REGISTRY_NAMES)
+    local player = globals.ThePlayer
+    local player_components = collect_registry_names(
+        type(player) == "table" and player.components or nil,
+        MAX_PLAYER_COMPONENT_NAMES)
     local world_name = world ~= nil and clean_string(world.prefab, "unknown", 80) or "unknown"
     local is_master = world ~= nil and world.ismastersim == true
     local os_table = globals.os or os
@@ -253,6 +279,14 @@ function M.Collect(globals)
             load_candidates = load_names_ok and type(load_names) == "table",
             loaded_mod_list = loaded_observable,
             failed_mod_list = manager ~= nil and type(manager.failedmods) == "table",
+            prefab_registry = prefab_registry.available,
+            recipe_registry = recipe_registry.available,
+            player_component_list = player_components.available,
+        },
+        registry = {
+            prefabs = prefab_registry,
+            recipes = recipe_registry,
+            player_components = player_components,
         },
         counts = counts,
         truncated = truncated,
