@@ -16,6 +16,27 @@ if not INVENTORY_OK then
     print("[ModXpector] WORLD_INVENTORY_MODULE_LOAD_FAILED " .. tostring(INVENTORY_LOAD_ERROR))
     WORLD_INVENTORY = nil
 end
+local RUNTIME_OBSERVER_OK, RUNTIME_OBSERVER = pcall(require, "modxpector/runtime_observer")
+if not RUNTIME_OBSERVER_OK or type(RUNTIME_OBSERVER) ~= "table"
+    or type(RUNTIME_OBSERVER.Register) ~= "function"
+    or type(RUNTIME_OBSERVER.Snapshot) ~= "function" then
+    print("[ModXpector] RUNTIME_OBSERVER_MODULE_UNAVAILABLE " .. tostring(RUNTIME_OBSERVER))
+    RUNTIME_OBSERVER_OK = false
+    RUNTIME_OBSERVER = nil
+end
+
+local runtime_component_observation_enabled = type(GetModConfigData) == "function"
+    and GetModConfigData("collect_runtime_components") == true
+if RUNTIME_OBSERVER_OK then
+    local registered, observer_state = pcall(RUNTIME_OBSERVER.Register,
+        AddComponentPostInit, DST_GLOBAL, runtime_component_observation_enabled, pcall, GetTime)
+    if not registered then
+        print("[ModXpector] RUNTIME_COMPONENT_OBSERVER_REGISTER_FAILED " .. tostring(observer_state))
+    elseif runtime_component_observation_enabled then
+        print("[ModXpector] RUNTIME_COMPONENT_OBSERVER enabled=true available="
+            .. tostring(type(observer_state) == "table" and observer_state.available == true))
+    end
+end
 local EMBEDDED_AI_OK, EMBEDDED_AI = pcall(require, "modxpector/embedded_ai")
 if not EMBEDDED_AI_OK or type(EMBEDDED_AI) ~= "table" or type(EMBEDDED_AI.Analyze) ~= "function" then
     print("[ModXpector] EMBEDDED_AI_MODULE_LOAD_FAILED " .. tostring(EMBEDDED_AI))
@@ -85,6 +106,24 @@ local function run_embedded_ai_diagnostics(callback)
         return false
     end
     local collect_ok, snapshot = pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)
+    if collect_ok and type(snapshot) == "table" then
+        if RUNTIME_OBSERVER_OK then
+            local observer_ok, observer_snapshot = pcall(RUNTIME_OBSERVER.Snapshot, DST_GLOBAL)
+            if observer_ok and type(observer_snapshot) == "table" then
+                snapshot.runtime_components = observer_snapshot
+            end
+        end
+        if snapshot.runtime_components == nil then
+            snapshot.runtime_components = {
+                schema = "modxpector/runtime-component-observations/v1",
+                enabled = runtime_component_observation_enabled,
+                available = false,
+                components = {},
+                events = {},
+                reason = RUNTIME_OBSERVER_OK and "observer_snapshot_unavailable" or "observer_module_unavailable",
+            }
+        end
+    end
     if not collect_ok or type(snapshot) ~= "table" then
         set_embedded_ai_status("falha_coleta", tostring(snapshot))
         finish(false, "Falha ao observar os mods ativos.")
@@ -116,6 +155,7 @@ local function run_embedded_ai_diagnostics(callback)
         plan = plan,
         next_task = next_task,
         task_execution = task_execution,
+        runtime_components = snapshot.runtime_components,
         session = embedded_ai_session,
         selected_suites = selected_suites,
     }
