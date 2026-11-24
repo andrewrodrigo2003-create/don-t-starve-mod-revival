@@ -34,7 +34,7 @@ Requer Lua 5.1.4. Na raiz do repositório:
 LUA_BIN=lua5.1 bash dst-mods/modxpector/tests/run-lua-tests.sh
 ```
 
-A suíte reproduzível contém seis testes: inventário v2, integração do relatório, UI estática, bootstrap seguro, Virtual Player ao vivo e repetição/limite de ataques. A suíte ampliada do laboratório também cobre APIs e cenários adicionais; o histórico de validação está no Obsidian.
+A suíte reproduzível executa sete arquivos de teste: motor de IA embarcada, inventário v2, módulos/configuração, UI estática, bootstrap seguro, Virtual Player ao vivo e repetição/limite de ataques. A suíte ampliada do laboratório também cobre APIs e cenários adicionais; o histórico de validação está no Obsidian.
 
 ## Empacotamento
 
