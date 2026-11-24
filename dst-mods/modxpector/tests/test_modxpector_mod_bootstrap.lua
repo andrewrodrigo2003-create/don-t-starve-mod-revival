@@ -75,6 +75,8 @@ local env = setmetatable({
             return { schema = "modxpector/test-plan/v1", enabled = true, run_id = "run_1",
                 allow_non_admin_test_player = false, allowed_prefabs = { "cutgrass" },
                 allowed_recipes = { "axe" }, steps = {} }
+        elseif path == "modxpector/runtime_observer" then
+            return dofile("dst-mods/modxpector/scripts/modxpector/runtime_observer.lua")
         elseif path == "modxpector/embedded_ai" then
             return dofile("dst-mods/modxpector/scripts/modxpector/embedded_ai.lua")
         elseif path == "modxpector/world_inventory" then
