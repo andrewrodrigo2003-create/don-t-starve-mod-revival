@@ -10,6 +10,7 @@ local spawned_items = 0
 local inventory_accepts_items = true
 local query_calls = 0
 local unlocked = {}
+local decoded_plan
 
 AddModRPCHandler = function(mod, name, fn)
     rpc_server[name] = fn
@@ -78,6 +79,7 @@ local env = setmetatable({
     Prefabs = Prefabs, AllRecipes = AllRecipes,
     GetTime = GetTime, SendModRPCToClient = SendModRPCToClient, SpawnPrefab = SpawnPrefab,
     MOD_RPC = MOD_RPC, modname = "modxpector_agent_test", print = function() end,
+    json = { decode = function() return decoded_plan end },
 }, { __index = function(_, name)
     if name == "pcall" then return nil end
     return _G[name]
@@ -155,3 +157,84 @@ inventory_accepts_items = true
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
 print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
+
+-- Master rejects malformed Virtual Player plans before storing them.
+admin = true
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "valid_plan_1",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = { "axe" },
+    allowed_actions = {},
+    steps = {
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_steps = { 1, 2 } },
+    },
+}
+rpc_server.set_test_plan(player, "valid_plan_1", "{}")
+assert(responses[#responses].success == true, "master must accept valid multiple-postcondition plans")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "valid_target_1",
+    allowed_prefabs = { "tree" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "CHOP", target = { prefab = "tree" }, target_required = true },
+        { kind = "assert", assertion = { kind = "target_dead", target_step = 1 }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(player, "valid_target_1", "{}")
+assert(responses[#responses].success == true, "master must accept an exact prior-action target reference")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_future_ref",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "assert", assertion = { kind = "player_has_item", prefab = "cutgrass" }, verifies_step = 3 },
+    },
+}
+rpc_server.set_test_plan(player, "invalid_future_ref", "{}")
+assert(responses[#responses].success == false)
+assert(string.find(responses[#responses].message, "invalid postcondition reference", 1, true))
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_target_ref",
+    allowed_prefabs = { "tree" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "wait", seconds = 1 },
+        { kind = "assert", assertion = { kind = "target_dead", target_step = 1 } },
+    },
+}
+rpc_server.set_test_plan(player, "invalid_target_ref", "{}")
+assert(responses[#responses].success == false)
+assert(string.find(responses[#responses].message, "target_step must reference a previous action", 1, true))
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_inventory_count",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 1.5 } },
+    },
+}
+rpc_server.set_test_plan(player, "invalid_inventory_count", "{}")
+assert(responses[#responses].success == false)
+assert(string.find(responses[#responses].message, "inventory assertion count", 1, true))
+print("MODXPECTOR_MASTER_TEST_PLAN_VALIDATION_CONTRACT_OK")
