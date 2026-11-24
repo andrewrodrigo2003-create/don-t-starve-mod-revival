@@ -348,6 +348,18 @@ assert(main:find('token_value:match("^([%w_%-]+)%s*$")', 1, true),
     "bridge token must be a complete token with only optional trailing whitespace")
 assert(not main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "w")', 1, true),
     "ModXpector must never write the bridge token from inside DST")
+
+-- Exercise the exact token pattern extracted from production source.
+local token_pattern = assert(main:match('token_value:match%("([^"]+)"%)'),
+    "production bridge token parser pattern must remain discoverable")
+assert(token_pattern == "^([%w_%-]+)%s*$", "bridge token parser must match the complete token")
+local function parse_bridge_token(value) return value:match(token_pattern) end
+local valid_token = string.rep("a", 48)
+assert(parse_bridge_token(valid_token) == valid_token)
+assert(parse_bridge_token(valid_token .. "\n") == valid_token, "trailing newline must be accepted")
+assert(parse_bridge_token(valid_token .. "\nextra") == nil, "suffix data must be rejected")
+assert(parse_bridge_token(" " .. valid_token) == nil, "leading whitespace must be rejected")
+assert(parse_bridge_token("short") == nil, "short token must be rejected by the caller's length guard")
 print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
 
 -- Navigation discoverability: the AI/Testes and Configuração entries must remain visible.
