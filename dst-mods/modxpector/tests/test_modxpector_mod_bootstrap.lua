@@ -145,6 +145,9 @@ file:close()
 local chunk = assert(loadstring(source, "@modxpector/modmain.lua"))
 setfenv(chunk, env)
 chunk()
+assert(type(engine_globals.MODXPECTOR_RUNTIME_COMPONENTS) == "table"
+    and engine_globals.MODXPECTOR_RUNTIME_COMPONENTS.enabled == false,
+    "runtime component observation must remain disabled by default in the game bootstrap")
 
 local suite_registered, suite_message = engine_globals.MODXPECTOR_REGISTER_TEST_SUITE({
     schema = "modxpector/test-suite/v1",
