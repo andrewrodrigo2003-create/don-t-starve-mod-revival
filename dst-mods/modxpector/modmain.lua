@@ -164,7 +164,7 @@ local function validate_target_reference(plan, index, reference)
     end
     local previous = plan.steps[reference]
     if type(previous) ~= "table" or previous.kind ~= "action"
-        or type(previous.target) ~= "table" then
+        or previous.target_required ~= true or type(previous.target) ~= "table" then
         return false, "target_step must reference a previous action with a target selector"
     end
     return true
@@ -193,7 +193,8 @@ local function validate_plan_assertion(plan, index, step)
             return false, "inventory assertion count must be an integer from 1 to 10000"
         end
         if assertion.kind == "player_equipped" and (type(assertion.slot) ~= "string"
-            or #assertion.slot < 1 or #assertion.slot > 32) then
+            or #assertion.slot < 1 or #assertion.slot > 32
+            or (type(EQUIPSLOTS) == "table" and EQUIPSLOTS[assertion.slot] == nil)) then
             return false, "invalid equipment slot"
         end
     elseif assertion.kind == "player_knows_recipe" then
@@ -243,6 +244,13 @@ end
 
 local function validate_plan_step(plan, index, step)
     if type(step) ~= "table" then return false, "step must be an object" end
+    if step.kind ~= "assert" and (step.verifies_step ~= nil or step.verifies_steps ~= nil) then
+        return false, "only assertion steps may verify side effects"
+    end
+    if step.skin ~= nil and (type(step.skin) ~= "string" or #step.skin > 128
+        or not step.skin:match("^[%w_%-]+$")) then
+        return false, "invalid skin identifier"
+    end
     if step.timeout ~= nil and (not finite_number(step.timeout) or step.timeout < 1 or step.timeout > 120) then
         return false, "invalid step timeout"
     end
@@ -261,6 +269,9 @@ local function validate_plan_step(plan, index, step)
         if step.target_required ~= nil and type(step.target_required) ~= "boolean" then
             return false, "target_required must be boolean"
         end
+        if step.target_required == true and step.target == nil then
+            return false, "target_required action needs a target selector"
+        end
         if step.invobject ~= nil and not prefab_is_allowed(step.invobject, plan) then
             return false, "action inventory object is not in the plan allowlist"
         end
@@ -271,10 +282,11 @@ local function validate_plan_step(plan, index, step)
             return false, "repeat_until_target_dead must be boolean"
         end
         if step.repeat_until_target_dead == true then
+            local repeat_timeout = step.repeat_timeout == nil and 120 or step.repeat_timeout
             if step.action ~= "ATTACK" or step.target_required ~= true
                 or not valid_target_selector(step.target, plan)
                 or not integer_in_range(step.max_repeats, 1, 20)
-                or not finite_number(step.repeat_timeout) or step.repeat_timeout < 1 or step.repeat_timeout > 600 then
+                or not finite_number(repeat_timeout) or repeat_timeout < 1 or repeat_timeout > 600 then
                 return false, "invalid bounded attack repeat configuration"
             end
         elseif step.max_repeats ~= nil or step.repeat_timeout ~= nil then
