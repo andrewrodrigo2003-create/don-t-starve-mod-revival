@@ -93,6 +93,8 @@ assert(source:find('world_inventory_module_unavailable', 1, true),
     "inventory failure must return an explicit unavailable status")
 assert(source:find('steps_verified = tonumber(report.steps_verified) or 0', 1, true),
     "transported reports must include the number of verified side-effect steps")
+assert(source:find('verification_assertions_passed = tonumber(report.verification_assertions_passed) or 0', 1, true),
+    "transported reports must include the number of passed postconditions")
 assert(source:find('steps_unverified = tonumber(report.steps_unverified) or 0', 1, true),
     "transported reports must expose unresolved side-effect steps")
 assert(source:find('unverified_step_indices = report.unverified_step_indices or {}', 1, true),
