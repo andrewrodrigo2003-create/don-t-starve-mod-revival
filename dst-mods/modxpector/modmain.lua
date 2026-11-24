@@ -16,6 +16,12 @@ if not INVENTORY_OK then
     print("[ModXpector] WORLD_INVENTORY_MODULE_LOAD_FAILED " .. tostring(INVENTORY_LOAD_ERROR))
     WORLD_INVENTORY = nil
 end
+local EMBEDDED_AI_OK, EMBEDDED_AI = pcall(require, "modxpector/embedded_ai")
+if not EMBEDDED_AI_OK or type(EMBEDDED_AI) ~= "table" or type(EMBEDDED_AI.Analyze) ~= "function" then
+    print("[ModXpector] EMBEDDED_AI_MODULE_LOAD_FAILED " .. tostring(EMBEDDED_AI))
+    EMBEDDED_AI_OK = false
+    EMBEDDED_AI = nil
+end
 local PLAN_OK, TEST_PLAN = pcall(require, "modxpector/test_plan")
 if not PLAN_OK or type(TEST_PLAN) ~= "table" then
     TEST_PLAN = { schema = "modxpector/test-plan/v1", enabled = false, allowed_prefabs = {}, allowed_recipes = {}, allowed_actions = {}, steps = {} }
@@ -23,10 +29,92 @@ end
 local CONFIG_SNAPSHOT_OK, CONFIG_SNAPSHOT = pcall(require, "inspector/config_snapshot")
 if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNAPSHOT.Read) ~= "function" then
     CONFIG_SNAPSHOT = { Read = function() return {
-        open_key = "KEY_F6", show_debug_info = true, ai_bridge_enabled = false,
+        open_key = "KEY_F6", show_debug_info = true,
         test_mode = false, max_spawn_count = 10,
     } end }
 end
+
+local function set_embedded_ai_status(status, detail, summary)
+    local state = {
+        status = tostring(status or "unknown"),
+        detail = tostring(detail or ""),
+        summary = type(summary) == "table" and summary or {},
+    }
+    if type(DST_GLOBAL.rawset) == "function" then
+        DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS", state)
+    else
+        DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_STATUS = state
+    end
+end
+
+set_embedded_ai_status(EMBEDDED_AI_OK and "pronta" or "indisponivel",
+    EMBEDDED_AI_OK and "Motor simbólico embarcado; sem serviço externo." or "Módulo de IA embarcada indisponível.")
+
+local function run_embedded_ai_diagnostics(callback)
+    local function finish(success, message, report)
+        if type(callback) == "function" then pcall(callback, success == true, tostring(message or ""), report) end
+    end
+    if not EMBEDDED_AI_OK then
+        set_embedded_ai_status("indisponivel", "O módulo embarcado não foi carregado.")
+        finish(false, "Motor de IA embarcada indisponível.")
+        return false
+    end
+    if not INVENTORY_OK or type(WORLD_INVENTORY) ~= "table" or type(WORLD_INVENTORY.Collect) ~= "function" then
+        set_embedded_ai_status("inventario_indisponivel", tostring(INVENTORY_LOAD_ERROR or "Inventário indisponível."))
+        finish(false, "Não foi possível coletar o inventário de mods.")
+        return false
+    end
+    local collect_ok, snapshot = pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)
+    if not collect_ok or type(snapshot) ~= "table" then
+        set_embedded_ai_status("falha_coleta", tostring(snapshot))
+        finish(false, "Falha ao observar os mods ativos.")
+        return false
+    end
+    local analyze_ok, analysis = pcall(EMBEDDED_AI.Analyze, snapshot)
+    if not analyze_ok or type(analysis) ~= "table" then
+        set_embedded_ai_status("falha_analise", tostring(analysis))
+        finish(false, "Falha no motor de diagnóstico embarcado.")
+        return false
+    end
+    local plan_ok, plan = pcall(EMBEDDED_AI.BuildPlan, analysis)
+    if not plan_ok or type(plan) ~= "table" then
+        set_embedded_ai_status("falha_planejamento", tostring(plan))
+        finish(false, "Falha ao priorizar a investigação.")
+        return false
+    end
+    local report = {
+        schema = "modxpector/embedded-ai-report/v1",
+        snapshot = snapshot,
+        analysis = analysis,
+        plan = plan,
+    }
+    if type(DST_GLOBAL.rawset) == "function" then
+        DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_REPORT", report)
+    else
+        DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_REPORT = report
+    end
+    local summary = analysis.summary or {}
+    local next_task = plan.tasks ~= nil and plan.tasks[1] or nil
+    set_embedded_ai_status("analisada", tostring(analysis.statement or "Análise concluída."), summary)
+    print("[ModXpector] EMBEDDED_AI_ANALYSIS status=" .. tostring(analysis.status)
+        .. " findings=" .. tostring(summary.total or 0)
+        .. " tasks=" .. tostring(plan.total or 0))
+    for index, finding in ipairs(analysis.findings or {}) do
+        if index > 8 then break end
+        print("[ModXpector] AI_FINDING code=" .. tostring(finding.code)
+            .. " mod=" .. tostring(finding.mod_id)
+            .. " confidence=" .. tostring(finding.confidence))
+    end
+    if next_task ~= nil then
+        print("[ModXpector] EMBEDDED_AI_NEXT_TASK kind=" .. tostring(next_task.kind)
+            .. " mod=" .. tostring(next_task.mod_id))
+    end
+    finish(true, "Análise concluída: " .. tostring(summary.total or 0)
+        .. " achado(s), " .. tostring(plan.total or 0) .. " tarefa(s) de investigação.", report)
+    return true
+end
+
+DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics
 
 local active_test_plan = nil
 local function current_test_plan()
@@ -964,7 +1052,7 @@ if type(AddPlayerPostInit) == "function" then
         local dedicated_ok, is_dedicated = pcall(function() return TheNet:IsDedicated() end)
         if not dedicated_ok or is_dedicated then return end
         inst:DoTaskInTime(0, function()
-            if inst == ThePlayer then inst:DoTaskInTime(8, function() probe_local_ai_bridge(inst) end) end
+            if inst == ThePlayer then inst:DoTaskInTime(8, function() run_embedded_ai_diagnostics() end) end
             if inst == ThePlayer and is_test_mode_enabled(TEST_PLAN) then start_virtual_player(inst, TEST_PLAN) end
         end)
     end)
