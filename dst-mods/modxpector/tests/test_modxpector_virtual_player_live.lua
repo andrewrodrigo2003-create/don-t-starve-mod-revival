@@ -642,3 +642,59 @@ assert(equipment_report.assertions_total == 2 and equipment_report.assertions_pa
 assert(equipment_report.verification_assertions_passed == 2)
 assert(equipped_item == nil, "UNEQUIP must leave the hands slot empty in this contract")
 print("MODXPECTOR_VIRTUAL_PLAYER_EQUIP_UNEQUIP_CONTRACT_OK")
+
+
+-- The first AI profile must move through the real Virtual Player action path
+-- and verify arrival against the exact entity reference captured by WALKTO.
+local walk_target = {
+    prefab = "grass",
+    IsValid = function() return true end,
+    HasTag = function() return false end,
+    Transform = { GetWorldPosition = function() return 3, 0, 4 end },
+}
+local walk_x, walk_z = 0, 0
+local walk_player = {
+    prefab = "wilson",
+    IsValid = function() return true end,
+    ListenForEvent = function() end,
+    Transform = { GetWorldPosition = function() return walk_x, 0, walk_z end },
+    GetBufferedAction = function() return nil end,
+    DoTaskInTime = function(_, delay, callback)
+        current_time = current_time + (delay or 0)
+        callback()
+    end,
+    components = {
+        playercontroller = {
+            DoAction = function(_, action)
+                assert(action.action == ACTIONS.WALKTO)
+                assert(action.target == walk_target)
+                walk_x, _, walk_z = walk_target.Transform.GetWorldPosition()
+            end,
+        },
+    },
+}
+local original_find_entities = TheSim.FindEntities
+TheSim.FindEntities = function() return { walk_target } end
+local walk_report
+local walk_controller = VirtualPlayer.new(walk_player, {
+    allowed_actions = { "WALKTO" },
+    allowed_prefabs = { "grass" },
+    on_finished = function(report) walk_report = report end,
+})
+assert(walk_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "ai-walkto-safe-profile",
+    allowed_actions = { "WALKTO" },
+    allowed_prefabs = { "grass" },
+    steps = {
+        { kind = "action", action = "WALKTO", target = { prefab = "grass", radius = 12 }, target_required = true },
+        { kind = "assert", assertion = { kind = "player_near_target", target_step = 1, radius = 4 }, verifies_step = 1 },
+    },
+}))
+assert(walk_report ~= nil and walk_report.outcome == "passed")
+assert(walk_report.steps_verified == 1 and walk_report.steps_unverified == 0)
+assert(walk_report.assertions_total == 1 and walk_report.assertions_passed == 1)
+assert(walk_x == 3 and walk_z == 4)
+TheSim.FindEntities = original_find_entities
+print("MODXPECTOR_VIRTUAL_PLAYER_WALKTO_AI_PROFILE_CONTRACT_OK")
