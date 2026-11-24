@@ -69,16 +69,6 @@ configuration_options = {
         default = true,
     },
     {
-        name = "ai_bridge_enabled",
-        label = "Ativar IA local para executar testes automáticos",
-        hover = "Permite ao agente local enviar planos de teste. Exige o serviço ModXpector ativo em 127.0.0.1:8765 e bridge_token.txt válido. Não instala nem inicia a IA; ative também o Modo de testes.",
-        options = {
-            { description = "Ativado", data = true },
-            { description = "Desativado", data = false },
-        },
-        default = false,
-    },
-    {
         name = "test_mode",
         label = "Permitir execução de testes controlados",
         hover = "Autoriza a execução de planos aprovados pelo agente local. Exige a opção de IA local ativada.",
