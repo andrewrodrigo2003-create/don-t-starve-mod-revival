@@ -276,3 +276,91 @@ assert(invalid_count_report ~= nil and invalid_count_report.outcome == "failed")
 assert(invalid_count_report.failure == "invalid spawn count")
 assert(invalid_count_calls == 0, "fractional spawn count must not reach the master RPC")
 print("MODXPECTOR_VIRTUAL_PLAYER_RPC_ALLOWLIST_CONTRACT_OK")
+
+-- Runtime exceptions in PlayerController, scheduler callbacks and RPC dispatch
+-- must terminate the run with a structured failure instead of leaving it stuck.
+local original_do_action = player.components.playercontroller.DoAction
+local action_runtime_report
+player.components.playercontroller.DoAction = function()
+    error("simulated PlayerController failure")
+end
+local action_runtime_controller = VirtualPlayer.new(player, {
+    allowed_prefabs = { "tree" },
+    on_finished = function(report) action_runtime_report = report end,
+})
+assert(action_runtime_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "action", action = "CHOP" } },
+}))
+assert(action_runtime_report ~= nil and action_runtime_report.running == false)
+assert(action_runtime_report.outcome == "failed")
+assert(string.find(action_runtime_report.failure, "simulated PlayerController failure", 1, true))
+player.components.playercontroller.DoAction = original_do_action
+
+local original_task_scheduler = player.DoTaskInTime
+local scheduler_runtime_report
+player.DoTaskInTime = function()
+    error("simulated task scheduler failure")
+end
+local scheduler_runtime_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) scheduler_runtime_report = report end,
+})
+assert(scheduler_runtime_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "wait", seconds = 1 } },
+}))
+assert(scheduler_runtime_report ~= nil and scheduler_runtime_report.running == false)
+assert(scheduler_runtime_report.outcome == "failed")
+assert(string.find(scheduler_runtime_report.failure, "simulated task scheduler failure", 1, true))
+player.DoTaskInTime = original_task_scheduler
+
+local original_get_buffered_action = player.GetBufferedAction
+local buffered_runtime_report
+player.GetBufferedAction = function()
+    error("simulated buffered action read failure")
+end
+local buffered_runtime_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) buffered_runtime_report = report end,
+})
+assert(buffered_runtime_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "action", action = "CHOP" } },
+}))
+assert(buffered_runtime_report ~= nil and buffered_runtime_report.running == false)
+assert(buffered_runtime_report.outcome == "failed")
+assert(string.find(buffered_runtime_report.failure, "simulated buffered action read failure", 1, true))
+player.GetBufferedAction = original_get_buffered_action
+
+local rpc_runtime_report
+local rpc_runtime_controller = VirtualPlayer.new(player, {
+    allowed_recipes = { "axe" },
+    send_rpc = function()
+        error("simulated RPC dispatch failure")
+    end,
+    on_finished = function(report) rpc_runtime_report = report end,
+})
+assert(rpc_runtime_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "unlock_recipe", recipe = "axe" } },
+}))
+assert(rpc_runtime_report ~= nil and rpc_runtime_report.running == false)
+assert(rpc_runtime_report.outcome == "failed")
+assert(string.find(rpc_runtime_report.failure, "simulated RPC dispatch failure", 1, true))
+
+local callback_runtime_report
+local callback_runtime_controller = VirtualPlayer.new(player, {
+    on_finished = function() error("simulated report callback failure") end,
+})
+assert(callback_runtime_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "assert", assertion = { kind = "player_health_gte", value = 100 } } },
+}))
+callback_runtime_report = callback_runtime_controller:GetReport()
+assert(callback_runtime_report.running == false and callback_runtime_report.outcome == "passed")
+assert(string.find(callback_runtime_report.on_finished_error, "simulated report callback failure", 1, true))
+print("MODXPECTOR_VIRTUAL_PLAYER_RUNTIME_GUARD_CONTRACT_OK")
