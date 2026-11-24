@@ -3,7 +3,6 @@
 local M = {}
 
 local MAX_EVENTS = 256
-local MAX_COMPONENTS = 128
 local COMPONENT_ALLOWLIST = {
     "health", "hunger", "sanity", "inventory", "container", "builder",
     "combat", "workable", "pickable", "harvestable", "growable", "follower",
@@ -105,7 +104,7 @@ function M.Register(add_component_post_init, globals, enabled, protected_call, g
     end
 
     state.available = state.hooks_registered > 0
-    state.reason = state.available and nil or "no_component_hooks_registered"
+    if not state.available then state.reason = "no_component_hooks_registered" end
     store_state(globals, state)
     return state.available, state
 end
