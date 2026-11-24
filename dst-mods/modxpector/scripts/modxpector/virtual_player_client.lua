@@ -211,12 +211,13 @@ function VirtualPlayer:_mark_step_verified(step_index)
 end
 
 function VirtualPlayer:_finish(ok, message)
+    self:_cleanup_target_listeners()
     if not ok then
         local current_step = self.queue[self.index]
         if current_step ~= nil then
             local last = self.results[#self.results]
             local terminal_status = {
-                completed = true, passed = true, failed = true, timeout = true,
+                completed = true, passed = true, failed = true, timeout = true, inconclusive = true,
                 submitted_unverified = true, cleared_unverified = true,
             }
             if last == nil or last.index ~= self.index or terminal_status[last.status] ~= true then
@@ -263,6 +264,9 @@ function VirtualPlayer:Start(plan)
     self.steps_verified = 0
     self.unverified_steps = {}
     self.step_targets = {}
+    self.target_death_events = {}
+    self.target_death_callbacks = {}
+    self.run_inconclusive = false
     self.assertions_total = 0
     self.assertions_passed = 0
     self.running = true
@@ -270,17 +274,42 @@ function VirtualPlayer:Start(plan)
     return true
 end
 
-function VirtualPlayer:_is_target_entity_dead(target)
-    if target == nil then return true end
+function VirtualPlayer:_capture_step_target(index, target)
+    if target == nil then return end
+    self.step_targets[index] = target
+    self.target_death_events[index] = false
+    if type(target.ListenForEvent) == "function" then
+        local callback = function() self.target_death_events[index] = true end
+        local ok = pcall(target.ListenForEvent, target, "death", callback)
+        if ok then self.target_death_callbacks[index] = callback end
+    end
+end
+
+function VirtualPlayer:_cleanup_target_listeners()
+    for index, callback in pairs(self.target_death_callbacks or {}) do
+        local target = self.step_targets ~= nil and self.step_targets[index] or nil
+        if target ~= nil and type(target.RemoveEventCallback) == "function" then
+            pcall(target.RemoveEventCallback, target, "death", callback)
+        end
+    end
+    self.target_death_callbacks = {}
+end
+
+function VirtualPlayer:_is_target_entity_dead(target, target_step)
+    if target == nil then return nil end
+    if target_step ~= nil and self.target_death_events ~= nil
+        and self.target_death_events[target_step] == true then
+        return true
+    end
     if type(target.IsValid) == "function" then
         local ok, valid = pcall(target.IsValid, target)
         if not ok then error("target validity check failed: " .. tostring(valid)) end
-        if valid ~= true then return true end
+        if valid ~= true then return nil end
     end
     local health = target.replica ~= nil and target.replica.health or nil
-    assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
+    if health == nil or type(health.GetCurrent) ~= "function" then return nil end
     local current_health = health:GetCurrent()
-    assert(type(current_health) == "number" and current_health == current_health, "target health value unavailable")
+    if type(current_health) ~= "number" or current_health ~= current_health then return nil end
     return current_health <= 0
 end
 
@@ -367,7 +396,7 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         assert(expected ~= nil, "target health assertion value required")
     elseif kind == "target_dead" then
         local target = self:_resolve_assertion_target(assertion)
-        actual = self:_is_target_entity_dead(target)
+        actual = self:_is_target_entity_dead(target, assertion.target_step)
         expected = assertion.expected ~= false
     elseif kind == "target_has_tag" then
         local target = self:_resolve_assertion_target(assertion)
@@ -381,11 +410,18 @@ function VirtualPlayer:_evaluate_assertion(assertion)
     else
         error("unsupported virtual-player assertion: " .. tostring(kind))
     end
+    local inconclusive = kind == "target_dead" and actual == nil
     local passed
-    if kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then passed = actual >= expected
-    elseif kind == "target_health_lte" then passed = actual <= expected
-    else passed = actual == expected end
-    return { kind = kind, actual = actual, expected = expected, passed = passed }
+    if inconclusive then
+        passed = false
+    elseif kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then
+        passed = actual >= expected
+    elseif kind == "target_health_lte" then
+        passed = actual <= expected
+    else
+        passed = actual == expected
+    end
+    return { kind = kind, actual = actual, expected = expected, passed = passed, inconclusive = inconclusive }
 end
 
 function VirtualPlayer:_submit_craft(step)
@@ -502,9 +538,9 @@ function VirtualPlayer:_next_impl()
         local ok, action_or_error = pcall(function() return self:BuildAction(step) end)
         if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
         local target_entity = action_or_error.target
-        if target_entity ~= nil then self.step_targets[self.index] = target_entity end
+        if target_entity ~= nil then self:_capture_step_target(self.index, target_entity) end
         if repeat_until_target_dead then
-            local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity) end)
+            local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity, self.index) end)
             if not alive_ok or target_dead ~= false then
                 self:_finish(false, "attack target is missing, already dead, or has no readable health")
                 return
@@ -573,6 +609,11 @@ function VirtualPlayer:_next_impl()
             self.assertions_passed = (self.assertions_passed or 0) + 1
             self:_record(step, "passed", "assertion passed: " .. tostring(result.kind))
             self:_next()
+        elseif ok and result.inconclusive then
+            self.run_inconclusive = true
+            self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind))
+            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind))
+            return
         else
             self:_record(step, "failed", ok and ("assertion failed: " .. tostring(result.kind)) or tostring(result))
             self:_finish(false, ok and "assertion failed" or tostring(result))
@@ -645,7 +686,7 @@ function VirtualPlayer:_poll_action()
     if active.step.repeat_until_target_dead == true then
         local repeat_count = (active.repeat_count or 0) + 1
         local check_ok, target_dead = pcall(function()
-            return self:_is_target_entity_dead(active.target_entity)
+            return self:_is_target_entity_dead(active.target_entity, self.index)
         end)
         if not check_ok then
             self:_record(active.step, "failed", tostring(target_dead))
@@ -742,7 +783,9 @@ function VirtualPlayer:GetReport()
         and math.max(0, report_time - self.started_at) or nil
     local all_assertions_passed = assertions_total > 0 and assertions_passed == assertions_total
     local outcome = "inconclusive"
-    if self.run_failed then
+    if self.run_inconclusive then
+        outcome = "inconclusive"
+    elseif self.run_failed then
         outcome = "failed"
     elseif all_assertions_passed and #unverified_step_indices == 0 then
         outcome = "passed"
