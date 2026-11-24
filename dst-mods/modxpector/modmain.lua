@@ -40,6 +40,35 @@ if RUNTIME_OBSERVER_OK then
             .. tostring(observer_available == true))
     end
 end
+local COMMUNITY_EVENTS_OK, COMMUNITY_EVENTS = pcall(require, "modxpector/community_events")
+if not COMMUNITY_EVENTS_OK or type(COMMUNITY_EVENTS) ~= "table"
+    or type(COMMUNITY_EVENTS.Configure) ~= "function"
+    or type(COMMUNITY_EVENTS.Report) ~= "function"
+    or type(COMMUNITY_EVENTS.Snapshot) ~= "function" then
+    print("[ModXpector] COMMUNITY_EVENT_MODULE_UNAVAILABLE " .. tostring(COMMUNITY_EVENTS))
+    COMMUNITY_EVENTS_OK = false
+    COMMUNITY_EVENTS = nil
+end
+
+local community_event_ingestion_enabled = false
+if type(GetModConfigData) == "function" then
+    local config_ok, config_value = pcall(GetModConfigData, "accept_community_events")
+    community_event_ingestion_enabled = config_ok and config_value == true
+end
+if COMMUNITY_EVENTS_OK then
+    local configure_ok, configure_error = pcall(COMMUNITY_EVENTS.Configure,
+        community_event_ingestion_enabled, GetTime)
+    if not configure_ok then
+        print("[ModXpector] COMMUNITY_EVENT_CONFIGURE_FAILED " .. tostring(configure_error))
+    end
+end
+
+local function report_community_diagnostic_event(event)
+    if not COMMUNITY_EVENTS_OK then return false, "community_event_module_unavailable" end
+    return COMMUNITY_EVENTS.Report(event)
+end
+DST_GLOBAL.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT = report_community_diagnostic_event
+
 local EMBEDDED_AI_OK, EMBEDDED_AI = pcall(require, "modxpector/embedded_ai")
 if not EMBEDDED_AI_OK or type(EMBEDDED_AI) ~= "table" or type(EMBEDDED_AI.Analyze) ~= "function" then
     print("[ModXpector] EMBEDDED_AI_MODULE_LOAD_FAILED " .. tostring(EMBEDDED_AI))
@@ -131,6 +160,23 @@ local function run_embedded_ai_diagnostics(callback)
                 reason = RUNTIME_OBSERVER_OK and "observer_snapshot_unavailable" or "observer_module_unavailable",
             }
         end
+        if COMMUNITY_EVENTS_OK then
+            local events_ok, event_snapshot = pcall(COMMUNITY_EVENTS.Snapshot)
+            if events_ok and type(event_snapshot) == "table" then
+                snapshot.community_events = event_snapshot
+            end
+        end
+        if snapshot.community_events == nil then
+            snapshot.community_events = {
+                schema = "modxpector/community-diagnostic-events/v1",
+                enabled = community_event_ingestion_enabled,
+                available = false,
+                events = {},
+                event_count = 0,
+                dropped = 0,
+                reason = COMMUNITY_EVENTS_OK and "event_snapshot_unavailable" or "event_module_unavailable",
+            }
+        end
     end
     if not collect_ok or type(snapshot) ~= "table" then
         set_embedded_ai_status("falha_coleta", tostring(snapshot))
@@ -164,6 +210,7 @@ local function run_embedded_ai_diagnostics(callback)
         next_task = next_task,
         task_execution = task_execution,
         runtime_components = snapshot.runtime_components,
+        community_events = snapshot.community_events,
         session = embedded_ai_session,
         selected_suites = selected_suites,
     }
