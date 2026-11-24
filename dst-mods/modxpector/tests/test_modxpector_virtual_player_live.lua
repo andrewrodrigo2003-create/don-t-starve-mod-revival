@@ -140,7 +140,7 @@ assert(finished ~= nil and finished.running == false)
 assert(player.components.playercontroller.last_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
-assert(finished.assertions_total == 11 and finished.assertions_passed == 11)
+assert(finished.assertions_total == 14 and finished.assertions_passed == 14)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
