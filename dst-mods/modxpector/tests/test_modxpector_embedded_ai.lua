@@ -252,6 +252,8 @@ assert(community_event_analysis.community_events.unverified == true
     and community_event_analysis.community_events.event_count == 2
     and #community_event_analysis.community_events.event_sample == 2,
     "analysis must expose a bounded community event summary")
+assert(community_event_analysis.community_events.event_sample[1].source_verified == false,
+    "analysis samples must override any sender claim that the source is verified")
 community_event_snapshot.community_events.dropped = 3
 community_event_analysis = AI.Analyze(community_event_snapshot)
 local event_drop_limitation = false
