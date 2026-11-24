@@ -23,6 +23,63 @@ assert(bt_status == BT.SUCCESS and bt_value == "sequence_complete", "sequence mu
 bt_status = BT.Tick(BT.Action(function() error("synthetic policy fault") end), {})
 assert(bt_status == BT.FAILURE, "behavior tree errors must fail closed")
 
+local memory_context = { tree_memory = {} }
+local memory_counts = { precondition = 0, running_action = 0, tail = 0 }
+local memory_sequence = BT.MemorySequence({
+    BT.Action(function()
+        memory_counts.precondition = memory_counts.precondition + 1
+        return "precondition_ok"
+    end),
+    BT.AsyncAction(function()
+        memory_counts.running_action = memory_counts.running_action + 1
+        if memory_counts.running_action == 1 then return BT.RUNNING, "waiting" end
+        return BT.SUCCESS, "action_done"
+    end),
+    BT.Action(function()
+        memory_counts.tail = memory_counts.tail + 1
+        return "sequence_done"
+    end),
+}, "test_sequence")
+bt_status = BT.Tick(memory_sequence, memory_context)
+assert(bt_status == BT.RUNNING and memory_counts.precondition == 1 and memory_counts.tail == 0,
+    "memory sequence should retain its running child without advancing")
+bt_status, bt_value = BT.Tick(memory_sequence, memory_context)
+assert(bt_status == BT.SUCCESS and bt_value == "sequence_done",
+    "memory sequence should resume and finish after its running child succeeds")
+assert(memory_counts.precondition == 1 and memory_counts.running_action == 2 and memory_counts.tail == 1,
+    "memory sequence must not restart completed children")
+assert(memory_context.tree_memory.test_sequence == nil,
+    "memory sequence should clear its cursor after completion")
+
+local selector_counts = { first = 0, second = 0, third = 0 }
+local memory_selector = BT.MemorySelector({
+    BT.Condition(function()
+        selector_counts.first = selector_counts.first + 1
+        return false
+    end, "first"),
+    BT.AsyncAction(function()
+        selector_counts.second = selector_counts.second + 1
+        if selector_counts.second == 1 then return BT.RUNNING, "pending" end
+        return BT.SUCCESS, "second_done"
+    end),
+    BT.Action(function()
+        selector_counts.third = selector_counts.third + 1
+        return "third"
+    end),
+}, "test_selector")
+bt_status = BT.Tick(memory_selector, memory_context)
+assert(bt_status == BT.RUNNING and selector_counts.first == 1 and selector_counts.second == 1,
+    "memory selector should preserve the branch that is still running")
+bt_status, bt_value = BT.Tick(memory_selector, memory_context)
+assert(bt_status == BT.SUCCESS and bt_value == "second_done",
+    "memory selector should resume the running branch")
+assert(selector_counts.first == 1 and selector_counts.second == 2 and selector_counts.third == 0,
+    "memory selector must not reevaluate earlier failed branches")
+assert(BT.ResetMemory(memory_context, "test_selector") == true,
+    "tree memory should support explicit reset")
+assert(BT.ResetMemory(memory_context) == true,
+    "tree memory should support complete reset")
+
 local invalid = AI.Analyze({ schema = "wrong" })
 assert(invalid.status == "invalid_input", "invalid schema must fail closed")
 
