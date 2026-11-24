@@ -24,6 +24,7 @@ local state = {
 
 local function clean(value, limit)
     if type(value) ~= "string" then return nil end
+    if #value > limit * 4 then value = value:sub(1, limit * 4) end
     value = value:gsub("[%z\1-\8\11\12\14-\31]", " ")
     value = value:gsub("([Tt][Oo][Kk][Ee][Nn]%s*=%s*)[%w_%-]+", "%1[redacted]")
     value = value:gsub("([Aa]uthorization:%s*[Bb]earer%s+)[%w%._%-]+", "%1[redacted]")
@@ -100,8 +101,8 @@ function M.Report(event)
         value = value or ""
         return tostring(#value) .. ":" .. value
     end
-    local key = key_part(event.mod_id) .. key_part(event.kind) .. key_part(event.severity)
-        .. key_part(message) .. key_part(event.prefab) .. key_part(event.component) .. key_part(stack)
+    local key = key_part(mod_id) .. key_part(kind) .. key_part(severity)
+        .. key_part(message) .. key_part(prefab) .. key_part(component) .. key_part(stack)
     local existing_id = state.dedupe[key]
     if existing_id ~= nil then
         for _, existing in ipairs(state.events) do
