@@ -803,7 +803,7 @@ function InspectorScreen:Refresh()
             make_button(self.content, "Exportar sessão", -145, -145, function()
                 local journal, count = Devtools.GetSessionReport()
                 write_export_block("CLIENT_SESSION_JOURNAL", journal)
-                self.devtools_report = { "Diário marcado no client_log.txt.", "Eventos registrados: " .. tostring(count), "Use Configuração > Capturar logs agora para salvar e analisar os arquivos." }
+                self.devtools_report = { "Diário marcado no client_log.txt.", "Eventos registrados: " .. tostring(count), "Use IA / Testes para executar a análise offline e consultar os achados." }
                 self:Refresh()
                 self:SetStatus("Diário da sessão exportado para o log.")
             end, 0.72)
@@ -867,7 +867,6 @@ function InspectorScreen:Refresh()
                 report_lines[#report_lines + 1] = "CONFIGURATION"
                 report_lines[#report_lines + 1] = "open_key=" .. config_key .. " (source=local_client)"
                 report_lines[#report_lines + 1] = "show_debug_info=" .. tostring(config.show_debug_info == true) .. " (source=local_client)"
-                report_lines[#report_lines + 1] = "ai_bridge_enabled=" .. tostring(config.ai_bridge_enabled == true) .. " (source=server)"
                 report_lines[#report_lines + 1] = "test_mode=" .. tostring(config.test_mode == true) .. " (source=server)"
                 report_lines[#report_lines + 1] = "max_spawn_count=" .. tostring(config.max_spawn_count or 10) .. " (source=server)"
                 local report = table.concat(report_lines, "\n")
