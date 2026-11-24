@@ -437,6 +437,48 @@ function M.NextTask(plan, session)
     return nil
 end
 
+local BUILTIN_COMMUNITY_SUITES = {
+    {
+        schema = "modxpector/test-suite/v1",
+        id = "friendly_skeleton_servant_smoke",
+        owner_mod_id = "workshop-2323760467",
+        title = "Friendly Skeleton - AI: aproximação ao Servant",
+        priority = 60,
+        allowed_prefabs = { "skeletonservant" },
+        allowed_recipes = {},
+        allowed_actions = { "WALKTO" },
+        scenarios = {
+            {
+                id = "approach_existing_servant",
+                title = "Aproximar-se de um Skeleton Servant existente",
+                steps = {
+                    {
+                        kind = "action",
+                        action = "WALKTO",
+                        target = { prefab = "skeletonservant", radius = 12 },
+                        target_required = true,
+                    },
+                    {
+                        kind = "assert",
+                        assertion = { kind = "player_near_target", target_step = 1, radius = 4 },
+                        verifies_step = 1,
+                    },
+                },
+            },
+        },
+    },
+}
+
+function M.GetBuiltinSuites()
+    -- Return fresh data so callers cannot mutate the embedded catalog.
+    local suites = {}
+    for index, suite in ipairs(BUILTIN_COMMUNITY_SUITES) do
+        local valid, normalized = M.ValidateSuite(suite)
+        if valid then suites[index] = normalized end
+    end
+    return suites
+end
+
 local SUITE_ACTION_ALLOWLIST = { WALKTO = true }
 local SUITE_ASSERTION_ALLOWLIST = {
     player_health_gte = true,
@@ -607,7 +649,7 @@ function M.ValidateSuite(suite)
     return true, normalized
 end
 
-function M.SelectSuites(suites, snapshot)
+function M.SelectSuites(suites, snapshot, available_prefabs)
     local active = {}
     local mods = type(snapshot) == "table" and type(snapshot.mods) == "table" and snapshot.mods or {}
     for _, mod in ipairs(mods) do
@@ -620,7 +662,16 @@ function M.SelectSuites(suites, snapshot)
     local selected = {}
     for _, candidate in ipairs(type(suites) == "table" and suites or {}) do
         local valid, suite = M.ValidateSuite(candidate)
-        if valid and active[suite.owner_mod_id] ~= nil then
+        local prefabs_available = type(available_prefabs) == "table"
+        if prefabs_available then
+            for _, prefab in ipairs(suite.allowed_prefabs) do
+                if available_prefabs[prefab] == nil then
+                    prefabs_available = false
+                    break
+                end
+            end
+        end
+        if valid and prefabs_available and active[suite.owner_mod_id] ~= nil then
             selected[#selected + 1] = {
                 suite = suite,
                 mod = active[suite.owner_mod_id],
