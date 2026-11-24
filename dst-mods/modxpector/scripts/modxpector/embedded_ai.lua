@@ -603,6 +603,130 @@ function M.NextTask(plan, session)
     return nil
 end
 
+local function find_snapshot_mod(snapshot, mod_id)
+    if type(snapshot) ~= "table" or type(snapshot.mods) ~= "table" then return nil end
+    for _, mod in ipairs(snapshot.mods) do
+        if type(mod) == "table" and mod.id == mod_id then return mod end
+    end
+    return nil
+end
+
+local function list_contains(values, expected)
+    for _, value in ipairs(type(values) == "table" and values or {}) do
+        if value == expected then return true end
+    end
+    return false
+end
+
+function M.ExecuteReadOnlyTask(task, snapshot)
+    if type(task) ~= "table" or type(task.kind) ~= "string"
+        or type(snapshot) ~= "table" or snapshot.schema ~= "modxpector/world-inventory/v2" then
+        return "inconclusive", { reason = "invalid_task_or_snapshot" }
+    end
+    local mod = find_snapshot_mod(snapshot, task.mod_id)
+    if mod == nil then return "inconclusive", { reason = "target_mod_not_in_snapshot" } end
+
+    if task.kind == "inspect_load_error" then
+        if type(mod.load_error) == "string" and mod.load_error ~= "" then
+            return "passed", {
+                diagnostic_outcome = "load_error_confirmed",
+                error_excerpt = mod.load_error:sub(1, 400),
+                signature = type(task.evidence) == "table" and task.evidence.signature or nil,
+            }
+        end
+        return "inconclusive", { reason = "load_error_not_observed" }
+    elseif task.kind == "verify_missing_dependency" then
+        if mod.dependencies_known == true and list_contains(mod.missing_dependencies, task.related_id) then
+            return "passed", { diagnostic_outcome = "dependency_missing_confirmed", dependency = task.related_id }
+        end
+        return "inconclusive", { reason = "dependency_state_not_confirmed", dependency = task.related_id }
+    elseif task.kind == "review_mod_flags" then
+        if mod.metadata_available ~= true then
+            return "inconclusive", { reason = "mod_metadata_unavailable" }
+        end
+        if mod.client_only == true and mod.all_clients_required == true then
+            return "passed", { diagnostic_outcome = "conflicting_mod_flags_confirmed" }
+        end
+        return "failed", { diagnostic_outcome = "flag_conflict_not_reproduced" }
+    elseif task.kind == "verify_dependency_enabled" then
+        if list_contains(mod.disabled_dependencies, task.related_id) then
+            return "passed", { diagnostic_outcome = "dependency_disabled_confirmed", dependency = task.related_id }
+        end
+        local dependency = find_snapshot_mod(snapshot, task.related_id)
+        if dependency ~= nil and dependency.enabled == true then
+            return "failed", { diagnostic_outcome = "dependency_is_enabled", dependency = task.related_id }
+        end
+        return "inconclusive", { reason = "dependency_state_not_observed", dependency = task.related_id }
+    elseif task.kind == "confirm_load_state" then
+        if mod.loaded_known == true and (mod.load_state == "candidate_not_observed_loaded"
+            or mod.load_state == "enabled_not_observed_loaded") then
+            return "passed", { diagnostic_outcome = "load_state_confirmed", load_state = mod.load_state }
+        end
+        if mod.loaded == true then
+            return "failed", { diagnostic_outcome = "mod_now_observed_loaded" }
+        end
+        return "inconclusive", { reason = "loaded_state_not_observable" }
+    elseif task.kind == "collect_dependency_evidence" then
+        if list_contains(mod.unverified_dependencies, task.related_id) then
+            return "inconclusive", { reason = "dependency_api_did_not_verify", dependency = task.related_id }
+        end
+        return "inconclusive", { reason = "no_additional_dependency_evidence", dependency = task.related_id }
+    elseif task.kind == "collect_mod_metadata" then
+        if mod.metadata_available == false then
+            return "inconclusive", { reason = "metadata_unavailable_in_runtime" }
+        end
+        return "failed", { diagnostic_outcome = "metadata_now_available" }
+    elseif task.kind == "review_community_api_compatibility" then
+        local apis = type(snapshot.community_apis) == "table" and snapshot.community_apis or {}
+        local api = type(apis.dev_tools) == "table" and apis.dev_tools or {}
+        if api.version_observed == true and type(api.version) == "number" and api.version > 1 then
+            return "passed", { diagnostic_outcome = "major_api_version_change", api = "DevToolsAPI", version = api.version }
+        end
+        if api.version_observed == true and type(api.version) == "number" then
+            return "failed", { diagnostic_outcome = "documented_api_version_observed", api = "DevToolsAPI", version = api.version }
+        end
+        return "inconclusive", { reason = "community_api_version_not_observed", api = "DevToolsAPI" }
+    elseif task.kind == "collect_community_api_evidence" then
+        local apis = type(snapshot.community_apis) == "table" and snapshot.community_apis or {}
+        local api = type(apis.dev_tools) == "table" and apis.dev_tools or {}
+        if api.version_observed == true then
+            return "failed", { diagnostic_outcome = "community_api_now_observed", api = "DevToolsAPI", version = api.version }
+        end
+        return "inconclusive", { reason = "community_api_not_observed", api = "DevToolsAPI" }
+    end
+    return "inconclusive", { reason = "unsupported_read_only_task", task_kind = task.kind }
+end
+
+function M.RunReadOnlyPlan(plan, session, snapshot, limit)
+    if type(plan) ~= "table" or plan.schema ~= M.PLAN_SCHEMA or plan.mode ~= "read_only"
+        or type(session) ~= "table" or session.schema ~= "modxpector/embedded-ai-session/v1"
+        or type(snapshot) ~= "table" or snapshot.schema ~= "modxpector/world-inventory/v2" then
+        return { executed = 0, results = {}, next_task = nil, complete = false, error = "invalid_plan_session_or_snapshot" }
+    end
+    limit = type(limit) == "number" and limit == math.floor(limit) and limit >= 1 and limit <= 200 and limit or 200
+    local results = {}
+    while #results < limit do
+        local task = M.NextTask(plan, session)
+        if task == nil then break end
+        local status, evidence = M.ExecuteReadOnlyTask(task, snapshot)
+        M.RecordTaskResult(session, task.id, status, evidence)
+        results[#results + 1] = {
+            task_id = task.id,
+            kind = task.kind,
+            mod_id = task.mod_id,
+            status = status,
+            evidence = evidence,
+        }
+    end
+    local next_task = M.NextTask(plan, session)
+    return {
+        executed = #results,
+        results = results,
+        next_task = next_task,
+        complete = next_task == nil,
+    }
+end
+
 local BUILTIN_COMMUNITY_SUITES = {
     {
         schema = "modxpector/test-suite/v1",
