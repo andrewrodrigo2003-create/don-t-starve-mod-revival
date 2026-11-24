@@ -107,7 +107,7 @@ local inventory_guard = source:find('if not INVENTORY_OK or type(WORLD_INVENTORY
 local inventory_collect = source:find('pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)', 1, true)
 assert(inventory_guard ~= nil and inventory_collect ~= nil and inventory_guard < inventory_collect,
     "world inventory must fail closed before calling Collect when its module failed to load")
-assert(source:find('inventory_indisponivel', 1, true),
+assert(source:find('inventario_indisponivel', 1, true),
     "embedded AI must report when the read-only inventory is unavailable")
 assert(source:find('DST_GLOBAL.MODXPECTOR_LAST_VIRTUAL_PLAYER_REPORT', 1, true),
     "Virtual Player reports must remain available in the game session")
