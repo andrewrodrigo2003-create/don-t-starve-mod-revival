@@ -35,6 +35,21 @@ assert(snapshot.event_count == 1 and snapshot.events[1].repeat_count == 2
     and snapshot.events[1].last_seen == 18,
     "identical reports must be deduplicated and counted")
 
+local secret_event = {
+    schema = "modxpector/community-diagnostic-events/v1",
+    mod_id = "workshop-12345",
+    kind = "runtime_error",
+    severity = "error",
+    message = "Token=secret123 Authorization: Bearer bearer-secret",
+    stack = "Authorization: Bearer stack-secret",
+}
+assert(Events.Report(secret_event) == true)
+snapshot = Events.Snapshot()
+assert(not snapshot.events[2].message:find("secret123", 1, true)
+    and not snapshot.events[2].message:find("bearer-secret", 1, true)
+    and not snapshot.events[2].stack:find("stack-secret", 1, true),
+    "diagnostic event text must redact common credential patterns")
+
 local invalid_cases = {
     { schema = "wrong", mod_id = "workshop-1", kind = "runtime_error", severity = "error", message = "x" },
     { schema = "modxpector/community-diagnostic-events/v1", mod_id = "not-an-id", kind = "runtime_error", severity = "error", message = "x" },
