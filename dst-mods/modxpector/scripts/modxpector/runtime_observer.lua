@@ -10,7 +10,7 @@ local COMPONENT_ALLOWLIST = {
 
 local function clean(value, limit)
     if type(value) ~= "string" then return "unknown" end
-    value = value:gsub("[%z\\1-\\8\\11\\12\\14-\\31]", " ")
+    value = value:gsub("[%z\1-\8\11\12\14-\31]", " ")
     limit = limit or 80
     if #value > limit then value = value:sub(1, limit) end
     return value
