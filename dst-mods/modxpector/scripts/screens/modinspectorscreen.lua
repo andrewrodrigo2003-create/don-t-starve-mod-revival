@@ -602,6 +602,7 @@ function InspectorScreen:Refresh()
         local community_events = type(analysis) == "table" and analysis.community_events or {}
         self:AddLine("Investigações: " .. tostring(task_execution.executed or 0)
             .. " | componentes: " .. tostring(runtime.event_count or 0)
+            .. " | observador: " .. runtime_label
             .. " | eventos comunitários: " .. tostring(community_events.event_count or 0)
             .. " (não verificados)", -55, 13)
         local findings = type(analysis) == "table" and analysis.findings or {}
