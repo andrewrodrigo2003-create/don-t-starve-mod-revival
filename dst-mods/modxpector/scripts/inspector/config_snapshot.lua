@@ -27,6 +27,7 @@ function M.Read(getter, safe_pcall)
         open_key = open_key,
         show_debug_info = read("show_debug_info", true, true) ~= false,
         test_mode = read("test_mode", false, false) == true,
+        collect_runtime_components = read("collect_runtime_components", false, false) == true,
         max_spawn_count = max_spawn_count,
     }
 end
