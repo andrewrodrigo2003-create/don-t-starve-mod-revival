@@ -313,16 +313,52 @@ function VirtualPlayer:_is_target_entity_dead(target, target_step)
     return current_health <= 0
 end
 
+function VirtualPlayer:_count_player_prefab(inventory, prefab)
+    assert(type(inventory.Has) == "function", "inventory replica Has unavailable")
+    local _, total = inventory:Has(prefab, 1, false)
+    total = tonumber(total) or 0
+
+    assert(type(inventory.GetOpenContainers) == "function",
+        "inventory replica GetOpenContainers unavailable")
+    local open_containers = inventory:GetOpenContainers() or {}
+    local overflow = type(inventory.GetOverflowContainer) == "function"
+        and inventory:GetOverflowContainer() or nil
+    for container_inst in pairs(open_containers) do
+        if container_inst ~= nil and (overflow == nil or container_inst ~= overflow.inst) then
+            local replica = container_inst.replica ~= nil
+                and (container_inst.replica.container or container_inst.replica.inventory) or nil
+            if replica ~= nil and replica ~= overflow and type(replica.Has) == "function" then
+                local _, found = replica:Has(prefab, 1, false)
+                total = total + (tonumber(found) or 0)
+            end
+        end
+    end
+
+    assert(type(inventory.GetEquippedItem) == "function",
+        "inventory replica GetEquippedItem unavailable")
+    for _, slot in pairs(EQUIPSLOTS or {}) do
+        local item = inventory:GetEquippedItem(slot)
+        if item ~= nil and item.prefab == prefab then
+            local stackable = item.replica ~= nil and item.replica.stackable or nil
+            local stack_size = stackable ~= nil and type(stackable.StackSize) == "function"
+                and stackable:StackSize() or 1
+            total = total + math.max(1, tonumber(stack_size) or 1)
+        end
+    end
+    return total
+end
+
 function VirtualPlayer:_evaluate_assertion(assertion)
     assert(type(assertion) == "table", "assertion must be an object")
     local kind = assertion.kind
     local actual, expected
     if kind == "player_has_item" then
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
-        assert(inventory ~= nil and type(inventory.FindItem) == "function", "inventory replica unavailable")
+        assert(inventory ~= nil, "inventory replica unavailable")
         local prefab = assert(assertion.prefab, "assertion prefab required")
-        assert(self.allowed_prefabs[prefab], "assertion item prefab is not in the test plan allowlist")
-        actual = inventory:FindItem(function(item) return item ~= nil and item.prefab == prefab end) ~= nil
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "assertion item prefab is not in the test plan allowlist")
+        actual = self:_count_player_prefab(inventory, prefab) >= 1
         expected = assertion.expected ~= false
     elseif kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then
         local replica_name = kind == "player_health_gte" and "health"
@@ -333,10 +369,14 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         assert(expected ~= nil, replica_name .. " assertion value required")
     elseif kind == "player_has_item_count_gte" then
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
-        assert(inventory ~= nil and type(inventory.Has) == "function", "inventory replica Has unavailable")
+        assert(inventory ~= nil, "inventory replica unavailable")
         local prefab = assert(assertion.prefab, "assertion prefab required")
-        assert(self.allowed_prefabs[prefab], "assertion item prefab is not in the test plan allowlist")
-        actual = inventory:Has(prefab, assertion.count, true)
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "assertion item prefab is not in the test plan allowlist")
+        local count = tonumber(assertion.count)
+        assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
+            "inventory count assertion must be an integer between 1 and 10000")
+        actual = self:_count_player_prefab(inventory, prefab) >= count
         expected = assertion.expected ~= false
     elseif kind == "player_knows_recipe" then
         local recipe_name = assert(assertion.recipe, "assertion recipe required")
