@@ -349,3 +349,14 @@ assert(main:find('token_value:match("^([%w_%-]+)")', 1, true),
 assert(not main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "w")', 1, true),
     "ModXpector must never write the bridge token from inside DST")
 print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
+
+-- Navigation discoverability: the AI/Testes and Configuração entries must remain visible.
+assert(screen_source:find('{ "IA / Testes", "testes" }', 1, true),
+    "AI/Testes must be a visible navigation tab")
+assert(screen_source:find('{ "Configuração", "config" }', 1, true),
+    "Configuração must be a visible navigation tab")
+assert(screen_source:find('menu principal > Mods > ModXpector > Configurar', 1, true),
+    "The configuration tab must explain where the user enables AI and test mode")
+assert(screen_source:find('IA + Modo de testes precisam estar ativados; o agente local e o token também são obrigatórios.', 1, true),
+    "The UI must state every prerequisite for AI-driven tests")
+print("MODXPECTOR_AI_MENU_DISCOVERABILITY_CONTRACT_OK")
