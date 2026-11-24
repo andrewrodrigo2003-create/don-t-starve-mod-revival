@@ -151,3 +151,16 @@ Essa evolução é uma implementação original inspirada conceitualmente no uso
 O motor executa automaticamente tarefas `internal_read_only` geradas pelo plano: inspecionar erro de carregamento, confirmar dependências ausentes/desativadas, revisar flags, confirmar estado de carregamento e registrar limites de evidência das APIs comunitárias. Cada execução grava status e evidência na sessão. `passed` significa que a investigação confirmou o achado, não que o mod passou em compatibilidade; `failed` significa que a evidência contradisse o achado; `inconclusive` preserva ausência de prova.
 
 O executor não altera o mundo, não executa código de outros mods e não inicia o Virtual Player. Ações do mundo permanecem restritas às suites aprovadas pelo Master.
+
+
+## Evidência dos registros de runtime
+
+O inventário inclui uma amostra somente de leitura dos registros que o runtime expõe:
+
+- `Prefabs`: total de chaves com nome string e até 256 nomes, ordenados alfabeticamente.
+- `AllRecipes`: total de chaves com nome string e até 256 nomes, ordenados alfabeticamente.
+- `ThePlayer.components`: até 128 nomes de componentes do jogador, ordenados alfabeticamente.
+- Os campos `capabilities`, `counts` e `registry` indicam disponibilidade, contagem, amostra e truncamento.
+- A coleta não chama hooks, não enumera entidades do mundo, não modifica tabelas e não faz polling contínuo.
+- A ausência de uma tabela é registrada como indisponível; não é tratada como zero nem como erro do mod.
+- As listas são amostras limitadas para diagnóstico e planejamento; não são prova de que todos os recursos de um mod funcionam.
