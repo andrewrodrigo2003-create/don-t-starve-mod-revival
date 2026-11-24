@@ -106,6 +106,20 @@ function M.Collect(globals)
     local loaded_observable = type(loaded_names) == "table"
     local loaded_set = to_set(loaded_names)
     local failures = collect_failures(manager)
+    local devtools_api = globals.DevToolsAPI
+    local devtools_api_present = type(devtools_api) == "table"
+        and type(devtools_api.GetAPIVersion) == "function"
+    local devtools_api_version
+    local devtools_api_version_observed = false
+    if devtools_api_present then
+        local version_ok, version = safe_call(protected_call, devtools_api, "GetAPIVersion")
+        if version_ok and type(version) == "number"
+            and version == version and version ~= math.huge and version ~= -math.huge then
+            devtools_api_version = version
+            devtools_api_version_observed = true
+        end
+    end
+
 
     local mods, seen = {}, {}
     local counts = {
@@ -243,6 +257,13 @@ function M.Collect(globals)
         counts = counts,
         truncated = truncated,
         mods = mods,
+        community_apis = {
+            dev_tools = {
+                available = devtools_api_present,
+                version = devtools_api_version,
+                version_observed = devtools_api_version_observed,
+            },
+        },
     }
 end
 
