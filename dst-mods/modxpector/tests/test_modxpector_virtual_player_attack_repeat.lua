@@ -10,15 +10,22 @@ local current_time = 0
 GetTime = function() return current_time end
 Vector3 = function(x, y, z) return { x = x, y = y, z = z } end
 
-local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buffered, two_targets)
+local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buffered, two_targets, suppress_death_event)
     current_time = 0
     local health = initial_health
     local attacks = 0
     local current_buffered
     local enemy_valid = true
+    local death_callback
     local enemy = {
         prefab = "spider",
         IsValid = function() return enemy_valid end,
+        ListenForEvent = function(_, event, callback)
+            if event == "death" then death_callback = callback end
+        end,
+        RemoveEventCallback = function(_, event, callback)
+            if event == "death" and death_callback == callback then death_callback = nil end
+        end,
         HasTag = function(_, tag) return tag == "monster" end,
         Transform = { GetWorldPosition = function() return 3, 0, 4 end },
         replica = { health = { GetCurrent = function() return health end } },
@@ -43,7 +50,10 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
                     if action.action == ACTIONS.ATTACK and action.target == enemy then
                         attacks = attacks + 1
                         health = health - 15
-                        if health <= 0 then enemy_valid = false end
+                        if health <= 0 then
+                            if not suppress_death_event and death_callback ~= nil then death_callback() end
+                            enemy_valid = false
+                        end
                         if hold_buffered then current_buffered = action end
                     end
                 end,
@@ -103,6 +113,10 @@ assert(timeout_health > 0 and timeout_health < 1000 and timeout_attacks < 20)
 local stuck_failure, stuck_health, stuck_attacks = run_attack(1000, 20, 1, true)
 assert(stuck_failure.outcome == "failed" and stuck_failure.failure == "attack repeat timeout")
 assert(stuck_health == 985 and stuck_attacks == 1)
+
+local unconfirmed_death = run_attack(25, 3, 5, false, false, true)
+assert(unconfirmed_death.outcome == "inconclusive")
+assert(string.find(unconfirmed_death.failure, "disappeared without confirmed death", 1, true))
 
 print("MODXPECTOR_VIRTUAL_PLAYER_ATTACK_REPEAT_OK success_attacks=" .. tostring(attacks)
     .. " max_attacks=" .. tostring(max_attacks) .. " timeout_attacks=" .. tostring(timeout_attacks)
