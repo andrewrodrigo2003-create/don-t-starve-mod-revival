@@ -183,7 +183,11 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
     local inventory_rejected = 0
     for _ = 1, count do
         local spawn_ok, entity = pcall(SpawnPrefab, prefab)
-        if spawn_ok and entity ~= nil and type(entity.IsValid) == "function" and entity:IsValid() then
+        local valid_ok, entity_valid = false, false
+        if spawn_ok and entity ~= nil and type(entity.IsValid) == "function" then
+            valid_ok, entity_valid = pcall(entity.IsValid, entity)
+        end
+        if spawn_ok and valid_ok and entity_valid == true then
             spawned = spawned + 1
             if as_item then
                 local inventory = player.components ~= nil and player.components.inventory or nil
@@ -195,7 +199,8 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
                     delivered = delivered + 1
                 else
                     inventory_rejected = inventory_rejected + 1
-                    if entity:IsValid() and entity.Transform ~= nil
+                    local still_valid_ok, still_valid = pcall(entity.IsValid, entity)
+                    if still_valid_ok and still_valid == true and entity.Transform ~= nil
                         and type(entity.Transform.SetPosition) == "function" then
                         pcall(entity.Transform.SetPosition, entity.Transform, x, 0, z)
                     end
