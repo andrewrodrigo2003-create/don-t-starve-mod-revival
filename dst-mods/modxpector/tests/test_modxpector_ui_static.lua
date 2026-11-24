@@ -353,13 +353,20 @@ assert(not main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "w")', 1, t
 local token_pattern = assert(main:match('token_value:match%("([^"]+)"%)'),
     "production bridge token parser pattern must remain discoverable")
 assert(token_pattern == "^([%w_%-]+)%s*$", "bridge token parser must match the complete token")
-local function parse_bridge_token(value) return value:match(token_pattern) end
+local function parse_bridge_token(value)
+    local token = value:match(token_pattern)
+    if token == nil or #token < 32 or #token > 128 then return nil end
+    return token
+end
+assert(main:find('if token == nil or #token < 32 or #token > 128 then return nil end', 1, true),
+    "production token length guard must remain enforced")
 local valid_token = string.rep("a", 48)
 assert(parse_bridge_token(valid_token) == valid_token)
 assert(parse_bridge_token(valid_token .. "\n") == valid_token, "trailing newline must be accepted")
 assert(parse_bridge_token(valid_token .. "\nextra") == nil, "suffix data must be rejected")
 assert(parse_bridge_token(" " .. valid_token) == nil, "leading whitespace must be rejected")
-assert(parse_bridge_token("short") == nil, "short token must be rejected by the caller's length guard")
+assert(parse_bridge_token("short") == nil, "short token must be rejected")
+assert(parse_bridge_token(string.rep("a", 129)) == nil, "oversized token must be rejected")
 print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
 
 -- Navigation discoverability: the AI/Testes and Configuração entries must remain visible.
