@@ -342,6 +342,14 @@ assert(main:find('pcall(require, "modxpector/embedded_ai")', 1, true),
     "modmain must load the embedded Lua reasoning engine")
 assert(main:find('DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics', 1, true),
     "modmain must expose the embedded analysis action to the dashboard")
+assert(main:find('DST_GLOBAL.MODXPECTOR_REGISTER_TEST_SUITE = register_embedded_test_suite', 1, true),
+    "community mods must be able to register declarative test suites")
+assert(main:find('DST_GLOBAL.MODXPECTOR_RUN_AI_SUITE = run_embedded_ai_suite', 1, true),
+    "embedded AI must expose a controlled Virtual Player suite runner")
+assert(main:find('AddClientModRPCHandler(MODNAME, "plan_ready"', 1, true),
+    "Virtual Player must start only after Master validation")
+assert(screen_source:find('Executar suite', 1, true),
+    "dashboard must expose safe community suite execution")
 assert(main:find('WORLD_INVENTORY.Collect, DST_GLOBAL', 1, true),
     "embedded AI must consume the in-game read-only mod inventory")
 assert(main:find('EMBEDDED_AI.Analyze, snapshot', 1, true),
