@@ -34,6 +34,26 @@ if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNA
     } end }
 end
 
+local embedded_ai_session = EMBEDDED_AI_OK and EMBEDDED_AI.NewSession("world-session") or nil
+local embedded_ai_test_suites = {}
+local function register_embedded_test_suite(suite)
+    if not EMBEDDED_AI_OK then return false, "embedded_ai_unavailable" end
+    local valid, normalized = EMBEDDED_AI.ValidateSuite(suite)
+    if not valid then return false, tostring(normalized) end
+    if #embedded_ai_test_suites >= 128 then return false, "suite_registry_limit" end
+    local key = normalized.owner_mod_id .. "|" .. normalized.id
+    for _, existing in ipairs(embedded_ai_test_suites) do
+        if existing.owner_mod_id .. "|" .. existing.id == key then
+            return false, "duplicate_suite"
+        end
+    end
+    embedded_ai_test_suites[#embedded_ai_test_suites + 1] = normalized
+    return true, "registered"
+end
+
+DST_GLOBAL.MODXPECTOR_TEST_SUITE_API_VERSION = 1
+DST_GLOBAL.MODXPECTOR_REGISTER_TEST_SUITE = register_embedded_test_suite
+
 local function set_embedded_ai_status(status, detail, summary)
     local state = {
         status = tostring(status or "unknown"),
@@ -83,6 +103,7 @@ local function run_embedded_ai_diagnostics(callback)
         return false
     end
     local next_task = EMBEDDED_AI.NextTask(plan, embedded_ai_session)
+    local selected_suites = EMBEDDED_AI.SelectSuites(embedded_ai_test_suites, snapshot)
     local report = {
         schema = "modxpector/embedded-ai-report/v1",
         snapshot = snapshot,
@@ -90,6 +111,7 @@ local function run_embedded_ai_diagnostics(callback)
         plan = plan,
         next_task = next_task,
         session = embedded_ai_session,
+        selected_suites = selected_suites,
     }
     if type(DST_GLOBAL.rawset) == "function" then
         DST_GLOBAL.rawset(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_REPORT", report)
@@ -101,7 +123,8 @@ local function run_embedded_ai_diagnostics(callback)
     print("[ModXpector] EMBEDDED_AI_ANALYSIS status=" .. tostring(analysis.status)
         .. " decision=" .. tostring(analysis.decision)
         .. " findings=" .. tostring(summary.total or 0)
-        .. " tasks=" .. tostring(plan.total or 0))
+        .. " tasks=" .. tostring(plan.total or 0)
+        .. " suites=" .. tostring(#selected_suites))
     for index, finding in ipairs(analysis.findings or {}) do
         if index > 8 then break end
         print("[ModXpector] AI_FINDING code=" .. tostring(finding.code)
