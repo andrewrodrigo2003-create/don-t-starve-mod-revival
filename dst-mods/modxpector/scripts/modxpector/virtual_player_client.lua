@@ -105,6 +105,20 @@ function VirtualPlayer:ResolveTarget(selector)
     return matches[1] ~= nil and matches[1].entity or nil
 end
 
+function VirtualPlayer:_resolve_assertion_target(assertion)
+    if assertion.target_step ~= nil then
+        local index = tonumber(assertion.target_step)
+        if not is_finite_number(index) or index ~= math.floor(index)
+            or index < 1 or index >= self.index then
+            error("target_step must reference a previous action step")
+        end
+        local target = self.step_targets ~= nil and self.step_targets[index] or nil
+        if target == nil then error("target_step has no captured entity reference") end
+        return target
+    end
+    return self:ResolveTarget(assert(assertion.target, "target selector required"))
+end
+
 function VirtualPlayer:BuildAction(step, target_override)
     assert(type(step) == "table", "action step must be an object")
     local action_name = step.action
@@ -248,6 +262,7 @@ function VirtualPlayer:Start(plan)
     self.steps_completed = 0
     self.steps_verified = 0
     self.unverified_steps = {}
+    self.step_targets = {}
     self.assertions_total = 0
     self.assertions_passed = 0
     self.running = true
@@ -314,7 +329,7 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         actual = item ~= nil and item.prefab == assertion.prefab
         expected = assertion.expected ~= false
     elseif kind == "player_near_target" then
-        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        local target = self:_resolve_assertion_target(assertion)
         actual = false
         if target ~= nil and self.player.Transform ~= nil and target.Transform ~= nil
             and type(self.player.Transform.GetWorldPosition) == "function"
@@ -327,22 +342,32 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         end
         expected = assertion.expected ~= false
     elseif kind == "target_exists" then
-        actual = self:ResolveTarget(assert(assertion.target, "target selector required")) ~= nil
+        local target = self:_resolve_assertion_target(assertion)
+        actual = target ~= nil
+        if actual and type(target.IsValid) == "function" then
+            local valid_ok, valid = pcall(target.IsValid, target)
+            actual = valid_ok and valid == true
+        end
         expected = assertion.expected ~= false
     elseif kind == "target_health_lte" then
-        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        local target = self:_resolve_assertion_target(assertion)
         assert(target ~= nil, "health assertion target not found")
         local health = target.replica ~= nil and target.replica.health or nil
         assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
         actual, expected = health:GetCurrent(), tonumber(assertion.value)
         assert(expected ~= nil, "target health assertion value required")
     elseif kind == "target_dead" then
-        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
+        local target = self:_resolve_assertion_target(assertion)
         actual = self:_is_target_entity_dead(target)
         expected = assertion.expected ~= false
     elseif kind == "target_has_tag" then
-        local target = self:ResolveTarget(assert(assertion.target, "target selector required"))
-        actual = target ~= nil and target:HasTag(assert(assertion.tag, "tag required")) or false
+        local target = self:_resolve_assertion_target(assertion)
+        local target_valid = target ~= nil
+        if target_valid and type(target.IsValid) == "function" then
+            local valid_ok, valid = pcall(target.IsValid, target)
+            target_valid = valid_ok and valid == true
+        end
+        actual = target_valid and target:HasTag(assert(assertion.tag, "tag required")) or false
         expected = assertion.expected ~= false
     else
         error("unsupported virtual-player assertion: " .. tostring(kind))
@@ -468,6 +493,7 @@ function VirtualPlayer:_next_impl()
         local ok, action_or_error = pcall(function() return self:BuildAction(step) end)
         if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
         local target_entity = action_or_error.target
+        if target_entity ~= nil then self.step_targets[self.index] = target_entity end
         if repeat_until_target_dead then
             local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity) end)
             if not alive_ok or target_dead ~= false then
