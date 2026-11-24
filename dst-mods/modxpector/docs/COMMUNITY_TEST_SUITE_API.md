@@ -111,3 +111,18 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 ## Estado atual
 
 O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. A cobertura atual limita-se ao perfil seguro com `WALKTO` e verificações observacionais. É necessário ampliar os adaptadores de ação e pós-condição gradualmente, com testes e evidências por subsistema.
+
+
+## Adaptador comunitário embutido: Friendly Skeleton - AI
+
+O catálogo interno inclui um smoke test opcional para o Workshop **2323760467**:
+
+- Prefab observado: `skeletonservant`.
+- Pré-condições: o mod precisa estar habilitado/carregado, o prefab precisa existir no registro `Prefabs` da sessão e um Skeleton Servant precisa já estar presente no mundo.
+- Cenário: o Virtual Player se aproxima do servant e verifica a distância.
+- Ação permitida: somente `WALKTO`; não cria, equipa, consome, ataca ou altera entidades.
+- Origem da referência: [página do mod na Oficina](https://steamcommunity.com/sharedfiles/filedetails/?id=2323760467) e descrição do mod original que identifica os nomes de spawn [808788274](https://steamcommunity.com/sharedfiles/filedetails/?id=808788274).
+- O código do mod comunitário não foi copiado. O nome do prefab é tratado como candidato derivado da página original; a suite só aparece quando o runtime confirma que `Prefabs.skeletonservant` está registrado.
+- O teste verifica existência do alvo e capacidade de aproximação; **não certifica** coleta, combate, mineração, persistência nem compatibilidade geral do mod.
+
+O catálogo só apresenta suites quando o mod proprietário está ativo e todos os prefabs declarados existem no registro local. Isso evita oferecer um teste cujo alvo não está registrado.
