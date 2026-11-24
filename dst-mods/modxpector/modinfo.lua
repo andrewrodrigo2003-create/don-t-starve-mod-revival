@@ -79,6 +79,16 @@ configuration_options = {
         default = false,
     },
     {
+        name = "collect_runtime_components",
+        label = "Observar componentes em runtime",
+        hover = "Registra, de forma limitada e somente leitura, a criação de componentes selecionados. Desativado por padrão; requer recarregar o mundo após alterar.",
+        options = {
+            { description = "Desativado", data = false },
+            { description = "Ativado", data = true },
+        },
+        default = false,
+    },
+    {
         name = "max_spawn_count",
         label = "Limite de itens por solicitação de teste",
         hover = "Limita a quantidade de itens criados por uma única solicitação.",
