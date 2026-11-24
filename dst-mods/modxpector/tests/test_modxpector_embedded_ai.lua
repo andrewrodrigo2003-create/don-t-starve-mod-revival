@@ -79,6 +79,16 @@ assert(BT.ResetMemory(memory_context, "test_selector") == true,
     "tree memory should support explicit reset")
 assert(BT.ResetMemory(memory_context) == true,
     "tree memory should support complete reset")
+local invalid_memory_tree = BT.MemorySequence({}, nil)
+bt_status = BT.Tick(invalid_memory_tree, {})
+assert(bt_status == BT.FAILURE, "memory composites must fail closed without a unique key")
+local corrupt_memory_context = { tree_memory = { corrupt = "not-an-index" } }
+local recovered_memory_tree = BT.MemorySequence({
+    BT.Action(function() return "recovered" end),
+}, "corrupt")
+bt_status, bt_value = BT.Tick(recovered_memory_tree, corrupt_memory_context)
+assert(bt_status == BT.SUCCESS and bt_value == "recovered",
+    "memory composites must reset invalid cursors safely")
 
 local invalid = AI.Analyze({ schema = "wrong" })
 assert(invalid.status == "invalid_input", "invalid schema must fail closed")
