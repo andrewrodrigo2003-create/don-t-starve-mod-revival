@@ -23,7 +23,7 @@ function M.GetAllowlist()
     return result
 end
 
-function M.Register(add_component_post_init, globals, enabled, protected_call, get_time)
+function M.Register(add_component_post_init, _globals, enabled, protected_call, get_time)
     protected_call = type(protected_call) == "function" and protected_call or pcall
     local state = {
         schema = "modxpector/runtime-component-observations/v1",
@@ -100,7 +100,7 @@ function M.Register(add_component_post_init, globals, enabled, protected_call, g
     return state.available, state
 end
 
-function M.Snapshot(globals)
+function M.Snapshot(_globals)
     local state = runtime_state
     if type(state) ~= "table" or state.schema ~= "modxpector/runtime-component-observations/v1" then
         return {
