@@ -71,7 +71,7 @@ configuration_options = {
     {
         name = "test_mode",
         label = "Permitir execução de testes controlados",
-        hover = "Autoriza a execução de planos aprovados pelo agente local. Exige a opção de IA local ativada.",
+        hover = "Autoriza a execução de cenários controlados pelo Virtual Player. A análise da IA embarcada funciona independentemente desta opção.",
         options = {
             { description = "Desativado", data = false },
             { description = "Ativado", data = true },
