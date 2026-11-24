@@ -200,6 +200,9 @@ assert(finished.steps_completed == #plan.steps,
 assert(finished.steps_verified == 6 and finished.steps_unverified == 0,
     "all five side-effect steps must have explicit post-action verification")
 assert(player.last_pickup_action.action == ACTIONS.PICKUP and player.picked_up == true)
+local equipped_invobject_action = controller:BuildAction({ kind = "action", action = "MOD_ACTION", invobject = "axe" })
+assert(equipped_invobject_action.invobject ~= nil and equipped_invobject_action.invobject.prefab == "axe",
+    "an equipped allowlisted tool must be usable as an explicit action inventory object")
 assert(player.crafted_recipe == "axe" and crafted_calls == 1)
 assert(player.placed_recipe ~= nil and player.placed_recipe.name == "structure" and placed_calls == 1)
 assert(player.placed_recipe.point.x == 2 and player.placed_recipe.point.z == 3)
