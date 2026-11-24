@@ -256,6 +256,21 @@ for _, limitation in ipairs(community_event_analysis.limitations) do
     if limitation:find("eventos comunitários", 1, true) then event_drop_limitation = true end
 end
 assert(event_drop_limitation, "dropped community events must reduce evidence completeness")
+local disabled_event_analysis = AI.Analyze({
+    schema = "modxpector/world-inventory/v2",
+    capabilities = { known_mod_list = true, loaded_mod_list = true, failed_mod_list = true },
+    mods = {},
+    community_events = {
+        enabled = false, available = false,
+        events = {
+            { id = 99, mod_id = "workshop-99", kind = "runtime_error",
+                severity = "error", message = "must not be ingested" },
+        },
+    },
+})
+assert(find_code(disabled_event_analysis, "COMMUNITY_EVENT_UNVERIFIED") == nil
+    and disabled_event_analysis.community_events.event_count == 0,
+    "AI must ignore community events when opt-in ingestion is disabled")
 assert(analysis.registry.prefabs.available == false and analysis.registry.prefabs.count == nil,
     "analysis should report registry evidence as unavailable when the snapshot omitted it")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
