@@ -610,7 +610,7 @@ function InspectorScreen:Refresh()
         self:AddLine("Suites comunitárias prontas: " .. tostring(#selected_suites), -238, 14)
         if first_suite ~= nil and first_scenario ~= nil then
             self:AddLine("Próxima suite: " .. tostring(first_suite.title), -260, 13)
-            make_button(self.content, "Executar teste seguro da comunidade", 0, -315, function()
+            make_button(self.content, "Executar suite", 160, -285, function()
                 local run_suite = rawget(DST_GLOBAL, "MODXPECTOR_RUN_AI_SUITE")
                 if type(run_suite) ~= "function" then
                     self:SetStatus("Executor de suites da IA não disponível.")
@@ -622,11 +622,11 @@ function InspectorScreen:Refresh()
                     self:SetStatus(message)
                     print("[ModXpector] EMBEDDED_AI_SUITE_REQUEST success=" .. tostring(success))
                 end)
-            end, 0.76)
+            end, 0.5)
         else
             self:AddLine("Nenhum mod ativo declarou uma suite compatível; só o diagnóstico passivo está disponível.", -260, 12)
         end
-        make_button(self.content, "Executar análise da IA embarcada", 0, -370, function()
+        make_button(self.content, "Analisar IA", -160, -285, function()
             local run = rawget(DST_GLOBAL, "MODXPECTOR_RUN_EMBEDDED_AI")
             if type(run) ~= "function" then
                 self:SetStatus("Motor de IA embarcada não disponível.")
@@ -638,7 +638,7 @@ function InspectorScreen:Refresh()
                 self:SetStatus(message)
                 print("[ModXpector] EMBEDDED_AI_UI_RESULT success=" .. tostring(success))
             end)
-        end, 0.76)
+        end, 0.5)
     elseif self.active_tab == "tmi" then
         self:AddLine("INTEGRAÇÃO TOO MANY ITEMS", 210, 27)
         self:AddLine(tmi and ("Detectado: " .. tmi.name) or "Não detectado automaticamente.", 155, 22)
