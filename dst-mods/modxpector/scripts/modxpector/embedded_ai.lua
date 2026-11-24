@@ -449,7 +449,11 @@ function M.Analyze(snapshot)
 
     local capabilities = type(snapshot.capabilities) == "table" and snapshot.capabilities or {}
     local community_events = type(snapshot.community_events) == "table" and snapshot.community_events or {}
-    local community_event_list = type(community_events.events) == "table" and community_events.events or {}
+    local community_event_list = {}
+    if community_events.enabled == true and community_events.available == true
+        and type(community_events.events) == "table" then
+        community_event_list = community_events.events
+    end
     for index, event in ipairs(community_event_list) do
         if index > 128 then break end
         if type(event) == "table"
