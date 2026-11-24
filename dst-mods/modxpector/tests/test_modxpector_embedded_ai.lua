@@ -71,6 +71,35 @@ local snapshot = {
     },
 }
 
+local devtools_api_snapshot = {
+    schema = "modxpector/world-inventory/v2",
+    capabilities = { known_mod_list = true, loaded_mod_list = true, failed_mod_list = true },
+    mods = {
+        { id = "workshop-2220506640", name = "Dev Tools", enabled = true, loaded = true,
+            loaded_known = true, load_state = "loaded", missing_dependencies = {},
+            disabled_dependencies = {}, unverified_dependencies = {}, metadata_available = true },
+    },
+    community_apis = { dev_tools = { available = true, version = 0.1, version_observed = true } },
+}
+local devtools_analysis = AI.Analyze(devtools_api_snapshot)
+assert(find_code(devtools_analysis, "DEVTOOLS_API_NOT_OBSERVED") == nil,
+    "a supported DevToolsAPI version should not produce an unavailable finding")
+assert(find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED") == nil,
+    "the documented DevToolsAPI 0.x version should remain compatible")
+
+devtools_api_snapshot.community_apis.dev_tools.version = 2
+devtools_analysis = AI.Analyze(devtools_api_snapshot)
+local devtools_version_finding = find_code(devtools_analysis, "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED")
+assert(devtools_version_finding ~= nil and devtools_version_finding.confidence == "probable",
+    "a major DevToolsAPI version change should request compatibility review, not assert failure")
+
+devtools_api_snapshot.community_apis.dev_tools.available = false
+devtools_api_snapshot.community_apis.dev_tools.version_observed = false
+devtools_analysis = AI.Analyze(devtools_api_snapshot)
+local devtools_missing_finding = find_code(devtools_analysis, "DEVTOOLS_API_NOT_OBSERVED")
+assert(devtools_missing_finding ~= nil and devtools_missing_finding.confidence == "unknown",
+    "a missing optional API should remain unknown, not be classified as a confirmed mod failure")
+
 local analysis = AI.Analyze(snapshot)
 assert(analysis.schema == AI.SCHEMA, "analysis schema missing")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
