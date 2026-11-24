@@ -541,8 +541,15 @@ function VirtualPlayer:_next_impl()
         if target_entity ~= nil then self:_capture_step_target(self.index, target_entity) end
         if repeat_until_target_dead then
             local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity, self.index) end)
-            if not alive_ok or target_dead ~= false then
-                self:_finish(false, "attack target is missing, already dead, or has no readable health")
+            if not alive_ok then
+                self:_finish(false, "attack target health check failed: " .. tostring(target_dead))
+                return
+            elseif target_dead == nil then
+                self.run_inconclusive = true
+                self:_finish(false, "attack target state is unavailable; death cannot be confirmed")
+                return
+            elseif target_dead == true then
+                self:_finish(false, "attack target is already dead")
                 return
             end
         end
@@ -697,6 +704,10 @@ function VirtualPlayer:_poll_action()
             self:_record(active.step, "completed", "target defeated after " .. tostring(repeat_count) .. " attack(s)")
             self.active = nil
             self:_next()
+        elseif target_dead == nil then
+            self.run_inconclusive = true
+            self:_record(active.step, "inconclusive", "target entity disappeared without a confirmed death event")
+            self:_finish(false, "attack target disappeared without confirmed death")
         elseif GetTime() - (active.repeat_started or active.started) > (active.repeat_timeout or 120) then
             self:_record(active.step, "timeout", "target remained alive beyond the repeat attack time budget")
             self:_finish(false, "attack repeat timeout")
