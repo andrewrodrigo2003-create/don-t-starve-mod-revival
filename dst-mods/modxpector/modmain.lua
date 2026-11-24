@@ -744,6 +744,124 @@ end
 
 DST_GLOBAL.MODXPECTOR_CAPTURE_LOGS = capture_modxpector_logs
 
+
+local function parse_ai_allowlist_csv(raw, pattern, maximum, action_allowlist)
+    if type(raw) ~= "string" then return nil, "lista de permissões inválida" end
+    local result, seen = {}, {}
+    for token in (raw .. ","):gmatch("(.-),") do
+        token = token:gsub("^%s+", ""):gsub("%s+$", "")
+        if token ~= "" then
+            if #token > 64 or not token:match(pattern) then
+                return nil, "identificador inválido: " .. token
+            end
+            if seen[token] then return nil, "identificador duplicado: " .. token end
+            if action_allowlist ~= nil and action_allowlist[token] ~= true then
+                return nil, "ação não permitida: " .. token
+            end
+            if #result >= maximum then return nil, "limite de itens excedido" end
+            seen[token] = true
+            result[#result + 1] = token
+        end
+    end
+    return result
+end
+
+local function request_ai_test_plan(goal, prefabs_csv, actions_csv, callback)
+    local function finish(success, message, payload)
+        if type(callback) == "function" then pcall(callback, success == true, tostring(message or ""), payload) end
+    end
+    if GetModConfigData("ai_bridge_enabled") ~= true then
+        finish(false, "Ative IA local nas opções do ModXpector.")
+        return false
+    end
+    if GetModConfigData("test_mode") ~= true then
+        finish(false, "Ative Modo de testes controlados nas opções do ModXpector.")
+        return false
+    end
+    if not bridge_poll_enabled then
+        finish(false, "A ponte ainda não confirmou a conexão com o agente local.")
+        return false
+    end
+    if bridge_token == nil then bridge_token = read_bridge_token() end
+    if bridge_token == nil then
+        finish(false, "bridge_token.txt ausente ou inválido.")
+        return false
+    end
+    if type(goal) ~= "string" then
+        finish(false, "Descreva o objetivo do teste.")
+        return false
+    end
+    goal = goal:gsub("^%s+", ""):gsub("%s+$", "")
+    if #goal < 5 or #goal > 2000 then
+        finish(false, "O objetivo precisa ter entre 5 e 2000 caracteres.")
+        return false
+    end
+    local prefabs, prefab_error = parse_ai_allowlist_csv(prefabs_csv, "^[a-z0-9_%-]+$", 40)
+    if prefabs == nil or #prefabs == 0 then
+        finish(false, prefab_error or "Informe pelo menos um prefab permitido.")
+        return false
+    end
+    local actions, action_error = parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, SERVER_ACTION_ALLOWLIST)
+    if actions == nil or #actions == 0 then
+        finish(false, action_error or "Informe pelo menos uma ação permitida.")
+        return false
+    end
+    if TheSim == nil or type(TheSim.QueryServer) ~= "function" then
+        finish(false, "TheSim:QueryServer não está disponível.")
+        return false
+    end
+    local payload = {
+        goal = goal,
+        allowed_prefabs = prefabs,
+        allowed_recipes = {},
+        allowed_actions = actions,
+    }
+    local encoded_ok, encoded = pcall(function() return json.encode(payload) end)
+    if not encoded_ok or type(encoded) ~= "string" or #encoded > 12 * 1024 then
+        finish(false, "Não foi possível preparar o pedido de teste.")
+        return false
+    end
+    local url = "http://127.0.0.1:" .. tostring(bridge_port) .. "/api/dst/plan?token=" .. bridge_token
+    local request_ok, request_error = pcall(function()
+        TheSim:QueryServer(url, function(body, successful, code)
+            if not successful or code ~= 200 or type(body) ~= "string" then
+                local detail = "Falha HTTP " .. tostring(code)
+                if type(body) == "string" then
+                    local decoded_ok, decoded = pcall(function() return json.decode(body) end)
+                    if decoded_ok and type(decoded) == "table" and type(decoded.detail) == "string" then
+                        detail = decoded.detail
+                    end
+                end
+                set_ai_bridge_status("falha_geracao", detail)
+                print("[ModXpector] AI_TEST_PLAN_REQUEST_FAILED code=" .. tostring(code))
+                finish(false, detail)
+                return
+            end
+            local decoded_ok, response = pcall(function() return json.decode(body) end)
+            if not decoded_ok or type(response) ~= "table" or response.queued ~= true
+                or type(response.run_id) ~= "string" then
+                set_ai_bridge_status("resposta_invalida", "O agente não confirmou o enfileiramento do plano.")
+                finish(false, "Resposta inválida do agente local.")
+                return
+            end
+            set_ai_bridge_status("plano_enfileirado", "Plano " .. response.run_id .. " aguardando o Virtual Player.")
+            print("[ModXpector] AI_TEST_PLAN_QUEUED run_id=" .. response.run_id
+                .. " steps=" .. tostring(response.steps or "?"))
+            finish(true, "Plano gerado e enfileirado. O Virtual Player vai buscá-lo automaticamente.", response)
+        end, "POST", encoded, 120)
+    end)
+    if not request_ok then
+        set_ai_bridge_status("falha_requisicao", tostring(request_error))
+        finish(false, "Falha ao consultar o agente local: " .. tostring(request_error))
+        return false
+    end
+    set_ai_bridge_status("gerando_plano", "O Ollama está elaborando o plano de teste.")
+    finish(true, "Pedido enviado ao agente local; aguardando a geração.")
+    return true
+end
+
+DST_GLOBAL.MODXPECTOR_REQUEST_AI_TEST = request_ai_test_plan
+
 local bridge_probe_started = false
 local bridge_probe_attempts = 0
 local function probe_local_ai_bridge(inst)
