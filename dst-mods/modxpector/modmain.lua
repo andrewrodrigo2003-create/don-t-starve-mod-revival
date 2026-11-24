@@ -278,6 +278,7 @@ local function send_game_report(inst, plan, report, token, port)
         duration_seconds = tonumber(report.duration_seconds),
         steps_completed = tonumber(report.steps_completed) or 0,
         steps_verified = tonumber(report.steps_verified) or 0,
+        verification_assertions_passed = tonumber(report.verification_assertions_passed) or 0,
         steps_unverified = tonumber(report.steps_unverified) or 0,
         unverified_step_indices = report.unverified_step_indices or {},
         assertions_total = tonumber(report.assertions_total) or 0,
