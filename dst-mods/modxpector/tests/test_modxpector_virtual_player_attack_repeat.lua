@@ -15,9 +15,10 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
     local health = initial_health
     local attacks = 0
     local current_buffered
+    local enemy_valid = true
     local enemy = {
         prefab = "spider",
-        IsValid = function() return true end,
+        IsValid = function() return enemy_valid end,
         HasTag = function(_, tag) return tag == "monster" end,
         Transform = { GetWorldPosition = function() return 3, 0, 4 end },
         replica = { health = { GetCurrent = function() return health end } },
@@ -42,6 +43,7 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
                     if action.action == ACTIONS.ATTACK and action.target == enemy then
                         attacks = attacks + 1
                         health = health - 15
+                        if health <= 0 then enemy_valid = false end
                         if hold_buffered then current_buffered = action end
                     end
                 end,
@@ -71,7 +73,7 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
     }
     plan.steps[#plan.steps + 1] = {
         kind = "assert",
-        assertion = { kind = "target_dead", target = { prefab = "spider" } },
+        assertion = { kind = "target_dead", target_step = 2 },
         verifies_step = 2,
     }
     assert(controller:Start(plan))
