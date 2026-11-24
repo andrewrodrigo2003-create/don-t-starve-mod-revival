@@ -158,13 +158,14 @@ end
 function VirtualPlayer:_record(step, status, detail)
     local timestamp = safe_get_time()
     local target_prefab = type(step.target) == "table" and step.target.prefab or nil
-    target_prefab = target_prefab or step.prefab or step.recipe
+    target_prefab = target_prefab or step.prefab
     self.results[#self.results + 1] = {
         run_id = self.run_id,
         index = self.index,
         kind = step.kind,
         action = step.action,
         target_prefab = target_prefab,
+        recipe = step.recipe,
         status = status,
         detail = detail,
         timestamp = timestamp,
