@@ -12,8 +12,8 @@ function M.Read(getter, safe_pcall)
         return default
     end
 
-    -- UI preferences are local-client settings; test/bridge/spawn controls
-    -- follow the server's effective configuration, matching modmain behavior.
+    -- UI preferences are local-client settings; test/spawn controls follow
+    -- the server's effective configuration, matching modmain behavior.
     local open_key = read("open_key", "KEY_F6", true)
     if type(open_key) ~= "string" or not string.match(open_key, "^KEY_[A-Z0-9]+$") then
         open_key = "KEY_F6"
@@ -26,7 +26,6 @@ function M.Read(getter, safe_pcall)
     return {
         open_key = open_key,
         show_debug_info = read("show_debug_info", true, true) ~= false,
-        ai_bridge_enabled = read("ai_bridge_enabled", false, false) == true,
         test_mode = read("test_mode", false, false) == true,
         max_spawn_count = max_spawn_count,
     }
