@@ -448,6 +448,45 @@ function M.Analyze(snapshot)
     end
 
     local capabilities = type(snapshot.capabilities) == "table" and snapshot.capabilities or {}
+    local community_events = type(snapshot.community_events) == "table" and snapshot.community_events or {}
+    local community_event_list = type(community_events.events) == "table" and community_events.events or {}
+    for index, event in ipairs(community_event_list) do
+        if index > 128 then break end
+        if type(event) == "table"
+            and (event.kind == "runtime_error" or event.kind == "compatibility_warning") then
+            local source_mod_id = safe_text(event.mod_id, 80)
+            local source_mod_name
+            local source_mod_active = false
+            for _, candidate in ipairs(type(snapshot.mods) == "table" and snapshot.mods or {}) do
+                if type(candidate) == "table" and candidate.id == source_mod_id then
+                    source_mod_name = safe_text(candidate.name, 120)
+                    source_mod_active = candidate.enabled == true
+                    break
+                end
+            end
+            add_finding(findings, {
+                code = "COMMUNITY_EVENT_UNVERIFIED",
+                severity = "warning",
+                confidence = "unknown",
+                mod_id = source_mod_id,
+                mod_name = source_mod_name or source_mod_id or "Mod comunitário",
+                title = "Evento comunitário relatado, origem não verificada",
+                detail = safe_text(event.message, 500) or "Um mod enviou um evento sem mensagem legível.",
+                evidence = {
+                    event_id = tonumber(event.id),
+                    event_kind = event.kind,
+                    source_claimed = source_mod_id,
+                    source_verified = false,
+                    claimed_mod_active = source_mod_active,
+                    repeat_count = tonumber(event.repeat_count) or 1,
+                    prefab = safe_text(event.prefab, 80),
+                    component = safe_text(event.component, 40),
+                    stack_excerpt = safe_text(event.stack, 1200),
+                },
+            })
+        end
+    end
+
     local mods = type(snapshot.mods) == "table" and snapshot.mods or {}
     for _, mod in ipairs(mods) do
         if type(mod) == "table" then analyze_mod(mod, findings) end
@@ -478,6 +517,13 @@ function M.Analyze(snapshot)
     end
     if (tonumber(runtime_components.callback_errors) or 0) > 0 then
         limitations[#limitations + 1] = "O observador de componentes encontrou erros ao registrar eventos."
+    end
+    local community_events = type(snapshot.community_events) == "table" and snapshot.community_events or {}
+    if community_events.enabled == true and community_events.available ~= true then
+        limitations[#limitations + 1] = "A ingestão de eventos comunitários foi ativada, mas não ficou disponível."
+    end
+    if (tonumber(community_events.dropped) or 0) > 0 then
+        limitations[#limitations + 1] = "O buffer de eventos comunitários descartou relatos por atingir limites."
     end
     if (tonumber(runtime_components.dropped) or 0) > 0 then
         limitations[#limitations + 1] = "O buffer de observação de componentes descartou eventos por atingir o limite."
@@ -572,6 +618,14 @@ function M.Analyze(snapshot)
                 event_sample = runtime_observed_events,
             },
         },
+        community_events = {
+            enabled = community_events.enabled == true,
+            available = community_events.available == true,
+            event_count = type(community_event_list) == "table" and #community_event_list or 0,
+            dropped = tonumber(community_events.dropped) or 0,
+            unverified = true,
+            event_sample = {},
+        },
         engine_version = M.VERSION,
         status = status,
         captured_at = tonumber(snapshot.captured_at) or 0,
@@ -582,6 +636,18 @@ function M.Analyze(snapshot)
             and "Nenhum problema conhecido foi identificado nos dados disponíveis; isso não comprova compatibilidade."
             or "A análise encontrou achados ou limitações que exigem investigação.",
     }
+    for index, event in ipairs(community_event_list) do
+        if index > 32 then break end
+        if type(event) == "table" then
+            analysis.community_events.event_sample[#analysis.community_events.event_sample + 1] = {
+                id = tonumber(event.id),
+                mod_id = safe_text(event.mod_id, 80),
+                kind = safe_text(event.kind, 40),
+                message = safe_text(event.message, 500),
+                source_verified = false,
+            }
+        end
+    end
     analysis.decision = M.EvaluatePolicy(analysis)
     return analysis
 end
