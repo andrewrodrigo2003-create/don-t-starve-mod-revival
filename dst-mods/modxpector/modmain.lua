@@ -69,7 +69,9 @@ local function report_community_diagnostic_event(event)
     if not COMMUNITY_EVENTS_OK or not COMMUNITY_EVENTS_CONFIGURED then
         return false, "community_event_module_unavailable"
     end
-    return COMMUNITY_EVENTS.Report(event)
+    local report_ok, accepted, event_id, status = pcall(COMMUNITY_EVENTS.Report, event)
+    if not report_ok then return false, "invalid_community_event_payload" end
+    return accepted, event_id, status
 end
 DST_GLOBAL.MODXPECTOR_REPORT_DIAGNOSTIC_EVENT = report_community_diagnostic_event
 
