@@ -27,6 +27,7 @@ AddClientModRPCHandler = function(mod, name, fn)
 end
 AddPlayerPostInit = function(fn) player_postinit = fn end
 GetModConfigData = function(name)
+    if name == "collect_runtime_components" then error("synthetic optional config failure") end
     if name == "test_mode" then return true end
     if name == "max_spawn_count" then return configured_max_spawn_count end
     return nil
