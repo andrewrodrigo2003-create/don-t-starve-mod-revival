@@ -236,19 +236,19 @@ control, data, source, list_state, prefab_count, prefab_available = tmi_probe.Ge
 assert(control == nil and data == nil and source:find("unavailable;", 1, true) == 1 and list_state == "global_missing" and prefab_available == false)
 local config_snapshot = assert(loadfile(root .. "scripts/inspector/config_snapshot.lua"))()
 local local_config = { open_key = "KEY_F8", show_debug_info = false }
-local server_config = { ai_bridge_enabled = false, test_mode = true, max_spawn_count = 20 }
+local server_config = { test_mode = true, max_spawn_count = 20 }
 local config_sources = {}
 local effective = config_snapshot.Read(function(key, get_local_config)
     config_sources[key] = get_local_config
     return (get_local_config and local_config or server_config)[key]
 end)
 assert(effective.open_key == "KEY_F8" and effective.show_debug_info == false)
-assert(effective.ai_bridge_enabled == false and effective.test_mode == true and effective.max_spawn_count == 20)
+assert(effective.test_mode == true and effective.max_spawn_count == 20)
 assert(config_sources.open_key == true and config_sources.show_debug_info == true)
-assert(config_sources.ai_bridge_enabled == false and config_sources.test_mode == false and config_sources.max_spawn_count == false)
+assert(config_sources.test_mode == false and config_sources.max_spawn_count == false)
 local defaults = config_snapshot.Read(function() return nil end)
 assert(defaults.open_key == "KEY_F6" and defaults.show_debug_info == true)
-assert(defaults.ai_bridge_enabled == false and defaults.test_mode == false and defaults.max_spawn_count == 10)
+assert(defaults.test_mode == false and defaults.max_spawn_count == 10)
 local invalid = config_snapshot.Read(function(key, get_local_config)
     if key == "open_key" and get_local_config == true then return "bad" end
     if key == "max_spawn_count" and get_local_config == false then return 99 end
@@ -269,7 +269,7 @@ assert(screen_source:find("Configuração", 1, true))
 assert(screen_source:find("CONFIGURAÇÕES ATIVAS DO MOD", 1, true))
 assert(screen_source:find("Abrir/fechar painel:", 1, true))
 assert(screen_source:find("Informações técnicas:", 1, true))
-assert(screen_source:find("IA local para testes automáticos:", 1, true))
+assert(screen_source:find("IA embarcada:", 1, true))
 assert(screen_source:find("Modo de testes controlados:", 1, true))
 assert(screen_source:find("Limite de geração por ação:", 1, true))
 assert(screen_source:find("MODXPECTOR — DST MOD INSPECTOR", 1, true))
@@ -304,7 +304,7 @@ assert(not ui:find('panel_saveslots.tex', 1, true), "Inspector must not use the 
 assert(not ui:find('GetScreenPos', 1, true), "Panel placement must not depend on world projection or cursor")
 assert(ui:find('self.nav:SetPosition(-465, 10)', 1, true), "Inspector must use left navigation rail")
 assert(ui:find('{ "IA / Testes", "testes" }', 1, true), "AI and test controls must be discoverable as a named tab")
-assert(ui:find('MODXPECTOR_AI_BRIDGE_STATUS', 1, true), "Dashboard must display live local AI bridge status")
+assert(ui:find('MODXPECTOR_EMBEDDED_AI_STATUS', 1, true), "Dashboard must display embedded AI status")
 assert(ui:find('content_first_button', 1, true) and ui:find('content_last_button', 1, true),
     "Prefab catalog must expose first/previous/next/last navigation")
 assert(ui:find('« Início', 1, true) and ui:find('‹ Anterior', 1, true)
@@ -327,48 +327,6 @@ assert(ui:find('"Anterior", -270, -215', 1, true)
     and ui:find('"Voltar", 270, -215', 1, true),
     "Nearby entity controls must have non-overlapping horizontal spacing")
 
--- Local bridge is fail-closed when configuration is missing or unset.
-assert(main:find('if GetModConfigData("ai_bridge_enabled") ~= true then', 1, true)
-    and main:find('set_ai_bridge_status("desativada"', 1, true),
-    "local bridge probe must require explicit opt-in and report its disabled state")
-assert(info:find('name = "ai_bridge_enabled"', 1, true))
-assert(info:find('Ativar IA local para executar testes automáticos', 1, true))
-assert(info:find('Permitir execução de testes controlados', 1, true))
-assert(main:find('set_ai_bridge_status("token_ausente"', 1, true))
-assert(main:find('set_ai_bridge_status("conectada"', 1, true))
-assert(main:find('set_ai_bridge_status("plano_aceito"', 1, true))
-assert(screen_source:find('Agente local:', 1, true))
-assert(screen_source:find('O mod não inicia nem instala o agente automaticamente.', 1, true))
-print("MODXPECTOR_LOCAL_BRIDGE_OPT_IN_STATIC_OK")
-
--- Token access must remain read-only and bound to the fixed local file.
-assert(main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "r")', 1, true),
-    "bridge token must be read-only")
-assert(main:find('token_value:match("^([%w_%-]+)%s*$")', 1, true),
-    "bridge token must be a complete token with only optional trailing whitespace")
-assert(not main:find('pcall(io.open, MODROOT .. "/bridge_token.txt", "w")', 1, true),
-    "ModXpector must never write the bridge token from inside DST")
-
--- Exercise the exact token pattern extracted from production source.
-local token_pattern = assert(main:match('token_value:match%("([^"]+)"%)'),
-    "production bridge token parser pattern must remain discoverable")
-assert(token_pattern == "^([%w_%-]+)%s*$", "bridge token parser must match the complete token")
-local function parse_bridge_token(value)
-    local token = value:match(token_pattern)
-    if token == nil or #token < 32 or #token > 128 then return nil end
-    return token
-end
-assert(main:find('if token == nil or #token < 32 or #token > 128 then return nil end', 1, true),
-    "production token length guard must remain enforced")
-local valid_token = string.rep("a", 48)
-assert(parse_bridge_token(valid_token) == valid_token)
-assert(parse_bridge_token(valid_token .. "\n") == valid_token, "trailing newline must be accepted")
-assert(parse_bridge_token(valid_token .. "\nextra") == nil, "suffix data must be rejected")
-assert(parse_bridge_token(" " .. valid_token) == nil, "leading whitespace must be rejected")
-assert(parse_bridge_token("short") == nil, "short token must be rejected")
-assert(parse_bridge_token(string.rep("a", 129)) == nil, "oversized token must be rejected")
-print("MODXPECTOR_BRIDGE_TOKEN_READ_ONLY_CONTRACT_OK")
-
 -- Navigation discoverability: the AI/Testes and Configuração entries must remain visible.
 assert(screen_source:find('{ "IA / Testes", "testes" }', 1, true),
     "AI/Testes must be a visible navigation tab")
@@ -376,47 +334,30 @@ assert(screen_source:find('{ "Configuração", "config" }', 1, true),
     "Configuração must be a visible navigation tab")
 assert(screen_source:find('menu principal > Mods > ModXpector > Configurar', 1, true),
     "The configuration tab must explain where the user enables AI and test mode")
-assert(screen_source:find('IA + Modo de testes precisam estar ativados; o agente local e o token também são obrigatórios.', 1, true),
-    "The UI must state every prerequisite for AI-driven tests")
+assert(screen_source:find('A análise principal funciona offline, sem Ollama, Python ou servidor.', 1, true),
+    "The UI must state that embedded AI has no external runtime dependency")
 print("MODXPECTOR_AI_MENU_DISCOVERABILITY_CONTRACT_OK")
 
 
--- The AI/Testes page must let the player submit a natural-language goal to the local planner.
-assert(main:find('DST_GLOBAL.MODXPECTOR_REQUEST_AI_TEST = request_ai_test_plan', 1, true),
-    "modmain must expose the local AI test-plan request to the native dashboard")
-assert(main:find('/api/dst/plan?token=', 1, true),
-    "the in-game request must submit to the authenticated local planner endpoint")
-assert(main:find('TheSim:QueryServer(url, function(body, successful, code)', 1, true),
-    "the local AI planner must use the supported game HTTP callback")
-assert(screen_source:find('TEMPLATES.StandardSingleLineTextEntry', 1, true),
-    "the AI/Testes tab must include editable test request fields")
-assert(screen_source:find('Gerar plano com IA e executar', 1, true),
-    "the dashboard must expose an action to generate and execute an AI test plan")
-assert(screen_source:find('Aproxime-se de um tufo de grama próximo e confirme que está a até 4 unidades dele.', 1, true),
-    "the first safe test profile must be prefilled and immediately understandable")
-assert(screen_source:find('self.ai_prefabs_text = "grass"', 1, true)
-    and screen_source:find('self.ai_actions_text = "WALKTO"', 1, true),
-    "the initial collection test must use explicit minimal allowlists")
-print("MODXPECTOR_AI_TEST_REQUEST_UI_CONTRACT_OK")
-
-
--- A transient local service failure must trigger bounded automatic reconnection.
-assert(main:find('local probe_local_ai_bridge', 1, true))
-assert(main:find('bridge_poll_enabled = false', 1, true))
-assert(main:find('math.min(60, 5 * (2 ^ math.min(bridge_probe_attempts, 4)))', 1, true))
-assert(main:find('GAME_TEST_POLL_FAILED', 1, true))
-print("MODXPECTOR_AI_BRIDGE_RECONNECT_CONTRACT_OK")
-
-
-assert(main:find('local AI_ACTION_ALLOWLIST = { WALKTO = true }', 1, true),
-    "the initial AI profile must not allow destructive game actions")
-assert(main:find('parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, AI_ACTION_ALLOWLIST)', 1, true),
-    "AI action input must be restricted to the dedicated non-destructive allowlist")
-print("MODXPECTOR_AI_NON_DESTRUCTIVE_ALLOWLIST_OK")
-
-
-assert(main:find('if agent_status ~= "ready" then', 1, true)
-    and main:find('set_ai_bridge_status("agente_indisponivel"', 1, true)
-    and main:find('inst:DoTaskInTime(30, function() probe_local_ai_bridge(inst) end)', 1, true),
-    "the game must not enable automatic polling until the local Ollama model is ready")
-print("MODXPECTOR_AI_MODEL_READINESS_RETRY_CONTRACT_OK")
+-- Embedded AI must be available offline and visible in the native dashboard.
+assert(main:find('pcall(require, "modxpector/embedded_ai")', 1, true),
+    "modmain must load the embedded Lua reasoning engine")
+assert(main:find('DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics', 1, true),
+    "modmain must expose the embedded analysis action to the dashboard")
+assert(main:find('WORLD_INVENTORY.Collect, DST_GLOBAL', 1, true),
+    "embedded AI must consume the in-game read-only mod inventory")
+assert(main:find('EMBEDDED_AI.Analyze, snapshot', 1, true),
+    "embedded AI must analyze the observed inventory")
+assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_STATUS', 1, true),
+    "dashboard must show embedded AI status")
+assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_REPORT', 1, true),
+    "dashboard must show diagnostic findings")
+assert(screen_source:find('Executar análise da IA embarcada', 1, true),
+    "dashboard must expose a button for the offline reasoning engine")
+assert(not screen_source:find('Ollama local', 1, true),
+    "dashboard must not instruct users to run Ollama")
+assert(not info:find('name = "ai_bridge_enabled"', 1, true),
+    "external bridge must not be a user-facing AI option")
+assert(not config_snapshot_source:find('ai_bridge_enabled', 1, true),
+    "effective config must not expose the external bridge as the main AI")
+print("MODXPECTOR_EMBEDDED_AI_UI_CONTRACT_OK")
