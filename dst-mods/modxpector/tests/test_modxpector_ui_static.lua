@@ -392,10 +392,10 @@ assert(screen_source:find('TEMPLATES.StandardSingleLineTextEntry', 1, true),
     "the AI/Testes tab must include editable test request fields")
 assert(screen_source:find('Gerar plano com IA e executar', 1, true),
     "the dashboard must expose an action to generate and execute an AI test plan")
-assert(screen_source:find('Colete um tufo de grama próximo e confirme que cutgrass entrou no inventário.', 1, true),
+assert(screen_source:find('Aproxime-se de um tufo de grama próximo e confirme que está a até 4 unidades dele.', 1, true),
     "the first safe test profile must be prefilled and immediately understandable")
-assert(screen_source:find('self.ai_prefabs_text = "grass,cutgrass"', 1, true)
-    and screen_source:find('self.ai_actions_text = "PICKUP"', 1, true),
+assert(screen_source:find('self.ai_prefabs_text = "grass"', 1, true)
+    and screen_source:find('self.ai_actions_text = "WALKTO"', 1, true),
     "the initial collection test must use explicit minimal allowlists")
 print("MODXPECTOR_AI_TEST_REQUEST_UI_CONTRACT_OK")
 
