@@ -7,6 +7,7 @@ local now = 1
 local configured_max_spawn_count = 20
 local responses = {}
 local spawned_items = 0
+local inventory_accepts_items = true
 local query_calls = 0
 local unlocked = {}
 
@@ -52,7 +53,10 @@ local player = {
     DoTaskInTime = function(_, _, callback) callback() end,
     components = {
         builder = { UnlockRecipe = function(_, recipe) unlocked[recipe] = true end },
-        inventory = { GiveItem = function() spawned_items = spawned_items + 1 end },
+        inventory = { GiveItem = function()
+            spawned_items = spawned_items + 1
+            return inventory_accepts_items
+        end },
     },
 }
 
@@ -138,5 +142,14 @@ assert(string.find(responses[#responses].message, "configured limit", 1, true))
 now = 1.8
 rpc_server.spawn_item(player, 6, "cutgrass", 5, 0, 0)
 assert(spawned_items == 7 and responses[#responses].success == true)
+
+-- A created prefab is not a successful spawn_item unless GiveItem confirms inventory delivery.
+inventory_accepts_items = false
+now = 2.0
+rpc_server.spawn_item(player, 7, "cutgrass", 1, 0, 0)
+assert(responses[#responses].success == false)
+assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
+inventory_accepts_items = true
+print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
 print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
