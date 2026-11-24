@@ -11,6 +11,7 @@ local inventory_accepts_items = true
 local query_calls = 0
 local sent_plan_rpc
 local virtual_player_started
+local pending_master_timeout
 local unlocked = {}
 local decoded_plan
 
@@ -53,7 +54,9 @@ end
 local player = {
     userid = "KU_TEST_USER",
     IsValid = function() return true end,
-    DoTaskInTime = function(_, _, callback) callback() end,
+    DoTaskInTime = function(_, delay, callback)
+        if delay >= 20 then pending_master_timeout = callback else callback() end
+    end,
     components = {
         builder = { UnlockRecipe = function(_, recipe) unlocked[recipe] = true end },
         inventory = { GiveItem = function()
@@ -180,6 +183,8 @@ assert(virtual_player_started ~= nil and virtual_player_started.schema == "modxp
 assert(virtual_player_started.suite_id == "community_grass_smoke"
     and virtual_player_started.scenario_id == "approach_grass",
     "Virtual Player plan must retain suite provenance")
+assert(type(pending_master_timeout) == "function", "Master validation must have a bounded timeout")
+pending_master_timeout() -- accepted plans must ignore the stale timeout callback
 
 assert(type(rpc_server.spawn_item) == "function")
 assert(type(rpc_server.spawn_entity) == "function")
