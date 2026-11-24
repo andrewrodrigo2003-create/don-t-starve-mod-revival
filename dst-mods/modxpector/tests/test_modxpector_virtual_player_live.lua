@@ -158,6 +158,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_step = 3 },
         { kind = "assert", assertion = { kind = "player_knows_recipe", recipe = "axe" }, verifies_step = 4 },
         { kind = "assert", assertion = { kind = "player_has_item", prefab = "axe" }, verifies_step = 5 },
+        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "axe", count = 1 } },
         { kind = "assert", assertion = { kind = "target_exists", target = { prefab = "structure" } }, verifies_step = 6 },
         { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe" } },
         { kind = "assert", assertion = { kind = "player_near_target", target = { prefab = "tree" }, radius = 5 } },
@@ -192,7 +193,7 @@ assert(saw_spawn_metadata and saw_recipe_metadata,
 assert(player.last_chop_action.action == ACTIONS.CHOP)
 assert(finished.results[1].status == "started")
 assert(finished.results[2].status == "cleared_unverified")
-assert(finished.assertions_total == 17 and finished.assertions_passed == 17)
+assert(finished.assertions_total == 18 and finished.assertions_passed == 18)
 assert(finished.outcome == "passed")
 assert(finished.steps_completed == #plan.steps,
     "steps_completed must count plan steps, not result events")
