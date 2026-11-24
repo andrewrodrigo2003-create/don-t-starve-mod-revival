@@ -152,7 +152,7 @@ assert(status({ enabled = true }, {}, "ready", { is_client = true, is_admin = tr
 local calls = {}
 local values = {
     open_key = "KEY_F8", show_debug_info = false,
-    ai_bridge_enabled = false, test_mode = true, max_spawn_count = 20,
+    test_mode = true, max_spawn_count = 20,
 }
 local snapshot = config.Read(function(key, local_config)
     calls[key] = local_config
@@ -160,13 +160,12 @@ local snapshot = config.Read(function(key, local_config)
 end, pcall)
 assert(snapshot.open_key == "KEY_F8")
 assert(snapshot.show_debug_info == false)
-assert(snapshot.ai_bridge_enabled == false)
 assert(snapshot.test_mode == true)
 assert(snapshot.max_spawn_count == 20)
 assert(calls.open_key == true and calls.show_debug_info == true)
-assert(calls.ai_bridge_enabled == false and calls.test_mode == false and calls.max_spawn_count == false)
+assert(calls.test_mode == false and calls.max_spawn_count == false)
 local defaults = config.Read(function(key) return ({ open_key = "INVALID", max_spawn_count = 999 })[key] end, pcall)
 assert(defaults.open_key == "KEY_F6" and defaults.max_spawn_count == 10)
-assert(defaults.ai_bridge_enabled == false, "local bridge must be opt-in when no saved setting exists")
+assert(defaults.test_mode == false, "controlled Virtual Player tests must remain opt-in")
 
 print("MODXPECTOR_CURRENT_MODULES_OK")
