@@ -605,7 +605,7 @@ function InspectorScreen:Refresh()
         self.ai_prefabs_entry.textbox:SetTextLengthLimit(420)
         self:AddLine("Ações não destrutivas permitidas (neste perfil: WALKTO)", -208, 16)
         self.ai_actions_entry = self.content:AddChild(TEMPLATES.StandardSingleLineTextEntry(
-            self.ai_actions_text, 720, 36, CHATFONT, 20, "Ex.: PICKUP"))
+            self.ai_actions_text, 720, 36, CHATFONT, 20, "Ex.: WALKTO"))
         self.ai_actions_entry:SetPosition(0, -236)
         self.ai_actions_entry.textbox:SetTextLengthLimit(420)
         make_button(self.content, "Gerar plano com IA e executar", 0, -286, function()
