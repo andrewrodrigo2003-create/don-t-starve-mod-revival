@@ -395,6 +395,15 @@ function VirtualPlayer:_next()
             or "BufferedAction submitted to PlayerController")
         self:_schedule(self.poll_interval, function() self:_poll_action() end)
     elseif step.kind == "unlock_recipe" then
+        if type(step.recipe) ~= "string" or #step.recipe == 0 or #step.recipe > 128
+            or not step.recipe:match("^[%w_%-]+$") then
+            self:_finish(false, "invalid recipe name")
+            return
+        end
+        if self.allowed_recipes[step.recipe] ~= true then
+            self:_finish(false, "recipe is not in the test plan allowlist")
+            return
+        end
         if type(self.send_rpc) ~= "function" then self:_finish(false, "server RPC bridge unavailable"); return end
         self.next_request_id = self.next_request_id + 1
         self.active = { step = step, request_id = self.next_request_id, started = GetTime(), timeout = 15 }
@@ -424,12 +433,29 @@ function VirtualPlayer:_next()
             self:_finish(false, ok and "assertion failed" or tostring(result))
         end
     elseif step.kind == "spawn_item" or step.kind == "spawn_entity" then
+        if type(step.prefab) ~= "string" or #step.prefab == 0 or #step.prefab > 128
+            or not step.prefab:match("^[%w_%-]+$") then
+            self:_finish(false, "invalid prefab")
+            return
+        end
+        if self.allowed_prefabs[step.prefab] ~= true then
+            self:_finish(false, "spawn prefab is not in the test plan allowlist")
+            return
+        end
+        local count = step.count == nil and 1 or tonumber(step.count)
+        if not is_finite_number(count) or count ~= math.floor(count) or count < 1 or count > 20 then
+            self:_finish(false, "invalid spawn count")
+            return
+        end
         if type(self.send_rpc) ~= "function" then self:_finish(false, "server RPC bridge unavailable"); return end
-        assert(type(step.prefab) == "string" and #step.prefab <= 128, "invalid prefab")
-        local count = math.max(1, math.min(tonumber(step.count) or 1, 20))
         local x, y, z = self.player.Transform:GetWorldPosition()
         if step.position ~= nil then
-            assert(is_finite_number(step.position.x) and is_finite_number(step.position.z), "invalid spawn position")
+            if type(step.position) ~= "table" or not is_finite_number(step.position.x)
+                or not is_finite_number(step.position.z) or math.abs(step.position.x) > 100000
+                or math.abs(step.position.z) > 100000 then
+                self:_finish(false, "invalid spawn position")
+                return
+            end
             x, z = step.position.x, step.position.z
         end
         self.next_request_id = self.next_request_id + 1
@@ -519,7 +545,8 @@ function VirtualPlayer:_poll_rpc()
     if not self.running or self.active == nil then return end
     local active = self.active
     if GetTime() - active.started > active.timeout then
-        self:_finish(false, "server spawn RPC timeout")
+        local operation = active.step ~= nil and active.step.kind or "server operation"
+        self:_finish(false, tostring(operation) .. " RPC timeout at step " .. tostring(self.index))
     else
         self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
     end
