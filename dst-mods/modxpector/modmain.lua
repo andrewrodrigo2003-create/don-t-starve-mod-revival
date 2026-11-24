@@ -179,19 +179,44 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
         return
     end
     local spawned = 0
+    local delivered = 0
+    local inventory_rejected = 0
     for _ = 1, count do
-        local ok, entity = pcall(SpawnPrefab, prefab)
-        if ok and entity ~= nil and entity:IsValid() then
-            if as_item and player.components ~= nil and player.components.inventory ~= nil then
-                player.components.inventory:GiveItem(entity)
-            else
-                entity.Transform:SetPosition(x, 0, z)
-            end
+        local spawn_ok, entity = pcall(SpawnPrefab, prefab)
+        if spawn_ok and entity ~= nil and type(entity.IsValid) == "function" and entity:IsValid() then
             spawned = spawned + 1
+            if as_item then
+                local inventory = player.components ~= nil and player.components.inventory or nil
+                local give_ok, give_result = false, nil
+                if inventory ~= nil and type(inventory.GiveItem) == "function" then
+                    give_ok, give_result = pcall(inventory.GiveItem, inventory, entity)
+                end
+                if give_ok and give_result ~= false and give_result ~= nil then
+                    delivered = delivered + 1
+                else
+                    inventory_rejected = inventory_rejected + 1
+                    if entity:IsValid() and entity.Transform ~= nil
+                        and type(entity.Transform.SetPosition) == "function" then
+                        pcall(entity.Transform.SetPosition, entity.Transform, x, 0, z)
+                    end
+                end
+            elseif entity.Transform ~= nil and type(entity.Transform.SetPosition) == "function" then
+                local position_ok = pcall(entity.Transform.SetPosition, entity.Transform, x, 0, z)
+                if position_ok then delivered = delivered + 1 end
+            end
         end
     end
-    send_result(player, request_id, spawned > 0,
-        spawned > 0 and ("spawned " .. tostring(spawned) .. " " .. prefab) or "no prefab instances were created")
+    local complete = spawned == count and (not as_item or delivered == count)
+        and (as_item or delivered == spawned)
+    local message
+    if as_item then
+        message = "created " .. tostring(spawned) .. "/" .. tostring(count)
+            .. "; delivered " .. tostring(delivered) .. " to inventory"
+            .. (inventory_rejected > 0 and ("; inventory rejected " .. tostring(inventory_rejected)) or "")
+    else
+        message = "spawned " .. tostring(delivered) .. "/" .. tostring(count) .. " entities"
+    end
+    send_result(player, request_id, complete, message)
 end
 
 if type(AddModRPCHandler) == "function" then
