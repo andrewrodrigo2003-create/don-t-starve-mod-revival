@@ -177,8 +177,8 @@ assert(devtools_missing_finding ~= nil and devtools_missing_finding.confidence =
 
 local analysis = AI.Analyze(snapshot)
 assert(analysis.schema == AI.SCHEMA, "analysis schema missing")
-assert(analysis.registry.prefabs.available == true and analysis.registry.prefabs.count == nil,
-    "analysis should preserve registry availability while omitting unavailable count data")
+assert(analysis.registry.prefabs.available == false and analysis.registry.prefabs.count == nil,
+    "analysis should report registry evidence as unavailable when the snapshot omitted it")
 assert(analysis.status == "issues_detected", "confirmed errors should be reported")
 assert(analysis.decision == "investigate_critical_load_failures", "behavior tree must prioritize critical load failures")
 assert(analysis.summary.critical == 1, "load failure should be critical")
