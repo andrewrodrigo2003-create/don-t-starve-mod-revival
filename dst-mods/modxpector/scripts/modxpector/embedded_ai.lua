@@ -272,6 +272,53 @@ local function analyze_mod(mod, findings)
     end
 end
 
+local function analyze_community_integrations(snapshot, findings)
+    local api_catalog = type(snapshot.community_apis) == "table" and snapshot.community_apis or {}
+    local devtools_api = type(api_catalog.dev_tools) == "table" and api_catalog.dev_tools or nil
+    if devtools_api == nil then return end
+
+    for _, mod in ipairs(type(snapshot.mods) == "table" and snapshot.mods or {}) do
+        if type(mod) == "table" and mod.id == "workshop-2220506640" and mod.enabled == true then
+            if devtools_api.available == true and devtools_api.version_observed == true then
+                if devtools_api.version > 1 then
+                    add_finding(findings, {
+                        code = "DEVTOOLS_API_MAJOR_VERSION_UNSUPPORTED",
+                        severity = "warning",
+                        confidence = "probable",
+                        mod_id = mod.id,
+                        mod_name = mod.name or "Dev Tools",
+                        title = "Versão principal da API Dev Tools não reconhecida",
+                        detail = "A API pública do Dev Tools mudou de versão principal; a integração opcional do ModXpector precisa revisar a compatibilidade antes de usá-la.",
+                        evidence = {
+                            api = "DevToolsAPI",
+                            version = devtools_api.version,
+                            documented_compatible_range = "<= 1",
+                        },
+                        next_task = "review_community_api_compatibility",
+                    })
+                end
+            elseif mod.loaded == true or mod.load_state == "loaded" then
+                add_finding(findings, {
+                    code = "DEVTOOLS_API_NOT_OBSERVED",
+                    severity = "info",
+                    confidence = "unknown",
+                    mod_id = mod.id,
+                    mod_name = mod.name or "Dev Tools",
+                    title = "API pública do Dev Tools não observada",
+                    detail = "O mod está carregado, mas DevToolsAPI:GetAPIVersion não foi observado neste contexto. Isso não prova falha do mod.",
+                    evidence = {
+                        api = "DevToolsAPI",
+                        available = devtools_api.available == true,
+                        version_observed = devtools_api.version_observed == true,
+                    },
+                    next_task = "collect_community_api_evidence",
+                })
+            end
+            break
+        end
+    end
+end
+
 function M.Analyze(snapshot)
     local findings = {}
     if type(snapshot) ~= "table" or snapshot.schema ~= "modxpector/world-inventory/v2" then
@@ -289,6 +336,7 @@ function M.Analyze(snapshot)
     for _, mod in ipairs(mods) do
         if type(mod) == "table" then analyze_mod(mod, findings) end
     end
+    analyze_community_integrations(snapshot, findings)
 
     local limitations = {}
     if capabilities.known_mod_list ~= true then
@@ -347,6 +395,8 @@ local TASK_PRIORITY = {
     confirm_load_state = 50,
     collect_dependency_evidence = 25,
     collect_mod_metadata = 20,
+    review_community_api_compatibility = 35,
+    collect_community_api_evidence = 15,
 }
 
 function M.BuildPlan(analysis)
