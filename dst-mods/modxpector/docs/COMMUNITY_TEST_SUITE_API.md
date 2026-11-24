@@ -137,3 +137,10 @@ O inventário faz uma sondagem somente de leitura à API pública `DevToolsAPI:G
 - Se o mod estiver carregado mas a API não for observada, o achado é **desconhecido/informativo**; ausência de API não é tratada como falha confirmada.
 - A chamada é protegida por `pcall`; ausência da API não interrompe o inventário nem o carregamento do ModXpector.
 - A integração não copia código do Dev Tools e não adiciona dependência de Workshop.
+
+
+## Behavior Trees com memória de execução
+
+O motor oferece agora `MemorySelector`, `MemorySequence`, `AsyncAction` e `ResetMemory`. Os composites mantêm o índice do filho que retornou `RUNNING`, retomam desse ponto no próximo tick e limpam o cursor quando terminam ou falham. Cada composite exige uma chave de memória única no contexto.
+
+Essa evolução é uma implementação original inspirada conceitualmente no uso de comportamentos stateful do Artificial Wilson; nenhum código desse repositório foi copiado. Ela prepara a IA para tarefas de vários ticks sem reiniciar precondições e ramos já concluídos.
