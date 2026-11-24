@@ -379,3 +379,22 @@ assert(screen_source:find('menu principal > Mods > ModXpector > Configurar', 1, 
 assert(screen_source:find('IA + Modo de testes precisam estar ativados; o agente local e o token também são obrigatórios.', 1, true),
     "The UI must state every prerequisite for AI-driven tests")
 print("MODXPECTOR_AI_MENU_DISCOVERABILITY_CONTRACT_OK")
+
+
+-- The AI/Testes page must let the player submit a natural-language goal to the local planner.
+assert(main:find('DST_GLOBAL.MODXPECTOR_REQUEST_AI_TEST = request_ai_test_plan', 1, true),
+    "modmain must expose the local AI test-plan request to the native dashboard")
+assert(main:find('/api/dst/plan?token=', 1, true),
+    "the in-game request must submit to the authenticated local planner endpoint")
+assert(main:find('TheSim:QueryServer(url, function(body, successful, code)', 1, true),
+    "the local AI planner must use the supported game HTTP callback")
+assert(screen_source:find('TEMPLATES.StandardSingleLineTextEntry', 1, true),
+    "the AI/Testes tab must include editable test request fields")
+assert(screen_source:find('Gerar plano com IA e executar', 1, true),
+    "the dashboard must expose an action to generate and execute an AI test plan")
+assert(screen_source:find('Colete um tufo de grama próximo e confirme que cutgrass entrou no inventário.', 1, true),
+    "the first safe test profile must be prefilled and immediately understandable")
+assert(screen_source:find('self.ai_prefabs_text = "grass,cutgrass"', 1, true)
+    and screen_source:find('self.ai_actions_text = "PICKUP"', 1, true),
+    "the initial collection test must use explicit minimal allowlists")
+print("MODXPECTOR_AI_TEST_REQUEST_UI_CONTRACT_OK")
