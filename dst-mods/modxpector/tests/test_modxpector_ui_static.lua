@@ -406,3 +406,10 @@ assert(main:find('bridge_poll_enabled = false', 1, true))
 assert(main:find('math.min(60, 5 * (2 ^ math.min(bridge_probe_attempts, 4)))', 1, true))
 assert(main:find('GAME_TEST_POLL_FAILED', 1, true))
 print("MODXPECTOR_AI_BRIDGE_RECONNECT_CONTRACT_OK")
+
+
+assert(main:find('local AI_ACTION_ALLOWLIST = { WALKTO = true }', 1, true),
+    "the initial AI profile must not allow destructive game actions")
+assert(main:find('parse_ai_allowlist_csv(actions_csv, "^[A-Z0-9_]+$", 40, AI_ACTION_ALLOWLIST)', 1, true),
+    "AI action input must be restricted to the dedicated non-destructive allowlist")
+print("MODXPECTOR_AI_NON_DESTRUCTIVE_ALLOWLIST_OK")
