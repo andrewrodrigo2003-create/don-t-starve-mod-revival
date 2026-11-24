@@ -436,4 +436,239 @@ function M.NextTask(plan, session)
     return nil
 end
 
+local SUITE_ACTION_ALLOWLIST = { WALKTO = true }
+local SUITE_ASSERTION_ALLOWLIST = {
+    player_health_gte = true,
+    player_hunger_gte = true,
+    player_sanity_gte = true,
+    player_has_item = true,
+    player_has_item_count_gte = true,
+    player_equipped = true,
+    player_near_target = true,
+    player_knows_recipe = true,
+    target_exists = true,
+    target_has_tag = true,
+}
+
+local function safe_identifier(value)
+    return type(value) == "string" and #value >= 1 and #value <= 64
+        and value:match("^[%w_%-]+$") ~= nil
+end
+
+local function list_to_set(values, maximum)
+    if type(values) ~= "table" or #values > maximum then return nil end
+    local set, normalized = {}, {}
+    for _, value in ipairs(values) do
+        if not safe_identifier(value) or set[value] then return nil end
+        set[value] = true
+        normalized[#normalized + 1] = value
+    end
+    return set, normalized
+end
+
+local function finite_in_range(value, minimum, maximum)
+    return type(value) == "number" and value == value
+        and value ~= math.huge and value ~= -math.huge
+        and value >= minimum and value <= maximum
+end
+
+local function copy_target(target, prefab_set)
+    if type(target) ~= "table" or not safe_identifier(target.prefab)
+        or prefab_set[target.prefab] ~= true then return nil end
+    if target.radius ~= nil and not finite_in_range(target.radius, 1, 40) then return nil end
+    if target.tag ~= nil and not safe_identifier(target.tag) then return nil end
+    local result = { prefab = target.prefab }
+    if target.radius ~= nil then result.radius = target.radius end
+    if target.tag ~= nil then result.tag = target.tag end
+    return result
+end
+
+local function copy_assertion(assertion, index, previous_actions, prefab_set, recipe_set)
+    if type(assertion) ~= "table" or SUITE_ASSERTION_ALLOWLIST[assertion.kind] ~= true then return nil end
+    local result = { kind = assertion.kind }
+    if assertion.expected ~= nil then
+        if type(assertion.expected) ~= "boolean" then return nil end
+        result.expected = assertion.expected
+    end
+
+    local kind = assertion.kind
+    if kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte"
+        or kind == "target_health_lte" then
+        if not finite_in_range(assertion.value, 0, 100000) then return nil end
+        result.value = assertion.value
+    elseif kind == "player_has_item" or kind == "player_equipped" then
+        if not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true then return nil end
+        result.prefab = assertion.prefab
+        if kind == "player_equipped" then
+            if assertion.slot ~= "HANDS" and assertion.slot ~= "BODY" and assertion.slot ~= "HEAD" then return nil end
+            result.slot = assertion.slot
+        end
+    elseif kind == "player_has_item_count_gte" then
+        if not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true
+            or not finite_in_range(assertion.count, 1, 10000)
+            or assertion.count ~= math.floor(assertion.count) then return nil end
+        result.prefab = assertion.prefab
+        result.count = assertion.count
+    elseif kind == "player_knows_recipe" then
+        if not safe_identifier(assertion.recipe) or recipe_set[assertion.recipe] ~= true then return nil end
+        result.recipe = assertion.recipe
+    elseif kind == "player_near_target" or kind == "target_exists" or kind == "target_has_tag" then
+        local target_step = assertion.target_step
+        if not finite_in_range(target_step, 1, index - 1)
+            or target_step ~= math.floor(target_step) or previous_actions[target_step] ~= true then return nil end
+        result.target_step = target_step
+        if kind == "player_near_target" then
+            if assertion.radius ~= nil and not finite_in_range(assertion.radius, 0, 100) then return nil end
+            if assertion.radius ~= nil then result.radius = assertion.radius end
+        elseif kind == "target_has_tag" then
+            if not safe_identifier(assertion.tag) then return nil end
+            result.tag = assertion.tag
+        end
+    else
+        return nil
+    end
+    return result
+end
+
+function M.ValidateSuite(suite)
+    if type(suite) ~= "table" or suite.schema ~= "modxpector/test-suite/v1" then
+        return false, "unsupported_suite_schema"
+    end
+    if not safe_identifier(suite.id) or not safe_identifier(suite.owner_mod_id)
+        or type(suite.title) ~= "string" or #suite.title < 1 or #suite.title > 160 then
+        return false, "invalid_suite_identity"
+    end
+    local prefab_set, prefabs = list_to_set(suite.allowed_prefabs or {}, 40)
+    local recipe_set, recipes = list_to_set(suite.allowed_recipes or {}, 40)
+    local action_set, actions = list_to_set(suite.allowed_actions or {}, 10)
+    if prefab_set == nil or recipe_set == nil or action_set == nil then
+        return false, "invalid_suite_allowlist"
+    end
+    for _, action in ipairs(actions) do
+        if SUITE_ACTION_ALLOWLIST[action] ~= true then return false, "action_not_allowed:" .. action end
+    end
+    if #suite.scenarios < 1 or #suite.scenarios > 20 or type(suite.scenarios) ~= "table" then
+        return false, "invalid_scenario_list"
+    end
+
+    local normalized = {
+        schema = "modxpector/test-suite/v1",
+        id = suite.id,
+        owner_mod_id = suite.owner_mod_id,
+        title = suite.title,
+        priority = finite_in_range(suite.priority or 0, 0, 100) and (suite.priority or 0) or 0,
+        allowed_prefabs = prefabs,
+        allowed_recipes = recipes,
+        allowed_actions = actions,
+        scenarios = {},
+    }
+    local seen_scenarios = {}
+    for _, scenario in ipairs(suite.scenarios) do
+        if type(scenario) ~= "table" or not safe_identifier(scenario.id)
+            or seen_scenarios[scenario.id] or type(scenario.title) ~= "string"
+            or #scenario.title < 1 or #scenario.title > 160
+            or type(scenario.steps) ~= "table" or #scenario.steps < 1 or #scenario.steps > 20 then
+            return false, "invalid_scenario"
+        end
+        seen_scenarios[scenario.id] = true
+        local previous_actions, steps, verified = {}, {}, {}
+        for index, step in ipairs(scenario.steps) do
+            if type(step) ~= "table" then return false, "invalid_step:" .. tostring(index) end
+            if step.kind == "action" then
+                if step.action ~= "WALKTO" or action_set.WALKTO ~= true
+                    or step.target_required ~= true then return false, "unsafe_action_step:" .. tostring(index) end
+                local target = copy_target(step.target, prefab_set)
+                if target == nil then return false, "invalid_action_target:" .. tostring(index) end
+                local normalized_step = {
+                    kind = "action",
+                    action = "WALKTO",
+                    target = target,
+                    target_required = true,
+                }
+                if step.timeout ~= nil then
+                    if not finite_in_range(step.timeout, 1, 120) then return false, "invalid_step_timeout" end
+                    normalized_step.timeout = step.timeout
+                end
+                steps[#steps + 1] = normalized_step
+                previous_actions[index] = true
+            elseif step.kind == "assert" then
+                local assertion = copy_assertion(step.assertion, index, previous_actions, prefab_set, recipe_set)
+                if assertion == nil then return false, "invalid_assertion_step:" .. tostring(index) end
+                local verifies_step = step.verifies_step
+                if not finite_in_range(verifies_step, 1, index - 1)
+                    or verifies_step ~= math.floor(verifies_step) or previous_actions[verifies_step] ~= true then
+                    return false, "assertion_must_verify_prior_action:" .. tostring(index)
+                end
+                verified[verifies_step] = true
+                steps[#steps + 1] = {
+                    kind = "assert",
+                    assertion = assertion,
+                    verifies_step = verifies_step,
+                }
+            else
+                return false, "step_kind_not_allowed:" .. tostring(index)
+            end
+        end
+        for action_index in pairs(previous_actions) do
+            if not verified[action_index] then return false, "action_without_postcondition:" .. tostring(action_index) end
+        end
+        normalized.scenarios[#normalized.scenarios + 1] = {
+            id = scenario.id,
+            title = scenario.title,
+            steps = steps,
+        }
+    end
+    return true, normalized
+end
+
+function M.SelectSuites(suites, snapshot)
+    local active = {}
+    for _, mod in ipairs(type(snapshot) == "table" and snapshot.mods or {}) do
+        if type(mod) == "table" and mod.enabled == true
+            and not (mod.loaded_known == true and mod.loaded ~= true)
+            and mod.load_state ~= "failed" then
+            active[mod.id] = mod
+        end
+    end
+    local selected = {}
+    for _, candidate in ipairs(type(suites) == "table" and suites or {}) do
+        local valid, suite = M.ValidateSuite(candidate)
+        if valid and active[suite.owner_mod_id] ~= nil then
+            selected[#selected + 1] = {
+                suite = suite,
+                mod = active[suite.owner_mod_id],
+                confidence = active[suite.owner_mod_id].loaded == true and "confirmed" or "probable",
+            }
+        end
+    end
+    table.sort(selected, function(a, b)
+        if a.suite.priority ~= b.suite.priority then return a.suite.priority > b.suite.priority end
+        return a.suite.id < b.suite.id
+    end)
+    return selected
+end
+
+function M.BuildVirtualPlayerPlan(suite, scenario_id, run_id)
+    local valid, normalized = M.ValidateSuite(suite)
+    if not valid then return nil, normalized end
+    if not safe_identifier(run_id) then return nil, "invalid_run_id" end
+    local scenario
+    for _, candidate in ipairs(normalized.scenarios) do
+        if candidate.id == scenario_id then scenario = candidate; break end
+    end
+    if scenario == nil then return nil, "scenario_not_found" end
+    return {
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        run_id = run_id,
+        allowed_prefabs = normalized.allowed_prefabs,
+        allowed_recipes = normalized.allowed_recipes,
+        allowed_actions = normalized.allowed_actions,
+        steps = scenario.steps,
+        suite_id = normalized.id,
+        owner_mod_id = normalized.owner_mod_id,
+        scenario_id = scenario.id,
+    }
+end
+
 return M
