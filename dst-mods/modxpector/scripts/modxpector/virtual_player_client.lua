@@ -133,6 +133,10 @@ function VirtualPlayer:_record(step, status, detail)
         status = status,
         detail = detail,
     }
+    if step.kind ~= "run" and (status == "completed" or status == "passed"
+        or status == "submitted_unverified" or status == "cleared_unverified") then
+        self.steps_completed = (self.steps_completed or 0) + 1
+    end
 end
 
 function VirtualPlayer:_finish(ok, message)
@@ -156,6 +160,7 @@ function VirtualPlayer:Start(plan)
     self.queue = plan.steps
     self.index = 0
     self.results = {}
+    self.steps_completed = 0
     self.assertions_total = 0
     self.assertions_passed = 0
     self.running = true
@@ -545,7 +550,7 @@ function VirtualPlayer:GetReport()
         evidence_level = "in-game-runner-unvalidated",
         player = self.player ~= nil and self.player:IsValid() and self.player.prefab or nil,
         running = self.running,
-        steps_completed = #self.results,
+        steps_completed = self.steps_completed or 0,
         assertions_total = self.assertions_total or 0,
         assertions_passed = self.assertions_passed or 0,
         outcome = self.run_failed and "failed" or ((self.assertions_total or 0) == 0 and "inconclusive" or ((self.assertions_passed or 0) == (self.assertions_total or 0) and "passed" or "failed")),
