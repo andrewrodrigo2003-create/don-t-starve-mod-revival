@@ -238,9 +238,17 @@ end
 local function send_game_report(inst, plan, report, token, port)
     if TheSim == nil or type(TheSim.QueryServer) ~= "function" or type(token) ~= "string" then return end
     local body = {
-        run_id = plan.run_id,
+        run_id = tostring(report.run_id or plan.run_id or ""),
         outcome = tostring(report.outcome or "unknown"),
+        started_at = tonumber(report.started_at),
+        finished_at = tonumber(report.finished_at),
+        duration_seconds = tonumber(report.duration_seconds),
         steps_completed = tonumber(report.steps_completed) or 0,
+        steps_verified = tonumber(report.steps_verified) or 0,
+        steps_unverified = tonumber(report.steps_unverified) or 0,
+        unverified_step_indices = report.unverified_step_indices or {},
+        assertions_total = tonumber(report.assertions_total) or 0,
+        assertions_passed = tonumber(report.assertions_passed) or 0,
         results = report.results or {},
     }
     local encoded_ok, encoded = pcall(function() return json.encode(body) end)
