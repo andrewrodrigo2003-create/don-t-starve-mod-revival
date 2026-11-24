@@ -102,7 +102,8 @@ local function run_embedded_ai_diagnostics(callback)
         finish(false, "Falha ao priorizar a investigação.")
         return false
     end
-    local next_task = EMBEDDED_AI.NextTask(plan, embedded_ai_session)
+    local task_execution = EMBEDDED_AI.RunReadOnlyPlan(plan, embedded_ai_session, snapshot, 200)
+    local next_task = task_execution.next_task
     local candidate_suites = EMBEDDED_AI.GetBuiltinSuites()
     for _, suite in ipairs(embedded_ai_test_suites) do
         candidate_suites[#candidate_suites + 1] = suite
@@ -114,6 +115,7 @@ local function run_embedded_ai_diagnostics(callback)
         analysis = analysis,
         plan = plan,
         next_task = next_task,
+        task_execution = task_execution,
         session = embedded_ai_session,
         selected_suites = selected_suites,
     }
@@ -128,6 +130,7 @@ local function run_embedded_ai_diagnostics(callback)
         .. " decision=" .. tostring(analysis.decision)
         .. " findings=" .. tostring(summary.total or 0)
         .. " tasks=" .. tostring(plan.total or 0)
+        .. " executed=" .. tostring(task_execution.executed or 0)
         .. " suites=" .. tostring(#selected_suites))
     for index, finding in ipairs(analysis.findings or {}) do
         if index > 8 then break end
