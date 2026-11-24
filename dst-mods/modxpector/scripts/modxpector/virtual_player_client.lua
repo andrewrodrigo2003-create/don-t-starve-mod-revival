@@ -138,7 +138,16 @@ function VirtualPlayer:BuildAction(step, target_override)
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
         assert(inventory ~= nil and type(inventory.FindItem) == "function", "inventory replica unavailable")
         invobject = inventory:FindItem(function(item) return item ~= nil and item.prefab == step.invobject end)
-        assert(invobject ~= nil, "requested inventory item not found: " .. tostring(step.invobject))
+        if invobject == nil and type(inventory.GetEquippedItem) == "function" then
+            for _, slot in pairs(EQUIPSLOTS or {}) do
+                local equipped = inventory:GetEquippedItem(slot)
+                if equipped ~= nil and equipped.prefab == step.invobject then
+                    invobject = equipped
+                    break
+                end
+            end
+        end
+        assert(invobject ~= nil, "requested inventory item not found in carried or equipped items: " .. tostring(step.invobject))
     end
     return BufferedAction(self.player, target, ACTIONS[action_name], invobject, position)
 end
