@@ -8,6 +8,7 @@ for test_file in \
   dst-mods/modxpector/tests/test_modxpector_embedded_ai.lua \
   dst-mods/modxpector/tests/test_modxpector_world_inventory.lua \
   dst-mods/modxpector/tests/test_modxpector_runtime_observer.lua \
+  dst-mods/modxpector/tests/test_modxpector_community_events.lua \
   dst-mods/modxpector/tests/test_modxpector_config.lua \
   dst-mods/modxpector/tests/test_modxpector_current_modules.lua \
   dst-mods/modxpector/tests/test_modxpector_ui_static.lua \
