@@ -88,6 +88,108 @@ function BehaviorTree.Action(action)
     end
 end
 
+local function valid_tree_status(status)
+    return status == BehaviorTree.SUCCESS or status == BehaviorTree.FAILURE
+        or status == BehaviorTree.RUNNING
+end
+
+function BehaviorTree.AsyncAction(action)
+    return function(context)
+        if type(action) ~= "function" then
+            return BehaviorTree.FAILURE, nil, "invalid async action"
+        end
+        local ok, status, result, reason = pcall(action, context)
+        if not ok then return BehaviorTree.FAILURE, nil, tostring(status) end
+        if not valid_tree_status(status) then
+            return BehaviorTree.FAILURE, nil, "async action returned an invalid status"
+        end
+        return status, result, reason
+    end
+end
+
+local function get_tree_memory(context, key)
+    if type(context) ~= "table" or type(key) ~= "string" or key == "" then return nil end
+    if type(context.tree_memory) ~= "table" then context.tree_memory = {} end
+    return context.tree_memory
+end
+
+function BehaviorTree.ResetMemory(context, key)
+    if type(context) ~= "table" or type(context.tree_memory) ~= "table" then return false end
+    if key == nil then
+        context.tree_memory = {}
+        return true
+    end
+    if type(key) ~= "string" or key == "" then return false end
+    context.tree_memory[key] = nil
+    return true
+end
+
+function BehaviorTree.MemorySelector(children, memory_key)
+    return function(context)
+        local memory = get_tree_memory(context, memory_key)
+        if memory == nil then
+            return BehaviorTree.FAILURE, nil, "memory selector requires a context and unique key"
+        end
+        local index = memory[memory_key] or 1
+        while index <= #(children or {}) do
+            local child = children[index]
+            if type(child) ~= "function" then
+                memory[memory_key] = nil
+                return BehaviorTree.FAILURE, nil, "invalid selector child"
+            end
+            local status, result, reason = child(context)
+            if not valid_tree_status(status) then
+                memory[memory_key] = nil
+                return BehaviorTree.FAILURE, nil, "selector child returned an invalid status"
+            end
+            if status == BehaviorTree.SUCCESS then
+                memory[memory_key] = nil
+                return status, result, reason
+            elseif status == BehaviorTree.RUNNING then
+                memory[memory_key] = index
+                return status, result, reason
+            end
+            index = index + 1
+        end
+        memory[memory_key] = nil
+        return BehaviorTree.FAILURE, nil, "all memory selector branches failed"
+    end
+end
+
+function BehaviorTree.MemorySequence(children, memory_key)
+    return function(context)
+        local memory = get_tree_memory(context, memory_key)
+        if memory == nil then
+            return BehaviorTree.FAILURE, nil, "memory sequence requires a context and unique key"
+        end
+        local index = memory[memory_key] or 1
+        local last_result
+        while index <= #(children or {}) do
+            local child = children[index]
+            if type(child) ~= "function" then
+                memory[memory_key] = nil
+                return BehaviorTree.FAILURE, nil, "invalid sequence child"
+            end
+            local status, result, reason = child(context)
+            if not valid_tree_status(status) then
+                memory[memory_key] = nil
+                return BehaviorTree.FAILURE, nil, "sequence child returned an invalid status"
+            end
+            if status == BehaviorTree.FAILURE then
+                memory[memory_key] = nil
+                return status, result, reason
+            elseif status == BehaviorTree.RUNNING then
+                memory[memory_key] = index
+                return status, result, reason
+            end
+            last_result = result
+            index = index + 1
+        end
+        memory[memory_key] = nil
+        return BehaviorTree.SUCCESS, last_result
+    end
+end
+
 function BehaviorTree.Selector(children)
     return function(context)
         for _, child in ipairs(children or {}) do
