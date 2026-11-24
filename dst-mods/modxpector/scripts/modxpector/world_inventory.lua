@@ -250,14 +250,15 @@ function M.Collect(globals)
     local truncated = #mods > MAX_MODS
     while #mods > MAX_MODS do table.remove(mods) end
 
-    local world = globals.TheWorld
-    local net = globals.TheNet
     local prefab_registry = collect_registry_names(globals.Prefabs, MAX_REGISTRY_NAMES)
     local recipe_registry = collect_registry_names(globals.AllRecipes, MAX_REGISTRY_NAMES)
     local player = globals.ThePlayer
     local player_components = collect_registry_names(
         type(player) == "table" and player.components or nil,
         MAX_PLAYER_COMPONENT_NAMES)
+
+    local world = globals.TheWorld
+    local net = globals.TheNet
     local world_name = world ~= nil and clean_string(world.prefab, "unknown", 80) or "unknown"
     local is_master = world ~= nil and world.ismastersim == true
     local os_table = globals.os or os
