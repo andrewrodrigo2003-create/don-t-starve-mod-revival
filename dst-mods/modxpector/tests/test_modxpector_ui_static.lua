@@ -360,7 +360,7 @@ assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_REPORT', 1, true),
     "dashboard must show diagnostic findings")
 assert(screen_source:find("Investigações:", 1, true),
     "dashboard must show read-only diagnostic task execution")
-assert(screen_source:find("Componentes runtime:", 1, true),
+assert(screen_source:find("observador:", 1, true) and screen_source:find("componentes:", 1, true),
     "dashboard must show runtime component observation state")
 assert(screen_source:find('Executar análise da IA embarcada', 1, true),
     "dashboard must expose a button for the offline reasoning engine")
