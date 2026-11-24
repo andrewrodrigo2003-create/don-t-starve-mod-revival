@@ -89,10 +89,12 @@ function M.Report(event)
         return false, "invalid_event_component"
     end
 
-    local key = table.concat({
-        event.mod_id, event.kind, event.severity, message,
-        event.prefab or "", event.component or "", stack or "",
-    }, "|")
+    local function key_part(value)
+        value = value or ""
+        return tostring(#value) .. ":" .. value
+    end
+    local key = key_part(event.mod_id) .. key_part(event.kind) .. key_part(event.severity)
+        .. key_part(message) .. key_part(event.prefab) .. key_part(event.component) .. key_part(stack)
     local existing_id = state.dedupe[key]
     if existing_id ~= nil then
         for _, existing in ipairs(state.events) do
