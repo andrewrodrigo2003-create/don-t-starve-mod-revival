@@ -487,8 +487,29 @@ function M.Analyze(snapshot)
         status = "incomplete_evidence"
     end
 
+    local registry = type(snapshot.registry) == "table" and snapshot.registry or {}
     local analysis = {
         schema = M.SCHEMA,
+        registry = {
+            prefabs = type(registry.prefabs) == "table" and {
+                available = registry.prefabs.available == true,
+                count = tonumber(registry.prefabs.count),
+                sample_count = type(registry.prefabs.names) == "table" and #registry.prefabs.names or 0,
+                truncated = registry.prefabs.truncated == true,
+            } or { available = false, count = nil, sample_count = 0, truncated = false },
+            recipes = type(registry.recipes) == "table" and {
+                available = registry.recipes.available == true,
+                count = tonumber(registry.recipes.count),
+                sample_count = type(registry.recipes.names) == "table" and #registry.recipes.names or 0,
+                truncated = registry.recipes.truncated == true,
+            } or { available = false, count = nil, sample_count = 0, truncated = false },
+            player_components = type(registry.player_components) == "table" and {
+                available = registry.player_components.available == true,
+                count = tonumber(registry.player_components.count),
+                sample_count = type(registry.player_components.names) == "table" and #registry.player_components.names or 0,
+                truncated = registry.player_components.truncated == true,
+            } or { available = false, count = nil, sample_count = 0, truncated = false },
+        },
         engine_version = M.VERSION,
         status = status,
         captured_at = tonumber(snapshot.captured_at) or 0,
