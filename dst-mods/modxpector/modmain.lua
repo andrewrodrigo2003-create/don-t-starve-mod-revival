@@ -856,7 +856,6 @@ local function request_ai_test_plan(goal, prefabs_csv, actions_csv, callback)
         return false
     end
     set_ai_bridge_status("gerando_plano", "O Ollama está elaborando o plano de teste.")
-    finish(true, "Pedido enviado ao agente local; aguardando a geração.")
     return true
 end
 
