@@ -54,15 +54,17 @@ for _, item in ipairs(bounded.components) do
 end
 assert(inventory_count == 300, "component counts must continue after the event buffer is full")
 
+local partial_observer = assert(loadfile(path))()
 local partial_hooks = {}
-local partial_ok, partial_state = Observer.Register(function(name, callback)
+local partial_ok, partial_state = partial_observer.Register(function(name, callback)
     if name == "health" then error("synthetic hook registration failure") end
     partial_hooks[name] = callback
 end, { rawset = rawset }, true, pcall)
 assert(partial_ok == true and partial_state.hook_failures == 1)
 assert(partial_state.hooks_registered == #Observer.GetAllowlist() - 1)
 
-local failed_ok, failed_state = Observer.Register(function() error("all hooks unavailable") end,
+local failed_observer = assert(loadfile(path))()
+local failed_ok, failed_state = failed_observer.Register(function() error("all hooks unavailable") end,
     { rawset = rawset }, true, pcall)
 assert(failed_ok == false and failed_state.hook_failures == #Observer.GetAllowlist())
 assert(failed_state.available == false and failed_state.reason == "no_component_hooks_registered")
