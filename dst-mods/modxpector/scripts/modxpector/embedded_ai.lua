@@ -649,7 +649,7 @@ function M.ExecuteReadOnlyTask(task, snapshot)
         end
         return "failed", { diagnostic_outcome = "flag_conflict_not_reproduced" }
     elseif task.kind == "verify_dependency_enabled" then
-        if list_contains(mod.disabled_dependencies, task.related_id) then
+        if mod.dependencies_known == true and list_contains(mod.disabled_dependencies, task.related_id) then
             return "passed", { diagnostic_outcome = "dependency_disabled_confirmed", dependency = task.related_id }
         end
         local dependency = find_snapshot_mod(snapshot, task.related_id)
