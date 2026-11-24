@@ -102,6 +102,19 @@ assert(result.counts.prefabs == 3 and result.counts.recipes == 2 and result.coun
 assert(result.registry.prefabs.names[1] == "grass" and result.registry.prefabs.names[2] == "modded_prefab")
 assert(result.registry.recipes.names[1] == "modded_recipe" and result.registry.recipes.names[2] == "spear")
 assert(result.registry.player_components.names[1] == "health")
+
+local large_prefabs = {}
+for i = 1, 300 do
+    large_prefabs[string.format("prefab_%03d", i)] = true
+end
+local large_registry = inventory.Collect({ pcall = pcall, Prefabs = large_prefabs })
+assert(large_registry.registry.prefabs.count == 300)
+assert(#large_registry.registry.prefabs.names == 256 and large_registry.registry.prefabs.truncated == true)
+assert(large_registry.registry.prefabs.names[1] == "prefab_001"
+    and large_registry.registry.prefabs.names[256] == "prefab_256",
+    "registry samples must be sorted and deterministically truncated")
+assert(large_prefabs.prefab_001 == true and large_prefabs.prefab_300 == true,
+    "registry collection must not mutate the source table")
 assert(result.community_apis.dev_tools.available == true)
 assert(result.community_apis.dev_tools.version_observed == true)
 assert(result.community_apis.dev_tools.version == 0.1)
