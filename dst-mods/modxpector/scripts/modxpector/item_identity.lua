@@ -228,6 +228,51 @@ function M.Capture(inventory, player, target, protected_call)
     return result
 end
 
+function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
+    if type(data) ~= "table" then
+        return "unverified", "event payload is unavailable"
+    end
+
+    if event_name == "itemget" then
+        if data.ignore_stacksize_anim ~= true then
+            return "preview_or_unverified", "itemget lacks the network-sync marker"
+        end
+        local valid = valid_entity(data.item, protected_call)
+        if valid ~= true or type(data.slot) ~= "number"
+            or data.slot < 1 or data.slot ~= math.floor(data.slot) then
+            return "unverified", "network-shaped itemget lacks a valid entity or slot"
+        end
+        return "replica_sync_candidate", "itemget carries the client classified sync marker"
+    end
+
+    if event_name == "itemlose" then
+        if data.item ~= nil or data.prev_item ~= nil then
+            return "preview_or_unverified", "itemlose includes a preview item reference"
+        end
+        if type(data.slot) ~= "number" or data.slot < 1
+            or data.slot ~= math.floor(data.slot) then
+            return "unverified", "itemlose slot is invalid"
+        end
+        return "replica_sync_candidate", "itemlose has the slot-only client classified shape"
+    end
+
+    if event_name == "stacksizechange" then
+        local item = event_entity or data.item
+        local valid = valid_entity(item, protected_call)
+        if valid ~= true or not finite_number(data.stacksize)
+            or data.stacksize < 1 or data.stacksize ~= math.floor(data.stacksize) then
+            return "unverified", "stacksizechange lacks a valid entity or stack size"
+        end
+        return "replica_sync_candidate", "stacksizechange uses the network-synced event channel"
+    end
+
+    if event_name == "stacksizepreview" then
+        return "preview_or_unverified", "stacksizepreview is a client prediction event"
+    end
+
+    return "unverified", "event type is outside the supported replica event set"
+end
+
 local function inconclusive(reason)
     return {
         outcome = "inconclusive",
