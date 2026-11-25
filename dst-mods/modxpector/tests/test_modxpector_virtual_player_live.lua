@@ -277,6 +277,39 @@ TheSim.FindEntities = function() return {} end
 local removed_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
 assert(removed_result.actual == nil and removed_result.inconclusive == true and removed_result.passed == false,
     "a missing target without a death event must not be reported as confirmed dead")
+
+-- A captured entity reference must be revalidated before every target assertion.
+local previous_index = controller.index
+local previous_step_target = controller.step_targets[1]
+local removed_captured_target = {
+    prefab = "tree",
+    IsValid = function() return false end,
+    replica = { health = { GetCurrent = function() return 0 end } },
+    HasTag = function() return true end,
+    Transform = { GetWorldPosition = function() return 3, 0, 4 end },
+}
+controller.index = 2
+controller.step_targets[1] = removed_captured_target
+local stale_exists = controller:_evaluate_assertion({
+    kind = "target_exists", target_step = 1, expected = false,
+})
+local stale_dead = controller:_evaluate_assertion({
+    kind = "target_dead", target_step = 1,
+})
+local stale_tag = controller:_evaluate_assertion({
+    kind = "target_has_tag", target_step = 1, tag = "workable", expected = false,
+})
+local stale_near = controller:_evaluate_assertion({
+    kind = "player_near_target", target_step = 1, expected = false,
+})
+assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.passed and stale_near.passed,
+    "stale captured targets must not satisfy existence, death, tag, or proximity assertions")
+local stale_health_ok = pcall(function()
+    controller:_evaluate_assertion({ kind = "target_health_lte", target_step = 1, value = 0 })
+end)
+assert(not stale_health_ok, "health assertions must reject a stale captured target")
+controller.step_targets[1] = previous_step_target
+controller.index = previous_index
 assert(finished.results[#finished.results].status == "completed")
 
 local target_ok, target_err = pcall(function() controller:ResolveTarget({ prefab = "modxpector_unapproved_test_prefab" }) end)
