@@ -95,7 +95,7 @@ local CONFIG_SNAPSHOT_OK, CONFIG_SNAPSHOT = pcall(require, "inspector/config_sna
 if not CONFIG_SNAPSHOT_OK or type(CONFIG_SNAPSHOT) ~= "table" or type(CONFIG_SNAPSHOT.Read) ~= "function" then
     CONFIG_SNAPSHOT = { Read = function() return {
         open_key = "KEY_F6", show_debug_info = true,
-        test_mode = false, collect_runtime_components = false, max_spawn_count = 10,
+        test_mode = false, laboratory_mode = false, collect_runtime_components = false, max_spawn_count = 10,
     } end }
 end
 
@@ -335,6 +335,26 @@ local SIDE_EFFECT_STEP_ALLOWLIST = {
     action = true, craft = true, craft_at_point = true,
     unlock_recipe = true, spawn_item = true, spawn_entity = true,
 }
+
+local function plan_requires_laboratory(plan)
+    if type(plan) ~= "table" or type(plan.steps) ~= "table" then return false end
+    for _, step in ipairs(plan.steps) do
+        if type(step) == "table" then
+            if step.kind == "action" and step.action ~= "WALKTO" then return true end
+            if step.kind == "craft" or step.kind == "craft_at_point"
+                or step.kind == "unlock_recipe" or step.kind == "spawn_item"
+                or step.kind == "spawn_entity" then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function laboratory_mode_enabled()
+    return type(GetModConfigData) == "function"
+        and GetModConfigData("laboratory_mode") == true
+end
 
 local function finite_number(value)
     return type(value) == "number" and value == value
@@ -610,6 +630,10 @@ local function handle_set_test_plan(player, run_id, plan_json)
     if not decoded_ok then reply(false, "test plan JSON could not be decoded"); return end
     local valid, reason = validate_incoming_plan(plan, run_id)
     if not valid then reply(false, reason); return end
+    if plan_requires_laboratory(plan) and not laboratory_mode_enabled() then
+        reply(false, "laboratory mode is disabled; world-changing steps require a separate disposable test world")
+        return
+    end
     active_test_plan = plan
     reply(true, "test plan accepted by master simulation")
 end
@@ -618,6 +642,10 @@ local function handle_unlock_recipe(player, request_id, recipe_name)
     if TheWorld == nil or not TheWorld.ismastersim then return end
     local plan = current_test_plan()
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
+    if not laboratory_mode_enabled() then
+        send_result(player, request_id, false, "laboratory mode is disabled; recipe changes require a disposable test world")
+        return
+    end
     if not is_admin_player(player) then send_result(player, request_id, false, "administrator permission required"); return end
     if not allow_spawn_request(player) then send_result(player, request_id, false, "test action rate limit exceeded"); return end
     if not recipe_is_allowed(recipe_name, plan) or AllRecipes == nil or AllRecipes[recipe_name] == nil then
@@ -636,6 +664,10 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
     if TheWorld == nil or not TheWorld.ismastersim then return end
     local plan = current_test_plan()
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
+    if not laboratory_mode_enabled() then
+        send_result(player, request_id, false, "laboratory mode is disabled; spawning requires a disposable test world")
+        return
+    end
     if not is_admin_player(player) then send_result(player, request_id, false, "administrator permission required"); return end
     if not allow_spawn_request(player) then send_result(player, request_id, false, "test spawn rate limit exceeded"); return end
     count = tonumber(count)
@@ -741,6 +773,7 @@ start_virtual_player = function(inst, plan)
     if not dedicated_ok or is_dedicated then return false end
     if GetModConfigData("test_mode") ~= true or not is_test_mode_enabled(plan)
         or type(plan.steps) ~= "table" or #plan.steps == 0 then return false end
+    if plan_requires_laboratory(plan) and not laboratory_mode_enabled() then return false end
     if virtual_player ~= nil and virtual_player.running then return false end
 
     local create_ok, controller = pcall(function()
