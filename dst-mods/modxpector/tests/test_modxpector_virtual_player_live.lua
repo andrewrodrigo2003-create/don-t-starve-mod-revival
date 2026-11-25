@@ -70,7 +70,8 @@ player = {
                 return nil
             end,
             Has = function(_, prefab, count)
-                local found = prefab == "cutgrass" and (player.picked_up and 3 or 2) or 0
+                local found = prefab == "cutgrass" and (player.picked_up and 3 or 2)
+                    or prefab == "axe" and (player.crafted_recipe == "axe" and 1 or 0) or 0
                 return found >= count, found
             end,
             GetOpenContainers = function() return { [open_container] = true } end,
@@ -203,7 +204,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_step = 3 },
         { kind = "assert", assertion = { kind = "player_knows_recipe", recipe = "axe" }, verifies_step = 4 },
         { kind = "assert", assertion = { kind = "player_has_item", prefab = "axe" }, verifies_step = 5 },
-        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "axe", count = 1 }, verifies_step = 5 },
+        { kind = "assert", assertion = { kind = "player_item_count_increased", prefab = "axe", target_step = 5, count = 1 }, verifies_step = 5 },
         { kind = "assert", assertion = { kind = "target_exists", target = { prefab = "structure" } }, verifies_step = 6 },
         { kind = "assert", assertion = { kind = "player_equipped", slot = "HANDS", prefab = "axe" } },
         { kind = "assert", assertion = { kind = "player_near_target", target = { prefab = "tree" }, radius = 5 } },
@@ -212,7 +213,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
-        { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 3 }, verifies_step = 24 },
+        { kind = "assert", assertion = { kind = "player_item_count_increased", prefab = "cutgrass", target_step = 24, count = 1 }, verifies_step = 24 },
     },
 }
 assert(controller:Start(plan))
@@ -686,6 +687,27 @@ assert(invalid_inventory_count_controller:Start({
 }))
 assert(invalid_inventory_count_report ~= nil and invalid_inventory_count_report.outcome == "failed")
 assert(string.find(invalid_inventory_count_report.failure, "integer between 1 and 10000", 1, true))
+
+
+-- A pre-existing item must not falsely verify a pickup that changed nothing.
+local baseline_guard_report
+local baseline_guard = VirtualPlayer.new(player, {
+    allowed_prefabs = { "cutgrass" },
+    on_finished = function(report) baseline_guard_report = report end,
+})
+assert(baseline_guard:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = {
+        { kind = "action", action = "PICKUP" },
+        { kind = "assert", assertion = {
+            kind = "player_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+        }, verifies_step = 1 },
+    },
+}))
+assert(baseline_guard_report ~= nil and baseline_guard_report.outcome == "failed",
+    "an unchanged pre-existing inventory count must not verify a pickup")
+assert(string.find(baseline_guard_report.failure, "assertion failed", 1, true))
 
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
 
