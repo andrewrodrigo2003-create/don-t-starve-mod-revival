@@ -284,3 +284,10 @@ O código de LocoMotor mostra que GoToEntity/GoToPoint definem destino e Buffere
 ### Teste
 
 Foi adicionado o contrato MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK: simula personagem sem movimento, confirma exatamente um ResetPath/FindPath, esgota a tentativa e verifica cancelamento da BufferedAction. O novo commit de código ainda aguarda CI; a validação em jogo real permanece pendente.
+
+
+## 19. Limite espacial para RPCs de spawn — 25/11/2026
+
+A autorização por etapa agora também limita a posição: quando a etapa declara step.position, as coordenadas do RPC precisam ficar a até 4 unidades desse ponto; sem posição explícita, o Master compara com a posição autoritativa atual do jogador e aplica o mesmo raio. Coordenadas não numéricas/NaN/infinito são rejeitadas antes de operações matemáticas. A etapa só é consumida depois de validar tipo, run_id, índice, prefab, quantidade e posição.
+
+O bootstrap inclui uma tentativa de spawn a 100,100 quando o jogador está em 0,0 e exige rejeição sem consumo da etapa. A nova alteração ainda aguarda CI; não considerar o contrato aprovado até a execução correspondente.
