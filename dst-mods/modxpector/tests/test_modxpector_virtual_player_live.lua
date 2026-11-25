@@ -1292,3 +1292,11 @@ local take_delta = take_controller:_evaluate_assertion({
     kind = "player_inventory_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
 })
 assert(take_delta.passed, "TAKEITEM must prove a real increase in carried inventory")
+
+holder_has_item = false
+local holder_state = take_controller:_evaluate_assertion({
+    kind = "target_has_tag", target_step = 1, tag = "inventoryitemholder_take", expected = false,
+})
+assert(holder_state.passed,
+    "TAKEITEM must also verify that the holder no longer advertises a takeable item")
+
