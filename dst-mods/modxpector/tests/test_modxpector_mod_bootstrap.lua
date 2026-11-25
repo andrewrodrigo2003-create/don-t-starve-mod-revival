@@ -296,41 +296,79 @@ assert(type(rpc_server.unlock_recipe) == "function")
 assert(type(rpc_client.action_result) == "function")
 assert(type(player_postinit) == "function")
 
-rpc_server.unlock_recipe(player, 1, "axe")
+-- Effectful RPCs require an active Master-approved plan with exact operation steps.
+admin = true
+laboratory_mode = true
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "server_rpc_ops",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = { "axe" },
+    allowed_actions = {},
+    steps = {
+        { kind = "unlock_recipe", recipe = "axe" },
+        { kind = "spawn_item", prefab = "cutgrass", count = 2 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 6 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 5 },
+        { kind = "spawn_item", prefab = "cutgrass", count = 1 },
+    },
+}
+rpc_server.set_test_plan(player, "server_rpc_ops", "{}")
+assert(responses[#responses].success == true, "Master must accept the disposable-lab operation plan")
+
+admin = false
+rpc_server.unlock_recipe(player, 1, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == nil and responses[#responses].success == false)
 admin = true
+laboratory_mode = false
 now = 1.2
-rpc_server.unlock_recipe(player, 2, "axe")
+rpc_server.unlock_recipe(player, 2, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == nil and responses[#responses].success == false
     and string.find(responses[#responses].message, "laboratory mode", 1, true),
     "recipe unlock must be blocked when disposable laboratory mode is disabled")
 laboratory_mode = true
 now = 1.4
-rpc_server.unlock_recipe(player, 3, "axe")
+rpc_server.unlock_recipe(player, 3, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == true and responses[#responses].success == true)
 now = 1.6
-rpc_server.spawn_item(player, 4, "cutgrass", 2, 0, 0)
+rpc_server.spawn_item(player, 4, 2, "server_rpc_ops", "cutgrass", 2, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == true)
-rpc_server.spawn_item(player, 5, "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(player, 5, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false and string.find(responses[#responses].message, "rate limit", 1, true))
 
 -- The configured per-request limit must be enforced by the master, not only displayed in the UI.
 configured_max_spawn_count = 5
 now = 1.8
-rpc_server.spawn_item(player, 6, "cutgrass", 6, 0, 0)
+rpc_server.spawn_item(player, 6, 4, "server_rpc_ops", "cutgrass", 6, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "configured limit", 1, true))
 now = 2.0
-rpc_server.spawn_item(player, 7, "cutgrass", 5, 0, 0)
+rpc_server.spawn_item(player, 7, 5, "server_rpc_ops", "cutgrass", 5, 0, 0)
 assert(spawned_items == 7 and responses[#responses].success == true)
 
 -- A created prefab is not a successful spawn_item unless GiveItem confirms inventory delivery.
 inventory_accepts_items = false
 now = 2.2
-rpc_server.spawn_item(player, 8, "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(player, 8, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
 inventory_accepts_items = true
+
+-- Wrong run IDs, replayed step indices, and RPCs after plan clear must fail closed.
+now = 2.4
+rpc_server.spawn_item(player, 9, 6, "stale_run_id", "cutgrass", 1, 0, 0)
+assert(responses[#responses].success == false and spawned_items == 7)
+now = 2.6
+rpc_server.unlock_recipe(player, 10, 1, "server_rpc_ops", "axe")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "already consumed", 1, true))
+rpc_server.clear_test_plan(player, "server_rpc_ops")
+now = 2.8
+rpc_server.spawn_item(player, 11, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "no active Master-approved", 1, true))
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
 print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
