@@ -274,6 +274,24 @@ local invalid_container_count_ok = pcall(function()
 end)
 assert(not invalid_container_count_ok, "fractional container assertion counts must be rejected")
 
+local previous_index_for_container = controller.index
+local previous_target_for_container = controller.step_targets[1]
+controller.index = 2
+controller.step_targets[1] = {
+    prefab = "treasurechest",
+    IsValid = function() return false end,
+    replica = { container = { Has = function() return true, 99 end } },
+}
+local stale_target_container_ok = pcall(function()
+    controller:_evaluate_assertion({
+        kind = "container_has_item", target_step = 1, prefab = "goldnugget", count = 1,
+    })
+end)
+assert(not stale_target_container_ok,
+    "container assertion must reject a removed captured target before reading its replica")
+controller.step_targets[1] = previous_target_for_container
+controller.index = previous_index_for_container
+
 local stale_open_container = {
     IsValid = function() return false end,
     replica = { container = { Has = function() return true, 99 end } },
