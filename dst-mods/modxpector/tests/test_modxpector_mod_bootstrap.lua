@@ -651,3 +651,26 @@ rpc_server.set_test_plan(reconnected_player, "invalid_takeitem_without_holder_st
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "holder/shelf state-change", 1, true),
     "Master must reject TAKEITEM without an independent holder/shelf state-change proof")
+
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_store_prefab_mismatch",
+    allowed_prefabs = { "cutgrass", "twigs", "treasurechest" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
+        { kind = "assert", assertion = {
+            kind = "container_item_count_increased", target_step = 1, prefab = "twigs", count = 1,
+        }, verifies_step = 1 },
+        { kind = "assert", assertion = {
+            kind = "player_inventory_item_count_decreased", target_step = 1, prefab = "twigs", count = 1,
+        }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "invalid_store_prefab_mismatch", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "same invobject", 1, true),
+    "Master must reject STORE postconditions that do not match the action's invobject")
