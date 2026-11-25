@@ -228,4 +228,72 @@ function M.Capture(inventory, player, target, protected_call)
     return result
 end
 
+local function inconclusive(reason)
+    return {
+        outcome = "inconclusive",
+        reason = reason,
+    }
+end
+
+function M.CompareExactMove(before, after, selected_guid)
+    if type(before) ~= "table" or before.schema ~= "modxpector/item-identity-capture/v1"
+        or type(after) ~= "table" or after.schema ~= "modxpector/item-identity-capture/v1" then
+        return inconclusive("snapshot schema is unavailable or unsupported")
+    end
+    if before.complete ~= true or after.complete ~= true
+        or type(before.player) ~= "table" or before.player.complete ~= true
+        or type(after.player) ~= "table" or after.player.complete ~= true
+        or type(before.target) ~= "table" or before.target.complete ~= true
+        or type(after.target) ~= "table" or after.target.complete ~= true then
+        return inconclusive("one or more snapshots are incomplete")
+    end
+    if not finite_number(selected_guid) or selected_guid < 1
+        or selected_guid ~= math.floor(selected_guid) then
+        return inconclusive("selected item GUID is invalid")
+    end
+
+    local source_item = before.player.by_guid[selected_guid]
+    if source_item == nil then
+        return inconclusive("selected item was not present in the baseline player inventory")
+    end
+    if source_item.source ~= "inventory_slot" then
+        return inconclusive("only items from normal inventory slots are supported")
+    end
+    if before.target.by_guid[selected_guid] ~= nil then
+        return inconclusive("selected item already appeared in the target baseline")
+    end
+
+    local received_item = after.target.by_guid[selected_guid]
+    if received_item == nil then
+        return inconclusive("the same GUID was not observed in the target after the action")
+    end
+    if after.player.by_guid[selected_guid] ~= nil then
+        return inconclusive("selected item is still present in the player snapshot")
+    end
+    if received_item.source ~= "container_slot" then
+        return inconclusive("received item was not observed in a normal target container slot")
+    end
+    if received_item.entity ~= source_item.entity then
+        return inconclusive("GUID matched but the local entity reference changed")
+    end
+    if received_item.prefab ~= source_item.prefab then
+        return inconclusive("item prefab changed during the observed move")
+    end
+    if received_item.stack_size ~= source_item.stack_size
+        or received_item.stack_size_source ~= source_item.stack_size_source then
+        return inconclusive("stack quantity evidence changed or is not comparable")
+    end
+
+    return {
+        outcome = "matched_candidate",
+        reason = "same entity reference and GUID moved from a normal player slot to a normal target slot",
+        guid = selected_guid,
+        prefab = source_item.prefab,
+        stack_size = source_item.stack_size,
+        before_slot = source_item.slot,
+        after_slot = received_item.slot,
+        evidence = "client_replica_snapshot_only",
+    }
+end
+
 return M
