@@ -61,9 +61,10 @@ function M.BuildReplicaSources(player, target, protected_call)
     end
 
     local player_replica_ok, player_replica = read_field(protected_call, player, "replica")
-    local inventory_ok, inventory = player_replica_ok
-        and read_field(protected_call, player_replica, "inventory") or false, nil
-    if player_replica_ok then inventory_ok, inventory = read_field(protected_call, player_replica, "inventory") end
+    local inventory_ok, inventory = false, nil
+    if player_replica_ok then
+        inventory_ok, inventory = read_field(protected_call, player_replica, "inventory")
+    end
     if not inventory_ok or type(inventory) ~= "table" then
         return nil, "player_inventory_replica_unavailable"
     end
