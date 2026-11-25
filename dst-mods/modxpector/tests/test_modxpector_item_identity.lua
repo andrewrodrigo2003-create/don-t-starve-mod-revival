@@ -253,4 +253,13 @@ local active_move = ItemIdentity.CompareExactMove(active_before, active_after, 5
 assert(active_move.outcome == "inconclusive",
     "active item source must remain unsupported by the narrow exact-move comparator")
 
+local malformed_move = ItemIdentity.CompareExactMove({
+    schema = "modxpector/item-identity-capture/v1",
+    complete = true,
+    player = { complete = true },
+    target = { complete = true },
+}, after_move, 501)
+assert(malformed_move.outcome == "inconclusive",
+    "malformed snapshot maps must fail closed")
+
 print("ModXpector item identity snapshot tests passed")
