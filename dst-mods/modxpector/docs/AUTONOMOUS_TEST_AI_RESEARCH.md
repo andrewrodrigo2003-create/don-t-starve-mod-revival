@@ -813,3 +813,11 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - O módulo ainda não está ligado ao fluxo de execução do Virtual Player. Essa separação é intencional: primeiro validar lifecycle e contratos do listener; depois integrar com baseline/after snapshot e garantir cleanup em sucesso, erro, timeout, cancelamento, remoção do player e troca de step.
 - STORE, TAKEITEM e TAKESINGLEITEM continuam bloqueados antes de DoAction. Nenhum teste in-game, multiplayer ou dedicated server foi realizado.
 - Package [45690255452](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690255452): success no commit `41efb86f4fa3812e3e5a52dccb74076e74872624`; Lua checks [45690234697](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690234697) estava em execução no último registro.
+
+
+**Endurecimento e correção encontrados pela CI:**
+- O observador agora limita fontes a 16, inscrições a 48, eventos capturados a 256 (padrão 64), nomes de origem a 64 caracteres e 1–4 eventos permitidos por fonte; rejeita fonte vazia, entidade malformada, inscrição duplicada e eventos não suportados.
+- Cada callback captura sua própria fonte e nome de evento, evitando colisão de variáveis de loop no Lua 5.1. O teste agora verifica a sequência real dos quatro nomes de evento, não apenas a contagem.
+- A CI revelou que o teste do teto de listeners era inalcançável quando o limite era 64 (16 fontes × 4 eventos). O teto foi ajustado para 48 e o teste usa 13 fontes; a falha foi corrigida.
+- Lua checks [45690682546](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690682546) e Package [45690671644](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690671644): success no commit `5750718e6bd18779861378f8313e449d72d5b221`.
+- Commit seguinte `e9fd3b49d86624bf0ea68283cd4ef3e810fe758d` adiciona teste para entidade de origem malformada; os dois workflows específicos estavam em execução na última consulta.
