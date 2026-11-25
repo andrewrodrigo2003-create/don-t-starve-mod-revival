@@ -626,3 +626,17 @@ A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais
 - Package/testes [45684407675](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684407675): **success** no mesmo commit; suíte Lua, ZIP e upload do artefato concluídos.
 - Package documental [45684441954](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684441954): **success** no commit documental `0ee34f86190f70f9687d2d5ca2e2a3be12541525`.
 - A contenção passou nos contratos automatizados. Não é validação in-game.
+
+
+### Auditoria e contenção de STORE — 25/11/2026
+
+**Achado:** as pós-condições anteriores comparavam somente deltas agregados por prefab. Mesmo com queda da contagem no inventário e aumento da mesma contagem no baú, não se prova que o mesmo item/stack foi transferido. Mudanças simultâneas independentes do mesmo prefab poderiam satisfazer os dois lados. A seleção por prefab em `FindItem` também não preserva uma identidade estável entre o item selecionado e o item recebido pelo contêiner.
+
+**Contenção aplicada:** `STORE` agora é interrompido antes de `PlayerController:DoAction` e reportado como `inconclusive`. Foi adicionado teste de regressão exigindo zero chamadas ao controller. Isso impede que o oráculo antigo produza uma falsa aprovação como se fosse prova de identidade.
+
+- Código: `ed3f8357543da7243234d8138cebe9363a17c16f`.
+- Teste: `85f774f61c58958440372218779d9b4de86f6b7c`.
+- CI package/testes [45685429266](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45685429266): pendente na última consulta.
+- Próxima implementação segura: capturar identidade do item selecionado (GUID/prefab/stack), verificar destino e transferência real; tratar active item, slots equipados, pilhas parciais, inventário cheio, overflow e containers proxy. Não reabilitar com base apenas em contagem agregada.
+
+**Estado:** STORE, TAKEITEM e TAKESINGLEITEM permanecem fail-closed. Nenhuma validação in-game, multiplayer ou dedicated server.
