@@ -484,12 +484,19 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_cont
             and inventory:GetOverflowContainer() or nil
         for container_inst in pairs(open_containers) do
             if container_inst ~= nil and (overflow == nil or container_inst ~= overflow.inst) then
-                local replica = container_inst.replica ~= nil
-                    and (container_inst.replica.container or container_inst.replica.inventory) or nil
-                assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
-                    "an open container does not expose an item-count replica")
-                local _, found = replica:Has(prefab, 1, false)
-                total = total + (tonumber(found) or 0)
+                -- Open-container state can briefly retain an entity during removal.
+                -- Never count inventory contents from a stale entity reference.
+                assert(type(container_inst.IsValid) == "function",
+                    "open container validity API unavailable")
+                local valid_ok, valid = pcall(container_inst.IsValid, container_inst)
+                if valid_ok and valid == true then
+                    local replica = container_inst.replica ~= nil
+                        and (container_inst.replica.container or container_inst.replica.inventory) or nil
+                    assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
+                        "an open container does not expose an item-count replica")
+                    local _, found = replica:Has(prefab, 1, false)
+                    total = total + (tonumber(found) or 0)
+                end
             end
         end
     end
