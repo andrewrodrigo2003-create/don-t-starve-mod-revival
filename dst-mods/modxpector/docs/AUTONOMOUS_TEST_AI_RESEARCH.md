@@ -803,3 +803,13 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Container Classified: itemget com ignore_stacksize_anim, itemlose slot-only, stacksizechange e preview: https://github.com/vietnd69/dst-scripts/blob/main/prefabs/container_classified.lua
 
 **Limites:** eventos são candidatos de sincronização local, não prova de causalidade/autoridade do servidor. Sem validação in-game, multiplayer ou dedicated server. STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
+
+### Incremento — observador passivo temporário por step (25/11/2026)
+- Criado `step_event_observer.lua`, módulo separado que recebe fontes de eventos explicitamente fornecidas pelo chamador e instala listeners apenas para `itemget`, `itemlose`, `stacksizechange` e `stacksizepreview`.
+- Cada sessão é limitada a no máximo 256 eventos (padrão 64), guarda somente metadados mínimos e classificação, e não executa ações nem altera inventário/entidades.
+- `Stop(session)` remove listeners em ordem inversa; a limpeza é idempotente. Falha de registro desfaz listeners já instalados. Ao exceder o limite, a sessão se encerra e tenta remover imediatamente todos os listeners.
+- Snapshot de observação registra explicitamente `evidence=client_replica_event_shape_only`, `causality=unproven` e `server_authority=unverified`. Overflow, falha de classificação ou limpeza incompleta impede declarar a observação completa.
+- Testes unitários adicionados para registro, eventos suportados, classificação, encerramento, limpeza idempotente, limite/overflow, fonte inválida, evento não permitido e falha parcial de registro.
+- O módulo ainda não está ligado ao fluxo de execução do Virtual Player. Essa separação é intencional: primeiro validar lifecycle e contratos do listener; depois integrar com baseline/after snapshot e garantir cleanup em sucesso, erro, timeout, cancelamento, remoção do player e troca de step.
+- STORE, TAKEITEM e TAKESINGLEITEM continuam bloqueados antes de DoAction. Nenhum teste in-game, multiplayer ou dedicated server foi realizado.
+- Package [45690255452](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690255452): success no commit `41efb86f4fa3812e3e5a52dccb74076e74872624`; Lua checks [45690234697](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690234697) estava em execução no último registro.
