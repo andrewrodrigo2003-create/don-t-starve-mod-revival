@@ -358,8 +358,8 @@ local stale_tag = controller:_evaluate_assertion({
 local stale_near = controller:_evaluate_assertion({
     kind = "player_near_target", target_step = 1, expected = false,
 })
-assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.passed and stale_near.passed,
-    "stale captured targets must not satisfy existence, death, tag, or proximity assertions")
+assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.inconclusive and stale_near.inconclusive,
+    "stale captured targets must not satisfy negative tag or proximity assertions")
 
 local previous_index_for_near = controller.index
 local previous_target_for_near = controller.step_targets[1]
@@ -1167,3 +1167,128 @@ assert(path_locomotor.bufferedaction == nil and path_stop_count == 1,
 assert(path_controller.running == false)
 TheSim.FindEntities = path_original_find_entities
 print("MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK")
+
+-- Transfer postconditions must prove item-count deltas on both sides of STORE.
+local carried_count, chest_count = 4, 0
+local transfer_target_valid = true
+local transfer_target = {
+    prefab = "treasurechest",
+    IsValid = function() return transfer_target_valid end,
+    replica = { container = {
+        Has = function(_, prefab) return chest_count >= 1, chest_count end,
+    } },
+}
+local transfer_player = {
+    prefab = "wilson",
+    IsValid = function() return true end,
+    replica = { inventory = {
+        Has = function(_, prefab) return carried_count >= 1, carried_count end,
+        GetEquippedItem = function() return nil end,
+    } },
+}
+local transfer_controller = VirtualPlayer.new(transfer_player, {
+    allowed_prefabs = { "cutgrass" },
+})
+transfer_controller.queue = {
+    { kind = "action", action = "STORE", target_required = true },
+    { kind = "assert", assertion = {
+        kind = "player_inventory_item_count_decreased", prefab = "cutgrass", target_step = 1, count = 1,
+    }, verifies_step = 1 },
+    { kind = "assert", assertion = {
+        kind = "container_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+    }, verifies_step = 1 },
+}
+transfer_controller.index = 1
+transfer_controller.step_targets = {}
+transfer_controller:_capture_step_target(1, transfer_target)
+transfer_controller:_capture_step_transfer_baseline(1, transfer_target)
+carried_count, chest_count = 3, 1 -- one item moved: valid partial transfer
+transfer_controller.index = 2
+local store_player_delta = transfer_controller:_evaluate_assertion({
+    kind = "player_inventory_item_count_decreased", prefab = "cutgrass", target_step = 1, count = 1,
+})
+local store_container_delta = transfer_controller:_evaluate_assertion({
+    kind = "container_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+})
+assert(store_player_delta.passed and store_container_delta.passed,
+    "STORE must verify both inventory decrease and container increase, including partial transfer")
+
+-- A one-sided change must not be reported as a successful transfer.
+carried_count, chest_count = 4, 0
+transfer_controller.index = 1
+transfer_controller:_capture_step_transfer_baseline(1, transfer_target)
+carried_count = 3
+transfer_controller.index = 2
+local store_one_sided = transfer_controller:_evaluate_assertion({
+    kind = "container_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+})
+assert(not store_one_sided.passed,
+    "a player inventory decrease without a matching container increase must fail")
+
+-- A removed target or unavailable/invalid replica must fail closed.
+carried_count, chest_count = 4, 0
+transfer_controller.index = 1
+transfer_target_valid = true
+transfer_controller:_capture_step_transfer_baseline(1, transfer_target)
+transfer_target_valid = false
+transfer_controller.index = 2
+local removed_transfer_target_ok = pcall(function()
+    transfer_controller:_evaluate_assertion({
+        kind = "container_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+    })
+end)
+assert(not removed_transfer_target_ok, "STORE verification must reject a removed target")
+
+transfer_target_valid = true
+local missing_container_target = {
+    IsValid = function() return true end,
+    replica = {},
+}
+transfer_controller.index = 1
+local missing_container_baseline_ok = pcall(function()
+    transfer_controller:_capture_step_transfer_baseline(1, missing_container_target)
+end)
+assert(not missing_container_baseline_ok, "STORE baseline must fail closed without a container replica")
+
+local invalid_count_target = {
+    IsValid = function() return true end,
+    replica = { container = { Has = function() return true, 0 / 0 end } },
+}
+transfer_controller.index = 1
+local invalid_count_baseline_ok = pcall(function()
+    transfer_controller:_capture_step_transfer_baseline(1, invalid_count_target)
+end)
+assert(not invalid_count_baseline_ok, "STORE baseline must reject non-finite container counts")
+
+-- TAKEITEM must increase the carried inventory count; target state is a separate proof.
+local held_count, holder_has_item = 2, true
+local holder_target = {
+    prefab = "birdcage",
+    IsValid = function() return true end,
+    HasTag = function(_, tag) return tag == "inventoryitemholder_take" and holder_has_item end,
+}
+local holder_player = {
+    prefab = "wilson",
+    IsValid = function() return true end,
+    replica = { inventory = {
+        Has = function(_, prefab) return held_count >= 1, held_count end,
+        GetEquippedItem = function() return nil end,
+    } },
+}
+local take_controller = VirtualPlayer.new(holder_player, { allowed_prefabs = { "cutgrass" } })
+take_controller.queue = {
+    { kind = "action", action = "TAKEITEM", target_required = true },
+    { kind = "assert", assertion = {
+        kind = "player_inventory_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+    }, verifies_step = 1 },
+}
+take_controller.index = 1
+take_controller.step_targets = {}
+take_controller:_capture_step_target(1, holder_target)
+take_controller:_capture_step_transfer_baseline(1, holder_target)
+held_count = 3
+take_controller.index = 2
+local take_delta = take_controller:_evaluate_assertion({
+    kind = "player_inventory_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+})
+assert(take_delta.passed, "TAKEITEM must prove a real increase in carried inventory")
