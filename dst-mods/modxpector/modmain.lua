@@ -959,6 +959,8 @@ if type(AddClientModRPCHandler) == "function" then
 end
 
 local chat_command_listener_installed = false
+local chat_command_listener_history = nil
+local chat_command_listener = nil
 local function chat_system_message(message)
     local history = rawget(DST_GLOBAL, "ChatHistory")
     if history ~= nil and type(history.OnSystemMessage) == "function" then
@@ -1039,7 +1041,7 @@ local function handle_modxpector_chat_command(player, message)
 end
 
 local function install_chat_command_listener(player)
-    if chat_command_listener_installed or player == nil or player ~= rawget(DST_GLOBAL, "ThePlayer") then
+    if player == nil or player ~= rawget(DST_GLOBAL, "ThePlayer") then
         return false
     end
     local history = rawget(DST_GLOBAL, "ChatHistory")
@@ -1047,15 +1049,33 @@ local function install_chat_command_listener(player)
         print("[ModXpector] ChatHistory API indisponível; comandos por chat não foram ativados.")
         return false
     end
+    if chat_command_listener_history == history and chat_command_listener ~= nil then
+        return true
+    end
+
+    if chat_command_listener_history ~= nil and chat_command_listener ~= nil
+        and type(chat_command_listener_history.RemoveChatHistoryListener) == "function" then
+        pcall(chat_command_listener_history.RemoveChatHistoryListener,
+            chat_command_listener_history, chat_command_listener)
+    end
+
     local listener = function(message)
-        local ok, err = pcall(handle_modxpector_chat_command, player, message)
+        -- Resolve ThePlayer at dispatch time; reconnects may replace the local entity.
+        local current_player = rawget(DST_GLOBAL, "ThePlayer")
+        if current_player == nil then return end
+        local ok, err = pcall(handle_modxpector_chat_command, current_player, message)
         if not ok then print("[ModXpector] CHAT_COMMAND_HANDLER_FAILED " .. tostring(err)) end
     end
     local ok, err = pcall(history.AddChatHistoryListener, history, listener)
     if not ok then
+        chat_command_listener_history = nil
+        chat_command_listener = nil
+        chat_command_listener_installed = false
         print("[ModXpector] CHAT_COMMAND_LISTENER_FAILED " .. tostring(err))
         return false
     end
+    chat_command_listener_history = history
+    chat_command_listener = listener
     chat_command_listener_installed = true
     print("[ModXpector] CHAT_COMMAND_LISTENER_READY")
     return true
