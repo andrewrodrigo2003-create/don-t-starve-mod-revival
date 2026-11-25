@@ -79,6 +79,16 @@ configuration_options = {
         default = false,
     },
     {
+        name = "laboratory_mode",
+        label = "Confirmar mundo de laboratório descartável",
+        hover = "Permite testes que alteram o mundo, inventário, receitas ou entidades. Ative somente em um mundo novo e descartável criado para testes; nunca na sua partida principal. Desativado por padrão.",
+        options = {
+            { description = "Desativado", data = false },
+            { description = "Ativado", data = true },
+        },
+        default = false,
+    },
+    {
         name = "collect_runtime_components",
         label = "Observar componentes em runtime",
         hover = "Registra, de forma limitada e somente leitura, a criação de componentes selecionados. Desativado por padrão; requer recarregar o mundo após alterar.",
