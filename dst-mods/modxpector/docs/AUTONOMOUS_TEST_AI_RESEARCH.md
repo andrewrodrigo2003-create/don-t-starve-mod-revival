@@ -308,3 +308,30 @@ A auditoria de chathistory.lua confirmou SendCommandResponse(messages), que acei
 - HEAD atual ainda precisa de CI. O workflow [ModXpector Package](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/workflows/modxpector-package.yml) tem `workflow_dispatch` para execução manual; esta sessão não dispõe de ação de dispatch.
 - Nenhum teste real no DST, multiplayer ou dedicated server foi realizado. Não declarar IA completa.
 - Próximo passo técnico: executar o workflow manual ou obter CI no HEAD atual; corrigir qualquer falha antes de ampliar as famílias de ações do Virtual Player. Depois, validar em mundo descartável dentro do jogo.
+
+
+## 21. Interpretação de linguagem natural offline — pesquisa — 25/11/2026
+
+### Evidências externas
+
+- O projeto [PocketSphinx/JSGF para controle em português](https://hackaday.io/project/34317/instructions) demonstra comandos PT-BR por gramática contextual restrita, com vocabulário e frases previstos; a gramática reduz o espaço de interpretação e evita depender de um modelo de linguagem grande em execução.
+- A documentação [Nuance — robust parsing grammars](https://docs.nuance.com/speech-suite/nr-gram/nrg_nlg_robust_parsing.html) descreve extração flexível de conceitos/slots, tolerância a palavras de preenchimento e confiança por slot. Porém, depende de um modelo estatístico de linguagem, então serve como referência conceitual, não como dependência embarcada.
+- O [Snips NLU engine](https://github.com/snipsco/snips-nlu/blob/74b2893c/snips_nlu/nlu_engine/nlu_engine.py) usa primeiro um parser determinístico conservador e só depois um parser probabilístico. Para o ModXpector, a primeira camada é adequada; a segunda fica fora do escopo inicial por custo de modelo, memória e ausência de corpus validado.
+- O artigo [Joint Intent Detection and Slot Filling with Rules](https://ceur-ws.org/Vol-2242/paper06.pdf) destaca intenção, extração de slots e uso de histórico recente. O princípio útil é separar intent/slots e usar contexto limitado, sem copiar a arquitetura ML do artigo.
+- O manual oficial [Lua 5.1 em português](https://www.lua.org/manual/5.1/pt/manual.html) afirma que a biblioteca string assume codificação de um byte; string.lower deixa outros bytes inalterados. Logo, o ModXpector não deve pressupor normalização Unicode/UTF-8 nativa para acentos.
+- Recursos portugueses baseados em [finite-state transducers](https://aclanthology.org/L04-1073.pdf) demonstram que FSTs são compactos e adequados para léxicos e gramáticas, embora uma cadeia NLP completa seja grande demais para o mod.
+
+### Decisão técnica recomendada
+
+Não substituir o parser seguro existente nem chamar isso de LLM. Manter `chat_commands.lua` como dispatcher de sintaxe estrita `/mx` e criar, depois da validação do ciclo atual, um módulo separado de interpretação limitada (`intent_interpreter.lua`):
+1. Exigir invocação explícita (prefixo `/mx`, `!mx` ou vocativo `ModXpector`) para não interpretar conversa comum.
+2. Normalizar acentos PT-BR por tabela explícita de substituição UTF-8 antes de tokenizar; não depender de `string.lower` para caracteres acentuados.
+3. Aplicar gramática determinística e léxicos de sinônimos para intents suportadas (status, analisar, testar, parar, ajuda, relatório).
+4. Extrair slots fechados (família de mod, suite, cenário, prefab) apenas de allowlists conhecidas.
+5. Calcular score/confiança por intent e por slot; se score baixo, slots ausentes ou intents empatadas, perguntar/explicar em vez de executar.
+6. Usar contexto de uma interação anterior apenas para resolver follow-ups simples, com expiração e sem ampliar permissões.
+7. Separar interpretação da execução: o intent gera estrutura; o planejador valida permissões, laboratório, plano e oráculos antes de agir.
+
+### Limites
+
+Isso permite linguagem natural limitada e segura, não conversa geral como ChatGPT. O parser atual ainda reconhece apenas comandos prefixados e não deve ser anunciado como NLU completo. Implementação adiada até obter CI no HEAD atual e consolidar os contratos do Virtual Player/RPC.
