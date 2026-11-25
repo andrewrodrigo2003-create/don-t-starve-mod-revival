@@ -358,3 +358,10 @@ Escopo da evidência: validação automatizada em harness Lua 5.1. Não prova co
 A consulta ao espelho de scripts DST `vietnd69/dst-scripts` (arquivo [`components/locomotor.lua`](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/components/locomotor.lua)) confirma que `ResetPath()` chama `KillPathSearch()` e limpa `self.path`; `Stop()` também limpa `lastdesttile`; `GoToEntity`/`GoToPoint` invocam `FindPath()` e `SetBufferedAction()` mantém a ação no locomotor. O código `entityscript.lua` do espelho `taichunmin/dont-starve-together-game-scripts` confirma que `GetBufferedAction()` retorna `self.bufferedaction` ou, como fallback, `components.locomotor.bufferedaction` ([fonte](https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/entityscript.lua)).
 
 Isso sustenta a estratégia atual: verificar a mesma BufferedAction no Entity/Locomotor, validar `dest`, cancelar a busca anterior com ResetPath, limpar `lastdesttile` e solicitar FindPath. O espelho de scripts é uma fonte comunitária extraída, não um repositório oficial da Klei; a confirmação final exige teste in-game. O contrato foi ampliado no commit `c8d81641c4be3b50fa3e5c812816c264a635858c` para exigir que `lastdesttile` seja limpo antes da nova busca.
+
+
+## 25. CI verde com contrato do cache de destino — 25/11/2026
+
+O teste WALKTO agora também inicia com `lastdesttile = "stale_destination_tile"` e exige que o replanejamento limpe o cache antes de chamar `FindPath` (commit `c8d81641c4be3b50fa3e5c812816c264a635858c`).
+
+CI [run 45664109579](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45664109579) passou integralmente no commit `c8d81641c4be3b50fa3e5c812816c264a635858c`: parse Lua 5.1, contratos completos, `MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK`, cenários de ataque repetido e verificação de exclusão de credenciais locais. É validação automatizada do harness, não execução in-game.
