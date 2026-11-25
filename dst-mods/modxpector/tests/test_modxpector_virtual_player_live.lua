@@ -6,6 +6,8 @@ ACTIONS = {
     CHOP = { name = "CHOP" }, ATTACK = { name = "ATTACK" },
     WALKTO = { name = "WALKTO" }, MOD_ACTION = { name = "MOD_ACTION" },
     PICKUP = { name = "PICKUP" },
+    STORE = { name = "STORE" }, TAKEITEM = { name = "TAKEITEM" },
+    TAKESINGLEITEM = { name = "TAKESINGLEITEM" },
 }
 Vector3 = function(x, y, z) return { x = x, y = y, z = z } end
 BufferedAction = function(doer, target, action, invobject, position)
@@ -31,6 +33,10 @@ end
 
 local crafted_calls, placed_calls = 0, 0
 local open_container = {
+    prefab = "treasurechest",
+    IsValid = function() return true end,
+    HasTag = function() return false end,
+    Transform = { GetWorldPosition = function() return 1, 0, 0 end },
     replica = {
         container = {
             Has = function(_, prefab)
@@ -114,8 +120,14 @@ local pickup_target = {
     HasTag = function() return false end,
     Transform = { GetWorldPosition = function() return 1, 0, 0 end },
 }
+local birdcage_target = {
+    prefab = "birdcage",
+    IsValid = function() return true end,
+    HasTag = function() return false end,
+    Transform = { GetWorldPosition = function() return 2, 0, 0 end },
+}
 TheSim.FindEntities = function()
-    local found = { target, pickup_target }
+    local found = { target, pickup_target, open_container, birdcage_target }
     if player ~= nil and player.placed_recipe ~= nil then found[#found + 1] = structure_target end
     return found
 end
@@ -124,7 +136,7 @@ local finished
 local controller
 controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
-    allowed_prefabs = { "cutgrass", "axe", "tree", "structure", "goldnugget" },
+    allowed_prefabs = { "cutgrass", "axe", "tree", "structure", "goldnugget", "treasurechest", "birdcage" },
     allowed_recipes = { "axe", "structure" },
     send_rpc = function(kind, request_id, value, count, _x, _z)
         if kind == "unlock_recipe" then
@@ -214,6 +226,21 @@ assert(dead_result.actual == true and dead_result.passed == true)
 target.replica.health.GetCurrent = function() return 25 end
 local alive_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" }, expected = false })
 assert(alive_result.actual == false and alive_result.passed == true)
+local accessible_gold = controller:_evaluate_assertion({ kind = "player_has_item", prefab = "goldnugget" })
+local carried_gold = controller:_evaluate_assertion({ kind = "player_inventory_has_item", prefab = "goldnugget" })
+local chest_gold = controller:_evaluate_assertion({
+    kind = "container_has_item", target = { prefab = "treasurechest" }, prefab = "goldnugget", count = 3,
+})
+assert(accessible_gold.passed == true and carried_gold.actual == false and carried_gold.passed == true,
+    "carried-inventory assertions must exclude items stored in open chests")
+assert(chest_gold.actual == true and chest_gold.passed == true,
+    "container assertions must read the target container replica count")
+local invalid_container_count_ok = pcall(function()
+    controller:_evaluate_assertion({
+        kind = "container_has_item", target = { prefab = "treasurechest" }, prefab = "goldnugget", count = 1.5,
+    })
+end)
+assert(not invalid_container_count_ok, "fractional container assertion counts must be rejected")
 TheSim.FindEntities = function() return {} end
 local removed_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
 assert(removed_result.actual == nil and removed_result.inconclusive == true and removed_result.passed == false,
@@ -228,6 +255,22 @@ local custom = controller:BuildAction({ action = "MOD_ACTION", invobject = "cutg
 assert(custom.action == ACTIONS.MOD_ACTION and custom.invobject.prefab == "cutgrass")
 local ok, err = pcall(function() controller:BuildAction({ action = "UNSAFE_EXEC" }) end)
 assert(not ok and string.find(tostring(err), "not allowed", 1, true))
+local store_action = controller:BuildAction({
+    kind = "action", action = "STORE", target = { prefab = "treasurechest", radius = 10 },
+    target_required = true, invobject = "cutgrass",
+})
+local take_item_action = controller:BuildAction({
+    kind = "action", action = "TAKEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
+})
+local take_single_action = controller:BuildAction({
+    kind = "action", action = "TAKESINGLEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
+})
+assert(store_action.action == ACTIONS.STORE and store_action.target == open_container
+    and store_action.invobject.prefab == "cutgrass")
+assert(take_item_action.action == ACTIONS.TAKEITEM and take_single_action.action == ACTIONS.TAKESINGLEITEM)
+local invalid_take_ok, invalid_take_error = pcall(function() controller:BuildAction({ kind = "action", action = "TAKE" }) end)
+assert(not invalid_take_ok and string.find(tostring(invalid_take_error), "not allowed", 1, true),
+    "nonexistent TAKE action must not be accepted in place of TAKEITEM/TAKESINGLEITEM")
 print("MODXPECTOR_LIVE_VIRTUAL_PLAYER_CONTRACT_OK")
 
 
