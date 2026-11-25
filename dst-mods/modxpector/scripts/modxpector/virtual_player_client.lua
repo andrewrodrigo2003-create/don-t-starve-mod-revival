@@ -901,6 +901,14 @@ function VirtualPlayer:_next_impl()
         self:_record(step, "started", "waiting")
         self:_schedule(seconds, function() self:_record(step, "completed", "wait elapsed"); self:_next() end)
     elseif step.kind == "action" then
+        if step.action == "STORE" then
+            self.run_inconclusive = true
+            self:_record(step, "inconclusive",
+                "prefab deltas cannot prove the exact inventory item was transferred to this container")
+            self:_finish(false,
+                "STORE is blocked until exact item identity and container transfer are independently verified")
+            return
+        end
         if step.action == "TAKEITEM" or step.action == "TAKESINGLEITEM" then
             self.run_inconclusive = true
             self:_record(step, "inconclusive",
