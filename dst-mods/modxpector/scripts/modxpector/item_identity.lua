@@ -2,6 +2,13 @@
 -- This module never mutates entities, inventories, containers, or stack sizes.
 local M = {}
 
+local function safe_call(protected_call, fn, ...)
+    if type(protected_call) ~= "function" or type(fn) ~= "function" then
+        return false, nil
+    end
+    return protected_call(fn, ...)
+end
+
 local function finite_number(value)
     return type(value) == "number" and value == value
         and value ~= math.huge and value ~= -math.huge
@@ -11,7 +18,7 @@ local function valid_entity(entity)
     if entity == nil or type(entity.IsValid) ~= "function" then
         return false, "entity validity API unavailable"
     end
-    local ok, valid = pcall(entity.IsValid, entity)
+    local ok, valid = safe_call(protected_call, entity.IsValid, entity)
     if not ok or valid ~= true then
         return false, "entity is invalid or validity check failed"
     end
@@ -27,7 +34,7 @@ local function stack_size(entity)
     if type(stackable.StackSize) ~= "function" then
         return nil, "stack size API unavailable"
     end
-    local ok, value = pcall(stackable.StackSize, stackable)
+    local ok, value = safe_call(protected_call, stackable.StackSize, stackable)
     if not ok or not finite_number(value) or value < 1 or value ~= math.floor(value) then
         return nil, "stack size is invalid"
     end
@@ -104,7 +111,7 @@ local function append_collection(snapshot, collection, source)
     end
 end
 
-local function capture_inventory(inventory)
+local function capture_inventory(inventory, protected_call)
     local snapshot = new_snapshot("player_inventory")
     if type(inventory) ~= "table" then
         fail(snapshot, "inventory replica unavailable")
@@ -114,7 +121,7 @@ local function capture_inventory(inventory)
     if type(inventory.GetItems) ~= "function" then
         fail(snapshot, "inventory GetItems API unavailable")
     else
-        local ok, items = pcall(inventory.GetItems, inventory)
+        local ok, items = safe_call(protected_call, inventory.GetItems, inventory)
         if not ok then fail(snapshot, "inventory GetItems call failed")
         else append_collection(snapshot, items, "inventory_slot") end
     end
@@ -122,7 +129,7 @@ local function capture_inventory(inventory)
     if type(inventory.GetEquips) ~= "function" then
         fail(snapshot, "inventory GetEquips API unavailable")
     else
-        local ok, equips = pcall(inventory.GetEquips, inventory)
+        local ok, equips = safe_call(protected_call, inventory.GetEquips, inventory)
         if not ok then fail(snapshot, "inventory GetEquips call failed")
         else append_collection(snapshot, equips, "equipment_slot") end
     end
@@ -130,7 +137,7 @@ local function capture_inventory(inventory)
     if type(inventory.GetActiveItem) ~= "function" then
         fail(snapshot, "inventory GetActiveItem API unavailable")
     else
-        local ok, item = pcall(inventory.GetActiveItem, inventory)
+        local ok, item = safe_call(protected_call, inventory.GetActiveItem, inventory)
         if not ok then fail(snapshot, "inventory GetActiveItem call failed")
         elseif item ~= nil then append_item(snapshot, item, "active_item", "active") end
     end
@@ -138,14 +145,14 @@ local function capture_inventory(inventory)
     if type(inventory.GetOverflowContainer) ~= "function" then
         fail(snapshot, "inventory GetOverflowContainer API unavailable")
     else
-        local ok, overflow = pcall(inventory.GetOverflowContainer, inventory)
+        local ok, overflow = safe_call(protected_call, inventory.GetOverflowContainer, inventory)
         if not ok then
             fail(snapshot, "inventory GetOverflowContainer call failed")
         elseif overflow ~= nil then
             if type(overflow.GetItems) ~= "function" then
                 fail(snapshot, "overflow container GetItems API unavailable")
             else
-                local items_ok, items = pcall(overflow.GetItems, overflow)
+                local items_ok, items = safe_call(protected_call, overflow.GetItems, overflow)
                 if not items_ok then fail(snapshot, "overflow container GetItems call failed")
                 else append_collection(snapshot, items, "overflow_slot") end
             end
@@ -161,7 +168,7 @@ local function capture_inventory(inventory)
     return snapshot
 end
 
-local function capture_target(target, player)
+local function capture_target(target, player, protected_call)
     local snapshot = new_snapshot("target_container")
     local valid, reason = valid_entity(target)
     if not valid then
@@ -178,7 +185,7 @@ local function capture_target(target, player)
         fail(snapshot, "target container open-state API unavailable")
         return snapshot
     end
-    local open_ok, is_open = pcall(container.IsOpenedBy, container, player)
+    local open_ok, is_open = safe_call(protected_call, container.IsOpenedBy, container, player)
     if not open_ok or is_open ~= true then
         fail(snapshot, "target container is not confirmed open by the player")
         return snapshot
@@ -187,7 +194,7 @@ local function capture_target(target, player)
         fail(snapshot, "target container GetItems API unavailable")
         return snapshot
     end
-    local items_ok, items = pcall(container.GetItems, container)
+    local items_ok, items = safe_call(protected_call, container.GetItems, container)
     if not items_ok then
         fail(snapshot, "target container GetItems call failed")
     else
@@ -202,12 +209,12 @@ local function capture_target(target, player)
     return snapshot
 end
 
-function M.Capture(inventory, player, target)
+function M.Capture(inventory, player, target, protected_call)
     local result = {
         schema = "modxpector/item-identity-capture/v1",
         complete = false,
-        player = capture_inventory(inventory),
-        target = target ~= nil and capture_target(target, player) or nil,
+        player = capture_inventory(inventory, protected_call),
+        target = target ~= nil and capture_target(target, player, protected_call) or nil,
     }
     result.complete = result.player.complete
         and (result.target == nil or result.target.complete)
