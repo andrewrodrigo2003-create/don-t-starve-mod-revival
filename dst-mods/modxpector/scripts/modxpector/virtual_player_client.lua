@@ -419,6 +419,7 @@ function VirtualPlayer:Start(plan)
     self.unverified_steps = {}
     self.step_targets = {}
     self.step_inventory_baselines = {}
+    self.step_transfer_baselines = {}
     self.target_death_events = {}
     self.target_death_callbacks = {}
     self.run_inconclusive = false
@@ -524,6 +525,58 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_cont
     return total
 end
 
+function VirtualPlayer:_count_container_prefab(target, prefab)
+    assert(self:_is_valid_target(target), "container target is no longer valid")
+    local container = target.replica ~= nil and target.replica.container or nil
+    assert(container ~= nil and type(container.Has) == "function",
+        "target container replica unavailable")
+    local _, raw_count = container:Has(prefab, 1, false)
+    local count = tonumber(raw_count)
+    assert(is_finite_number(count) and count >= 0,
+        "target container replica returned an invalid item count")
+    return count
+end
+
+function VirtualPlayer:_capture_step_transfer_baseline(step_index, target)
+    local player_prefabs, container_prefabs = {}, {}
+    for future_index = step_index + 1, #self.queue do
+        local candidate = self.queue[future_index]
+        if type(candidate) == "table" and candidate.kind == "assert"
+            and candidate.assertion ~= nil then
+            local assertion = candidate.assertion
+            local kind = assertion.kind
+            local references = candidate.verifies_steps ~= nil and candidate.verifies_steps or candidate.verifies_step
+            local matches = references == step_index
+            if type(references) == "table" then
+                for _, reference in ipairs(references) do
+                    if tonumber(reference) == step_index then matches = true; break end
+                end
+            end
+            if matches and type(assertion.prefab) == "string"
+                and self.allowed_prefabs[assertion.prefab] then
+                if kind == "player_inventory_item_count_increased"
+                    or kind == "player_inventory_item_count_decreased" then
+                    player_prefabs[assertion.prefab] = true
+                elseif kind == "container_item_count_increased" then
+                    container_prefabs[assertion.prefab] = true
+                end
+            end
+        end
+    end
+    if next(player_prefabs) == nil and next(container_prefabs) == nil then return end
+    local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+    assert(inventory ~= nil, "inventory replica unavailable for transfer baseline")
+    local baseline = { player = {}, container = {} }
+    for prefab in pairs(player_prefabs) do
+        baseline.player[prefab] = self:_count_player_prefab(inventory, prefab, false)
+    end
+    for prefab in pairs(container_prefabs) do
+        baseline.container[prefab] = self:_count_container_prefab(target, prefab)
+    end
+    self.step_transfer_baselines = self.step_transfer_baselines or {}
+    self.step_transfer_baselines[step_index] = baseline
+end
+
 function VirtualPlayer:_capture_step_inventory_baseline(step_index)
     local prefabs = {}
     for future_index = step_index + 1, #self.queue do
@@ -600,6 +653,40 @@ function VirtualPlayer:_evaluate_assertion(assertion)
             "item-count increase must be an integer between 1 and 10000")
         actual = self:_count_player_prefab(inventory, prefab, true) - baseline >= count
         expected = true
+    elseif kind == "player_inventory_item_count_increased"
+        or kind == "player_inventory_item_count_decreased"
+        or kind == "container_item_count_increased" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil, "inventory replica unavailable")
+        local prefab = assert(assertion.prefab, "transfer assertion prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "transfer assertion prefab is not in the test plan allowlist")
+        local step_index = tonumber(assertion.target_step)
+        assert(is_finite_number(step_index) and step_index == math.floor(step_index)
+            and step_index >= 1 and step_index < self.index,
+            "transfer assertion must reference a previous action step")
+        local baseline = self.step_transfer_baselines ~= nil
+            and self.step_transfer_baselines[step_index] or nil
+        assert(type(baseline) == "table", "transfer baseline was not captured for the referenced action")
+        local count = assertion.count == nil and 1 or tonumber(assertion.count)
+        assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
+            "transfer assertion count must be an integer between 1 and 10000")
+        if kind == "container_item_count_increased" then
+            local before = baseline.container ~= nil and baseline.container[prefab] or nil
+            assert(is_finite_number(before), "container transfer baseline was not captured")
+            local target = self:_resolve_assertion_target(assertion)
+            actual = self:_count_container_prefab(target, prefab) - before >= count
+        else
+            local before = baseline.player ~= nil and baseline.player[prefab] or nil
+            assert(is_finite_number(before), "player transfer baseline was not captured")
+            local after = self:_count_player_prefab(inventory, prefab, false)
+            if kind == "player_inventory_item_count_increased" then
+                actual = after - before >= count
+            else
+                actual = before - after >= count
+            end
+        end
+        expected = true
     elseif kind == "player_has_item_count_gte" then
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
         assert(inventory ~= nil, "inventory replica unavailable")
@@ -614,19 +701,13 @@ function VirtualPlayer:_evaluate_assertion(assertion)
     elseif kind == "container_has_item" then
         local target = self:_resolve_assertion_target(assertion)
         assert(self:_is_valid_target(target), "container assertion target is no longer valid")
-        local container = target.replica ~= nil and target.replica.container or nil
-        assert(container ~= nil and type(container.Has) == "function",
-            "target container replica unavailable")
         local prefab = assert(assertion.prefab, "assertion prefab required")
         assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
             "assertion item prefab is not in the test plan allowlist")
         local count = assertion.count == nil and 1 or tonumber(assertion.count)
         assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
             "container assertion count must be an integer between 1 and 10000")
-        local _, raw_found = container:Has(prefab, count, false)
-        local found = tonumber(raw_found)
-        assert(is_finite_number(found) and found >= 0,
-            "target container replica returned an invalid item count")
+        local found = self:_count_container_prefab(target, prefab)
         actual = found >= count
         expected = assertion.expected ~= false
     elseif kind == "player_knows_recipe" then
@@ -696,13 +777,16 @@ function VirtualPlayer:_evaluate_assertion(assertion)
             "target tag must be a non-empty string up to 64 characters")
         if target_valid then
             assert(type(target.HasTag) == "function", "target HasTag API unavailable")
+            actual = target:HasTag(assertion.tag) == true
+        else
+            actual = nil
         end
-        actual = target_valid and target:HasTag(assertion.tag) or false
         expected = assertion.expected ~= false
     else
         error("unsupported virtual-player assertion: " .. tostring(kind))
     end
-    local inconclusive = (kind == "target_dead" or kind == "player_near_target") and actual == nil
+    local inconclusive = (kind == "target_dead" or kind == "player_near_target"
+        or kind == "target_has_tag") and actual == nil
     local passed
     if inconclusive then
         passed = false
@@ -833,6 +917,14 @@ function VirtualPlayer:_next_impl()
         if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
         local target_entity = action_or_error.target
         if target_entity ~= nil then self:_capture_step_target(self.index, target_entity) end
+        local baseline_ok, baseline_error = pcall(function()
+            self:_capture_step_transfer_baseline(self.index, target_entity)
+        end)
+        if not baseline_ok then
+            self:_record(step, "failed", tostring(baseline_error))
+            self:_finish(false, "transfer baseline capture failed: " .. tostring(baseline_error))
+            return
+        end
         if repeat_until_target_dead then
             local alive_ok, target_dead = pcall(function() return self:_is_target_entity_dead(target_entity, self.index) end)
             if not alive_ok then
