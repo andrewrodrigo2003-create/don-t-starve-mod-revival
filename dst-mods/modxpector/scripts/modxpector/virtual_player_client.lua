@@ -3,6 +3,7 @@
 -- DST mod environments may hide pcall; use the engine global table.
 local DST_GLOBAL = GLOBAL or _G
 local pcall = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
+local ItemIdentity = require("modxpector/item_identity")
 local VirtualPlayer = {}
 VirtualPlayer.__index = VirtualPlayer
 
@@ -455,6 +456,13 @@ function VirtualPlayer:_is_valid_target(target)
     if target == nil or type(target.IsValid) ~= "function" then return false end
     local ok, valid = pcall(target.IsValid, target)
     return ok and valid == true
+end
+
+function VirtualPlayer:CaptureItemIdentitySnapshot(target)
+    -- Diagnostic-only API: it observes client replicas and never submits actions.
+    local inventory = self.player ~= nil and self.player.replica ~= nil
+        and self.player.replica.inventory or nil
+    return ItemIdentity.Capture(inventory, self.player, target, pcall)
 end
 
 function VirtualPlayer:_is_target_entity_dead(target, target_step)
