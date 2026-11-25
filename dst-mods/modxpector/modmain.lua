@@ -1040,10 +1040,15 @@ local chat_command_listener_history = nil
 local chat_command_listener = nil
 local function chat_system_message(message)
     local history = rawget(DST_GLOBAL, "ChatHistory")
+    local response = tostring(message or "")
+    if history ~= nil and type(history.SendCommandResponse) == "function" then
+        local ok = pcall(history.SendCommandResponse, history, response)
+        if ok then return end
+    end
     if history ~= nil and type(history.OnSystemMessage) == "function" then
-        pcall(history.OnSystemMessage, history, tostring(message or ""))
+        pcall(history.OnSystemMessage, history, response)
     else
-        print("[ModXpector Chat] " .. tostring(message or ""))
+        print("[ModXpector Chat] " .. response)
     end
 end
 
