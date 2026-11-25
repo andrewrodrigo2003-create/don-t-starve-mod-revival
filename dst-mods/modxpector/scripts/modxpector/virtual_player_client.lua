@@ -14,7 +14,7 @@ local ACTION_ALLOWLIST = {
     PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
     COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
     LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
-    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
+    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKEITEM = true, TAKESINGLEITEM = true,
 }
 
 local SIDE_EFFECT_STEPS = {
@@ -356,25 +356,27 @@ function VirtualPlayer:_is_target_entity_dead(target, target_step)
     return current_health <= 0
 end
 
-function VirtualPlayer:_count_player_prefab(inventory, prefab)
+function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_containers)
     assert(type(inventory.Has) == "function", "inventory replica Has unavailable")
     local _, total = inventory:Has(prefab, 1, false)
     total = tonumber(total) or 0
 
-    assert(type(inventory.GetOpenContainers) == "function",
-        "inventory replica GetOpenContainers unavailable")
-    local open_containers = inventory:GetOpenContainers()
-    assert(type(open_containers) == "table", "inventory open-container state unavailable")
-    local overflow = type(inventory.GetOverflowContainer) == "function"
-        and inventory:GetOverflowContainer() or nil
-    for container_inst in pairs(open_containers) do
-        if container_inst ~= nil and (overflow == nil or container_inst ~= overflow.inst) then
-            local replica = container_inst.replica ~= nil
-                and (container_inst.replica.container or container_inst.replica.inventory) or nil
-            assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
-                "an open container does not expose an item-count replica")
-            local _, found = replica:Has(prefab, 1, false)
-            total = total + (tonumber(found) or 0)
+    if include_open_containers == true then
+        assert(type(inventory.GetOpenContainers) == "function",
+            "inventory replica GetOpenContainers unavailable")
+        local open_containers = inventory:GetOpenContainers()
+        assert(type(open_containers) == "table", "inventory open-container state unavailable")
+        local overflow = type(inventory.GetOverflowContainer) == "function"
+            and inventory:GetOverflowContainer() or nil
+        for container_inst in pairs(open_containers) do
+            if container_inst ~= nil and (overflow == nil or container_inst ~= overflow.inst) then
+                local replica = container_inst.replica ~= nil
+                    and (container_inst.replica.container or container_inst.replica.inventory) or nil
+                assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
+                    "an open container does not expose an item-count replica")
+                local _, found = replica:Has(prefab, 1, false)
+                total = total + (tonumber(found) or 0)
+            end
         end
     end
 
@@ -402,7 +404,15 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         local prefab = assert(assertion.prefab, "assertion prefab required")
         assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
             "assertion item prefab is not in the test plan allowlist")
-        actual = self:_count_player_prefab(inventory, prefab) >= 1
+        actual = self:_count_player_prefab(inventory, prefab, true) >= 1
+        expected = assertion.expected ~= false
+    elseif kind == "player_inventory_has_item" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil, "inventory replica unavailable")
+        local prefab = assert(assertion.prefab, "assertion prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "assertion item prefab is not in the test plan allowlist")
+        actual = self:_count_player_prefab(inventory, prefab, false) >= 1
         expected = assertion.expected ~= false
     elseif kind == "player_health_gte" or kind == "player_hunger_gte" or kind == "player_sanity_gte" then
         local replica_name = kind == "player_health_gte" and "health"
@@ -420,7 +430,22 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         local count = tonumber(assertion.count)
         assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
             "inventory count assertion must be an integer between 1 and 10000")
-        actual = self:_count_player_prefab(inventory, prefab) >= count
+        actual = self:_count_player_prefab(inventory, prefab, true) >= count
+        expected = assertion.expected ~= false
+    elseif kind == "container_has_item" then
+        local target = self:_resolve_assertion_target(assertion)
+        assert(target ~= nil, "container assertion target not found")
+        local container = target.replica ~= nil and target.replica.container or nil
+        assert(container ~= nil and type(container.Has) == "function",
+            "target container replica unavailable")
+        local prefab = assert(assertion.prefab, "assertion prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "assertion item prefab is not in the test plan allowlist")
+        local count = assertion.count == nil and 1 or tonumber(assertion.count)
+        assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
+            "container assertion count must be an integer between 1 and 10000")
+        local _, found = container:Has(prefab, count, false)
+        actual = (tonumber(found) or 0) >= count
         expected = assertion.expected ~= false
     elseif kind == "player_knows_recipe" then
         local recipe_name = assert(assertion.recipe, "assertion recipe required")
