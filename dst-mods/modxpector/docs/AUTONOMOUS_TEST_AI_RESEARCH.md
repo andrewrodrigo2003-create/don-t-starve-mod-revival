@@ -158,3 +158,17 @@ Não declarar IA completa até demonstrar:
 - Validação L4/L5 documentada, não apenas mocks/CI.
 
 **Conclusão:** o caminho mais viável é ampliar o cérebro simbólico existente e conectar de forma segura o Virtual Player a um catálogo crescente de capacidades verificáveis. O agente pode ser autônomo para tarefas de teste delimitadas, offline e sem serviços externos; não deve ser descrito como um ChatGPT local de propósito geral.
+
+
+## 12. Implementação inicial de comandos por chat — 25/11/2026
+
+- Criado `scripts/modxpector/chat_commands.lua`, parser offline com limite de 256 caracteres e identificadores estritos.
+- Comandos reconhecidos: `/mx analisar`, `/mx status`, `/mx ajuda`, `/mx parar`, `/mx testar` (lista suites) e `/mx testar <suite_id> <scenario_id>`.
+- O listener usa `ChatHistory:AddChatHistoryListener` no cliente e filtra mensagens do próprio jogador (`sender_userid`) e do tipo de mensagem normal. Mensagens comuns não são interceptadas.
+- Respostas são locais via `ChatHistory:OnSystemMessage`; o comando de teste passa pelo mesmo caminho de validação local/Master já existente e continua sujeito a `test_mode`, allowlists e permissões.
+- `/mx parar` solicita cancelamento do Virtual Player ou limpa um plano pendente, quando houver.
+- Texto arbitrário, IDs inseguros, comandos desconhecidos e payloads semelhantes a código são rejeitados; nenhum texto é executado como Lua.
+- Criado teste unitário do parser e incluído no runner Lua 5.1.
+- Commit de integração: `07ee488e386d803372041f349cc35c72eb1ab47b`.
+- GitHub Actions run `45652447734`: **success**; parse de todos os arquivos Lua, contratos Lua 5.1 e verificação de segurança do pacote passaram.
+- Isso comprova parse/contratos do parser e integração estática, não prova que `ChatHistory` esteja disponível no momento de registro em todos os contextos, nem valida chat em sessão real, multiplayer ou servidor dedicado. Essas validações continuam pendentes.
