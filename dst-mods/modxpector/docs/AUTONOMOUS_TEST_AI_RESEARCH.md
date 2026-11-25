@@ -172,3 +172,30 @@ Não declarar IA completa até demonstrar:
 - Commit de integração: `07ee488e386d803372041f349cc35c72eb1ab47b`.
 - GitHub Actions run `45652447734`: **success**; parse de todos os arquivos Lua, contratos Lua 5.1 e verificação de segurança do pacote passaram.
 - Isso comprova parse/contratos do parser e integração estática, não prova que `ChatHistory` esteja disponível no momento de registro em todos os contextos, nem valida chat em sessão real, multiplayer ou servidor dedicado. Essas validações continuam pendentes.
+
+
+## 13. Auditoria do Virtual Player e isolamento — 25/11/2026
+
+### O que o código faz hoje
+
+ - virtual_player_client.lua recebe ThePlayer (o personagem real do cliente local), constrói BufferedAction e chama ThePlayer.components.playercontroller:DoAction. Portanto, Virtual Player descreve um controlador automatizado do personagem local; não é um segundo jogador/NPC independente.
+ - A documentação do componente PlayerController descreve DoAction(BufferedAction) como caminho nativo que valida a ação e coordena locomotor/RPC cliente-servidor. Isso é preferível a criar jogador falso ou contornar autoridade, mas confirma que movimento e ações afetam o personagem real e o mundo atual.
+ - A fonte de chathistory.lua no espelho de scripts DST confirma que AddChatHistoryListener(fn) recebe um objeto chat_message com type, sender_userid e message; OnSystemMessage insere mensagem local. O formato usado pelo listener implementado corresponde ao código consultado. A validação real dentro do jogo continua pendente.
+
+### Lacuna de segurança identificada e correção implementada
+
+ - Antes desta atualização, test_mode + permissão de administrador eram suficientes para aceitar planos com ações que alteram o mundo. Não havia confirmação separada de que o save era um laboratório descartável.
+ - Foi adicionada a opção laboratory_mode, com padrão false. O Master rejeita planos com ações diferentes de WALKTO, crafting, desbloqueio de receita ou spawn enquanto essa opção estiver desativada. Os RPCs de spawn e desbloqueio também verificam essa opção.
+ - O painel agora exibe o estado do modo laboratório. A análise passiva e as suites comunitárias observacionais permanecem disponíveis sem ativá-lo.
+ - Limite importante: laboratory_mode é uma confirmação explícita do administrador, não um detector infalível de save descartável. Ainda é obrigatório criar um mundo/cluster separado e ativar essa opção somente nele.
+
+### Como separar o laboratório
+
+A documentação oficial da Klei descreve -cluster como seleção da pasta de cluster e -conf_dir/-persistent_storage_root como separação do diretório de configuração/armazenamento. Um cluster separado cria outro conjunto de saves; Master e Caves dentro do mesmo cluster são shards do mesmo mundo e não devem ser confundidos com isolamento. Fonte: https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide.
+
+### Próxima validação
+
+ - Executar os contratos Lua 5.1 e confirmar rejeição do Master com laboratory_mode=false e aceitação controlada com laboratory_mode=true.
+ - Fazer teste real apenas em mundo descartável, começando com WALKTO; só depois validar cada ação mutável isoladamente.
+ - Verificar lifecycle do listener de chat em reconexão/respawn, RPC e cancelamento no jogo real.
+ - Não declarar isolamento físico automático: o mod não cria um segundo mundo em memória.
