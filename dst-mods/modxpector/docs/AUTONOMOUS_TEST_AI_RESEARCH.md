@@ -608,3 +608,14 @@ A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais
 - Lua checks [45682409667](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682409667): **success** no HEAD documental `444ea2571aee36cc43a98cf6f6bf1bdcd8463532`.
 - O resultado confirma parse Lua 5.1, contratos e verificação de credenciais no commit testado; não cobre a nova lacuna de semântica identificada nesta auditoria.
 - PR #76 e PR #177 continuam draft/open, sem merge ou publicação.
+
+
+### Correção de segurança — bloqueio fail-closed das ações de retirada (25/11/2026)
+
+- O Virtual Player agora interrompe `TAKEITEM` e `TAKESINGLEITEM` antes de construir/enviar a BufferedAction.
+- O resultado é `inconclusive`, não `passed`: identidade do item recebido e transição pré/pós da tag ainda não estão comprovadas.
+- Teste de regressão executa ambos os nomes de ação com um PlayerController instrumentado e exige zero chamadas a `DoAction`.
+- Código: `5a0230bf02e40326b67a8ac14264a3cbab2df0fa`.
+- Teste: `70f600567e32d95364d08e204c3444cb1e619dd1`.
+- CI do pacote/testes do ModXpector no commit de teste: run [45684407675](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684407675), ainda em fila na última consulta. Não declarar aprovado até concluir.
+- A correção é uma contenção segura, não a implementação final da retirada. STORE também continua fora do perfil comunitário. Nenhuma validação real dentro do DST/multiplayer/dedicated server.
