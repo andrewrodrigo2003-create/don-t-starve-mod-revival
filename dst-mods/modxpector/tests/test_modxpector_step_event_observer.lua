@@ -153,4 +153,48 @@ local malformed_entity, malformed_entity_reason = Observer.Start({
 }, pcall)
 assert(malformed_entity == nil and malformed_entity_reason == "invalid_event_source")
 
+
+
+local player_classified = entity(970)
+player_classified.IsBusy = function() return false end
+local target_classified = entity(971)
+target_classified.IsBusy = function() return false end
+local source_player = entity(972)
+source_player.replica = { inventory = { classified = player_classified } }
+local source_target = entity(973)
+local target_container_replica = {
+    IsBusy = function() return false end,
+    IsOpenedBy = function(_, opener) return opener == source_player end,
+    classified = target_classified,
+}
+source_target.replica = { container = target_container_replica }
+local replica_sources = assert(Observer.BuildReplicaSources(source_player, source_target, pcall))
+assert(#replica_sources == 2
+    and replica_sources[1].entity == player_classified
+    and replica_sources[2].entity == target_classified,
+    "source resolver must use the player's and target's classified replicas")
+assert(replica_sources[1].label == "player_inventory"
+    and replica_sources[2].label == "target_container")
+
+player_classified.IsBusy = function() return true end
+local busy_sources, busy_reason = Observer.BuildReplicaSources(source_player, source_target, pcall)
+assert(busy_sources == nil and busy_reason == "player_inventory_classified_busy_or_unknown")
+player_classified.IsBusy = function() return false end
+target_container_replica.IsBusy = function() return true end
+local busy_target_sources, busy_target_reason =
+    Observer.BuildReplicaSources(source_player, source_target, pcall)
+assert(busy_target_sources == nil
+    and busy_target_reason == "target_container_busy_closed_or_unknown")
+target_container_replica.IsBusy = function() return false end
+target_container_replica.IsOpenedBy = function() return false end
+local closed_target_sources, closed_target_reason =
+    Observer.BuildReplicaSources(source_player, source_target, pcall)
+assert(closed_target_sources == nil
+    and closed_target_reason == "target_container_busy_closed_or_unknown")
+local invalid_player = entity(974)
+invalid_player.IsValid = function() return false end
+local invalid_sources, invalid_sources_reason =
+    Observer.BuildReplicaSources(invalid_player, source_target, pcall)
+assert(invalid_sources == nil and invalid_sources_reason == "invalid_player_or_target")
+
 print("ModXpector step event observer tests passed")
