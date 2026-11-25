@@ -555,7 +555,7 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         expected = assertion.expected ~= false
     elseif kind == "container_has_item" then
         local target = self:_resolve_assertion_target(assertion)
-        assert(target ~= nil, "container assertion target not found")
+        assert(self:_is_valid_target(target), "container assertion target is no longer valid")
         local container = target.replica ~= nil and target.replica.container or nil
         assert(container ~= nil and type(container.Has) == "function",
             "target container replica unavailable")
