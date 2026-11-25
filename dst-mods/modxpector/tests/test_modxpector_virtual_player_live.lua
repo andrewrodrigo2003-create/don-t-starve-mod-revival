@@ -853,3 +853,76 @@ assert(cancel_counts.stop == 0 and cancel_counts.clear == 0 and cancel_counts.en
 assert(unrelated_player.bufferedaction == unrelated_action)
 assert(unrelated_controller:GetReport().active_action_cancellation == "not_cancelled")
 print("MODXPECTOR_VIRTUAL_PLAYER_CANCEL_ACTION_CONTRACT_OK")
+
+-- A stalled WALKTO requests one fresh native path search, then fails safely if still stuck.
+local path_tasks = {}
+local path_reset_count, path_find_count, path_stop_count = 0, 0, 0
+local path_player_position = 0
+local path_locomotor = {
+    bufferedaction = nil,
+    dest = { IsValid = function() return true end },
+    ResetPath = function(self)
+        path_reset_count = path_reset_count + 1
+        self.path = nil
+    end,
+    FindPath = function() path_find_count = path_find_count + 1 end,
+    Stop = function() path_stop_count = path_stop_count + 1 end,
+    Clear = function(self)
+        self.bufferedaction = nil
+        self.dest = nil
+    end,
+}
+local path_player = {
+    prefab = "wilson",
+    components = {
+        locomotor = path_locomotor,
+        playercontroller = {
+            DoAction = function(_, action) path_locomotor.bufferedaction = action end,
+        },
+    },
+    Transform = { GetWorldPosition = function() return path_player_position, 0, 0 end },
+    IsValid = function() return true end,
+    GetBufferedAction = function() return path_locomotor.bufferedaction end,
+    DoTaskInTime = function(_, delay, fn)
+        path_tasks[#path_tasks + 1] = { due = current_time + delay, fn = fn }
+    end,
+}
+local path_finished
+local path_controller = VirtualPlayer.new(path_player, {
+    allowed_prefabs = { "tree" },
+    stuck_timeout = 2,
+    max_path_replan_attempts = 1,
+    on_finished = function(report) path_finished = report end,
+})
+path_controller.poll_interval = 1
+current_time = 100
+assert(path_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "bounded-walkto-replan",
+    allowed_prefabs = { "tree" },
+    steps = {
+        { kind = "action", action = "WALKTO", target = { prefab = "tree", radius = 12 }, target_required = true, timeout = 20 },
+    },
+}))
+local function run_next_path_task()
+    table.sort(path_tasks, function(a, b) return a.due < b.due end)
+    local task = table.remove(path_tasks, 1)
+    assert(task ~= nil, "expected a scheduled Virtual Player poll")
+    current_time = task.due
+    task.fn()
+end
+run_next_path_task() -- begin movement tracking
+run_next_path_task() -- no progress yet
+run_next_path_task() -- one ResetPath + FindPath request
+assert(path_reset_count == 1 and path_find_count == 1,
+    "stalled WALKTO must request exactly one native path refresh")
+run_next_path_task() -- wait after replan
+run_next_path_task() -- bounded recovery exhausted
+assert(path_finished ~= nil and path_finished.outcome == "failed")
+assert(path_finished.path_replan_requests == 1)
+assert(path_finished.active_action_cancellation == "cancelled")
+assert(path_locomotor.bufferedaction == nil and path_stop_count == 1,
+    "a still-stuck WALKTO must cancel its own action after the bounded replan")
+assert(path_controller.running == false)
+print("MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK")
