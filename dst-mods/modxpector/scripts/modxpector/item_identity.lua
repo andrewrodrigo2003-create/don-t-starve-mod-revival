@@ -14,7 +14,7 @@ local function finite_number(value)
         and value ~= math.huge and value ~= -math.huge
 end
 
-local function valid_entity(entity)
+local function valid_entity(entity, protected_call)
     if entity == nil or type(entity.IsValid) ~= "function" then
         return false, "entity validity API unavailable"
     end
@@ -25,7 +25,7 @@ local function valid_entity(entity)
     return true
 end
 
-local function stack_size(entity)
+local function stack_size(entity, protected_call)
     local replica = entity.replica
     local stackable = type(replica) == "table" and replica.stackable or nil
     if stackable == nil then
@@ -58,8 +58,8 @@ local function fail(snapshot, message)
     snapshot.errors[#snapshot.errors + 1] = message
 end
 
-local function append_item(snapshot, entity, source, slot)
-    local valid, reason = valid_entity(entity)
+local function append_item(snapshot, entity, source, slot, protected_call)
+    local valid, reason = valid_entity(entity, protected_call)
     if not valid then
         fail(snapshot, source .. ": " .. reason)
         return
@@ -75,7 +75,7 @@ local function append_item(snapshot, entity, source, slot)
         return
     end
 
-    local size, size_source = stack_size(entity)
+    local size, size_source = stack_size(entity, protected_call)
     if size == nil then
         fail(snapshot, source .. ": " .. size_source)
         return
@@ -99,14 +99,14 @@ local function append_item(snapshot, entity, source, slot)
     snapshot.item_count = snapshot.item_count + 1
 end
 
-local function append_collection(snapshot, collection, source)
+local function append_collection(snapshot, collection, source, protected_call)
     if type(collection) ~= "table" then
         fail(snapshot, source .. ": item collection is unavailable")
         return
     end
     for slot, entity in pairs(collection) do
         if entity ~= nil then
-            append_item(snapshot, entity, source, slot)
+            append_item(snapshot, entity, source, slot, protected_call)
         end
     end
 end
@@ -123,7 +123,7 @@ local function capture_inventory(inventory, protected_call)
     else
         local ok, items = safe_call(protected_call, inventory.GetItems, inventory)
         if not ok then fail(snapshot, "inventory GetItems call failed")
-        else append_collection(snapshot, items, "inventory_slot") end
+        else append_collection(snapshot, items, "inventory_slot", protected_call) end
     end
 
     if type(inventory.GetEquips) ~= "function" then
@@ -131,7 +131,7 @@ local function capture_inventory(inventory, protected_call)
     else
         local ok, equips = safe_call(protected_call, inventory.GetEquips, inventory)
         if not ok then fail(snapshot, "inventory GetEquips call failed")
-        else append_collection(snapshot, equips, "equipment_slot") end
+        else append_collection(snapshot, equips, "equipment_slot", protected_call) end
     end
 
     if type(inventory.GetActiveItem) ~= "function" then
@@ -139,7 +139,7 @@ local function capture_inventory(inventory, protected_call)
     else
         local ok, item = safe_call(protected_call, inventory.GetActiveItem, inventory)
         if not ok then fail(snapshot, "inventory GetActiveItem call failed")
-        elseif item ~= nil then append_item(snapshot, item, "active_item", "active") end
+        elseif item ~= nil then append_item(snapshot, item, "active_item", "active", protected_call) end
     end
 
     if type(inventory.GetOverflowContainer) ~= "function" then
@@ -154,7 +154,7 @@ local function capture_inventory(inventory, protected_call)
             else
                 local items_ok, items = safe_call(protected_call, overflow.GetItems, overflow)
                 if not items_ok then fail(snapshot, "overflow container GetItems call failed")
-                else append_collection(snapshot, items, "overflow_slot") end
+                else append_collection(snapshot, items, "overflow_slot", protected_call) end
             end
         end
     end
@@ -170,7 +170,7 @@ end
 
 local function capture_target(target, player, protected_call)
     local snapshot = new_snapshot("target_container")
-    local valid, reason = valid_entity(target)
+    local valid, reason = valid_entity(target, protected_call)
     if not valid then
         fail(snapshot, "target: " .. reason)
         return snapshot
@@ -198,7 +198,7 @@ local function capture_target(target, player, protected_call)
     if not items_ok then
         fail(snapshot, "target container GetItems call failed")
     else
-        append_collection(snapshot, items, "container_slot")
+        append_collection(snapshot, items, "container_slot", protected_call)
     end
 
     table.sort(snapshot.items, function(a, b)
