@@ -269,7 +269,9 @@ local function consume_declared_server_operation(plan, step_index, run_id, kind,
     if type(run_id) ~= "string" or plan.run_id ~= run_id then
         return false, "stale or mismatched test run ID"
     end
-    if not integer_in_range(step_index, 1, #plan.steps) then
+    if type(step_index) ~= "number" or step_index ~= step_index
+        or step_index == math.huge or step_index == -math.huge
+        or step_index ~= math.floor(step_index) or step_index < 1 or step_index > #plan.steps then
         return false, "invalid test plan step index"
     end
     if type(plan._server_consumed_steps) ~= "table" then
