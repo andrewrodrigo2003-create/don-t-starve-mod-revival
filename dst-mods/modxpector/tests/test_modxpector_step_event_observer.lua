@@ -147,4 +147,10 @@ local duplicate_subscription, duplicate_subscription_reason = Observer.Start({
 assert(duplicate_subscription == nil
     and duplicate_subscription_reason == "duplicate_event_subscription")
 
+
+local malformed_entity, malformed_entity_reason = Observer.Start({
+    { entity = 42, label = "malformed-entity", events = { "itemget" } },
+}, pcall)
+assert(malformed_entity == nil and malformed_entity_reason == "invalid_event_source")
+
 print("ModXpector step event observer tests passed")
