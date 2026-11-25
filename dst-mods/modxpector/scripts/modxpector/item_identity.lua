@@ -1,6 +1,7 @@
 -- Read-only, fail-closed snapshots of client-visible item identity.
 -- This module never mutates entities, inventories, containers, or stack sizes.
 local M = {}
+local MAX_COLLECTION_ENTRIES = 512
 
 local function safe_call(protected_call, fn, ...)
     if type(protected_call) ~= "function" or type(fn) ~= "function" then
@@ -104,7 +105,13 @@ local function append_collection(snapshot, collection, source, protected_call)
         fail(snapshot, source .. ": item collection is unavailable")
         return
     end
+    local visited = 0
     for slot, entity in pairs(collection) do
+        visited = visited + 1
+        if visited > MAX_COLLECTION_ENTRIES then
+            fail(snapshot, source .. ": collection exceeds the 512-entry safety limit")
+            break
+        end
         if entity ~= nil then
             append_item(snapshot, entity, source, slot, protected_call)
         end
