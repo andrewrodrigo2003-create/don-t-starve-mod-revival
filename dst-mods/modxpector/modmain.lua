@@ -745,7 +745,8 @@ local function handle_spawn(player, request_id, step_index, run_id, prefab, coun
         return
     end
     x, z = tonumber(x), tonumber(z)
-    if x == nil or z == nil or x ~= x or z ~= z or math.abs(x) > 100000 or math.abs(z) > 100000 then
+    if not finite_number(x) or not finite_number(z)
+        or math.abs(x) > 100000 or math.abs(z) > 100000 then
         send_result(player, request_id, false, "invalid spawn coordinates")
         return
     end
