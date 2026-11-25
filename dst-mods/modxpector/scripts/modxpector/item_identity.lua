@@ -244,8 +244,10 @@ function M.CompareExactMove(before, after, selected_guid)
         or type(before.player) ~= "table" or before.player.complete ~= true
         or type(after.player) ~= "table" or after.player.complete ~= true
         or type(before.target) ~= "table" or before.target.complete ~= true
-        or type(after.target) ~= "table" or after.target.complete ~= true then
-        return inconclusive("one or more snapshots are incomplete")
+        or type(after.target) ~= "table" or after.target.complete ~= true
+        or type(before.player.by_guid) ~= "table" or type(after.player.by_guid) ~= "table"
+        or type(before.target.by_guid) ~= "table" or type(after.target.by_guid) ~= "table" then
+        return inconclusive("one or more snapshots are incomplete or malformed")
     end
     if not finite_number(selected_guid) or selected_guid < 1
         or selected_guid ~= math.floor(selected_guid) then
