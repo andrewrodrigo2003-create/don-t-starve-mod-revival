@@ -88,8 +88,7 @@ function M.Start(sources, protected_call, get_time, max_events)
                     data = inst
                     inst = source.entity
                 end
-                local event_entity = event_name == "stacksizechange"
-                    or event_name == "stacksizepreview" and source.entity or nil
+                local event_entity = nil
                 if event_name == "stacksizechange" or event_name == "stacksizepreview" then
                     event_entity = source.entity
                 end
