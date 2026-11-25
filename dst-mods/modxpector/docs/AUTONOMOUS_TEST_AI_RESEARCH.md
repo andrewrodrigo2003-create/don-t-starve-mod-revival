@@ -449,3 +449,19 @@ HEAD: `3545e2fc26249a79563259b60feb0e81e0a8bba0`.
 - [Pacote do commit anterior 8eecc02 — 45674493553](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674493553): verificar separadamente; não inclui o teste final no HEAD 3545e2f.
 
 Sem teste in-game. A correção impede consulta de réplica stale, mas não prova integração no servidor real.
+
+
+## Atualização — verificação de ganho real de itens — 25/11/2026
+
+Foi identificada uma possibilidade de falso positivo: uma pós-condição como `player_has_item_count_gte` podia aprovar coleta/fabricação quando o jogador já possuía a quantidade exigida antes da ação. O simples estado final do inventário não demonstra que a ação produziu o efeito.
+
+- Código: `436ea2d1c8b6e4befa2ecb3e999bfa89c49c28b7`.
+- Testes de regressão: `e58d955b965a67e9d39c1662c20c044ed130c296`.
+- Nova asserção `player_item_count_increased` captura, antes da ação, a contagem do prefab referenciado e exige aumento real após a ação.
+- A captura é limitada aos prefabs allowlisted que aparecem em pós-condições futuras vinculadas à etapa.
+- Os cenários de fabricação de machado e coleta de capim passaram a exigir aumento, não apenas presença/quantidade final.
+- Teste negativo: jogador já possui os itens; ação PICKUP não altera inventário; a verificação deve falhar.
+- A alteração foi enviada ao branch do PR #76. A consulta de workflows não retornou execução associada ao novo HEAD; portanto, CI ainda não confirmada. Não declarar os novos contratos aprovados.
+- Não houve teste dentro do DST, multiplayer ou servidor dedicado.
+
+PR #76 continua draft/open, sem merge ou publicação. A IA permanece incompleta.
