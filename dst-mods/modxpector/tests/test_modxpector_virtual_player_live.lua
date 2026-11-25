@@ -258,13 +258,13 @@ assert(not ok and string.find(tostring(err), "not allowed", 1, true))
 local store_action = controller:BuildAction({
     kind = "action", action = "STORE", target = { prefab = "treasurechest", radius = 10 },
     target_required = true, invobject = "cutgrass",
-})
+}, open_container)
 local take_item_action = controller:BuildAction({
     kind = "action", action = "TAKEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
-})
+}, birdcage_target)
 local take_single_action = controller:BuildAction({
     kind = "action", action = "TAKESINGLEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
-})
+}, birdcage_target)
 assert(store_action.action == ACTIONS.STORE and store_action.target == open_container
     and store_action.invobject.prefab == "cutgrass")
 assert(take_item_action.action == ACTIONS.TAKEITEM and take_single_action.action == ACTIONS.TAKESINGLEITEM)
