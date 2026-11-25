@@ -547,6 +547,20 @@ local function validate_plan_assertion(plan, index, step)
         return false, "this assertion does not accept a target selector"
     end
 
+    if assertion.kind == "player_inventory_item_count_increased"
+        or assertion.kind == "player_inventory_item_count_decreased"
+        or assertion.kind == "container_item_count_increased" then
+        local matches_verified_step = step.verifies_step == assertion.target_step
+        if type(step.verifies_steps) == "table" then
+            for _, reference in ipairs(step.verifies_steps) do
+                if reference == assertion.target_step then matches_verified_step = true; break end
+            end
+        end
+        if not matches_verified_step then
+            return false, "transfer assertion target_step must match a verified action step"
+        end
+    end
+
     if step.verifies_step ~= nil and step.verifies_steps ~= nil then
         return false, "use verifies_step or verifies_steps, not both"
     end
