@@ -1200,6 +1200,8 @@ transfer_controller.queue = {
 }
 transfer_controller.index = 1
 transfer_controller.step_targets = {}
+transfer_controller.target_death_events = {}
+transfer_controller.target_death_callbacks = {}
 transfer_controller:_capture_step_target(1, transfer_target)
 transfer_controller:_capture_step_transfer_baseline(1, transfer_target)
 carried_count, chest_count = 3, 1 -- one item moved: valid partial transfer
@@ -1284,6 +1286,8 @@ take_controller.queue = {
 }
 take_controller.index = 1
 take_controller.step_targets = {}
+take_controller.target_death_events = {}
+take_controller.target_death_callbacks = {}
 take_controller:_capture_step_target(1, holder_target)
 take_controller:_capture_step_transfer_baseline(1, holder_target)
 held_count = 3
