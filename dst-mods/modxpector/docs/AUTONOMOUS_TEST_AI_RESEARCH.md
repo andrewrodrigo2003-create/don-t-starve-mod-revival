@@ -365,3 +365,14 @@ Isso sustenta a estratégia atual: verificar a mesma BufferedAction no Entity/Lo
 O teste WALKTO agora também inicia com `lastdesttile = "stale_destination_tile"` e exige que o replanejamento limpe o cache antes de chamar `FindPath` (commit `c8d81641c4be3b50fa3e5c812816c264a635858c`).
 
 CI [run 45664109579](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45664109579) passou integralmente no commit `c8d81641c4be3b50fa3e5c812816c264a635858c`: parse Lua 5.1, contratos completos, `MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK`, cenários de ataque repetido e verificação de exclusão de credenciais locais. É validação automatizada do harness, não execução in-game.
+
+
+## 26. Seleção resiliente e determinística de alvos — 25/11/2026
+
+O Virtual Player agora protege a varredura contra entidades que se tornam inválidas durante a enumeração, entidades sem Transform utilizável e coordenadas não finitas. Um candidato problemático é ignorado sem abortar a busca inteira. O raio também volta ao padrão quando recebe valor não finito e continua limitado ao intervalo seguro.
+
+Quando dois candidatos válidos estão à mesma distância, o GUID define o desempate; se não houver GUID utilizável, a ordem original da enumeração é preservada. Isso reduz variação de alvo entre execuções quando o DST fornece identificadores.
+
+O contrato automatizado cobre empate por GUID, entidade cuja chamada IsValid falha, posição não finita e raio NaN. A CI [45666712487](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45666712487) passou no commit `da225811774fd1ac58b8bf23f786e8f115f0d22b`: parse Lua 5.1, contratos e verificação de exclusão de credenciais. A CI [45666700660](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45666700660) também passou: testes Lua, geração do ZIP e upload do artefato de teste.
+
+**Limite:** os testes usam harness/mocks. Não comprovam comportamento dentro do DST, nem multiplayer ou servidor dedicado. O Virtual Player continua exigindo validação in-game em mundo descartável.
