@@ -92,6 +92,9 @@ local player = {
 
 local engine_globals = { pcall = pcall, rawset = rawset }
 engine_globals.Prefabs = Prefabs
+engine_globals.ThePlayer = player
+engine_globals.ChatHistory = chat_history
+engine_globals.ChatTypes = ChatTypes
 local env = setmetatable({
     GLOBAL = engine_globals,
     require = function(path)
