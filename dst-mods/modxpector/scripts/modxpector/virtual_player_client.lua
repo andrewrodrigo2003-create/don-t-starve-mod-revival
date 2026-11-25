@@ -456,11 +456,13 @@ function VirtualPlayer:_is_valid_target(target)
 end
 
 function VirtualPlayer:_is_target_entity_dead(target, target_step)
-    if not self:_is_valid_target(target) then return nil end
+    if target == nil then return nil end
+    -- A recorded death event is authoritative even after the entity is removed.
     if target_step ~= nil and self.target_death_events ~= nil
         and self.target_death_events[target_step] == true then
         return true
     end
+    if not self:_is_valid_target(target) then return nil end
     local health = target.replica ~= nil and target.replica.health or nil
     if health == nil or type(health.GetCurrent) ~= "function" then return nil end
     local current_health = health:GetCurrent()
