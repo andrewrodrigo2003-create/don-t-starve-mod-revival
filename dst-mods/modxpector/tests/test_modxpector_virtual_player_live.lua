@@ -304,6 +304,29 @@ local stale_near = controller:_evaluate_assertion({
 })
 assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.passed and stale_near.passed,
     "stale captured targets must not satisfy existence, death, tag, or proximity assertions")
+
+local invalid_radius_negative = pcall(function()
+    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = -1 })
+end)
+local invalid_radius_large = pcall(function()
+    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = 41 })
+end)
+local invalid_radius_nan = pcall(function()
+    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = 0 / 0 })
+end)
+assert(not invalid_radius_negative and not invalid_radius_large and not invalid_radius_nan,
+    "near-target assertion must reject negative, excessive, and non-finite radii")
+
+local malformed_position_target = {
+    prefab = "tree",
+    IsValid = function() return true end,
+    Transform = { GetWorldPosition = function() return 0 / 0, 0, 0 end },
+}
+local malformed_near = controller:_evaluate_assertion({
+    kind = "player_near_target", target = malformed_position_target, expected = false,
+})
+assert(malformed_near.inconclusive and not malformed_near.passed,
+    "invalid world coordinates must be inconclusive, not pass a negative proximity assertion")
 controller.target_death_events[1] = true
 assert(controller:_is_target_entity_dead(removed_captured_target, 1) == true,
     "a captured death event must remain authoritative after the target entity is removed")
