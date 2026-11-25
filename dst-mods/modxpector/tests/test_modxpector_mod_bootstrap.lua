@@ -257,6 +257,24 @@ print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
 print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
 
+-- Movement is an action on the real local character and must also stay inside the disposable lab.
+laboratory_mode = false
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "walkto_requires_laboratory",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "WALKTO", target = { prefab = "cutgrass" }, target_required = true },
+    },
+}
+rpc_server.set_test_plan(player, "walkto_requires_laboratory", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "laboratory mode", 1, true),
+    "Master must reject movement plans outside the disposable laboratory")
+
 -- World-changing plans must be rejected unless the server explicitly confirms a disposable lab world.
 laboratory_mode = false
 decoded_plan = {
