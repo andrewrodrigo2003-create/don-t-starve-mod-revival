@@ -1341,3 +1341,37 @@ local closed_container_baseline_ok = pcall(function()
 end)
 assert(not closed_container_baseline_ok,
     "STORE baseline must reject closed containers because their replica may report a false zero")
+
+
+-- TAKEITEM/TAKESINGLEITEM are fail-closed until the exact held item can be identified
+-- and its transfer into the player's inventory can be independently verified.
+for _, blocked_action in ipairs({ "TAKEITEM", "TAKESINGLEITEM" }) do
+    local submitted_actions = 0
+    local blocked_report
+    local blocked_player = {
+        prefab = "wilson",
+        IsValid = function() return true end,
+        components = {
+            playercontroller = {
+                DoAction = function() submitted_actions = submitted_actions + 1 end,
+            },
+        },
+    }
+    local blocked_controller = VirtualPlayer.new(blocked_player, {
+        on_finished = function(report) blocked_report = report end,
+    })
+    assert(blocked_controller:Start({
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        run_id = "blocked-" .. blocked_action,
+        steps = {
+            { kind = "action", action = blocked_action, target_required = true },
+        },
+    }))
+    assert(submitted_actions == 0,
+        blocked_action .. " must not reach PlayerController before identity-safe oracles exist")
+    assert(blocked_report ~= nil and blocked_report.outcome == "inconclusive",
+        blocked_action .. " must be reported as inconclusive, not passed or completed")
+    assert(blocked_report.run_failed == nil or blocked_report.outcome == "inconclusive")
+end
+print("MODXPECTOR_VIRTUAL_PLAYER_TAKEITEM_FAIL_CLOSED_CONTRACT_OK")
