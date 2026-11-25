@@ -591,3 +591,24 @@ rpc_server.set_test_plan(reconnected_player, "invalid_transfer_target_mismatch",
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "target_step must match", 1, true),
     "Master must reject transfer baselines bound to a different action than the verified step")
+
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_negative_transfer_expectation",
+    allowed_prefabs = { "cutgrass", "treasurechest" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
+        { kind = "assert", assertion = {
+            kind = "container_item_count_increased", target_step = 1,
+            prefab = "cutgrass", count = 1, expected = false,
+        }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "invalid_negative_transfer_expectation", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "expected=true", 1, true),
+    "Master must reject negative expectations for transfer-delta assertions")
