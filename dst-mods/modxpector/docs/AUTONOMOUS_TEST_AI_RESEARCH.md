@@ -755,3 +755,11 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Container Replica: IsOpenedBy, GetItems — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/container_replica
 - Stackable Replica: StackSize() sincronizado — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable_replica
 - Stackable: split via Get(num) e merge via Put(item) — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable
+
+### Resultado final — coletor read-only de identidade (25/11/2026)
+- Limite de segurança adicionado: no máximo 512 entradas por coleção (slots, equipamentos, overflow ou contêiner); acima disso, o snapshot fica incompleto e interrompe a enumeração.
+- Teste negativo adicionado para coleção com 513 itens; confirma fail-closed e limite máximo de 512 registros retidos.
+- Lua checks [45688079737](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688079737): success no commit `a8ef781038ea9a9e36c6f6edeead2d0096b1fd3d`; parse de todos os arquivos Lua, contratos e verificação de credenciais passaram.
+- Package/testes [45688069212](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688069212): success no mesmo commit; suíte Lua, ZIP e upload do artefato concluídos.
+- O commit `a8ef781` contém o coletor, a integração read-only no Virtual Player, os testes e o limite de coleção. Os commits documentais posteriores não alteram esse código.
+- Nenhum teste in-game, multiplayer ou dedicated server. O coletor não é um oráculo de transferência; STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
