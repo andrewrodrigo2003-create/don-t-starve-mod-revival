@@ -901,6 +901,14 @@ function VirtualPlayer:_next_impl()
         self:_record(step, "started", "waiting")
         self:_schedule(seconds, function() self:_record(step, "completed", "wait elapsed"); self:_next() end)
     elseif step.kind == "action" then
+        if step.action == "TAKEITEM" or step.action == "TAKESINGLEITEM" then
+            self.run_inconclusive = true
+            self:_record(step, "inconclusive",
+                "item identity and target-state transition are not yet independently verified")
+            self:_finish(false,
+                "TAKEITEM/TAKESINGLEITEM are blocked until the exact target item transfer is verifiable")
+            return
+        end
         local repeat_until_target_dead = step.repeat_until_target_dead == true
         local max_repeats = tonumber(step.max_repeats)
         local repeat_timeout = tonumber(step.repeat_timeout) or 120
