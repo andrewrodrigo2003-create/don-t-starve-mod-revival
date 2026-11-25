@@ -340,7 +340,10 @@ local function plan_requires_laboratory(plan)
     if type(plan) ~= "table" or type(plan.steps) ~= "table" then return false end
     for _, step in ipairs(plan.steps) do
         if type(step) == "table" then
-            if step.kind == "action" and step.action ~= "WALKTO" then return true end
+            if step.kind == "action" then
+                -- WALKTO still moves the real local player; it is not observation-only.
+                return true
+            end
             if step.kind == "craft" or step.kind == "craft_at_point"
                 or step.kind == "unlock_recipe" or step.kind == "spawn_item"
                 or step.kind == "spawn_entity" then
