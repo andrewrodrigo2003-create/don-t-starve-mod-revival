@@ -12,6 +12,8 @@ assert(disabled.collect_runtime_components == false,
 assert(disabled.accept_community_events == false,
     "community event ingestion must default to disabled")
 assert(disabled.test_mode == false)
+assert(disabled.laboratory_mode == false,
+    "world-changing laboratory mode must default to disabled")
 
 local enabled = config_module.Read(function(key)
     if key == "collect_runtime_components" or key == "accept_community_events" then return true end
@@ -34,6 +36,10 @@ assert(option ~= nil and option.default == false,
 assert(type(option.options) == "table" and #option.options == 2
     and option.options[1].data == false and option.options[2].data == true,
     "runtime observation must be a clear opt-in toggle")
+local laboratory_option = options.laboratory_mode
+assert(laboratory_option ~= nil and laboratory_option.default == false
+    and laboratory_option.options[1].data == false and laboratory_option.options[2].data == true,
+    "world-changing tests must require a separate explicit disposable-lab opt-in")
 local event_option = options.accept_community_events
 assert(event_option ~= nil and event_option.default == false
     and event_option.options[1].data == false and event_option.options[2].data == true,
