@@ -69,7 +69,7 @@ function M.BuildReplicaSources(player, target, protected_call)
         return nil, "player_inventory_replica_unavailable"
     end
     local classified_ok, inventory_classified = read_field(protected_call, inventory, "classified")
-    if not classified_ok or type(inventory_classified) ~= "table"
+    if not classified_ok or not valid_entity(protected_call, inventory_classified)
         or type(inventory_classified.IsBusy) ~= "function" then
         return nil, "player_inventory_classified_unavailable"
     end
@@ -96,7 +96,7 @@ function M.BuildReplicaSources(player, target, protected_call)
         return nil, "target_container_busy_closed_or_unknown"
     end
     local container_classified_ok, container_classified = read_field(protected_call, container, "classified")
-    if not container_classified_ok or type(container_classified) ~= "table"
+    if not container_classified_ok or not valid_entity(protected_call, container_classified)
         or type(container_classified.IsBusy) ~= "function" then
         return nil, "target_container_classified_unavailable"
     end
@@ -140,7 +140,7 @@ function M.Start(sources, protected_call, get_time, max_events)
     }
 
     for _, source in ipairs(sources) do
-        if type(source) ~= "table" or type(source.entity) ~= "table"
+        if type(source) ~= "table" or not valid_entity(protected_call, source.entity)
             or type(source.label) ~= "string" or #source.label == 0 or #source.label > 64
             or type(source.events) ~= "table" or #source.events == 0 or #source.events > 4
             or type(source.entity.ListenForEvent) ~= "function"
