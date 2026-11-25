@@ -319,7 +319,16 @@ function VirtualPlayer:_cancel_active_action()
         local clear_ok = pcall(self.player.ClearBufferedAction, self.player)
         cancelled = clear_ok or cancelled
     end
-    return cancelled
+
+    -- A successful API call is not proof that the action actually stopped.
+    -- Confirm that neither EntityScript nor Locomotor still exposes our action.
+    local verify_ok, current_after = pcall(self.player.GetBufferedAction, self.player)
+    if not verify_ok or current_after == active.action
+        or self.player.bufferedaction == active.action
+        or (locomotor ~= nil and locomotor.bufferedaction == active.action) then
+        return false
+    end
+    return true
 end
 
 function VirtualPlayer:_finish(ok, message)
