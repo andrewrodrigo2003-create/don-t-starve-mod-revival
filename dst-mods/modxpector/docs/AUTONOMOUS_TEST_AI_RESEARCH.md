@@ -518,3 +518,12 @@ Próximo desenho seguro:
 4. Não tratar sucesso do retorno da ação como prova de transferência.
 
 A pesquisa usa espelhos comunitários de scripts e documentação de API, não o build instalado da Klei; validar contra os scripts/runtime do jogo e em staging descartável antes de declarar compatibilidade.
+
+
+### Resultado da CI — contagem fail-closed de contêiner (25/11/2026)
+- [ModXpector Lua checks — run 45681303062](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45681303062): **success**, no commit de testes `53c28545da3e7ff7b1c0bda6534cdfe990dfe105`.
+- [ModXpector package — run 45681293374](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45681293374): **success**, no mesmo commit de testes.
+- [ModXpector package — run 45681288149](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45681288149): **success**, no commit de código `5adfc938454d1c3769590bf498c878b9684c48e5`.
+- [ModXpector package após documentação — run 45681331607](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45681331607): **success**, no commit documental `e8d3201577137683438abf8afe221f97aa1b01ad`.
+- O resultado valida parse/contratos/pacote automatizados correspondentes aos workflows; não valida execução real dentro do DST.
+- PR #76 e PR #177 continuam draft/open e sem merge. Nenhum teste in-game, multiplayer ou dedicated server foi executado.
