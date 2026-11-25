@@ -167,4 +167,90 @@ assert(oversized_result.complete == false,
 assert(oversized_result.player.item_count <= 512,
     "snapshot collector must not retain more than 512 entries")
 
+local moving_stack_size = 2
+local moving_item = entity(501, "log")
+moving_item.replica = {
+    stackable = {
+        StackSize = function() return moving_stack_size end,
+    },
+}
+local source_contains_item = true
+local target_contains_item = false
+local moving_inventory = {
+    GetItems = function()
+        return source_contains_item and { [3] = moving_item } or {}
+    end,
+    GetEquips = function() return {} end,
+    GetActiveItem = function() return nil end,
+    GetOverflowContainer = function() return nil end,
+}
+local moving_target = {
+    IsValid = function() return true end,
+    replica = {
+        container = {
+            IsOpenedBy = function(_, opener) return opener == player end,
+            GetItems = function()
+                return target_contains_item and { [5] = moving_item } or {}
+            end,
+        },
+    },
+}
+local before_move = ItemIdentity.Capture(moving_inventory, player, moving_target, pcall)
+source_contains_item = false
+target_contains_item = true
+local after_move = ItemIdentity.Capture(moving_inventory, player, moving_target, pcall)
+local exact_move = ItemIdentity.CompareExactMove(before_move, after_move, 501)
+assert(exact_move.outcome == "matched_candidate",
+    "same entity/GUID with unchanged stack evidence should produce only a matched candidate")
+assert(exact_move.evidence == "client_replica_snapshot_only",
+    "exact move must remain explicitly client-snapshot evidence")
+
+local replacement_item = entity(501, "log", 2)
+local replaced_target = {
+    IsValid = function() return true end,
+    replica = {
+        container = {
+            IsOpenedBy = function() return true end,
+            GetItems = function() return { [1] = replacement_item } end,
+        },
+    },
+}
+local replaced_after = ItemIdentity.Capture(moving_inventory, player, replaced_target, pcall)
+local replaced_move = ItemIdentity.CompareExactMove(before_move, replaced_after, 501)
+assert(replaced_move.outcome == "inconclusive",
+    "matching GUID with a different local entity reference must not be accepted")
+
+local split_item = entity(502, "log", 1)
+source_contains_item = true
+target_contains_item = false
+moving_stack_size = 1
+local split_before = ItemIdentity.Capture(moving_inventory, player, moving_target, pcall)
+source_contains_item = true
+target_contains_item = true
+local split_target = {
+    IsValid = function() return true end,
+    replica = {
+        container = {
+            IsOpenedBy = function() return true end,
+            GetItems = function() return { [1] = split_item } end,
+        },
+    },
+}
+local split_after = ItemIdentity.Capture(moving_inventory, player, split_target, pcall)
+local split_move = ItemIdentity.CompareExactMove(split_before, split_after, 501)
+assert(split_move.outcome == "inconclusive",
+    "split stacks with a new GUID must remain inconclusive")
+
+local active_inventory = {
+    GetItems = function() return {} end,
+    GetEquips = function() return {} end,
+    GetActiveItem = function() return moving_item end,
+    GetOverflowContainer = function() return nil end,
+}
+local active_before = ItemIdentity.Capture(active_inventory, player, moving_target, pcall)
+local active_after = ItemIdentity.Capture(inventory, player, moving_target, pcall)
+local active_move = ItemIdentity.CompareExactMove(active_before, active_after, 501)
+assert(active_move.outcome == "inconclusive",
+    "active item source must remain unsupported by the narrow exact-move comparator")
+
 print("ModXpector item identity snapshot tests passed")
