@@ -136,4 +136,15 @@ end
 local listener_limit, listener_limit_reason = Observer.Start(too_many_listeners, pcall)
 assert(listener_limit == nil and listener_limit_reason == "too_many_event_listeners")
 
+
+local no_sources, no_sources_reason = Observer.Start({}, pcall)
+assert(no_sources == nil and no_sources_reason == "no_event_sources")
+
+local duplicate_source = entity(960)
+local duplicate_subscription, duplicate_subscription_reason = Observer.Start({
+    { entity = duplicate_source, label = "duplicate", events = { "itemget", "itemget" } },
+}, pcall)
+assert(duplicate_subscription == nil
+    and duplicate_subscription_reason == "duplicate_event_subscription")
+
 print("ModXpector step event observer tests passed")
