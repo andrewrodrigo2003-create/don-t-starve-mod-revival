@@ -262,6 +262,42 @@ local function current_test_plan()
     return active_test_plan or TEST_PLAN
 end
 
+local function consume_declared_server_operation(plan, step_index, run_id, kind, value, count)
+    if active_test_plan == nil or plan ~= active_test_plan then
+        return false, "there is no active Master-approved test plan"
+    end
+    if type(run_id) ~= "string" or plan.run_id ~= run_id then
+        return false, "stale or mismatched test run ID"
+    end
+    if not integer_in_range(step_index, 1, #plan.steps) then
+        return false, "invalid test plan step index"
+    end
+    if type(plan._server_consumed_steps) ~= "table" then
+        return false, "server-side plan authorization state is unavailable"
+    end
+    if plan._server_consumed_steps[step_index] == true then
+        return false, "test plan step was already consumed"
+    end
+
+    local step = plan.steps[step_index]
+    if type(step) ~= "table" or step.kind ~= kind then
+        return false, "RPC operation does not match the declared test plan step"
+    end
+    if kind == "unlock_recipe" then
+        if step.recipe ~= value then return false, "recipe does not match the declared test plan step" end
+    elseif kind == "spawn_item" or kind == "spawn_entity" then
+        local expected_count = step.count == nil and 1 or step.count
+        if step.prefab ~= value or expected_count ~= count then
+            return false, "spawn request does not match the declared test plan step"
+        end
+    else
+        return false, "unsupported server operation kind"
+    end
+
+    plan._server_consumed_steps[step_index] = true
+    return true, "authorized"
+end
+
 local function is_test_mode_enabled(plan)
     plan = plan or current_test_plan()
     return GetModConfigData("test_mode") == true
@@ -637,11 +673,12 @@ local function handle_set_test_plan(player, run_id, plan_json)
         reply(false, "laboratory mode is disabled; world-changing steps require a separate disposable test world")
         return
     end
+    plan._server_consumed_steps = {}
     active_test_plan = plan
     reply(true, "test plan accepted by master simulation")
 end
 
-local function handle_unlock_recipe(player, request_id, recipe_name)
+local function handle_unlock_recipe(player, request_id, step_index, run_id, recipe_name)
     if TheWorld == nil or not TheWorld.ismastersim then return end
     local plan = current_test_plan()
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
@@ -659,11 +696,17 @@ local function handle_unlock_recipe(player, request_id, recipe_name)
         send_result(player, request_id, false, "player builder component unavailable")
         return
     end
+    local authorized, authorization_reason = consume_declared_server_operation(
+        plan, step_index, run_id, "unlock_recipe", recipe_name)
+    if not authorized then
+        send_result(player, request_id, false, authorization_reason)
+        return
+    end
     local ok, err = pcall(function() player.components.builder:UnlockRecipe(recipe_name) end)
     send_result(player, request_id, ok, ok and ("unlocked recipe " .. recipe_name) or tostring(err))
 end
 
-local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
+local function handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, as_item)
     if TheWorld == nil or not TheWorld.ismastersim then return end
     local plan = current_test_plan()
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
@@ -682,6 +725,13 @@ local function handle_spawn(player, request_id, prefab, count, x, z, as_item)
     x, z = tonumber(x), tonumber(z)
     if x == nil or z == nil or x ~= x or z ~= z or math.abs(x) > 100000 or math.abs(z) > 100000 then
         send_result(player, request_id, false, "invalid spawn coordinates")
+        return
+    end
+    local operation_kind = as_item and "spawn_item" or "spawn_entity"
+    local authorized, authorization_reason = consume_declared_server_operation(
+        plan, step_index, run_id, operation_kind, prefab, count)
+    if not authorized then
+        send_result(player, request_id, false, authorization_reason)
         return
     end
     local spawned = 0
@@ -736,11 +786,11 @@ if type(AddModRPCHandler) == "function" then
         if TheWorld == nil or not TheWorld.ismastersim or not is_admin_player(player) then return end
         if active_test_plan ~= nil and active_test_plan.run_id == run_id then active_test_plan = nil end
     end)
-    AddModRPCHandler(MODNAME, "spawn_item", function(player, request_id, prefab, count, x, z)
-        handle_spawn(player, request_id, prefab, count, x, z, true)
+    AddModRPCHandler(MODNAME, "spawn_item", function(player, request_id, step_index, run_id, prefab, count, x, z)
+        handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, true)
     end)
-    AddModRPCHandler(MODNAME, "spawn_entity", function(player, request_id, prefab, count, x, z)
-        handle_spawn(player, request_id, prefab, count, x, z, false)
+    AddModRPCHandler(MODNAME, "spawn_entity", function(player, request_id, step_index, run_id, prefab, count, x, z)
+        handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, false)
     end)
     AddModRPCHandler(MODNAME, "unlock_recipe", handle_unlock_recipe)
 end
