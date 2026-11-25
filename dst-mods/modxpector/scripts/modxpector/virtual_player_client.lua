@@ -449,16 +449,17 @@ function VirtualPlayer:_cleanup_target_listeners()
     self.target_death_callbacks = {}
 end
 
+function VirtualPlayer:_is_valid_target(target)
+    if target == nil or type(target.IsValid) ~= "function" then return false end
+    local ok, valid = pcall(target.IsValid, target)
+    return ok and valid == true
+end
+
 function VirtualPlayer:_is_target_entity_dead(target, target_step)
-    if target == nil then return nil end
+    if not self:_is_valid_target(target) then return nil end
     if target_step ~= nil and self.target_death_events ~= nil
         and self.target_death_events[target_step] == true then
         return true
-    end
-    if type(target.IsValid) == "function" then
-        local ok, valid = pcall(target.IsValid, target)
-        if not ok then error("target validity check failed: " .. tostring(valid)) end
-        if valid ~= true then return nil end
     end
     local health = target.replica ~= nil and target.replica.health or nil
     if health == nil or type(health.GetCurrent) ~= "function" then return nil end
@@ -582,11 +583,7 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         expected = assertion.expected ~= false
     elseif kind == "player_near_target" then
         local target = self:_resolve_assertion_target(assertion)
-        local target_valid = target ~= nil
-        if target_valid and type(target.IsValid) == "function" then
-            local valid_ok, valid = pcall(target.IsValid, target)
-            target_valid = valid_ok and valid == true
-        end
+        local target_valid = self:_is_valid_target(target)
         actual = false
         if target_valid and self.player.Transform ~= nil and target.Transform ~= nil
             and type(self.player.Transform.GetWorldPosition) == "function"
@@ -600,19 +597,11 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         expected = assertion.expected ~= false
     elseif kind == "target_exists" then
         local target = self:_resolve_assertion_target(assertion)
-        actual = target ~= nil
-        if actual and type(target.IsValid) == "function" then
-            local valid_ok, valid = pcall(target.IsValid, target)
-            actual = valid_ok and valid == true
-        end
+        actual = self:_is_valid_target(target)
         expected = assertion.expected ~= false
     elseif kind == "target_health_lte" then
         local target = self:_resolve_assertion_target(assertion)
-        assert(target ~= nil, "health assertion target not found")
-        if type(target.IsValid) == "function" then
-            local valid_ok, valid = pcall(target.IsValid, target)
-            assert(valid_ok and valid == true, "health assertion target is no longer valid")
-        end
+        assert(self:_is_valid_target(target), "health assertion target is missing or no longer valid")
         local health = target.replica ~= nil and target.replica.health or nil
         assert(health ~= nil and type(health.GetCurrent) == "function", "target health replica unavailable")
         actual, expected = health:GetCurrent(), tonumber(assertion.value)
@@ -623,12 +612,13 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         expected = assertion.expected ~= false
     elseif kind == "target_has_tag" then
         local target = self:_resolve_assertion_target(assertion)
-        local target_valid = target ~= nil
-        if target_valid and type(target.IsValid) == "function" then
-            local valid_ok, valid = pcall(target.IsValid, target)
-            target_valid = valid_ok and valid == true
+        local target_valid = self:_is_valid_target(target)
+        assert(type(assertion.tag) == "string" and #assertion.tag > 0 and #assertion.tag <= 64,
+            "target tag must be a non-empty string up to 64 characters")
+        if target_valid then
+            assert(type(target.HasTag) == "function", "target HasTag API unavailable")
         end
-        actual = target_valid and target:HasTag(assert(assertion.tag, "tag required")) or false
+        actual = target_valid and target:HasTag(assertion.tag) or false
         expected = assertion.expected ~= false
     else
         error("unsupported virtual-player assertion: " .. tostring(kind))
