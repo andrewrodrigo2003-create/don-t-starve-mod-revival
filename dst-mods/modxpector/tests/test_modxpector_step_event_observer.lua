@@ -197,4 +197,14 @@ local invalid_sources, invalid_sources_reason =
     Observer.BuildReplicaSources(invalid_player, source_target, pcall)
 assert(invalid_sources == nil and invalid_sources_reason == "invalid_player_or_target")
 
+
+local stale_event_source = entity(965)
+stale_event_source.IsValid = function() return false end
+stale_event_source.ListenForEvent = function() end
+stale_event_source.RemoveEventCallback = function() end
+local stale_source_session, stale_source_reason = Observer.Start({
+    { entity = stale_event_source, label = "stale", events = { "itemget" } },
+}, pcall)
+assert(stale_source_session == nil and stale_source_reason == "invalid_event_source")
+
 print("ModXpector step event observer tests passed")
