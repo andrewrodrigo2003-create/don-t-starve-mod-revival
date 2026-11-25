@@ -226,3 +226,8 @@ end
 
 As chamadas server-authoritative de spawn_item, spawn_entity e unlock_recipe devem incluir request_id, step_index (índice 1-based), run_id e os parâmetros específicos da operação. O Master confere esses campos contra a etapa exata do plano aprovado, confirma que a etapa ainda não foi consumida e só então executa o efeito. Uma etapa não pode ser reutilizada. Não invoque esses RPCs fora de um plano ativo aprovado; limpar o plano invalida chamadas subsequentes. Essa autorização é adicional a administrator, test_mode, laboratory_mode, allowlists e limites de taxa/quantidade.
 
+
+
+### Coordenadas de spawn
+
+Além da etapa exata, run_id e quantidade, o Master valida a posição. Se a etapa tiver position, o spawn deve ocorrer a até 4 unidades desse ponto; caso contrário, deve ficar a até 4 unidades da posição autoritativa do jogador no servidor. Coordenadas não numéricas, NaN, infinitas ou fora do limite são rejeitadas. A etapa não é consumida quando a validação espacial falha.
