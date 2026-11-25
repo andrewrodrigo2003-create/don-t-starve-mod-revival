@@ -836,12 +836,12 @@ start_virtual_player = function(inst, plan)
             allowed_actions = plan.allowed_actions or {},
             allowed_prefabs = plan.allowed_prefabs or {},
             allowed_recipes = plan.allowed_recipes or {},
-            send_rpc = function(kind, request_id, value, count, x, z)
+            send_rpc = function(kind, request_id, value, count, x, z, step_index, run_id)
                 if kind == "unlock_recipe" then
-                    SendModRPCToServer(MOD_RPC[MODNAME].unlock_recipe, request_id, value)
+                    SendModRPCToServer(MOD_RPC[MODNAME].unlock_recipe, request_id, step_index, run_id, value)
                 else
                     local rpc = kind == "spawn_item" and MOD_RPC[MODNAME].spawn_item or MOD_RPC[MODNAME].spawn_entity
-                    SendModRPCToServer(rpc, request_id, value, count, x, z)
+                    SendModRPCToServer(rpc, request_id, step_index, run_id, value, count, x, z)
                 end
             end,
             on_finished = function(report)
