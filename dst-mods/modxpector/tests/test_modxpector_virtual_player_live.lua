@@ -1305,6 +1305,21 @@ local take_delta = take_controller:_evaluate_assertion({
 })
 assert(take_delta.passed, "TAKEITEM must prove a real increase in carried inventory")
 
+held_count = 2
+holder_has_item = true
+take_controller.index = 1
+take_controller:_capture_step_transfer_baseline(1, holder_target)
+take_controller.index = 2
+local take_no_change = take_controller:_evaluate_assertion({
+    kind = "player_inventory_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
+})
+local take_holder_unchanged = take_controller:_evaluate_assertion({
+    kind = "target_has_tag", target_step = 1, tag = "inventoryitemholder_take", expected = false,
+})
+assert(not take_no_change.passed and not take_holder_unchanged.passed,
+    "TAKEITEM must fail when neither inventory nor holder state changes")
+
+
 holder_has_item = false
 local holder_state = take_controller:_evaluate_assertion({
     kind = "target_has_tag", target_step = 1, tag = "inventoryitemholder_take", expected = false,
