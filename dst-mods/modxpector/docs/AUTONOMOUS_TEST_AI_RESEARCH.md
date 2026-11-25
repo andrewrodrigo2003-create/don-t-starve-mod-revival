@@ -763,3 +763,15 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Package/testes [45688069212](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688069212): success no mesmo commit; suíte Lua, ZIP e upload do artefato concluídos.
 - O commit `a8ef781` contém o coletor, a integração read-only no Virtual Player, os testes e o limite de coleção. Os commits documentais posteriores não alteram esse código.
 - Nenhum teste in-game, multiplayer ou dedicated server. O coletor não é um oráculo de transferência; STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
+### Incremento seguinte — correlação observacional de movimento exato (25/11/2026)
+- O módulo item_identity.lua agora oferece CompareExactMove(before, after, selected_guid, protected_call).
+- Escopo deliberadamente estreito: item precisa estar em slot normal do inventário no snapshot inicial e aparecer no slot normal do contêiner-alvo no snapshot posterior.
+- Exige snapshots completos, GUID válido, GUID ausente do alvo antes, GUID ausente do inventário depois, mesma referência local de entidade, mesmo prefab e evidência de stacksize inalterada; revalida IsValid nos dois registros durante a comparação.
+- Não aceita item ativo, equipado, overflow, alvo/coleção incompleta, GUID diferente de split, referência de entidade substituída, pilha alterada ou mapa de snapshot malformado.
+- Resultado é somente observed_move_candidate com evidence=client_replica_snapshot_only, causality=unproven e server_authority=unverified. Não significa passed e não prova que a ação do Virtual Player causou o movimento.
+- Testes cobrem movimento candidato, GUID igual com entidade local diferente, split com GUID novo, item ativo, mapa malformado e entidade removida após captura.
+- Um teste intermediário falhou no commit `401cbad` porque a nova assinatura passou a exigir protected_call e a fixture ainda chamava a função sem pcall; corrigido no commit `b39dc97`, com CI verde.
+- Outro teste intermediário falhou no commit `53806f9` porque o resultado foi renomeado para observed_move_candidate e a expectativa do teste ainda era matched_candidate; corrigido no commit `83522c8`.
+- Lua checks [45688560807](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688560807): success no commit `83522c8c105a7e8fc8eb9b931b86533f258fc9fc`.
+- Package/testes [45688548172](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688548172): success no mesmo commit; suíte Lua, ZIP e upload concluídos.
+- Nenhuma ação foi reabilitada. STORE, TAKEITEM e TAKESINGLEITEM seguem fail-closed. Sem validação dentro do DST, multiplayer ou dedicated server.
