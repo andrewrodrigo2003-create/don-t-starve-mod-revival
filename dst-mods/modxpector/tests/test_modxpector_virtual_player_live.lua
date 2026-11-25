@@ -893,6 +893,7 @@ local path_player = {
 }
 local path_finished
 local path_controller = VirtualPlayer.new(path_player, {
+    allowed_actions = { "WALKTO" },
     allowed_prefabs = { "tree" },
     stuck_timeout = 2,
     max_path_replan_attempts = 1,
