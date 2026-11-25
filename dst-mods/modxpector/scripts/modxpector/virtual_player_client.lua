@@ -231,7 +231,42 @@ function VirtualPlayer:_mark_step_verified(step_references)
     end
 end
 
+function VirtualPlayer:_cancel_active_action()
+    local active = self.active
+    if active == nil or active.action == nil or self.player == nil
+        or type(self.player.GetBufferedAction) ~= "function" then
+        return false
+    end
+
+    local current_ok, current = pcall(self.player.GetBufferedAction, self.player)
+    if not current_ok or current ~= active.action then
+        -- Never cancel a newer action started by the player or another system.
+        return false
+    end
+
+    local components = self.player.components
+    local locomotor = type(components) == "table" and components.locomotor or nil
+    if locomotor ~= nil then
+        if type(locomotor.Stop) == "function" then
+            pcall(locomotor.Stop, locomotor)
+        end
+        if type(locomotor.Clear) == "function" then
+            -- Clear removes the locomotor's buffered action as well as its destination.
+            pcall(locomotor.Clear, locomotor)
+        end
+    end
+
+    if type(self.player.ClearBufferedAction) == "function" then
+        -- EntityScript:ClearBufferedAction clears the entity-side buffered action.
+        pcall(self.player.ClearBufferedAction, self.player)
+    end
+    return true
+end
+
 function VirtualPlayer:_finish(ok, message)
+    if not ok then
+        self:_cancel_active_action()
+    end
     self:_cleanup_target_listeners()
     if not ok then
         local current_step = self.queue[self.index]
