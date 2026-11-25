@@ -862,10 +862,14 @@ start_virtual_player = function(inst, plan)
                     steps_unverified = report.steps_unverified,
                     assertions_total = report.assertions_total,
                     assertions_passed = report.assertions_passed,
+                    path_replan_requests = report.path_replan_requests,
+                    active_action_cancellation = report.active_action_cancellation,
                 })
                 set_embedded_ai_status("teste_finalizado", tostring(report.outcome or "unknown"))
                 print("[ModXpector] VIRTUAL_PLAYER_FINISHED run_id=" .. tostring(plan.run_id or "none")
-                    .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed))
+                    .. " outcome=" .. tostring(report.outcome) .. " steps=" .. tostring(report.steps_completed)
+                    .. " path_replan_requests=" .. tostring(report.path_replan_requests or 0)
+                    .. " action_cancellation=" .. tostring(report.active_action_cancellation or "none"))
                 for _, result in ipairs(report.results or {}) do
                     print("[ModXpector] step=" .. tostring(result.index) .. " status=" .. tostring(result.status)
                         .. " detail=" .. tostring(result.detail))
