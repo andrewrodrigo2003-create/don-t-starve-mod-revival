@@ -888,3 +888,20 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/stackable.lua
 - https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/entityscript.lua
 - https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/entityscript
+
+
+### Auditoria de cleanup recuperável — correção necessária antes da integração (25/11/2026)
+
+A revisão de `step_event_observer.lua` encontrou falha adicional no cleanup:
+- `cleanup(session)` marca `session.cleaned=true` antes de confirmar todas as remoções.
+- Mesmo se `RemoveEventCallback` falhar, a lista `session.listeners` é esvaziada, descartando as referências que permitiriam retry.
+- Uma segunda chamada retorna sucesso pelo atalho `if session.cleaned then return true end`, podendo transformar uma falha anterior em `cleanup_complete=true` sem remover o listener.
+- Se `Start` registra parcialmente e o registro seguinte falha, uma falha simultânea no cleanup pode deixar listener órfão sem que o chamador receba o handle da sessão.
+
+O teste atual cobre a primeira falha de remoção (cleanup incompleto), mas não cobre retry, falha parcial com handle recuperável ou a falsa aprovação na segunda chamada.
+
+**Contrato requerido:** preservar inscrições pendentes; marcar cada inscrição removida individualmente; `cleaned=true` somente quando todas forem removidas ou quando a remoção automática da source estiver comprovada; repetir Stop deve tentar novamente as pendentes; falha parcial durante Start precisa retornar/armazenar um handle recuperável. Quando listener owner e source entity forem separados, a limpeza deve passar a source exata a `RemoveEventCallback(event, callback, source)`.
+
+**Novos testes obrigatórios:** falha repetida; falha seguida de sucesso; remoção parcial e retry apenas das pendentes; registro parcial seguido de cleanup falho; Stop repetido nunca aprova enquanto houver pendência; source removida durante callback; callback já copiado pelo dispatch antes do Stop.
+
+**Ordem de execução atualizada:** corrigir roteamento real de eventos → tornar cleanup recuperável → ampliar testes de split/merge, remoção e reentrância → somente então integrar o observador ao lifecycle do Virtual Player. Nenhum código foi alterado nesta auditoria.
