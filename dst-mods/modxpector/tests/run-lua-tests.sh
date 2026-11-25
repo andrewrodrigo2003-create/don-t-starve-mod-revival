@@ -16,6 +16,7 @@ for test_file in \
   dst-mods/modxpector/tests/test_modxpector_mod_bootstrap.lua \
   dst-mods/modxpector/tests/test_modxpector_virtual_player_live.lua \
   dst-mods/modxpector/tests/test_modxpector_item_identity.lua \
+  dst-mods/modxpector/tests/test_modxpector_step_event_observer.lua \
   dst-mods/modxpector/tests/test_modxpector_virtual_player_attack_repeat.lua
 do
   echo "== $test_file =="
