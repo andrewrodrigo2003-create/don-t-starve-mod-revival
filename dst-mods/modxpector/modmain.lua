@@ -550,6 +550,9 @@ local function validate_plan_assertion(plan, index, step)
     if assertion.kind == "player_inventory_item_count_increased"
         or assertion.kind == "player_inventory_item_count_decreased"
         or assertion.kind == "container_item_count_increased" then
+        if assertion.expected ~= nil and assertion.expected ~= true then
+            return false, "transfer delta assertions require expected=true"
+        end
         local matches_verified_step = step.verifies_step == assertion.target_step
         if type(step.verifies_steps) == "table" then
             for _, reference in ipairs(step.verifies_steps) do
