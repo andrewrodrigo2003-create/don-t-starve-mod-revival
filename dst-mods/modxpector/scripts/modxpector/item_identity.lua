@@ -242,7 +242,7 @@ function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
             or data.slot < 1 or data.slot ~= math.floor(data.slot) then
             return "unverified", "network-shaped itemget lacks a valid entity or slot"
         end
-        return "replica_sync_candidate", "itemget carries the client classified sync marker"
+        return "network_shape_candidate", "itemget carries the client classified sync marker"
     end
 
     if event_name == "itemlose" then
@@ -253,7 +253,7 @@ function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
             or data.slot ~= math.floor(data.slot) then
             return "unverified", "itemlose slot is invalid"
         end
-        return "replica_sync_candidate", "itemlose has the slot-only client classified shape"
+        return "network_shape_candidate", "itemlose has the slot-only client classified shape"
     end
 
     if event_name == "stacksizechange" then
@@ -263,7 +263,7 @@ function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
             or data.stacksize < 1 or data.stacksize ~= math.floor(data.stacksize) then
             return "unverified", "stacksizechange lacks a valid entity or stack size"
         end
-        return "replica_sync_candidate", "stacksizechange uses the network-synced event channel"
+        return "network_shape_candidate", "stacksizechange uses the network-synced event channel"
     end
 
     if event_name == "stacksizepreview" then
