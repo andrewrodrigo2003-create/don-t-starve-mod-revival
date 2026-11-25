@@ -39,6 +39,7 @@ local open_container = {
     Transform = { GetWorldPosition = function() return 1, 0, 0 end },
     replica = {
         container = {
+            IsOpenedBy = function() return true end,
             Has = function(_, prefab)
                 if prefab == "goldnugget" then return true, 3 end
                 return false, 0
@@ -429,7 +430,10 @@ assert(not invalid_take_ok and string.find(tostring(invalid_take_error), "not al
 local invalid_container_count_target = {
     prefab = "treasurechest",
     IsValid = function() return true end,
-    replica = { container = { Has = function() return true, -5 end } },
+    replica = { container = {
+        IsOpenedBy = function() return true end,
+        Has = function() return true, -5 end,
+    } },
 }
 local invalid_container_count_ok = pcall(function()
     controller:_evaluate_assertion({
@@ -442,7 +446,10 @@ assert(not invalid_container_count_ok,
 local nan_container_count_target = {
     prefab = "treasurechest",
     IsValid = function() return true end,
-    replica = { container = { Has = function() return true, 0 / 0 end } },
+    replica = { container = {
+        IsOpenedBy = function() return true end,
+        Has = function() return true, 0 / 0 end,
+    } },
 }
 local nan_container_count_ok = pcall(function()
     controller:_evaluate_assertion({
@@ -1175,6 +1182,7 @@ local transfer_target = {
     prefab = "treasurechest",
     IsValid = function() return transfer_target_valid end,
     replica = { container = {
+        IsOpenedBy = function() return true end,
         Has = function(_, prefab) return chest_count >= 1, chest_count end,
     } },
 }
@@ -1304,3 +1312,17 @@ local holder_state = take_controller:_evaluate_assertion({
 assert(holder_state.passed,
     "TAKEITEM must also verify that the holder no longer advertises a takeable item")
 
+
+local closed_transfer_target = {
+    IsValid = function() return true end,
+    replica = { container = {
+        IsOpenedBy = function() return false end,
+        Has = function() return true, 99 end,
+    } },
+}
+transfer_controller.index = 1
+local closed_container_baseline_ok = pcall(function()
+    transfer_controller:_capture_step_transfer_baseline(1, closed_transfer_target)
+end)
+assert(not closed_container_baseline_ok,
+    "STORE baseline must reject closed containers because their replica may report a false zero")
