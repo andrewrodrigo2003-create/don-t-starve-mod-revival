@@ -269,4 +269,40 @@ local stale_move = ItemIdentity.CompareExactMove(before_move, after_move, 501, p
 assert(stale_move.outcome == "inconclusive",
     "entity removed after capture must fail exact move comparison")
 
+local itemget_event, itemget_reason =
+    ItemIdentity.ClassifyReplicaEvent("itemget",
+        { item = wood, slot = 2, ignore_stacksize_anim = true }, nil, pcall)
+assert(itemget_event == "replica_sync_candidate",
+    "classified itemget marker should be recognized as a sync candidate")
+
+local preview_itemget = ItemIdentity.ClassifyReplicaEvent("itemget",
+    { item = wood, slot = 2 }, nil, pcall)
+assert(preview_itemget == "preview_or_unverified",
+    "itemget without the sync marker must not be treated as replica sync")
+
+local itemlose_event = ItemIdentity.ClassifyReplicaEvent("itemlose",
+    { slot = 2 }, nil, pcall)
+assert(itemlose_event == "replica_sync_candidate",
+    "slot-only itemlose should be recognized as a sync candidate")
+
+local preview_itemlose = ItemIdentity.ClassifyReplicaEvent("itemlose",
+    { slot = 2, item = wood }, nil, pcall)
+assert(preview_itemlose == "preview_or_unverified",
+    "itemlose carrying a preview item must not be treated as replica sync")
+
+local stack_event = ItemIdentity.ClassifyReplicaEvent("stacksizechange",
+    { item = wood, stacksize = 4 }, nil, pcall)
+assert(stack_event == "replica_sync_candidate",
+    "network stacksizechange should be recognized as a sync candidate")
+
+local stack_preview = ItemIdentity.ClassifyReplicaEvent("stacksizepreview",
+    { stacksize = 4 }, wood, pcall)
+assert(stack_preview == "preview_or_unverified",
+    "stacksizepreview must remain classified as prediction")
+
+local invalid_stack_event = ItemIdentity.ClassifyReplicaEvent("stacksizechange",
+    { item = wood, stacksize = 0 }, nil, pcall)
+assert(invalid_stack_event == "unverified",
+    "invalid stack size event must fail closed")
+
 print("ModXpector item identity snapshot tests passed")
