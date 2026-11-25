@@ -199,3 +199,30 @@ A documentação oficial da Klei descreve -cluster como seleção da pasta de cl
  - Fazer teste real apenas em mundo descartável, começando com WALKTO; só depois validar cada ação mutável isoladamente.
  - Verificar lifecycle do listener de chat em reconexão/respawn, RPC e cancelamento no jogo real.
  - Não declarar isolamento físico automático: o mod não cria um segundo mundo em memória.
+
+
+## 14. Cancelamento real do Virtual Player — 25/11/2026
+
+### Lacuna encontrada
+
+O método Stop() anterior encerrava o executor e o polling, mas não removia a BufferedAction que já havia sido entregue ao personagem. Em caso de timeout/cancelamento, o personagem poderia continuar tentando executar a ação mesmo com o relatório indicando que o Virtual Player parou.
+
+### Contrato do runtime consultado
+
+- EntityScript:GetBufferedAction() retorna primeiro a bufferedaction da entidade e, se ausente, a bufferedaction do LocoMotor.
+- EntityScript:ClearBufferedAction() chama Fail() na ação da entidade e a remove.
+- LocoMotor:Stop() interrompe movimento e destino, mas a implementação consultada não limpa bufferedaction (a chamada SetBufferedAction(nil) está comentada).
+- LocoMotor:Clear() limpa destino e flags e chama SetBufferedAction(nil), removendo a ação do locomotor.
+Fontes de código consultadas: [entityscript.lua](https://github.com/vietnd69/dst-scripts/blob/hotfix-713564/entityscript.lua) e [locomotor.lua](https://raw.githubusercontent.com/vietnd69/dst-scripts/hotfix-714014/components/locomotor.lua). Referência comunitária complementar: [Klei Forums — Cancel/stop current action](https://kleiforums.com/forums/topic/143403-cancelstop-current-action/).
+
+### Correção aplicada
+
+- Ao encerrar uma execução com falha, timeout ou Stop(), o Virtual Player consulta a ação atual e só tenta cancelar se ela ainda for exatamente a ação que ele iniciou.
+- Se a ação estiver no LocoMotor, usa Stop() e Clear(); se estiver no buffer da entidade, usa ClearBufferedAction().
+- Se outra ação substituiu a ação do Virtual Player, não a interrompe.
+- O relatório agora expõe active_action_cancellation: cancelled, not_cancelled, error ou not_needed.
+- Foram adicionados contratos para ação no locomotor, ação no EntityScript e proteção contra cancelar uma ação alheia.
+
+### Estado de validação
+
+A alteração e os testes foram gravados na branch do PR #76. O último CI concluído (run 45655539612) passou para o incremento anterior de modo laboratório, mas é anterior à correção de cancelamento. A nova suíte de cancelamento ainda aguarda uma execução de CI no HEAD atual; não declarar esse incremento testado até isso ocorrer. A API e a semântica foram conferidas por fontes de scripts, mas ainda falta validar no DST real.
