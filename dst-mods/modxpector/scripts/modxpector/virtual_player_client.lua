@@ -751,7 +751,8 @@ function VirtualPlayer:_next_impl()
         self.next_request_id = self.next_request_id + 1
         self.active = { step = step, request_id = self.next_request_id, started = GetTime(), timeout = 15 }
         self:_record(step, "started", "requesting server-authoritative recipe unlock")
-        self.send_rpc("unlock_recipe", self.active.request_id, step.recipe)
+        self.send_rpc("unlock_recipe", self.active.request_id, step.recipe,
+            nil, nil, nil, self.index, self.run_id)
         self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
     elseif step.kind == "craft" or step.kind == "craft_at_point" then
         local ok, result = pcall(function() return self:_submit_craft(step) end)
@@ -826,7 +827,8 @@ function VirtualPlayer:_next_impl()
         self.next_request_id = self.next_request_id + 1
         self.active = { step = step, request_id = self.next_request_id, started = GetTime(), timeout = 15 }
         self:_record(step, "started", "requesting server-authoritative spawn")
-        self.send_rpc(step.kind, self.active.request_id, step.prefab, count, x, z)
+        self.send_rpc(step.kind, self.active.request_id, step.prefab, count, x, z,
+            self.index, self.run_id)
         self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
     else
         self:_finish(false, "unsupported virtual-player step kind: " .. tostring(step.kind))
