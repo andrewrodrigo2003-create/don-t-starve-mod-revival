@@ -296,3 +296,15 @@ O bootstrap inclui uma tentativa de spawn a 100,100 quando o jogador está em 0,
 ## 20. Resposta de chat pelo tipo correto do DST — 25/11/2026
 
 A auditoria de chathistory.lua confirmou SendCommandResponse(messages), que aceita string ou lista e grava mensagens como ChatTypes.CommandResponse. O ModXpector agora prefere esse método e usa OnSystemMessage apenas como fallback se a API não existir/falhar. O listener continua filtrando ChatTypes.Message, evitando responder a si mesmo.
+
+
+## Checkpoint operacional — 25/11/2026
+
+- PR de desenvolvimento: [#76](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/76), branch `security/modxpector-5.0.14-opt-in-2026-11-23`, HEAD `ed4916c983412a44b7b1ecf7d775f972276ef563`, draft/open, sem merge.
+- PR de documentação: [#177](https://github.com/andrewrodrigo2003-create/cerebro-secundario/pull/177), branch `research/modxpector-autonomous-ai-2026-11-25`, draft/open, sem merge.
+- Implementado neste ciclo: isolamento `laboratory_mode` para toda ação inclusive WALKTO; cancelamento verificado da BufferedAction; autorização de spawn/unlock por run_id + step_index consumível uma vez; limite espacial do spawn; replanejamento nativo limitado para WALKTO; listener ChatHistory resiliente a reconexão/substituição de manager e resposta via SendCommandResponse.
+- Testes novos/adaptados: cancelamento e proteção contra ação alheia; rejeição de WALKTO fora do laboratório; ChatHistory com reconexão e manager substituído; RPC com run_id/índice/tipo/consumo único/posição; recuperação de WALKTO limitada.
+- Último CI confirmado: [run 45658012911](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45658012911), sucesso no commit `dd0fa62591e2ce545bfb137d8aa0aaf881d9a9bc`. Ele é anterior às alterações posteriores de autorização por etapa, posição e replanejamento. Não atribuir esse sucesso ao HEAD atual.
+- HEAD atual ainda precisa de CI. O workflow [ModXpector Package](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/workflows/modxpector-package.yml) tem `workflow_dispatch` para execução manual; esta sessão não dispõe de ação de dispatch.
+- Nenhum teste real no DST, multiplayer ou dedicated server foi realizado. Não declarar IA completa.
+- Próximo passo técnico: executar o workflow manual ou obter CI no HEAD atual; corrigir qualquer falha antes de ampliar as famílias de ações do Virtual Player. Depois, validar em mundo descartável dentro do jogo.
