@@ -828,3 +828,13 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - No caminho normal, `_poll_action` limpa `active` e avança para o próximo step; no modo de ataque repetido, há caminhos adicionais de re-submissão, timeout e falha.
 - Portanto, conectar o observador exige um único ponto de encerramento idempotente chamado antes de `_finish` gerar o relatório e também ao concluir normalmente cada ação/step; deve cobrir cancelamento, timeout, substituição do BufferedAction, erro de callback, morte/remoção de entidade e replanejamento/repetição.
 - Não foi feita essa integração nesta etapa. O observador permanece desacoplado para evitar listeners órfãos ou snapshots associados ao step errado. A integração futura deve construir fontes somente a partir de `player.replica.inventory.classified` e `target.replica.container.classified` validados, além dos itens selecionados que realmente emitirem eventos; contêineres especiais/proxy ficam fora do primeiro perfil.
+
+
+### Incremento — resolução segura das fontes de eventos vanilla (25/11/2026)
+- Adicionada `BuildReplicaSources(player, target, protected_call)`: resolve somente `player.replica.inventory.classified` e `target.replica.container.classified`.
+- Exige player, alvo e classified válidos; inventário/classified do contêiner não ocupados; contêiner aberto pelo jogador; falha fechado se qualquer API/estado estiver ausente, busy, fechado ou lançar exceção.
+- O observador recebe fontes rotuladas `player_inventory` e `target_container`, cada uma com os quatro eventos allowlisted. `Start` também exige que a entidade classificada esteja válida antes de registrar listener.
+- Testes cobrem resolução das duas fontes, player inválido, inventário busy, contêiner busy/fechado e fonte classificada stale. A integração ainda não foi conectada ao fluxo de ações do Virtual Player.
+- Lua checks [45691089854](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45691089854): success no commit `9ab2ff419b0b51efec74237373656c09b896ae83`. Package [45691076223](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45691076223): testes Lua e construção/validação do ZIP concluídos com sucesso; upload do artefato ainda em execução na última consulta.
+- Referência de API vanilla: Inventory Replica expõe a entidade `classified`; Container Replica usa `classified` e o estado de abertura. Fontes: https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica e https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/container_classified.
+- Sem validação in-game, multiplayer ou dedicated server. STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
