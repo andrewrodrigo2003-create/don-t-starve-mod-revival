@@ -376,3 +376,18 @@ Quando dois candidatos válidos estão à mesma distância, o GUID define o dese
 O contrato automatizado cobre empate por GUID, entidade cuja chamada IsValid falha, posição não finita e raio NaN. A CI [45666712487](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45666712487) passou no commit `da225811774fd1ac58b8bf23f786e8f115f0d22b`: parse Lua 5.1, contratos e verificação de exclusão de credenciais. A CI [45666700660](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45666700660) também passou: testes Lua, geração do ZIP e upload do artefato de teste.
 
 **Limite:** os testes usam harness/mocks. Não comprovam comportamento dentro do DST, nem multiplayer ou servidor dedicado. O Virtual Player continua exigindo validação in-game em mundo descartável.
+
+
+## 27. Confirmação pós-condição de cancelamento — 25/11/2026
+
+A auditoria identificou que `_cancel_active_action` podia interpretar uma chamada de limpeza sem erro como cancelamento confirmado. Isso era insuficiente: uma API pode retornar normalmente sem remover o BufferedAction.
+
+A função agora verifica o estado depois da tentativa de cancelamento. Só retorna sucesso quando `GetBufferedAction()`, `player.bufferedaction` e `locomotor.bufferedaction` não apontam mais para a ação que o ModXpector possuía. Se a ação continuar presente, o relatório registra `not_cancelled`. A proteção contra cancelamento de ações substitutas de outros sistemas foi mantida.
+
+Foi adicionado um contrato negativo em que `Clear()` retorna normalmente, mas deliberadamente não limpa `locomotor.bufferedaction`; o relatório deve permanecer `not_cancelled`.
+
+Validação no HEAD `4184874e1026083073743d9a3d9f7407385b7d56`:
+- [Lua 5.1, contratos e verificação de credenciais — run 45671901760](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45671901760): sucesso.
+- [Suíte Lua, ZIP e upload de artefato — run 45671890553](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45671890553): sucesso.
+
+**Limite:** harness e mocks não comprovam cancelamento dentro do DST real. Ainda exige validação em mundo descartável e cenários multiplayer/dedicado.
