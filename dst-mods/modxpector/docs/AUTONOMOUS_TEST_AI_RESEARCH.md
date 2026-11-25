@@ -777,3 +777,29 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Nenhuma ação foi reabilitada. STORE, TAKEITEM e TAKESINGLEITEM seguem fail-closed. Sem validação dentro do DST, multiplayer ou dedicated server.
 ### CI documental pós-registro — 25/11/2026
 - Package/testes [45688702135](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688702135): success no HEAD documental `77b1cce66a3ac58f1fa66885101c1a3bfa15ebe1`; testes Lua, ZIP e upload concluídos. O código correlacionador foi validado anteriormente no SHA `83522c8` pelos dois workflows específicos.
+### Auditoria adicional — estados de preview e eventos replicados (25/11/2026)
+
+**Correção crítica no snapshot:** GetItems() da InventoryReplica/ContainerReplica pode retornar _itemspreview durante uma previsão local de UI. Portanto, um snapshot que só lê GetItems() pode confundir previsão com estado replicado. O coletor agora exige estado não ocupado antes de enumerar:
+- Inventory replica: exige inventory.classified:IsBusy() == false; classified ausente, método ausente, exceção ou busy=true torna o snapshot incompleto.
+- Overflow e contêiner-alvo: exigem ContainerReplica:IsBusy() == false; o alvo também precisa continuar aberto pelo jogador.
+- Isso evita consumir coleções enquanto o classified mantém _itemspreview e está aguardando Refresh. O coletor continua sem mutações e sem enviar ações.
+
+**Forma dos eventos vanilla observada no código-fonte:**
+- No caminho de sincronização de slots, inventory_classified.lua e container_classified.lua emitem itemget com data.item, data.slot e ignore_stacksize_anim=true; itemlose é emitido com apenas data.slot.
+- Nas rotinas de preview local, PushItemGet emite itemget sem ignore_stacksize_anim; PushItemLose recebe SlotItem com referência item. Assim, as formas dos payloads diferem, mas ainda são apenas candidatos de origem replicada, não prova criptográfica nem garantia contra mods que imitem os eventos.
+- Atualizações de stack replicadas usam stacksizechange; previsões locais usam stacksizepreview. O classificador novo rotula as formas compatíveis como network_shape_candidate e todo o resto como preview_or_unverified/unverified.
+- O classificador não instala listeners, não controla o tempo do evento e não prova causalidade. A etapa seguinte é um observador temporário, limitado ao step, que correlacione itemlose da origem com itemget do destino e snapshots completos; ainda sem liberar STORE.
+
+**Testes e CI do estado atual:**
+- Testes adicionais cobrem classified ocupado, overflow ocupado, contêiner-alvo ocupado, itemget com/sem marcador, itemlose com/sem referência, stacksizechange e stacksizepreview.
+- Lua checks [45689332578](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45689332578): success no commit `4048455b9db89ffb05bbc55a96541a1244c0249d`.
+- Package/testes [45689321553](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45689321553): success no mesmo commit; suíte Lua, ZIP e upload concluídos.
+- Falhas intermediárias 1c71/d1e foram causadas por mocks de teste sem IsBusy nos alvos; o teste foi corrigido no commit `4048455` e o HEAD passou.
+
+**Fontes vanilla:**
+- Inventory Replica client implementation: https://github.com/vietnd69/dst-scripts/blob/main/components/inventory_replica.lua
+- Inventory Classified: GetItems pode usar _itemspreview; IsBusy e eventos itemget/itemlose/stacksizechange: https://github.com/vietnd69/dst-scripts/blob/main/prefabs/inventory_classified.lua
+- Container Replica: IsBusy e GetItems delegados ao classified: https://github.com/vietnd69/dst-scripts/blob/main/components/container_replica.lua
+- Container Classified: itemget com ignore_stacksize_anim, itemlose slot-only, stacksizechange e preview: https://github.com/vietnd69/dst-scripts/blob/main/prefabs/container_classified.lua
+
+**Limites:** eventos são candidatos de sincronização local, não prova de causalidade/autoridade do servidor. Sem validação in-game, multiplayer ou dedicated server. STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
