@@ -619,3 +619,10 @@ A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais
 - Teste: `70f600567e32d95364d08e204c3444cb1e619dd1`.
 - CI do pacote/testes do ModXpector no commit de teste: run [45684407675](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684407675), ainda em fila na última consulta. Não declarar aprovado até concluir.
 - A correção é uma contenção segura, não a implementação final da retirada. STORE também continua fora do perfil comunitário. Nenhuma validação real dentro do DST/multiplayer/dedicated server.
+
+
+### Resultado final de CI do bloqueio fail-closed — 25/11/2026
+- Lua checks [45684416185](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684416185): **success** no commit de teste `70f600567e32d95364d08e204c3444cb1e619dd1`.
+- Package/testes [45684407675](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684407675): **success** no mesmo commit; suíte Lua, ZIP e upload do artefato concluídos.
+- Package documental [45684441954](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45684441954): **success** no commit documental `0ee34f86190f70f9687d2d5ca2e2a3be12541525`.
+- A contenção passou nos contratos automatizados. Não é validação in-game.
