@@ -775,3 +775,5 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Lua checks [45688560807](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688560807): success no commit `83522c8c105a7e8fc8eb9b931b86533f258fc9fc`.
 - Package/testes [45688548172](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688548172): success no mesmo commit; suíte Lua, ZIP e upload concluídos.
 - Nenhuma ação foi reabilitada. STORE, TAKEITEM e TAKESINGLEITEM seguem fail-closed. Sem validação dentro do DST, multiplayer ou dedicated server.
+### CI documental pós-registro — 25/11/2026
+- Package/testes [45688702135](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45688702135): success no HEAD documental `77b1cce66a3ac58f1fa66885101c1a3bfa15ebe1`; testes Lua, ZIP e upload concluídos. O código correlacionador foi validado anteriormente no SHA `83522c8` pelos dois workflows específicos.
