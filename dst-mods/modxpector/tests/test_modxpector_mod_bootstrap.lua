@@ -54,9 +54,9 @@ SpawnPrefab = function(prefab)
     return { IsValid = function() return true end, Transform = { SetPosition = function() end } }
 end
 
-local ChatTypes = { Message = "message", SystemMessage = "system" }
+local ChatTypes = { Message = "message", SystemMessage = "system", CommandResponse = "command_response" }
 local function make_chat_history()
-    local history = { listeners = {}, system_messages = {}, add_count = 0, remove_count = 0 }
+    local history = { listeners = {}, system_messages = {}, command_responses = {}, add_count = 0, remove_count = 0 }
     function history:AddChatHistoryListener(fn)
         self.listeners[fn] = true
         self.add_count = self.add_count + 1
@@ -69,6 +69,12 @@ local function make_chat_history()
         self.system_messages[#self.system_messages + 1] = message
         for listener in pairs(self.listeners) do
             listener({ type = ChatTypes.SystemMessage, message = message })
+        end
+    end
+    function history:SendCommandResponse(message)
+        self.command_responses[#self.command_responses + 1] = message
+        for listener in pairs(self.listeners) do
+            listener({ type = ChatTypes.CommandResponse, message = message })
         end
     end
     return history
@@ -207,9 +213,9 @@ first_chat_listener({
     sender_userid = player.userid,
     message = "/mx status",
 })
-assert(#chat_history.system_messages == 1
-    and string.find(chat_history.system_messages[1], "ModXpector: IA", 1, true),
-    "the chat listener must answer supported commands through OnSystemMessage")
+assert(#chat_history.command_responses == 1
+    and string.find(chat_history.command_responses[1], "ModXpector: IA", 1, true),
+    "the chat listener must answer supported commands through SendCommandResponse")
 
 -- The listener must resolve the current player after reconnect rather than retaining a stale entity.
 player.userid = nil
@@ -230,7 +236,7 @@ first_chat_listener({
     sender_userid = reconnected_player.userid,
     message = "/mx status",
 })
-assert(#chat_history.system_messages == 2,
+assert(#chat_history.command_responses == 2,
     "the existing listener must use the replacement local player entity")
 
 -- If DST replaces the ChatHistory manager, remove the old callback and bind to the new manager.
@@ -246,7 +252,7 @@ replacement_listener({
     sender_userid = reconnected_player.userid,
     message = "/mx status",
 })
-assert(#replacement_history.system_messages == 1,
+assert(#replacement_history.command_responses == 1,
     "the replacement history manager must receive chat command responses")
 
 assert(query_calls == 0, "embedded AI must not make localhost HTTP calls")
