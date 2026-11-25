@@ -6,6 +6,7 @@ local config_module = config_chunk()
 local disabled = config_module.Read(function(key)
     if key == "collect_runtime_components" then return nil end
     if key == "test_mode" then return false end
+    if key == "laboratory_mode" then return false end
 end, pcall)
 assert(disabled.collect_runtime_components == false,
     "runtime component observation must default to disabled")
@@ -16,10 +17,12 @@ assert(disabled.laboratory_mode == false,
     "world-changing laboratory mode must default to disabled")
 
 local enabled = config_module.Read(function(key)
-    if key == "collect_runtime_components" or key == "accept_community_events" then return true end
+    if key == "collect_runtime_components" or key == "accept_community_events" or key == "laboratory_mode" then return true end
 end, pcall)
 assert(enabled.collect_runtime_components == true and enabled.accept_community_events == true,
     "configuration snapshot must expose explicit opt-in for observers")
+assert(enabled.laboratory_mode == true,
+    "configuration snapshot must expose the separate disposable-lab opt-in")
 
 local modinfo_path = root .. "/dst-mods/modxpector/modinfo.lua"
 local modinfo_chunk = assert(loadfile(modinfo_path))
