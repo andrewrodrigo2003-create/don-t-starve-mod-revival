@@ -527,3 +527,41 @@ A pesquisa usa espelhos comunitários de scripts e documentação de API, não o
 - [ModXpector package após documentação — run 45681331607](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45681331607): **success**, no commit documental `e8d3201577137683438abf8afe221f97aa1b01ad`.
 - O resultado valida parse/contratos/pacote automatizados correspondentes aos workflows; não valida execução real dentro do DST.
 - PR #76 e PR #177 continuam draft/open e sem merge. Nenhum teste in-game, multiplayer ou dedicated server foi executado.
+
+
+## Implementação — oráculos de transferência STORE/TAKEITEM (25/11/2026)
+
+### O que foi adicionado
+- `player_inventory_item_count_decreased`: exige delta negativo na contagem carregada/equipada do jogador, sem somar baús abertos.
+- `player_inventory_item_count_increased`: exige delta positivo na contagem carregada/equipada.
+- `container_item_count_increased`: exige delta positivo no contêiner-alvo capturado.
+- Os baselines são capturados depois de construir a BufferedAction e resolver/revalidar o alvo, mas antes de chamar `PlayerController:DoAction`.
+- O baseline do contêiner exige réplica válida e `ContainerReplica:IsOpenedBy(ThePlayer)`. A fonte consultada mostra que `ContainerReplica:Has` retorna zero quando o contêiner não está aberto/replicado para o jogador; contar um baú fechado como zero poderia criar falso positivo. Contêiner fechado, réplica ausente, alvo removido ou contagem inválida bloqueiam a captura.
+- `target_has_tag` e `player_near_target` agora ficam inconclusivos quando o alvo capturado já não é válido; não podem passar uma expectativa negativa só porque a entidade desapareceu.
+
+### Contratos exigidos pelo Master
+- STORE precisa de dois oráculos vinculados à mesma etapa: redução do inventário do jogador e aumento do contêiner.
+- Os dois oráculos precisam usar o mesmo prefab do `invobject` da ação e a mesma quantidade mínima. Transferências parciais são aceitas quando ambos os lados demonstram o delta mínimo.
+- TAKEITEM precisa demonstrar aumento no inventário e remoção do estado de item disponível do alvo, por `takeshelfitem` ou `inventoryitemholder_take`.
+- O Master rejeita oráculo de transferência associado a outra etapa, expectativa negativa de delta, STORE com prova de apenas um lado, STORE com prefab divergente e TAKEITEM sem prova independente de mudança no holder/prateleira.
+- Isso não libera STORE/TAKEITEM no perfil comunitário atual; a suite pública continua restrita a WALKTO.
+
+### Testes adicionados
+- STORE: transferência parcial com deltas coerentes; mudança em apenas um lado; alvo removido; contêiner fechado; réplica ausente; contagem NaN/negativa.
+- TAKEITEM: aumento real de inventário e remoção da tag do holder; ausência de alteração não passa.
+- Master: pares obrigatórios, prefab correspondente ao invobject, mesma etapa e rejeição de prova incompleta.
+- Alvos removidos não podem satisfazer expectativas negativas de tag/proximidade.
+
+### Commits e CI
+- Código: `b60d42b88b21ca9f7e5366896576dd046ec7f961`, `188ff44da1170dacb9ed216cfd2dee4208e1594a`, `8a36052e3579d0385b64921b1bc4217553e476cd`, `f48937918908df9fe1a3351e37cb6d035897fec5`, `3a6fbf5ee3f7b1f9a3a5b637ed2afce5db0f4cbb`, `df3f97cb0e64a491d8c867aca3e746f4b5b32255`, `5ebffad0b6237cdd9f3c368e0f4c96c91c6498af`.
+- Testes: `160238ab2f8274960cbb4299cf142854e75fd7b0`, `b5774b6c638d20c66ede885e1298f16f74e5d7d6`, `8de2482e90fe571a6835c1298f53315a0bb98881`, `19bb23052eeb25af1ea69d9715cb6d918873a887`, `cd6449fda44cb8eee5cbb817412fb7a128bfa8b2`, `65fc35f9f5f53b488a0f376c7a9da357b6bd3841`, `37e59cf0047025b660b5cf8301c81f8fc90302da`, `a1ab5089d06541558c5142229507b641130e45d2`.
+- [Lua checks — run 45682174403](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682174403): **success** no commit de testes `65fc35f`; inclui parse Lua 5.1, contratos e verificação de credenciais do pacote.
+- [Package — run 45682134866](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682134866): **success** no commit de código `5ebffad`.
+- A validação mais recente dos testes adicionados depois de `65fc35f` ainda precisa terminar no HEAD atual antes de declarar o conjunto final aprovado.
+- Nenhuma execução real dentro do DST, multiplayer ou dedicated server foi realizada. Os testes são harness/mocks; não provam que a transferência funciona em sessão real.
+
+### Limites conhecidos
+- STORE só é verificável pelo oráculo atual quando a réplica do contêiner está aberta ao jogador e expõe `IsOpenedBy` + `Has`; proxies e recipientes sem réplica compatível falham de forma fechada.
+- TAKEITEM só pode ser aprovado quando o prefab do item é explicitamente allowlisted e a suite identifica a tag correta do alvo. Não é retirada genérica de baú.
+- `TAKESINGLEITEM` não consta como ação vanilla nas fontes consultadas; tratar apenas como possível extensão de mod, não como ação DST padrão.
+- A implementação não executa a ação em ambiente real e não deve ser descrita como transferência já validada in-game.
