@@ -530,6 +530,11 @@ function VirtualPlayer:_count_container_prefab(target, prefab)
     local container = target.replica ~= nil and target.replica.container or nil
     assert(container ~= nil and type(container.Has) == "function",
         "target container replica unavailable")
+    assert(type(container.IsOpenedBy) == "function",
+        "target container open-state API unavailable")
+    local open_ok, is_open = pcall(container.IsOpenedBy, container, self.player)
+    assert(open_ok and is_open == true,
+        "target container must be open to the Virtual Player before counting items")
     local _, raw_count = container:Has(prefab, 1, false)
     local count = tonumber(raw_count)
     assert(is_finite_number(count) and count >= 0,
