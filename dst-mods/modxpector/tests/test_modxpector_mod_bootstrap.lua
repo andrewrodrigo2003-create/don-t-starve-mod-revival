@@ -106,6 +106,8 @@ local env = setmetatable({
             return dofile("dst-mods/modxpector/scripts/modxpector/runtime_observer.lua")
         elseif path == "modxpector/community_events" then
             return dofile("dst-mods/modxpector/scripts/modxpector/community_events.lua")
+        elseif path == "modxpector/chat_commands" then
+            return dofile("dst-mods/modxpector/scripts/modxpector/chat_commands.lua")
         elseif path == "modxpector/embedded_ai" then
             return dofile("dst-mods/modxpector/scripts/modxpector/embedded_ai.lua")
         elseif path == "modxpector/world_inventory" then
