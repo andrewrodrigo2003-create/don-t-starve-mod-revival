@@ -242,7 +242,8 @@ function VirtualPlayer:_record(step, status, detail)
         detail = detail,
         timestamp = timestamp,
         elapsed_seconds = timestamp ~= nil and self.step_started_at ~= nil
-            and math.max(0, timestamp - self.step_started_at) or nil,    }
+            and math.max(0, timestamp - self.step_started_at) or nil,
+    }
     if step.kind ~= "run" and (status == "completed" or status == "passed"
         or status == "submitted_unverified" or status == "cleared_unverified") then
         self.steps_completed = (self.steps_completed or 0) + 1
@@ -441,7 +442,8 @@ end
 
 function VirtualPlayer:_is_target_entity_dead(target, target_step)
     if target == nil then return nil end
-    if target_step ~= nil and self.target_death_events ~= nil        and self.target_death_events[target_step] == true then
+    if target_step ~= nil and self.target_death_events ~= nil
+        and self.target_death_events[target_step] == true then
         return true
     end
     if type(target.IsValid) == "function" then
@@ -640,7 +642,8 @@ function VirtualPlayer:_submit_craft(step)
     assert(type(step.recipe) == "string" and #step.recipe > 0 and #step.recipe <= 128
         and step.recipe:match("^[%w_%-]+$"), "invalid recipe name")
     assert(self.allowed_recipes[step.recipe] == true, "recipe is not in the test plan allowlist")
-    assert(type(GetValidRecipe) == "function", "GetValidRecipe API unavailable")    local recipe = GetValidRecipe(step.recipe)
+    assert(type(GetValidRecipe) == "function", "GetValidRecipe API unavailable")
+    local recipe = GetValidRecipe(step.recipe)
     assert(recipe ~= nil, "recipe is not registered: " .. tostring(step.recipe))
     local builder = self.player.replica ~= nil and self.player.replica.builder or nil
     assert(builder ~= nil, "player builder replica unavailable")
@@ -839,7 +842,8 @@ function VirtualPlayer:_next_impl()
         elseif ok and result.inconclusive then
             self.run_inconclusive = true
             self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind))
-            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind))            return
+            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind))
+            return
         else
             self:_record(step, "failed", ok and ("assertion failed: " .. tostring(result.kind)) or tostring(result))
             self:_finish(false, ok and "assertion failed" or tostring(result))
@@ -1038,3 +1042,86 @@ function VirtualPlayer:_poll_action()
     self.active = nil
     self:_next()
 end
+
+function VirtualPlayer:_poll_rpc()
+    if not self.running or self.active == nil then return end
+    local active = self.active
+    if GetTime() - active.started > active.timeout then
+        local operation = active.step ~= nil and active.step.kind or "server operation"
+        self:_finish(false, tostring(operation) .. " RPC timeout at step " .. tostring(self.index))
+    else
+        self:_schedule(self.poll_interval, function() self:_poll_rpc() end)
+    end
+end
+
+function VirtualPlayer:OnRPCResult(request_id, success, message)
+    if not self.running or self.active == nil or self.active.request_id ~= request_id then return false end
+    local step = self.active.step
+    self:_record(step, success and "completed" or "failed", tostring(message or "server response"))
+    self.active = nil
+    if success then
+        self:_schedule(0.35, function() self:_next() end)
+    else
+        self:_finish(false, tostring(message or "server rejected test operation"))
+    end
+    return true
+end
+
+function VirtualPlayer:Stop(reason)
+    if not self.running then return false end
+    self:_finish(false, reason or "stopped")
+    return true
+end
+
+function VirtualPlayer:GetReport()
+    local unverified_step_indices = {}
+    for index = 1, self.index do
+        if self.unverified_steps ~= nil and self.unverified_steps[index] ~= nil then
+            unverified_step_indices[#unverified_step_indices + 1] = index
+        end
+    end
+    local assertions_total = self.assertions_total or 0
+    local assertions_passed = self.assertions_passed or 0
+    local report_time = self.finished_at or safe_get_time()
+    local duration_seconds = self.started_at ~= nil and report_time ~= nil
+        and math.max(0, report_time - self.started_at) or nil
+    local all_assertions_passed = assertions_total > 0 and assertions_passed == assertions_total
+    local outcome = "inconclusive"
+    if self.run_inconclusive then
+        outcome = "inconclusive"
+    elseif self.run_failed then
+        outcome = "failed"
+    elseif all_assertions_passed and #unverified_step_indices == 0 then
+        outcome = "passed"
+    end
+    local player_prefab
+    if self.player ~= nil and type(self.player.IsValid) == "function" then
+        local player_ok, player_valid = pcall(self.player.IsValid, self.player)
+        if player_ok and player_valid == true then player_prefab = self.player.prefab end
+    end
+    return {
+        schema = "modxpector/live-virtual-player/v1",
+        evidence_level = "in-game-runner-unvalidated",
+        run_id = self.run_id,
+        started_at = self.started_at,
+        finished_at = self.finished_at,
+        duration_seconds = duration_seconds,
+        player = player_prefab,
+        running = self.running,
+        steps_completed = self.steps_completed or 0,
+        steps_verified = self.steps_verified or 0,
+        verification_assertions_passed = self.verification_assertions_passed or 0,
+        steps_unverified = #unverified_step_indices,
+        unverified_step_indices = unverified_step_indices,
+        assertions_total = assertions_total,
+        assertions_passed = assertions_passed,
+        outcome = outcome,
+        failure = self.failure,
+        active_action_cancellation = self.active_action_cancellation,
+        path_replan_requests = self.path_replan_requests or 0,
+        on_finished_error = self.on_finished_error,
+        results = self.results,
+    }
+end
+
+return VirtualPlayer
