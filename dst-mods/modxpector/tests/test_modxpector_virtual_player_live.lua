@@ -789,7 +789,7 @@ local cancel_player = {
     prefab = "wilson",
     components = { locomotor = cancel_locomotor, playercontroller = { DoAction = function() end } },
     IsValid = function() return true end,
-    GetBufferedAction = function() return cancel_current_action end,
+    GetBufferedAction = function() return cancel_locomotor.bufferedaction end,
     DoTaskInTime = function() end, -- retain the scheduled tick; this test stops before it runs
 }
 local cancel_report
@@ -810,6 +810,33 @@ assert(cancel_counts.stop == 1 and cancel_counts.clear == 1 and cancel_counts.en
 assert(cancel_locomotor.bufferedaction == nil and cancel_report ~= nil and cancel_report.running == false)
 assert(cancel_report.active_action_cancellation == "cancelled",
     "the final report must distinguish a confirmed cancellation from a generic stop")
+
+-- A cleanup API that returns normally but leaves the action buffered is not a confirmed cancellation.
+local noop_action = { action = ACTIONS.CHOP }
+local noop_locomotor = {
+    bufferedaction = noop_action,
+    Stop = function() end,
+    Clear = function() return true end, -- deliberately does not clear bufferedaction
+}
+local noop_player = {
+    prefab = "wilson",
+    components = { locomotor = noop_locomotor, playercontroller = { DoAction = function() end } },
+    IsValid = function() return true end,
+    GetBufferedAction = function() return noop_locomotor.bufferedaction end,
+    DoTaskInTime = function() end,
+}
+local noop_controller = VirtualPlayer.new(noop_player, {})
+assert(noop_controller:Start({
+    schema = "modxpector/test-plan/v1", enabled = true, run_id = "cancel-noop-clear",
+    steps = { { kind = "action", action = "CHOP", timeout = 5 } },
+}))
+noop_controller.index = 1
+noop_controller.active = { action = noop_action, step = { kind = "action", action = "CHOP" } }
+assert(noop_controller:Stop("verify no-op clear"))
+assert(noop_controller:GetReport().active_action_cancellation == "not_cancelled",
+    "a no-op Clear must not be reported as a confirmed cancellation")
+assert(noop_locomotor.bufferedaction == noop_action,
+    "the cancellation check must not claim that an action was cleared when it remains buffered")
 
 -- Entity-side buffered actions must be cleared without touching an unrelated locomotor action.
 cancel_counts = { stop = 0, clear = 0, entity_clear = 0 }
