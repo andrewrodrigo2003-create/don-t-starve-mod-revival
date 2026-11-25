@@ -227,7 +227,7 @@ target.replica.health.GetCurrent = function() return 25 end
 local alive_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" }, expected = false })
 assert(alive_result.actual == false and alive_result.passed == true)
 local accessible_gold = controller:_evaluate_assertion({ kind = "player_has_item", prefab = "goldnugget" })
-local carried_gold = controller:_evaluate_assertion({ kind = "player_inventory_has_item", prefab = "goldnugget" })
+local carried_gold = controller:_evaluate_assertion({ kind = "player_inventory_has_item", prefab = "goldnugget", expected = false })
 local chest_gold = controller:_evaluate_assertion({
     kind = "container_has_item", target = { prefab = "treasurechest" }, prefab = "goldnugget", count = 3,
 })
