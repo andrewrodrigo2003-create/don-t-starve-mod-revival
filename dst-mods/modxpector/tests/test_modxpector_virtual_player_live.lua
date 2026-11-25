@@ -138,12 +138,16 @@ controller = VirtualPlayer.new(player, {
     allowed_actions = { "MOD_ACTION" },
     allowed_prefabs = { "cutgrass", "axe", "tree", "structure", "goldnugget", "treasurechest", "birdcage" },
     allowed_recipes = { "axe", "structure" },
-    send_rpc = function(kind, request_id, value, count, _x, _z)
+    send_rpc = function(kind, request_id, value, count, _x, _z, step_index, run_id)
+        assert(run_id == "live-vp-contract-001",
+            "effectful RPC must carry the active plan run ID")
         if kind == "unlock_recipe" then
-            assert(value == "axe")
+            assert(value == "axe" and step_index == 4,
+                "unlock RPC must carry its exact 1-based plan step")
             controller:OnRPCResult(request_id, true, "unlocked recipe axe")
         else
-            assert(kind == "spawn_item" and value == "cutgrass" and count == 2)
+            assert(kind == "spawn_item" and value == "cutgrass" and count == 2 and step_index == 3,
+                "spawn RPC must carry its exact 1-based plan step")
             controller:OnRPCResult(request_id, true, "spawned test items")
         end
     end,
