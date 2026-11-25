@@ -778,6 +778,8 @@ assert(cancel_controller:Stop("user requested cancellation"))
 assert(cancel_counts.stop == 1 and cancel_counts.clear == 1 and cancel_counts.entity_clear == 0,
     "cancellation must stop locomotion and clear only the matching locomotor action")
 assert(cancel_locomotor.bufferedaction == nil and cancel_report ~= nil and cancel_report.running == false)
+assert(cancel_report.active_action_cancellation == "cancelled",
+    "the final report must distinguish a confirmed cancellation from a generic stop")
 
 -- Entity-side buffered actions must be cleared without touching an unrelated locomotor action.
 cancel_counts = { stop = 0, clear = 0, entity_clear = 0 }
@@ -849,4 +851,5 @@ assert(unrelated_controller:Stop("user requested cancellation"))
 assert(cancel_counts.stop == 0 and cancel_counts.clear == 0 and cancel_counts.entity_clear == 0,
     "cancellation must leave an unrelated replacement action untouched")
 assert(unrelated_player.bufferedaction == unrelated_action)
+assert(unrelated_controller:GetReport().active_action_cancellation == "not_cancelled")
 print("MODXPECTOR_VIRTUAL_PLAYER_CANCEL_ACTION_CONTRACT_OK")
