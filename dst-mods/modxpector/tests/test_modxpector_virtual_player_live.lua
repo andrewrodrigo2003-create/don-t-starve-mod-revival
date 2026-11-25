@@ -304,6 +304,10 @@ local stale_near = controller:_evaluate_assertion({
 })
 assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.passed and stale_near.passed,
     "stale captured targets must not satisfy existence, death, tag, or proximity assertions")
+controller.target_death_events[1] = true
+assert(controller:_is_target_entity_dead(removed_captured_target, 1) == true,
+    "a captured death event must remain authoritative after the target entity is removed")
+controller.target_death_events[1] = false
 local stale_health_ok = pcall(function()
     controller:_evaluate_assertion({ kind = "target_health_lte", target_step = 1, value = 0 })
 end)
