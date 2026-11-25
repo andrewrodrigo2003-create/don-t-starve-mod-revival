@@ -584,13 +584,13 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         actual = item ~= nil and item.prefab == prefab
         expected = assertion.expected ~= false
     elseif kind == "player_near_target" then
+        local radius = assertion.radius == nil and 5 or tonumber(assertion.radius)
+        assert(is_finite_number(radius) and radius >= 0 and radius <= 40,
+            "player_near_target radius must be finite and between 0 and 40")
         local target = self:_resolve_assertion_target(assertion)
         local target_valid = self:_is_valid_target(target)
         actual = false
         if target_valid then
-            local radius = assertion.radius == nil and 5 or tonumber(assertion.radius)
-            assert(is_finite_number(radius) and radius >= 0 and radius <= 40,
-                "player_near_target radius must be finite and between 0 and 40")
             assert(self.player.Transform ~= nil and target.Transform ~= nil
                 and type(self.player.Transform.GetWorldPosition) == "function"
                 and type(target.Transform.GetWorldPosition) == "function",
