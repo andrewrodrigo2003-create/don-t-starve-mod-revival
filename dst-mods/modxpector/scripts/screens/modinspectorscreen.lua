@@ -948,10 +948,12 @@ function InspectorScreen:Refresh()
         self:AddLine("Informações técnicas: " .. (config.show_debug_info and "Ativadas" or "Desativadas"), 125, 19)
         self:AddLine("IA embarcada: incluída no próprio ModXpector", 90, 19)
         self:AddLine("Modo de testes controlados: " .. (config.test_mode and "Ativado" or "Desativado"), 55, 19)
+        self:AddLine("Laboratório (mundo descartável): "
+            .. (config.laboratory_mode and "Ativado" or "Desativado"), -15, 18)
         self:AddLine("Observação de componentes em runtime: "
-            .. (config.collect_runtime_components and "Ativada" or "Desativada"), -15, 18)
+            .. (config.collect_runtime_components and "Ativada" or "Desativada"), -40, 17)
         self:AddLine("Receber eventos de mods comunitários: "
-            .. (config.accept_community_events and "Ativado" or "Desativado"), -35, 18)
+            .. (config.accept_community_events and "Ativado" or "Desativado"), -65, 17)
         local ai_state = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS")
         self:AddLine("Estado da IA: " .. (type(ai_state) == "table" and tostring(ai_state.status or "não verificada") or "aguardando análise"), 20, 18)
         self:AddLine("Limite de geração por ação: " .. tostring(config.max_spawn_count or 10), -65, 18)
