@@ -300,7 +300,7 @@ A auditoria de chathistory.lua confirmou SendCommandResponse(messages), que acei
 
 ## Checkpoint operacional — 25/11/2026
 
-- PR de desenvolvimento: [#76](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/76), branch `security/modxpector-5.0.14-opt-in-2026-11-23`, HEAD `885bbe4462e561d83a163d4662edb71e49c51af1`, draft/open, sem merge.
+- PR de desenvolvimento: [#76](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/76), branch `security/modxpector-5.0.14-opt-in-2026-11-23`, HEAD `4e8d112502892ec01e8da4ed178e6391ca22f6a9`, draft/open, sem merge.
 - PR de documentação: [#177](https://github.com/andrewrodrigo2003-create/cerebro-secundario/pull/177), branch `research/modxpector-autonomous-ai-2026-11-25`, draft/open, sem merge.
 - Implementado neste ciclo: isolamento `laboratory_mode` para toda ação inclusive WALKTO; cancelamento verificado da BufferedAction; autorização de spawn/unlock por run_id + step_index consumível uma vez; limite espacial do spawn; replanejamento nativo limitado para WALKTO; listener ChatHistory resiliente a reconexão/substituição de manager e resposta via SendCommandResponse.
 - Testes novos/adaptados: cancelamento e proteção contra ação alheia; rejeição de WALKTO fora do laboratório; ChatHistory com reconexão e manager substituído; RPC com run_id/índice/tipo/consumo único/posição; recuperação de WALKTO limitada.
