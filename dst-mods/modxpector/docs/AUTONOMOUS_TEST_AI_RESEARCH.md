@@ -335,3 +335,10 @@ Não substituir o parser seguro existente nem chamar isso de LLM. Manter `chat_c
 ### Limites
 
 Isso permite linguagem natural limitada e segura, não conversa geral como ChatGPT. O parser atual ainda reconhece apenas comandos prefixados e não deve ser anunciado como NLU completo. Implementação adiada até obter CI no HEAD atual e consolidar os contratos do Virtual Player/RPC.
+
+
+## 22. Resultado da CI e correção do contrato de replanejamento — 25/11/2026
+
+O run [45659771990](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45659771990), no commit `b08ab077dbe5317a2041f37bc2b4328f260274b2`, concluiu parse Lua 5.1 com sucesso, mas falhou na suíte `test_modxpector_virtual_player_live.lua` na linha 915: `expected a scheduled Virtual Player poll`. Os contratos anteriores (bootstrap, configuração, cancelamento, etc.) passaram até esse ponto.
+
+Causa identificada no teste novo: o `VirtualPlayer.new` do cenário de recuperação não recebeu `allowed_actions = { "WALKTO" }`; `BuildAction` rejeitou a ação antes de agendar o poll. Correção aplicada no commit `5ac39b2e341fa3c833409e9e4310ccf62c8dd1f6`, adicionando a allowlist ao cenário. A correção é coerente com o contrato do Virtual Player, mas ainda não foi reexecutada em CI; não marcar como aprovada até novo run.
