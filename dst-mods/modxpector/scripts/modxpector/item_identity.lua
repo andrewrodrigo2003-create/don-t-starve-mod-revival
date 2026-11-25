@@ -125,6 +125,17 @@ local function capture_inventory(inventory, protected_call)
         return snapshot
     end
 
+    local classified = inventory.classified
+    if type(classified) ~= "table" or type(classified.IsBusy) ~= "function" then
+        fail(snapshot, "inventory classified busy-state API unavailable")
+        return snapshot
+    end
+    local classified_ok, classified_busy = safe_call(protected_call, classified.IsBusy, classified)
+    if not classified_ok or classified_busy ~= false then
+        fail(snapshot, "inventory classified is busy or its state is unavailable")
+        return snapshot
+    end
+
     if type(inventory.GetItems) ~= "function" then
         fail(snapshot, "inventory GetItems API unavailable")
     else
@@ -156,12 +167,19 @@ local function capture_inventory(inventory, protected_call)
         if not ok then
             fail(snapshot, "inventory GetOverflowContainer call failed")
         elseif overflow ~= nil then
-            if type(overflow.GetItems) ~= "function" then
-                fail(snapshot, "overflow container GetItems API unavailable")
+            if type(overflow.IsBusy) ~= "function" then
+                fail(snapshot, "overflow container busy-state API unavailable")
             else
-                local items_ok, items = safe_call(protected_call, overflow.GetItems, overflow)
-                if not items_ok then fail(snapshot, "overflow container GetItems call failed")
-                else append_collection(snapshot, items, "overflow_slot", protected_call) end
+                local busy_ok, is_busy = safe_call(protected_call, overflow.IsBusy, overflow)
+                if not busy_ok or is_busy ~= false then
+                    fail(snapshot, "overflow container is busy or its state is unavailable")
+                elseif type(overflow.GetItems) ~= "function" then
+                    fail(snapshot, "overflow container GetItems API unavailable")
+                else
+                    local items_ok, items = safe_call(protected_call, overflow.GetItems, overflow)
+                    if not items_ok then fail(snapshot, "overflow container GetItems call failed")
+                    else append_collection(snapshot, items, "overflow_slot", protected_call) end
+                end
             end
         end
     end
@@ -186,6 +204,15 @@ local function capture_target(target, player, protected_call)
     local container = target.replica ~= nil and target.replica.container or nil
     if type(container) ~= "table" then
         fail(snapshot, "target container replica unavailable")
+        return snapshot
+    end
+    if type(container.IsBusy) ~= "function" then
+        fail(snapshot, "target container busy-state API unavailable")
+        return snapshot
+    end
+    local busy_ok, is_busy = safe_call(protected_call, container.IsBusy, container)
+    if not busy_ok or is_busy ~= false then
+        fail(snapshot, "target container is busy or its state is unavailable")
         return snapshot
     end
     if type(container.IsOpenedBy) ~= "function" then
