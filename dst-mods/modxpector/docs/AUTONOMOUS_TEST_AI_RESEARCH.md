@@ -465,3 +465,7 @@ Foi identificada uma possibilidade de falso positivo: uma pós-condição como `
 - Não houve teste dentro do DST, multiplayer ou servidor dedicado.
 
 PR #76 continua draft/open, sem merge ou publicação. A IA permanece incompleta.
+
+
+### Correção de status de CI anterior — 25/11/2026
+A consulta posterior confirmou que o run [45674502369](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674502369) concluiu com sucesso no incremento anterior de contêiner stale (`3545e2f`): testes Lua, build do ZIP e upload do artefato. Isso não valida os commits posteriores de baseline de inventário (`436ea2d`/`e58d955`). O run [45674703643](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674703643) também passou, mas é anterior ao novo baseline.
