@@ -510,12 +510,14 @@ local function validate_plan_assertion(plan, index, step)
         if assertion.kind == "player_has_item_count_gte"
             and not integer_in_range(assertion.count, 1, 10000) then
             return false, "inventory assertion count must be an integer from 1 to 10000"
-        elseif (assertion.kind == "container_has_item"
-            or assertion.kind == "player_inventory_item_count_increased"
+        elseif assertion.kind == "container_has_item" and assertion.count ~= nil
+            and not integer_in_range(assertion.count, 1, 10000) then
+            return false, "container assertion count must be an integer from 1 to 10000"
+        elseif (assertion.kind == "player_inventory_item_count_increased"
             or assertion.kind == "player_inventory_item_count_decreased"
             or assertion.kind == "container_item_count_increased") and assertion.count ~= nil
             and not integer_in_range(assertion.count, 1, 10000) then
-            return false, "container/transfer assertion count must be an integer from 1 to 10000"
+            return false, "transfer assertion count must be an integer from 1 to 10000"
         end
         if assertion.kind == "player_equipped" and (type(assertion.slot) ~= "string"
             or #assertion.slot < 1 or #assertion.slot > 32
