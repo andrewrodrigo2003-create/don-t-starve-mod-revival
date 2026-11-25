@@ -63,3 +63,5 @@ A IA principal está dentro do próprio mod, em Lua. Ela observa o inventário d
 6. Se houver uma suite compatível, ative **Modo de testes controlados** e clique em **Executar suite**. O Master valida permissões, allowlists e pós-condições antes de iniciar o Virtual Player.
 
 A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. As suites são dados declarativos, sem callbacks ou código arbitrário; o perfil atual só permite WALKTO e verificações observacionais. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
+
+O contrato interno do Virtual Player também reconhece as ações DST `STORE`, `TAKEITEM` e `TAKESINGLEITEM`, além das pós-condições `player_inventory_has_item` (itens carregados, equipados e no overflow; exclui baús abertos) e `container_has_item` (contagem no contêiner-alvo). Essa cobertura foi verificada em Lua 5.1/harness, não no jogo real. A API de suites comunitárias continua limitada a `WALKTO`; retirar itens de baús por slot ainda requer um adaptador específico de `ContainerReplica` e permanece pendente.
