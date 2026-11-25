@@ -265,3 +265,22 @@ A fonte chathistory.lua confirma os métodos AddChatHistoryListener(fn) e Remove
 - Continuar ignorando mensagens de sistema, evitando loop quando o ModXpector responde no próprio chat.
 
 O bootstrap agora testa comando /mx status, reconexão com troca da entidade ThePlayer e substituição do manager. Esses contratos passaram no run 45658012911. A validação em sessão real, multiplayer e dedicated server continua pendente.
+
+
+## 18. Recuperação limitada de WALKTO — 25/11/2026
+
+### Pesquisa de runtime
+
+O código de LocoMotor mostra que GoToEntity/GoToPoint definem destino e BufferedAction; FindPath submete uma busca ao TheWorld.Pathfinder. ResetPath mata a busca/caminho atual. FindPath evita buscas repetidas quando lastdesttile é igual ao destino anterior, portanto a implementação limpa lastdesttile antes de chamar FindPath novamente. Fonte: [locomotor.lua (DST script mirror)](https://raw.githubusercontent.com/vietnd69/dst-scripts/hotfix-714014/components/locomotor.lua).
+
+### Implementação
+
+- A recuperação é aplicada apenas a WALKTO, e somente quando a ação ativa continua sendo a mesma BufferedAction registrada no LocoMotor e há um destino válido.
+- O executor mede deslocamento do personagem. O padrão é 6 segundos sem progresso para detectar bloqueio.
+- Faz no máximo uma tentativa: ResetPath(), lastdesttile=nil e FindPath(). Isso pede uma nova busca nativa; não prova que a rota foi encontrada.
+- Se não houver progresso por mais 6 segundos, registra stuck, encerra e cancela a ação ainda pertencente ao Virtual Player.
+- O relatório inclui path_replan_requests e active_action_cancellation. O número conta solicitações de nova busca, não caminhos encontrados.
+
+### Teste
+
+Foi adicionado o contrato MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK: simula personagem sem movimento, confirma exatamente um ResetPath/FindPath, esgota a tentativa e verifica cancelamento da BufferedAction. O novo commit de código ainda aguarda CI; a validação em jogo real permanece pendente.
