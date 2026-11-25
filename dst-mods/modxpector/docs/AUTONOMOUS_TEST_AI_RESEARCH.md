@@ -565,3 +565,13 @@ A pesquisa usa espelhos comunitários de scripts e documentação de API, não o
 - TAKEITEM só pode ser aprovado quando o prefab do item é explicitamente allowlisted e a suite identifica a tag correta do alvo. Não é retirada genérica de baú.
 - `TAKESINGLEITEM` não consta como ação vanilla nas fontes consultadas; tratar apenas como possível extensão de mod, não como ação DST padrão.
 - A implementação não executa a ação em ambiente real e não deve ser descrita como transferência já validada in-game.
+
+
+### Validação final do incremento de transferência — 25/11/2026
+- [Lua checks — run 45682243266](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682243266): **success** no commit de testes `a1ab5089d06541558c5142229507b641130e45d2`. Parse Lua 5.1, contratos completos e verificação de exclusão de credenciais passaram.
+- [Package — run 45682230818](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682230818): **success** no mesmo commit. Runner Lua passou, ZIP distributável foi construído e artefato enviado.
+- [Lua checks — run 45682286656](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682286656): **success** no HEAD documental `0fe820a1ffa8d0e5cc494fe61db0e34d30293c09`.
+- [Package — run 45682278811](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682278811): **success** no mesmo HEAD documental.
+- Os contratos cobrem os oráculos e as validações do Master via mocks/harness. Não são execução da ação real no DST.
+- PR #76 permanece draft/open, sem merge/publicação. PR #177 permanece draft/open, sem merge.
+- Não houve teste real no DST, multiplayer ou dedicated server. A IA permanece incompleta e STORE/TAKEITEM não foram liberados no perfil comunitário.
