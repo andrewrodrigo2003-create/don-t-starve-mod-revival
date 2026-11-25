@@ -670,3 +670,42 @@ Portanto, a implementação futura deverá comparar identidade/stack do item ant
 - Vanilla actions.lua, ACTIONS.STORE.fn: https://github.com/jupitersh/dst-scripts-source-code/blob/master/actions.lua
 
 Essas páginas documentam APIs e semântica de referência; não provam que todas as entidades/slots estão replicados em todo estado do cliente. A próxima etapa deverá validar a disponibilidade efetiva no client e falhar fechado se a réplica não expuser identidade suficiente.
+
+
+### Auditoria de superfície de identidade nas réplicas — 25/11/2026
+
+A documentação da API pública foi detalhada para separar o que a réplica promete expor do que ainda precisa ser provado em runtime:
+
+**Inventário do jogador (client replica):**
+- `GetItems()` retorna os itens dos slots normais do inventário.
+- `GetEquips()` retorna os itens equipados; não se deve presumir que estejam incluídos em `GetItems()`.
+- `GetActiveItem()` expõe separadamente o item ativo/segurado.
+- `GetOverflowContainer()` expõe o contêiner de overflow (por exemplo, mochila), que exige enumeração própria via réplica do contêiner.
+- `GetOpenContainers()` lista contêineres abertos, mas não é inventário carregado e não deve ser somado como se fosse.
+
+**Contêiner de destino (client replica):**
+- `GetItems()` retorna entidades de item do contêiner; `GetItemInSlot(slot)` permite observar slot; `FindItem(fn)` retorna apenas um primeiro item correspondente.
+- `IsHolding(item)` é a consulta específica de pertencimento da entidade e é preferível a uma contagem por prefab quando a referência exata ainda existe.
+- `Has(prefab, amount)` continua sendo uma contagem agregada e não comprova identidade.
+
+**Semântica de pilhas:**
+- `stackable:Get(num)` pode criar uma nova entidade quando uma parte da pilha é removida; se a pilha inteira é retirada, retorna a própria entidade.
+- `stackable:Put(item)` pode absorver a entidade de origem em outra pilha ou deixar overflow no item de origem.
+- Logo, GUID/referência de entidade é uma prova forte somente quando a mesma entidade sobrevive à transferência. GUID isolado não correlaciona, por si só, uma entidade nova criada por split com a pilha original; contagem/prefab não resolve essa lacuna.
+
+**Decisão de implementação (sem reabilitação neste incremento):**
+1. Criar primeiro um coletor read-only de snapshots, limitado a slots, equipamentos, item ativo, overflow e itens do contêiner-alvo; cada entrada deve conter referência local da entidade, GUID validado, prefab e tamanho de pilha apenas se a API client-side correspondente estiver realmente disponível.
+2. Marcar o snapshot como incompleto se qualquer coleção necessária não puder ser enumerada, se houver entidade inválida, GUID ausente/duplicado, prefab inconsistente ou valor de stack inválido. Snapshot incompleto nunca autoriza sucesso.
+3. A primeira prova candidata de STORE deve ser estritamente limitada a item não empilhável, entidade exata ainda válida e destino normal cuja réplica confirme `IsHolding(invobject)` após a ação, com ausência no inventário de origem. Qualquer merge, split, proxy, construção, overflow, rollback ou destino alternativo resulta em `inconclusive`.
+4. Só depois criar um correlacionador de pilhas para split/merge, com testes de conservação de quantidade e identidade/linhagem. Não inferir linhagem pela coincidência de prefab ou por GUID diferente.
+5. TAKEITEM/TAKESINGLEITEM requerem adaptadores por holder/shelf. A transição da tag é evidência auxiliar, não identidade do item recebido. A ação continua bloqueada até o item removido do holder ser correlacionado com a entidade recebida (ou com a linhagem de stack validada).
+
+**Testes negativos obrigatórios antes de qualquer liberação:** item preexistente do mesmo prefab; transferência simultânea independente do mesmo prefab; GUID ausente/duplicado; entidade removida; stack que divide; stack que se funde; active item; equipado; overflow/backpack; inventário cheio; contêiner cheio; proxy→master; construction slot; rollback/devolução; holder/shelf já vazio; item que cai no chão; réplica atrasada/incompleta.
+
+**Fontes de API consultadas nesta auditoria:**
+- Inventory Replica — `GetItems`, `GetEquips`, `GetActiveItem`, `GetOverflowContainer`, `GetOpenContainers`, `FindItem`: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica
+- Container Replica — `GetItems`, `GetItemInSlot`, `IsHolding`, `FindItem`, `Has`: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/container_replica
+- Stackable — semântica de `Get(num)` e `Put(item)`: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable
+- InventoryItem — `RemoveFromOwner`: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/inventoryitem
+
+As APIs acima descrevem a superfície documentada; não comprovam disponibilidade de GUID, stack replica, slots ou entidades em todos os estados de cliente/servidor. A próxima etapa técnica é implementar e testar somente o coletor read-only, sem alterar a liberação das ações. Até lá, STORE, TAKEITEM e TAKESINGLEITEM seguem fail-closed. Sem validação in-game, multiplayer ou dedicated server.
