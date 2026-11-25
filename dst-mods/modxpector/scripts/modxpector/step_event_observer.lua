@@ -11,6 +11,8 @@ local ALLOWED_EVENTS = {
 }
 local DEFAULT_MAX_EVENTS = 64
 local HARD_MAX_EVENTS = 256
+local MAX_SOURCES = 16
+local MAX_LISTENERS = 64
 
 local function safe_call(protected_call, fn, ...)
     if type(protected_call) ~= "function" or type(fn) ~= "function" then
@@ -49,6 +51,8 @@ function M.Start(sources, protected_call, get_time, max_events)
         return nil, "invalid_event_limit"
     end
 
+    if #sources > MAX_SOURCES then return nil, "too_many_event_sources" end
+
     local session = {
         schema = "modxpector/step-event-observer/v1",
         active = true,
@@ -71,10 +75,16 @@ function M.Start(sources, protected_call, get_time, max_events)
             return nil, "invalid_event_source"
         end
         for _, event_name in ipairs(source.events) do
+            if #session.listeners >= MAX_LISTENERS then
+                cleanup(session)
+                return nil, "too_many_event_listeners"
+            end
             if ALLOWED_EVENTS[event_name] ~= true then
                 cleanup(session)
                 return nil, "unsupported_event_name"
             end
+            local event_source = source
+            local observed_event_name = event_name
             local callback = function(inst, data)
                 if not session.active then return end
                 if session.event_count >= session.max_events then
@@ -86,14 +96,14 @@ function M.Start(sources, protected_call, get_time, max_events)
                 end
                 if data == nil and type(inst) == "table" then
                     data = inst
-                    inst = source.entity
+                    inst = event_source.entity
                 end
                 local event_entity = nil
-                if event_name == "stacksizechange" or event_name == "stacksizepreview" then
-                    event_entity = source.entity
+                if observed_event_name == "stacksizechange" or observed_event_name == "stacksizepreview" then
+                    event_entity = event_source.entity
                 end
                 local classify_ok, classification, reason = safe_call(protected_call,
-                    ItemIdentity.ClassifyReplicaEvent, event_name, data, event_entity, protected_call)
+                    ItemIdentity.ClassifyReplicaEvent, observed_event_name, data, event_entity, protected_call)
                 if not classify_ok then
                     classification = "unverified"
                     reason = "event_classifier_failed"
@@ -107,23 +117,23 @@ function M.Start(sources, protected_call, get_time, max_events)
                 session.event_count = session.event_count + 1
                 session.events[#session.events + 1] = {
                     index = session.event_count,
-                    source = source.label,
-                    event = event_name,
+                    source = event_source.label,
+                    event = observed_event_name,
                     classification = classification,
                     reason = reason,
                     timestamp = timestamp,
                     entity_guid = type(inst) == "table" and inst.GUID or nil,
                 }
             end
-            local listen_ok = safe_call(protected_call, source.entity.ListenForEvent,
-                source.entity, event_name, callback)
+            local listen_ok = safe_call(protected_call, event_source.entity.ListenForEvent,
+                event_source.entity, observed_event_name, callback)
             if not listen_ok then
                 cleanup(session)
                 return nil, "event_listener_registration_failed"
             end
             session.listeners[#session.listeners + 1] = {
-                entity = source.entity,
-                event_name = event_name,
+                entity = event_source.entity,
+                event_name = observed_event_name,
                 callback = callback,
             }
         end
