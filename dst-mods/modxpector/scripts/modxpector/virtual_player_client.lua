@@ -46,6 +46,10 @@ function VirtualPlayer.new(player, options)
     self.max_steps = math.max(1, math.min(self.options.max_steps or 100, 200))
     self.poll_interval = 0.15
     self.default_timeout = 20
+    self.stuck_timeout = math.max(1, math.min(tonumber(self.options.stuck_timeout) or 6, 30))
+    local path_replan_attempts = tonumber(self.options.max_path_replan_attempts)
+    self.max_path_replan_attempts = path_replan_attempts ~= nil
+        and math.max(0, math.min(math.floor(path_replan_attempts), 2)) or 1
     self.queue = {}
     self.index = 0
     self.results = {}
@@ -335,6 +339,7 @@ function VirtualPlayer:Start(plan)
     self.results = {}
     self.steps_completed = 0
     self.steps_verified = 0
+    self.path_replan_requests = 0
     self.verification_assertions_passed = 0
     self.verification_requirements = {}
     self.verification_assertions = {}
@@ -842,6 +847,34 @@ function VirtualPlayer:_next()
     if not ok then self:_handle_runtime_error(err, self.queue[self.index]) end
 end
 
+function VirtualPlayer:_get_player_position()
+    local transform = self.player ~= nil and self.player.Transform or nil
+    if transform == nil or type(transform.GetWorldPosition) ~= "function" then return nil end
+    local ok, x, y, z = pcall(transform.GetWorldPosition, transform)
+    if not ok or not is_finite_number(x) or not is_finite_number(z) then return nil end
+    return x, z
+end
+
+function VirtualPlayer:_request_path_replan(active)
+    local locomotor = self.player ~= nil and self.player.components ~= nil
+        and self.player.components.locomotor or nil
+    if locomotor == nil or locomotor.bufferedaction ~= active.action
+        or locomotor.dest == nil or type(locomotor.ResetPath) ~= "function"
+        or type(locomotor.FindPath) ~= "function" then
+        return false
+    end
+    if type(locomotor.dest.IsValid) == "function" then
+        local valid_ok, valid = pcall(locomotor.dest.IsValid, locomotor.dest)
+        if not valid_ok or valid ~= true then return false end
+    end
+    local reset_ok = pcall(locomotor.ResetPath, locomotor)
+    if not reset_ok then return false end
+    -- FindPath skips work when the destination tile matches lastdesttile.
+    locomotor.lastdesttile = nil
+    local find_ok = pcall(locomotor.FindPath, locomotor)
+    return find_ok
+end
+
 function VirtualPlayer:_poll_action()
     if not self.running or self.active == nil then return end
     local active = self.active
@@ -852,6 +885,47 @@ function VirtualPlayer:_poll_action()
         return
     end
     if current == active.action then
+        if active.step.action == "WALKTO" then
+            local locomotor = self.player.components ~= nil and self.player.components.locomotor or nil
+            if locomotor ~= nil and locomotor.bufferedaction == active.action and locomotor.dest ~= nil then
+                local x, z = self:_get_player_position()
+                if x ~= nil and z ~= nil then
+                    local now = safe_get_time()
+                    if active.path_tracking_started ~= true then
+                        active.path_tracking_started = true
+                        active.last_progress_at = now
+                        active.last_position_x = x
+                        active.last_position_z = z
+                    else
+                        local dx = x - active.last_position_x
+                        local dz = z - active.last_position_z
+                        if dx * dx + dz * dz >= 0.0625 then
+                            active.last_progress_at = now
+                            active.last_position_x = x
+                            active.last_position_z = z
+                        elseif now ~= nil and active.last_progress_at ~= nil
+                            and now - active.last_progress_at >= self.stuck_timeout then
+                            local attempts = active.path_replan_attempts or 0
+                            if attempts < self.max_path_replan_attempts
+                                and self:_request_path_replan(active) then
+                                active.path_replan_attempts = attempts + 1
+                                active.last_progress_at = now
+                                active.last_position_x = x
+                                active.last_position_z = z
+                                self.path_replan_requests = (self.path_replan_requests or 0) + 1
+                                self:_record(active.step, "replanned",
+                                    "movement stalled; requested a fresh native locomotor path search")
+                            else
+                                self:_record(active.step, "stuck",
+                                    "WALKTO made no measurable progress after the bounded path replan")
+                                self:_finish(false, "Virtual Player remained stuck during WALKTO")
+                                return
+                            end
+                        end
+                    end
+                end
+            end
+        end
         if active.step.repeat_until_target_dead == true
             and GetTime() - (active.repeat_started or active.started) > (active.repeat_timeout or 120) then
             self:_record(active.step, "timeout", "target remained alive or attack action stayed buffered beyond the total repeat time budget")
@@ -999,6 +1073,7 @@ function VirtualPlayer:GetReport()
         outcome = outcome,
         failure = self.failure,
         active_action_cancellation = self.active_action_cancellation,
+        path_replan_requests = self.path_replan_requests or 0,
         on_finished_error = self.on_finished_error,
         results = self.results,
     }
