@@ -68,7 +68,7 @@ function M.Start(sources, protected_call, get_time, max_events)
     }
 
     for _, source in ipairs(sources) do
-        if type(source) ~= "table" or source.entity == nil
+        if type(source) ~= "table" or type(source.entity) ~= "table"
             or type(source.label) ~= "string" or #source.label == 0 or #source.label > 64
             or type(source.events) ~= "table" or #source.events == 0 or #source.events > 4
             or type(source.entity.ListenForEvent) ~= "function"
