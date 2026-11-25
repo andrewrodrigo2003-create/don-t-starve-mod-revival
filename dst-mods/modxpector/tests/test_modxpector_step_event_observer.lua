@@ -95,4 +95,16 @@ local bad_limit, bad_limit_reason = Observer.Start({
 }, pcall, nil, 999)
 assert(bad_limit == nil and bad_limit_reason == "invalid_event_limit")
 
+
+
+local cleanup_failure_entity = entity(950)
+cleanup_failure_entity.RemoveEventCallback = function() error("cleanup rejected") end
+local cleanup_failure_session = assert(Observer.Start({
+    { entity = cleanup_failure_entity, label = "cleanup-failure", events = { "itemget" } },
+}, pcall))
+local cleanup_failure_snapshot = assert(Observer.Stop(cleanup_failure_session))
+assert(cleanup_failure_snapshot.cleanup_complete == false
+    and cleanup_failure_snapshot.complete == false,
+    "listener cleanup failure must invalidate the observation")
+
 print("ModXpector step event observer tests passed")
