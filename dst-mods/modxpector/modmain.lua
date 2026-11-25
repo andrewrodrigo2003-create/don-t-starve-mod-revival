@@ -312,18 +312,18 @@ local SERVER_ACTION_ALLOWLIST = {
     PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
     COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
     LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
-    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKE = true,
+    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKEITEM = true, TAKESINGLEITEM = true,
 }
 local AI_ACTION_ALLOWLIST = { WALKTO = true }
 local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
-    player_has_item = true, player_has_item_count_gte = true, player_equipped = true,
+    player_has_item = true, player_has_item_count_gte = true, player_inventory_has_item = true, container_has_item = true, player_equipped = true,
     player_near_target = true, player_knows_recipe = true,
     target_exists = true, target_health_lte = true, target_dead = true, target_has_tag = true,
 }
 local TARGET_ASSERTION_ALLOWLIST = {
     player_near_target = true, target_exists = true, target_health_lte = true,
-    target_dead = true, target_has_tag = true,
+    target_dead = true, target_has_tag = true, container_has_item = true,
 }
 local SIDE_EFFECT_STEP_ALLOWLIST = {
     action = true, craft = true, craft_at_point = true,
@@ -408,6 +408,7 @@ local function validate_plan_assertion(plan, index, step)
             return false, "invalid assertion numeric value"
         end
     elseif assertion.kind == "player_has_item" or assertion.kind == "player_has_item_count_gte"
+        or assertion.kind == "player_inventory_has_item" or assertion.kind == "container_has_item"
         or assertion.kind == "player_equipped" then
         if not prefab_is_allowed(assertion.prefab, plan) then
             return false, "assertion prefab is not in the plan allowlist"
@@ -415,6 +416,9 @@ local function validate_plan_assertion(plan, index, step)
         if assertion.kind == "player_has_item_count_gte"
             and not integer_in_range(assertion.count, 1, 10000) then
             return false, "inventory assertion count must be an integer from 1 to 10000"
+        elseif assertion.kind == "container_has_item" and assertion.count ~= nil
+            and not integer_in_range(assertion.count, 1, 10000) then
+            return false, "container assertion count must be an integer from 1 to 10000"
         end
         if assertion.kind == "player_equipped" and (type(assertion.slot) ~= "string"
             or #assertion.slot < 1 or #assertion.slot > 32
