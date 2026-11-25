@@ -26,12 +26,14 @@ local active = entity(103, "flint")
 local backpack_item = entity(104, "cutgrass", 7)
 local chest_item = entity(201, "goldnugget", 3)
 local overflow = {
+    IsBusy = function() return false end,
     GetItems = function()
         calls.overflow = calls.overflow + 1
         return { [1] = backpack_item }
     end,
 }
 local inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function()
         calls.inventory = calls.inventory + 1
         return { [1] = wood }
@@ -51,6 +53,7 @@ local chest = {
     IsValid = function() return true end,
     replica = {
         container = {
+            IsBusy = function() return false end,
             IsOpenedBy = function(_, opener) return opener == player end,
             GetItems = function()
                 calls.target = calls.target + 1
@@ -80,6 +83,7 @@ assert(no_target.complete == true and no_target.target == nil,
 
 local duplicate = entity(101, "log")
 local duplicate_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return { [1] = wood } end,
     GetEquips = function() return { hands = duplicate } end,
     GetActiveItem = function() return nil end,
@@ -91,6 +95,7 @@ assert(#duplicate_result.player.errors > 0)
 
 local invalid_guid = entity(0, "log")
 local invalid_guid_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return { [1] = invalid_guid } end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -101,6 +106,7 @@ assert(invalid_guid_result.complete == false, "zero GUID must fail closed")
 
 local invalid_stack = entity(301, "log", 0 / 0)
 local invalid_stack_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return { [1] = invalid_stack } end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -112,6 +118,7 @@ assert(invalid_stack_result.complete == false, "NaN stack size must fail closed"
 local invalid_entity = entity(401, "log")
 invalid_entity.IsValid = function() return false end
 local invalid_entity_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return { [1] = invalid_entity } end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -121,6 +128,7 @@ local invalid_entity_result = ItemIdentity.Capture(invalid_entity_inventory, pla
 assert(invalid_entity_result.complete == false, "stale entity must fail closed")
 
 local incomplete_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return {} end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -143,6 +151,7 @@ assert(closed_result.complete == false and closed_result.target.complete == fals
     "closed target container must fail closed")
 
 local throwing_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() error("replica unavailable") end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -156,6 +165,7 @@ for index = 1, 513 do
     oversized_items[index] = entity(1000 + index, "log")
 end
 local oversized_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return oversized_items end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return nil end,
@@ -177,6 +187,7 @@ moving_item.replica = {
 local source_contains_item = true
 local target_contains_item = false
 local moving_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function()
         return source_contains_item and { [3] = moving_item } or {}
     end,
@@ -244,6 +255,7 @@ assert(split_move.outcome == "inconclusive",
     "split stacks with a new GUID must remain inconclusive")
 
 local active_inventory = {
+    classified = { IsBusy = function() return false end },
     GetItems = function() return {} end,
     GetEquips = function() return {} end,
     GetActiveItem = function() return moving_item end,
