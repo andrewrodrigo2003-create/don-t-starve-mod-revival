@@ -41,6 +41,77 @@ local function cleanup(session)
     return clean
 end
 
+
+local function read_field(protected_call, object, key)
+    if object == nil then return false, nil end
+    return safe_call(protected_call, function() return object[key] end)
+end
+
+local function valid_entity(protected_call, entity)
+    if type(entity) ~= "table" or type(entity.IsValid) ~= "function" then return false end
+    local ok, valid = safe_call(protected_call, entity.IsValid, entity)
+    return ok and valid == true
+end
+
+function M.BuildReplicaSources(player, target, protected_call)
+    if type(protected_call) ~= "function"
+        or not valid_entity(protected_call, player)
+        or not valid_entity(protected_call, target) then
+        return nil, "invalid_player_or_target"
+    end
+
+    local player_replica_ok, player_replica = read_field(protected_call, player, "replica")
+    local inventory_ok, inventory = player_replica_ok
+        and read_field(protected_call, player_replica, "inventory") or false, nil
+    if player_replica_ok then inventory_ok, inventory = read_field(protected_call, player_replica, "inventory") end
+    if not inventory_ok or type(inventory) ~= "table" then
+        return nil, "player_inventory_replica_unavailable"
+    end
+    local classified_ok, inventory_classified = read_field(protected_call, inventory, "classified")
+    if not classified_ok or type(inventory_classified) ~= "table"
+        or type(inventory_classified.IsBusy) ~= "function" then
+        return nil, "player_inventory_classified_unavailable"
+    end
+    local inventory_busy_ok, inventory_busy = safe_call(protected_call,
+        inventory_classified.IsBusy, inventory_classified)
+    if not inventory_busy_ok or inventory_busy ~= false then
+        return nil, "player_inventory_classified_busy_or_unknown"
+    end
+
+    local target_replica_ok, target_replica = read_field(protected_call, target, "replica")
+    if not target_replica_ok or type(target_replica) ~= "table" then
+        return nil, "target_replica_unavailable"
+    end
+    local container_ok, container = read_field(protected_call, target_replica, "container")
+    if not container_ok or type(container) ~= "table" then
+        return nil, "target_container_replica_unavailable"
+    end
+    if type(container.IsBusy) ~= "function" or type(container.IsOpenedBy) ~= "function" then
+        return nil, "target_container_state_api_unavailable"
+    end
+    local target_busy_ok, target_busy = safe_call(protected_call, container.IsBusy, container)
+    local target_open_ok, target_open = safe_call(protected_call, container.IsOpenedBy, container, player)
+    if not target_busy_ok or target_busy ~= false or not target_open_ok or target_open ~= true then
+        return nil, "target_container_busy_closed_or_unknown"
+    end
+    local container_classified_ok, container_classified = read_field(protected_call, container, "classified")
+    if not container_classified_ok or type(container_classified) ~= "table"
+        or type(container_classified.IsBusy) ~= "function" then
+        return nil, "target_container_classified_unavailable"
+    end
+    local classified_busy_ok, classified_busy = safe_call(protected_call,
+        container_classified.IsBusy, container_classified)
+    if not classified_busy_ok or classified_busy ~= false then
+        return nil, "target_container_classified_busy_or_unknown"
+    end
+
+    local events = { "itemget", "itemlose", "stacksizechange", "stacksizepreview" }
+    return {
+        { entity = inventory_classified, label = "player_inventory", events = events },
+        { entity = container_classified, label = "target_container", events = events },
+    }
+end
+
 function M.Start(sources, protected_call, get_time, max_events)
     if type(sources) ~= "table" or type(protected_call) ~= "function" then
         return nil, "invalid_observer_arguments"
