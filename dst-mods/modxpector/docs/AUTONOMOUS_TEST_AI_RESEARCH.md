@@ -421,3 +421,17 @@ HEAD final: `c4fbb873a21cf468cbb1d90bde078849b5491080`.
 - [CI testes, ZIP e upload do artefato — 45673459863](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673459863): sucesso.
 
 Os commits intermediários `dbb0548` e `450e6cc` tiveram falha de contrato; a correção final passou nos dois fluxos. A validação continua sendo automatizada por harness, sem execução dentro do DST real.
+
+
+## 30. Inventário e contêineres abertos — 25/11/2026
+
+A contagem de itens do Virtual Player agora revalida cada entidade presente em `GetOpenContainers()` antes de consultar sua réplica de inventário. Referências de contêiner removidas são ignoradas, evitando contagem fantasma de itens após despawn/remoção. Se a referência não oferece API `IsValid`, a verificação falha de forma fechada em vez de confiar no conteúdo.
+
+Foi adicionado teste em que um contêiner inválido expõe uma réplica falsa com 99 itens; a contagem correta permanece zero.
+
+HEAD atual de código/testes: `626e6881482c7e1d4463d5f2df0a2c694926b3ac`.
+- [CI Lua 5.1, contratos e exclusão de credenciais — 45673786778](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673786778): sucesso.
+- [CI testes, ZIP e artefato — 45673779970](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673779970): ainda em execução na última consulta; não declarar concluído até obter o resultado final.
+- O commit de código anterior `873ca82` passou no pacote [45673772572](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673772572), mas o teste adicional está no commit seguinte e aguarda a execução do pacote.
+
+Sem teste in-game; mocks não substituem validação no DST real.
