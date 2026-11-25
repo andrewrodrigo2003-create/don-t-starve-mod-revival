@@ -50,6 +50,11 @@ assert(session.event_count == 4, "all supported events should be captured")
 local stopped = assert(Observer.Stop(session))
 assert(stopped.active == false and stopped.complete == true)
 assert(stopped.cleanup_complete == true and stopped.event_count == 4)
+assert(stopped.events[1].event == "itemget"
+    and stopped.events[2].event == "itemlose"
+    and stopped.events[3].event == "stacksizechange"
+    and stopped.events[4].event == "stacksizepreview",
+    "each listener must retain its own event name")
 assert(stopped.evidence == "client_replica_event_shape_only")
 assert(stopped.causality == "unproven" and stopped.server_authority == "unverified")
 assert(classified:ListenerCount("itemget") == 0 and item:ListenerCount("stacksizechange") == 0)
@@ -106,5 +111,29 @@ local cleanup_failure_snapshot = assert(Observer.Stop(cleanup_failure_session))
 assert(cleanup_failure_snapshot.cleanup_complete == false
     and cleanup_failure_snapshot.complete == false,
     "listener cleanup failure must invalidate the observation")
+
+
+
+local too_many_sources = {}
+for index = 1, 17 do
+    too_many_sources[index] = {
+        entity = entity(1000 + index),
+        label = "source-" .. tostring(index),
+        events = { "itemget" },
+    }
+end
+local source_limit, source_limit_reason = Observer.Start(too_many_sources, pcall)
+assert(source_limit == nil and source_limit_reason == "too_many_event_sources")
+
+local too_many_listeners = {}
+for index = 1, 16 do
+    too_many_listeners[index] = {
+        entity = entity(1100 + index),
+        label = "source-" .. tostring(index),
+        events = { "itemget", "itemlose", "stacksizechange", "stacksizepreview" },
+    }
+end
+local listener_limit, listener_limit_reason = Observer.Start(too_many_listeners, pcall)
+assert(listener_limit == nil and listener_limit_reason == "too_many_event_listeners")
 
 print("ModXpector step event observer tests passed")
