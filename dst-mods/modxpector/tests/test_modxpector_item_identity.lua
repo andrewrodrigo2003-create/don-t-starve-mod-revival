@@ -272,7 +272,7 @@ assert(stale_move.outcome == "inconclusive",
 local itemget_event, itemget_reason =
     ItemIdentity.ClassifyReplicaEvent("itemget",
         { item = wood, slot = 2, ignore_stacksize_anim = true }, nil, pcall)
-assert(itemget_event == "replica_sync_candidate",
+assert(itemget_event == "network_shape_candidate",
     "classified itemget marker should be recognized as a sync candidate")
 
 local preview_itemget = ItemIdentity.ClassifyReplicaEvent("itemget",
@@ -282,7 +282,7 @@ assert(preview_itemget == "preview_or_unverified",
 
 local itemlose_event = ItemIdentity.ClassifyReplicaEvent("itemlose",
     { slot = 2 }, nil, pcall)
-assert(itemlose_event == "replica_sync_candidate",
+assert(itemlose_event == "network_shape_candidate",
     "slot-only itemlose should be recognized as a sync candidate")
 
 local preview_itemlose = ItemIdentity.ClassifyReplicaEvent("itemlose",
@@ -292,7 +292,7 @@ assert(preview_itemlose == "preview_or_unverified",
 
 local stack_event = ItemIdentity.ClassifyReplicaEvent("stacksizechange",
     { item = wood, stacksize = 4 }, nil, pcall)
-assert(stack_event == "replica_sync_candidate",
+assert(stack_event == "network_shape_candidate",
     "network stacksizechange should be recognized as a sync candidate")
 
 local stack_preview = ItemIdentity.ClassifyReplicaEvent("stacksizepreview",
