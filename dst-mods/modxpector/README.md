@@ -72,3 +72,6 @@ O contrato interno do Virtual Player também reconhece as ações DST `STORE`, `
 ### Recuperação limitada de navegação
 
 Durante WALKTO, o Virtual Player observa o progresso real do personagem. Se não houver deslocamento mensurável por 6 segundos, solicita uma nova busca de caminho nativa uma única vez. Se continuar preso por mais 6 segundos, cancela a própria BufferedAction e registra falha; não declara sucesso nem fica tentando indefinidamente. Isso ainda não é um planejador global de rotas nem garante que exista um caminho.
+
+
+**Limite de posição dos spawns:** o Master exige que cada RPC corresponda à etapa exata do plano e restringe as coordenadas ao ponto declarado nessa etapa ou, quando não há ponto explícito, a até 4 unidades da posição autoritativa do jogador. Coordenadas não numéricas, fora do limite ou incompatíveis com o plano são rejeitadas.
