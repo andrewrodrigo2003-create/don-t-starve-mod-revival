@@ -153,6 +153,35 @@ controller = VirtualPlayer.new(player, {
     end,
     on_finished = function(report) finished = report end,
 })
+-- Target selection ignores stale/malformed entities and uses GUID to break distance ties.
+local original_target_finder = TheSim.FindEntities
+local tied_target_high_guid = {
+    GUID = 42, prefab = "tree",
+    IsValid = function() return true end,
+    Transform = { GetWorldPosition = function() return 3, 0, 4 end },
+}
+local tied_target_low_guid = {
+    GUID = 7, prefab = "tree",
+    IsValid = function() return true end,
+    Transform = { GetWorldPosition = function() return 3, 0, 4 end },
+}
+local stale_target = {
+    GUID = 1, prefab = "tree",
+    IsValid = function() error("entity was removed during scan") end,
+    Transform = { GetWorldPosition = function() return 3, 0, 4 end },
+}
+local invalid_position_target = {
+    GUID = 0, prefab = "tree",
+    IsValid = function() return true end,
+    Transform = { GetWorldPosition = function() return 0 / 0, 0, 0 end },
+}
+TheSim.FindEntities = function()
+    return { tied_target_high_guid, stale_target, invalid_position_target, tied_target_low_guid }
+end
+assert(controller:ResolveTarget({ prefab = "tree", radius = 0 / 0 }) == tied_target_low_guid,
+    "target selection must skip stale/non-finite entities and choose the lowest GUID on distance ties")
+TheSim.FindEntities = original_target_finder
+
 local plan = {
     schema = "modxpector/test-plan/v1",
     enabled = true,
@@ -197,8 +226,7 @@ assert(type(finished.results[1].elapsed_seconds) == "number")
 local saw_spawn_metadata, saw_recipe_metadata = false, false
 for _, result in ipairs(finished.results) do
     if result.kind == "spawn_item" and result.status == "completed" then
-        assert(result.target_prefab == "cutgrass" and result.recipe == nil)
-        saw_spawn_metadata = true
+        assert(result.target_prefab == "cutgrass" and result.recipe == nil)        saw_spawn_metadata = true
     elseif result.kind == "craft" and result.status == "submitted_unverified" then
         assert(result.recipe == "axe" and result.target_prefab == nil)
         saw_recipe_metadata = true
@@ -397,8 +425,7 @@ local invalid_count = VirtualPlayer.new(player, {
     on_finished = function(report) invalid_count_report = report end,
 })
 assert(invalid_count:Start({
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
+    schema = "modxpector/test-plan/v1",    enabled = true,
     steps = { { kind = "spawn_item", prefab = "cutgrass", count = 1.5 } },
 }))
 assert(invalid_count_report ~= nil and invalid_count_report.outcome == "failed")
@@ -597,8 +624,7 @@ assert(malformed_step_controller:Start({
     enabled = true,
     steps = { "not-an-object" },
 }))
-assert(malformed_step_report ~= nil and malformed_step_report.outcome == "failed")
-assert(malformed_step_report.results[1].kind == "invalid")
+assert(malformed_step_report ~= nil and malformed_step_report.outcome == "failed")assert(malformed_step_report.results[1].kind == "invalid")
 assert(malformed_step_report.results[1].status == "failed")
 local multi_verification_report
 local multi_verification
@@ -797,8 +823,7 @@ local entity_player = {
             Stop = function() cancel_counts.stop = cancel_counts.stop + 1 end,
             Clear = function() cancel_counts.clear = cancel_counts.clear + 1 end,
         },
-        playercontroller = { DoAction = function() end },
-    },
+        playercontroller = { DoAction = function() end },    },
     IsValid = function() return true end,
     GetBufferedAction = function(self) return self.bufferedaction end,
     ClearBufferedAction = function(self)
