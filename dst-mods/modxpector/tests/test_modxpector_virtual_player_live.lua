@@ -426,6 +426,33 @@ assert(take_item_action.action == ACTIONS.TAKEITEM and take_single_action.action
 local invalid_take_ok, invalid_take_error = pcall(function() controller:BuildAction({ kind = "action", action = "TAKE" }) end)
 assert(not invalid_take_ok and string.find(tostring(invalid_take_error), "not allowed", 1, true),
     "nonexistent TAKE action must not be accepted in place of TAKEITEM/TAKESINGLEITEM")
+local invalid_container_count_target = {
+    prefab = "treasurechest",
+    IsValid = function() return true end,
+    replica = { container = { Has = function() return true, -5 end } },
+}
+local invalid_container_count_ok = pcall(function()
+    controller:_evaluate_assertion({
+        kind = "container_has_item", target = invalid_container_count_target,
+        prefab = "goldnugget", count = 1,
+    })
+end)
+assert(not invalid_container_count_ok,
+    "container assertions must reject negative replica counts instead of normalizing them to zero")
+local nan_container_count_target = {
+    prefab = "treasurechest",
+    IsValid = function() return true end,
+    replica = { container = { Has = function() return true, 0 / 0 end } },
+}
+local nan_container_count_ok = pcall(function()
+    controller:_evaluate_assertion({
+        kind = "container_has_item", target = nan_container_count_target,
+        prefab = "goldnugget", count = 1,
+    })
+end)
+assert(not nan_container_count_ok,
+    "container assertions must reject NaN replica counts")
+
 print("MODXPECTOR_LIVE_VIRTUAL_PLAYER_CONTRACT_OK")
 
 
