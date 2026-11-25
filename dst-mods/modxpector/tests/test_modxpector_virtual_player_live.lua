@@ -742,3 +742,77 @@ assert(walk_report.assertions_total == 1 and walk_report.assertions_passed == 1)
 assert(walk_x == 3 and walk_z == 4)
 TheSim.FindEntities = original_find_entities
 print("MODXPECTOR_VIRTUAL_PLAYER_WALKTO_AI_PROFILE_CONTRACT_OK")
+
+-- Stopping or timing out must clear the Virtual Player's own buffered action.
+local cancel_counts = { stop = 0, clear = 0, entity_clear = 0 }
+local cancel_action = { action = ACTIONS.CHOP }
+local cancel_current_action = cancel_action
+local cancel_player = {
+    prefab = "wilson",
+    components = {
+        locomotor = {
+            Stop = function() cancel_counts.stop = cancel_counts.stop + 1 end,
+            Clear = function() cancel_counts.clear = cancel_counts.clear + 1 end,
+        },
+        playercontroller = { DoAction = function() end },
+    },
+    IsValid = function() return true end,
+    GetBufferedAction = function() return cancel_current_action end,
+    ClearBufferedAction = function()
+        cancel_counts.entity_clear = cancel_counts.entity_clear + 1
+        cancel_current_action = nil
+    end,
+    DoTaskInTime = function() end, -- retain the scheduled tick; this test stops before it runs
+}
+local cancel_report
+local cancel_controller = VirtualPlayer.new(cancel_player, {
+    on_finished = function(report) cancel_report = report end,
+})
+assert(cancel_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "cancel-owned-action",
+    steps = { { kind = "action", action = "CHOP", timeout = 5 } },
+}))
+cancel_controller.index = 1
+cancel_controller.active = { action = cancel_action, step = { kind = "action", action = "CHOP" } }
+assert(cancel_controller:Stop("user requested cancellation"))
+assert(cancel_counts.stop == 1 and cancel_counts.clear == 1 and cancel_counts.entity_clear == 1,
+    "cancellation must stop locomotion and clear locomotor/entity buffered actions")
+assert(cancel_current_action == nil and cancel_report ~= nil and cancel_report.running == false)
+
+-- If another system replaces the buffered action, stopping ModXpector must not cancel it.
+cancel_counts = { stop = 0, clear = 0, entity_clear = 0 }
+local unrelated_action = { action = ACTIONS.PICKUP }
+cancel_current_action = unrelated_action
+local unrelated_player = {
+    prefab = "wilson",
+    components = {
+        locomotor = {
+            Stop = function() cancel_counts.stop = cancel_counts.stop + 1 end,
+            Clear = function() cancel_counts.clear = cancel_counts.clear + 1 end,
+        },
+        playercontroller = { DoAction = function() end },
+    },
+    IsValid = function() return true end,
+    GetBufferedAction = function() return cancel_current_action end,
+    ClearBufferedAction = function()
+        cancel_counts.entity_clear = cancel_counts.entity_clear + 1
+        cancel_current_action = nil
+    end,
+    DoTaskInTime = function() end,
+}
+local unrelated_controller = VirtualPlayer.new(unrelated_player, {})
+assert(unrelated_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "cancel-does-not-touch-user-action",
+    steps = { { kind = "action", action = "CHOP", timeout = 5 } },
+}))
+unrelated_controller.index = 1
+unrelated_controller.active = { action = cancel_action, step = { kind = "action", action = "CHOP" } }
+assert(unrelated_controller:Stop("user requested cancellation"))
+assert(cancel_counts.stop == 0 and cancel_counts.clear == 0 and cancel_counts.entity_clear == 0,
+    "cancellation must leave an unrelated replacement action untouched")
+assert(cancel_current_action == unrelated_action)
+print("MODXPECTOR_VIRTUAL_PLAYER_CANCEL_ACTION_CONTRACT_OK")
