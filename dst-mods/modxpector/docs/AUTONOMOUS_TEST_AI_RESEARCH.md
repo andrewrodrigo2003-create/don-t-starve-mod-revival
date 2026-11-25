@@ -291,3 +291,8 @@ Foi adicionado o contrato MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT
 A autorização por etapa agora também limita a posição: quando a etapa declara step.position, as coordenadas do RPC precisam ficar a até 4 unidades desse ponto; sem posição explícita, o Master compara com a posição autoritativa atual do jogador e aplica o mesmo raio. Coordenadas não numéricas/NaN/infinito são rejeitadas antes de operações matemáticas. A etapa só é consumida depois de validar tipo, run_id, índice, prefab, quantidade e posição.
 
 O bootstrap inclui uma tentativa de spawn a 100,100 quando o jogador está em 0,0 e exige rejeição sem consumo da etapa. A nova alteração ainda aguarda CI; não considerar o contrato aprovado até a execução correspondente.
+
+
+## 20. Resposta de chat pelo tipo correto do DST — 25/11/2026
+
+A auditoria de chathistory.lua confirmou SendCommandResponse(messages), que aceita string ou lista e grava mensagens como ChatTypes.CommandResponse. O ModXpector agora prefere esse método e usa OnSystemMessage apenas como fallback se a API não existir/falhar. O listener continua filtrando ChatTypes.Message, evitando responder a si mesmo.
