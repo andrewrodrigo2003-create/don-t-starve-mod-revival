@@ -905,3 +905,17 @@ O teste atual cobre a primeira falha de remoção (cleanup incompleto), mas não
 **Novos testes obrigatórios:** falha repetida; falha seguida de sucesso; remoção parcial e retry apenas das pendentes; registro parcial seguido de cleanup falho; Stop repetido nunca aprova enquanto houver pendência; source removida durante callback; callback já copiado pelo dispatch antes do Stop.
 
 **Ordem de execução atualizada:** corrigir roteamento real de eventos → tornar cleanup recuperável → ampliar testes de split/merge, remoção e reentrância → somente então integrar o observador ao lifecycle do Virtual Player. Nenhum código foi alterado nesta auditoria.
+
+
+### Lacuna de metadados no registro de eventos (25/11/2026)
+
+Mesmo depois de corrigir a origem dos eventos, o registro atual ainda não preserva os campos mínimos necessários para correlação:
+- O callback calcula a classificação a partir de `data`, mas grava apenas índice, rótulo da fonte, nome do evento, classificação, motivo, timestamp e `entity_guid` do primeiro argumento `inst`.
+- Para `itemget`, o payload de sincronização contém `data.item` e `data.slot`, mas o observador não registra GUID/prefab do item nem slot.
+- Para `itemlose`, o payload sincronizado contém apenas `slot`, mas esse slot também não é registrado.
+- Para `stacksizechange`, `stacksize`/eventuais campos de mudança não são preservados; `entity_guid` depende de o primeiro argumento ser realmente o item.
+- `ClassifyReplicaEvent` retorna apenas classificação e motivo, não uma projeção validada dos metadados.
+
+**Correção futura:** extrair sob proteção e validar somente campos escalares mínimos (por exemplo, slot, GUID/prefab do item quando presente, stack size, old stack size e origem quando finita), sem guardar referências de entidade no relatório. A ausência de campos deve permanecer explícita/inconclusiva. Esses metadados servem para correlação e diagnóstico, não como prova independente de causalidade ou autoridade do servidor.
+
+Testes devem verificar payload completo, payload parcial, GUID inválido, slot inválido, stack size NaN/infinito, item removido antes do callback e eventos de preview. A identidade e o resultado continuam dependendo de snapshots independentes antes/depois e de evidência adicional.
