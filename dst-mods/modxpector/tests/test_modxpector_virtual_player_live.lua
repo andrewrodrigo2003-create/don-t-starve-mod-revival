@@ -1375,3 +1375,33 @@ for _, blocked_action in ipairs({ "TAKEITEM", "TAKESINGLEITEM" }) do
     assert(blocked_report.run_failed == nil or blocked_report.outcome == "inconclusive")
 end
 print("MODXPECTOR_VIRTUAL_PLAYER_TAKEITEM_FAIL_CLOSED_CONTRACT_OK")
+
+
+-- STORE remains fail-closed: matching prefab count deltas cannot prove item identity.
+local store_submissions = 0
+local store_report
+local store_player = {
+    prefab = "wilson",
+    IsValid = function() return true end,
+    components = {
+        playercontroller = {
+            DoAction = function() store_submissions = store_submissions + 1 end,
+        },
+    },
+}
+local store_controller = VirtualPlayer.new(store_player, {
+    on_finished = function(report) store_report = report end,
+})
+assert(store_controller:Start({
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "blocked-STORE-identity",
+    steps = {
+        { kind = "action", action = "STORE", target_required = true },
+    },
+}))
+assert(store_submissions == 0,
+    "STORE must not reach PlayerController while verification relies only on aggregate prefab deltas")
+assert(store_report ~= nil and store_report.outcome == "inconclusive",
+    "STORE identity gap must be reported as inconclusive")
+print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
