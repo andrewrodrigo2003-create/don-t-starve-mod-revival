@@ -645,3 +645,28 @@ A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais
 ### CI final da contenção STORE — 25/11/2026
 - Package/testes [45685429266](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45685429266): **success**; suíte Lua, geração do ZIP e upload do artefato concluídos no commit de teste `85f774f61c58958440372218779d9b4de86f6b7c`.
 - Package da documentação no commit `2bcfe4ee982219da9365c232437816c548d92298` ainda estava em execução na última consulta.
+
+
+### Pesquisa de identidade de itens e ramificações vanilla de STORE — 25/11/2026
+
+A documentação pública das réplicas indica APIs que podem permitir uma prova por entidade, em vez de contagem agregada:
+- Inventory Replica: `FindItem(fn)`, `GetActiveItem()`, `GetItemInSlot(slot)` retornam entidades de item ou nil.
+- Container Replica: `FindItem(fn)`, `GetItemInSlot(slot)`, `GetItems()` retornam entidades de item.
+- Container component: `GetItemInSlot(slot)`, `GetItemSlot(item)`, `GetAllItems()` permitem relacionar entidade e slot no lado de componente.
+
+O código vanilla de `ACTIONS.STORE.fn` possui ramificações importantes:
+1. Converte alvo com `container_proxy` para o container master.
+2. Pode resolver destino especial de `constructionsite` e slot de ingrediente.
+3. Remove item do owner com `RemoveFromOwner(acceptsstacks)`, então tenta `GiveItem` no destino.
+4. Se `GiveItem` falha, devolve o item ao inventário ou ao active item; o comportamento difere se o controller client está anexado.
+5. Há caminho separado para `occupiable`, sem transferência para container.
+
+Portanto, a implementação futura deverá comparar identidade/stack do item antes e depois e identificar o destino real, não presumir que todo STORE termina em container. A identidade deve considerar GUID e prefab, mas também stack split/merge: GUID sozinho pode mudar quando uma pilha é dividida ou absorvida. A prova deve modelar a relação entre quantidade removida do item original, entidade resultante e slot/holder de destino. Deve tratar proxy→master, slots de construção, active item, overflow, baú cheio, falha/rollback e ocupiable separadamente.
+
+**Fontes:**
+- Inventory Replica API: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica (FindItem, GetActiveItem, GetItemInSlot).
+- Container Replica API: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/container_replica (FindItem, GetItemInSlot, GetItems).
+- Container component API: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/container (GetItemInSlot, GetItemSlot, GetAllItems).
+- Vanilla actions.lua, ACTIONS.STORE.fn: https://github.com/jupitersh/dst-scripts-source-code/blob/master/actions.lua
+
+Essas páginas documentam APIs e semântica de referência; não provam que todas as entidades/slots estão replicados em todo estado do cliente. A próxima etapa deverá validar a disponibilidade efetiva no client e falhar fechado se a réplica não expuser identidade suficiente.
