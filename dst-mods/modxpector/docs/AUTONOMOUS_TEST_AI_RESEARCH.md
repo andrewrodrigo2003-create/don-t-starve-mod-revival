@@ -709,3 +709,16 @@ A documentação da API pública foi detalhada para separar o que a réplica pro
 - InventoryItem — `RemoveFromOwner`: https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/inventoryitem
 
 As APIs acima descrevem a superfície documentada; não comprovam disponibilidade de GUID, stack replica, slots ou entidades em todos os estados de cliente/servidor. A próxima etapa técnica é implementar e testar somente o coletor read-only, sem alterar a liberação das ações. Até lá, STORE, TAKEITEM e TAKESINGLEITEM seguem fail-closed. Sem validação in-game, multiplayer ou dedicated server.
+
+
+### Complemento — Stackable Replica client-side confirmado — 25/11/2026
+
+A consulta à documentação específica de `stackable_replica` confirmou que entidades podem expor `item.replica.stackable:StackSize()` no cliente, com valor sincronizado pela rede. Isso permite registrar tamanho de pilha no snapshot sem acessar componentes server-only, desde que a réplica exista e o valor seja finito, inteiro e >= 1.
+
+Cuidados:
+- Usar `StackSize()`, não `GetPreviewStackSize()`: preview é estado transitório de interface e não prova quantidade autoritativa.
+- Ausência de `replica.stackable` pode representar item não empilhável, mas só classificar como quantidade 1 se a entidade estiver válida e o prefab/estado realmente não exigir stack; caso contrário, snapshot incompleto.
+- A réplica documenta sincronização de quantidade, mas não resolve linhagem de uma nova entidade criada por `stackable:Get(num)` nem prova que uma entidade resultante de split veio do item selecionado.
+- O snapshot read-only pode agora registrar `GUID + prefab + stacksize + origem/slot`; qualquer correlação entre GUIDs diferentes continua inconclusiva sem evento/ligação de linhagem comprovada.
+
+Fonte: Stackable Replica API — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable_replica (exemplo client-side e método `StackSize()`).
