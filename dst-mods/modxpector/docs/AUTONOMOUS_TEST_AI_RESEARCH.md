@@ -722,3 +722,36 @@ Cuidados:
 - O snapshot read-only pode agora registrar `GUID + prefab + stacksize + origem/slot`; qualquer correlação entre GUIDs diferentes continua inconclusiva sem evento/ligação de linhagem comprovada.
 
 Fonte: Stackable Replica API — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable_replica (exemplo client-side e método `StackSize()`).
+
+### Implementação inicial — snapshots de identidade somente leitura (25/11/2026)
+
+Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais, e o Virtual Player expõe CaptureItemIdentitySnapshot(target) para diagnóstico. A função lê apenas réplicas client-side e não envia BufferedAction/RPC nem altera entidades.
+
+**Cobertura do snapshot do jogador:**
+- Slots normais via InventoryReplica:GetItems().
+- Equipamentos via GetEquips().
+- Item ativo via GetActiveItem().
+- Mochila/overflow via GetOverflowContainer():GetItems().
+- Cada entrada guarda referência local da entidade, GUID numérico, prefab, tamanho da pilha quando a réplica stackable existe, origem e slot.
+
+**Snapshot do destino:**
+- Exige entidade válida, replica.container, confirmação IsOpenedBy(player) e GetItems().
+- Captura GUID/prefab/stacksize/origem/slot de cada item observado.
+
+**Fail-closed:**
+- API/coleção ausente, exceção, entidade inválida, GUID não positivo/não inteiro, prefab ausente, GUID duplicado dentro do mesmo snapshot ou stacksize inválido torna o snapshot incompleto.
+- Se replica.stackable não existe, registra tamanho 1 com origem not-replicated; isso não é usado como prova de que uma transferência de pilha é segura.
+- O snapshot não correlaciona GUIDs diferentes após split/merge e não declara transferência concluída. Não reabilita STORE, TAKEITEM ou TAKESINGLEITEM.
+
+**Testes adicionados:** snapshot completo com inventário/equipamento/ativo/overflow/baú; modo sem alvo; GUID duplicado/zero; entidade removida; stacksize NaN; API ausente; réplica que lança exceção; contêiner fechado; e contagem de chamadas para garantir leitura única. Suite adicionada ao runner Lua 5.1.
+
+**CI do código/teste:** Package [45687893930](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45687893930) passou no commit 2b009dde53319c7d590b8c1e3ed6b14345de25ca, incluindo testes Lua, ZIP e upload do artefato. Lua checks [45687902336](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45687902336) ainda estavam em execução na última consulta; não declarar a validação completa até concluir.
+
+**Limites:** o resultado é uma captura observacional, não um oráculo de transferência. A API documentada não prova que todas as referências estejam sincronizadas em todos os estados reais; snapshots incompletos bloqueiam qualquer conclusão. Nenhuma execução in-game, multiplayer ou dedicated server foi realizada. STORE/TAKEITEM/TAKESINGLEITEM seguem bloqueados; IA incompleta; PR permanece draft e sem merge.
+
+**Fontes públicas usadas para conferir a superfície client-side:**
+- Inventory Replica: GetItems, GetEquips, GetActiveItem, GetOverflowContainer — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica
+- Inventory Classified: distinção entre slots, equipamentos, item ativo e overflow — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/prefabs/inventory_classified
+- Container Replica: IsOpenedBy, GetItems — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/container_replica
+- Stackable Replica: StackSize() sincronizado — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable_replica
+- Stackable: split via Get(num) e merge via Put(item) — https://vietnd.github.io/dst-api-webdocs/docs/game-scripts/components/stackable
