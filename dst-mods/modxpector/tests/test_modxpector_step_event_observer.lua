@@ -126,7 +126,7 @@ local source_limit, source_limit_reason = Observer.Start(too_many_sources, pcall
 assert(source_limit == nil and source_limit_reason == "too_many_event_sources")
 
 local too_many_listeners = {}
-for index = 1, 16 do
+for index = 1, 13 do
     too_many_listeners[index] = {
         entity = entity(1100 + index),
         label = "source-" .. tostring(index),
