@@ -587,14 +587,23 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         local target = self:_resolve_assertion_target(assertion)
         local target_valid = self:_is_valid_target(target)
         actual = false
-        if target_valid and self.player.Transform ~= nil and target.Transform ~= nil
-            and type(self.player.Transform.GetWorldPosition) == "function"
-            and type(target.Transform.GetWorldPosition) == "function" then
+        if target_valid then
+            local radius = assertion.radius == nil and 5 or tonumber(assertion.radius)
+            assert(is_finite_number(radius) and radius >= 0 and radius <= 40,
+                "player_near_target radius must be finite and between 0 and 40")
+            assert(self.player.Transform ~= nil and target.Transform ~= nil
+                and type(self.player.Transform.GetWorldPosition) == "function"
+                and type(target.Transform.GetWorldPosition) == "function",
+                "player_near_target transform API unavailable")
             local px, _, pz = self.player.Transform:GetWorldPosition()
             local tx, _, tz = target.Transform:GetWorldPosition()
-            local dx, dz = px - tx, pz - tz
-            local radius = assertion.radius or 5
-            actual = dx * dx + dz * dz <= radius * radius
+            if is_finite_number(px) and is_finite_number(pz)
+                and is_finite_number(tx) and is_finite_number(tz) then
+                local dx, dz = px - tx, pz - tz
+                actual = dx * dx + dz * dz <= radius * radius
+            else
+                actual = nil
+            end
         end
         expected = assertion.expected ~= false
     elseif kind == "target_exists" then
@@ -625,7 +634,7 @@ function VirtualPlayer:_evaluate_assertion(assertion)
     else
         error("unsupported virtual-player assertion: " .. tostring(kind))
     end
-    local inconclusive = kind == "target_dead" and actual == nil
+    local inconclusive = (kind == "target_dead" or kind == "player_near_target") and actual == nil
     local passed
     if inconclusive then
         passed = false
