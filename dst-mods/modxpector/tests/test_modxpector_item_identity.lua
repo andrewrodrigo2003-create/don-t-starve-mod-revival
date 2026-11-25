@@ -141,6 +141,7 @@ local closed_chest = {
     IsValid = function() return true end,
     replica = {
         container = {
+            IsBusy = function() return false end,
             IsOpenedBy = function() return false end,
             GetItems = function() return { [1] = chest_item } end,
         },
@@ -199,6 +200,7 @@ local moving_target = {
     IsValid = function() return true end,
     replica = {
         container = {
+            IsBusy = function() return false end,
             IsOpenedBy = function(_, opener) return opener == player end,
             GetItems = function()
                 return target_contains_item and { [5] = moving_item } or {}
@@ -223,6 +225,7 @@ local replaced_target = {
     IsValid = function() return true end,
     replica = {
         container = {
+            IsBusy = function() return false end,
             IsOpenedBy = function() return true end,
             GetItems = function() return { [1] = replacement_item } end,
         },
@@ -244,6 +247,7 @@ local split_target = {
     IsValid = function() return true end,
     replica = {
         container = {
+            IsBusy = function() return false end,
             IsOpenedBy = function() return true end,
             GetItems = function() return { [1] = split_item } end,
         },
