@@ -99,6 +99,14 @@ São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coord
 
 A execução pode falhar por ausência do prefab, condições do mundo ou limitações do jogo. Isso é registrado como resultado do cenário, não como prova automática de que o mod inteiro está incompatível.
 
+## Segurança: mundo normal versus laboratório descartável
+
+ - O perfil comunitário atual continua limitado a WALKTO e verificações observacionais; ele não exige laboratory_mode.
+ - test_mode é a autorização geral para iniciar testes controlados. Não significa que o mundo esteja isolado.
+ - Planos com ações que alteram entidades, inventário, receitas ou o mundo exigem a opção separada Confirmar mundo de laboratório descartável (laboratory_mode), cujo padrão é desativado.
+ - O ModXpector não consegue provar, apenas pelo runtime do jogo, que o save atual é descartável. O usuário precisa criar um mundo/cluster separado e habilitar a opção somente nele.
+ - Para servidores dedicados, a Klei documenta -cluster para selecionar uma pasta de cluster e -conf_dir/-persistent_storage_root para separar diretórios de configuração. Master e Caves são shards do mesmo cluster, não saves isolados: https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide.
+
 ## Responsabilidade do mod autor
 
 - Use um prefab de teste que já exista naturalmente no mundo ou em uma área de teste controlada.
