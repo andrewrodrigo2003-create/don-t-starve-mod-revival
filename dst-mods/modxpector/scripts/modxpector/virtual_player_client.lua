@@ -473,8 +473,10 @@ end
 
 function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_containers)
     assert(type(inventory.Has) == "function", "inventory replica Has unavailable")
-    local _, total = inventory:Has(prefab, 1, false)
-    total = tonumber(total) or 0
+    local _, raw_total = inventory:Has(prefab, 1, false)
+    local total = tonumber(raw_total)
+    assert(is_finite_number(total) and total >= 0,
+        "inventory replica returned an invalid item count")
 
     if include_open_containers == true then
         assert(type(inventory.GetOpenContainers) == "function",
@@ -495,8 +497,11 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_cont
                         and (container_inst.replica.container or container_inst.replica.inventory) or nil
                     assert(replica ~= nil and replica ~= overflow and type(replica.Has) == "function",
                         "an open container does not expose an item-count replica")
-                    local _, found = replica:Has(prefab, 1, false)
-                    total = total + (tonumber(found) or 0)
+                    local _, raw_found = replica:Has(prefab, 1, false)
+                    local found = tonumber(raw_found)
+                    assert(is_finite_number(found) and found >= 0,
+                        "open container replica returned an invalid item count")
+                    total = total + found
                 end
             end
         end
@@ -510,7 +515,10 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_cont
             local stackable = item.replica ~= nil and item.replica.stackable or nil
             local stack_size = stackable ~= nil and type(stackable.StackSize) == "function"
                 and stackable:StackSize() or 1
-            total = total + math.max(1, tonumber(stack_size) or 1)
+            stack_size = tonumber(stack_size)
+            assert(is_finite_number(stack_size) and stack_size >= 1,
+                "equipped item replica returned an invalid stack size")
+            total = total + stack_size
         end
     end
     return total
