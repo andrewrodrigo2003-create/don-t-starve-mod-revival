@@ -200,10 +200,12 @@ source_contains_item = false
 target_contains_item = true
 local after_move = ItemIdentity.Capture(moving_inventory, player, moving_target, pcall)
 local exact_move = ItemIdentity.CompareExactMove(before_move, after_move, 501, pcall)
-assert(exact_move.outcome == "matched_candidate",
+assert(exact_move.outcome == "observed_move_candidate",
     "same entity/GUID with unchanged stack evidence should produce only a matched candidate")
 assert(exact_move.evidence == "client_replica_snapshot_only",
     "exact move must remain explicitly client-snapshot evidence")
+assert(exact_move.causality == "unproven" and exact_move.server_authority == "unverified",
+    "client-side correlation must not claim action causality or server authority")
 
 local replacement_item = entity(501, "log", 2)
 local replaced_target = {
