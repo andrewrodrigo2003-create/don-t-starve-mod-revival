@@ -185,7 +185,7 @@ Não declarar IA completa até demonstrar:
 ### Lacuna de segurança identificada e correção implementada
 
  - Antes desta atualização, test_mode + permissão de administrador eram suficientes para aceitar planos com ações que alteram o mundo. Não havia confirmação separada de que o save era um laboratório descartável.
- - Foi adicionada a opção laboratory_mode, com padrão false. O Master rejeita planos com ações diferentes de WALKTO, crafting, desbloqueio de receita ou spawn enquanto essa opção estiver desativada. Os RPCs de spawn e desbloqueio também verificam essa opção.
+ - Foi adicionada a opção laboratory_mode, com padrão false. O Master rejeita qualquer etapa de ação (inclusive WALKTO), crafting, desbloqueio de receita ou spawn enquanto essa opção estiver desativada. Os RPCs de spawn e desbloqueio também verificam essa opção.
  - O painel agora exibe o estado do modo laboratório. A análise passiva e as suites comunitárias observacionais permanecem disponíveis sem ativá-lo.
  - Limite importante: laboratory_mode é uma confirmação explícita do administrador, não um detector infalível de save descartável. Ainda é obrigatório criar um mundo/cluster separado e ativar essa opção somente nele.
 
@@ -213,7 +213,7 @@ O método Stop() anterior encerrava o executor e o polling, mas não removia a B
 - EntityScript:ClearBufferedAction() chama Fail() na ação da entidade e a remove.
 - LocoMotor:Stop() interrompe movimento e destino, mas a implementação consultada não limpa bufferedaction (a chamada SetBufferedAction(nil) está comentada).
 - LocoMotor:Clear() limpa destino e flags e chama SetBufferedAction(nil), removendo a ação do locomotor.
-Fontes de código consultadas: [entityscript.lua](https://github.com/vietnd69/dst-scripts/blob/hotfix-713564/entityscript.lua) e [locomotor.lua](https://raw.githubusercontent.com/vietnd69/dst-scripts/hotfix-714014/components/locomotor.lua). Referência comunitária complementar: [Klei Forums — Cancel/stop current action](https://kleiforums.com/forums/topic/143403-cancelstop-current-action/).
+Fontes de código consultadas: [entityscript.lua](https://github.com/vietnd69/dst-scripts/blob/hotfix-714014/entityscript.lua) e [locomotor.lua](https://raw.githubusercontent.com/vietnd69/dst-scripts/hotfix-714014/components/locomotor.lua). Referência comunitária complementar: [Klei Forums — Cancel/stop current action](https://kleiforums.com/forums/topic/143403-cancelstop-current-action/).
 
 ### Correção aplicada
 
@@ -225,7 +225,7 @@ Fontes de código consultadas: [entityscript.lua](https://github.com/vietnd69/ds
 
 ### Estado de validação
 
-A alteração e os testes foram gravados na branch do PR #76. O último CI concluído (run 45655539612) passou para o incremento anterior de modo laboratório, mas é anterior à correção de cancelamento. A nova suíte de cancelamento ainda aguarda uma execução de CI no HEAD atual; não declarar esse incremento testado até isso ocorrer. A API e a semântica foram conferidas por fontes de scripts, mas ainda falta validar no DST real.
+A alteração e os testes foram gravados na branch do PR #76. O GitHub Actions run 45658012911, no commit dd0fa62591e2ce545bfb137d8aa0aaf881d9a9bc (HEAD então atual), passou: parse de todos os arquivos Lua 5.1, contratos completos e verificação do pacote. O log confirma os contratos de cancelamento do Virtual Player, bootstrap do Master e segurança. Isso valida os contratos/harness, não substitui teste real no DST.
 
 
 ## 15. Política final de isolamento para movimento — 25/11/2026
@@ -251,5 +251,17 @@ Os RPCs de spawn e desbloqueio de receitas verificavam modo de teste, administra
 
 ### Contratos adicionados
 
-O bootstrap cobre aprovação do plano, bloqueio sem laboratório, execução da etapa autorizada, rate limit, limite de quantidade, falha de entrega ao inventário, run_id incorreto, índice de etapa com tipo errado, replay e chamada após clear_test_plan. O resultado da CI no HEAD mais recente ainda precisa ser consultado antes de declarar o incremento aprovado.
+O bootstrap cobre aprovação do plano, bloqueio sem laboratório, execução da etapa autorizada, rate limit, limite de quantidade, falha de entrega ao inventário, run_id incorreto, índice de etapa com tipo errado, replay e chamada após clear_test_plan. O GitHub Actions run 45658012911 no commit dd0fa62591e2ce545bfb137d8aa0aaf881d9a9bc passou com todos os contratos Lua 5.1 e a verificação do pacote.
 
+
+
+## 17. Ciclo de vida do listener de chat — 25/11/2026
+
+A fonte chathistory.lua confirma os métodos AddChatHistoryListener(fn) e RemoveChatHistoryListener(fn); os callbacks ficam registrados no manager. A implementação foi ajustada para:
+
+- Resolver ThePlayer no momento em que a mensagem chega, em vez de capturar a entidade antiga na closure.
+- Não duplicar o callback quando o mesmo ChatHistory manager persiste após reconexão.
+- Remover o callback do manager anterior quando DST substitui o ChatHistory manager e registrar no novo.
+- Continuar ignorando mensagens de sistema, evitando loop quando o ModXpector responde no próprio chat.
+
+O bootstrap agora testa comando /mx status, reconexão com troca da entidade ThePlayer e substituição do manager. Esses contratos passaram no run 45658012911. A validação em sessão real, multiplayer e dedicated server continua pendente.
