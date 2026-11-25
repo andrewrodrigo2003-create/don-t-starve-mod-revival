@@ -874,6 +874,7 @@ local path_player_position = 0
 local path_locomotor = {
     bufferedaction = nil,
     dest = { IsValid = function() return true end },
+    lastdesttile = "stale_destination_tile",
     ResetPath = function(self)
         path_reset_count = path_reset_count + 1
         self.path = nil
@@ -931,6 +932,8 @@ run_next_path_task() -- no progress yet
 run_next_path_task() -- one ResetPath + FindPath request
 assert(path_reset_count == 1 and path_find_count == 1,
     "stalled WALKTO must request exactly one native path refresh")
+assert(path_locomotor.lastdesttile == nil,
+    "path recovery must clear the cached destination tile before FindPath")
 run_next_path_task() -- wait after replan
 run_next_path_task() -- bounded recovery exhausted
 assert(path_finished ~= nil and path_finished.outcome == "failed")
