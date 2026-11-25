@@ -821,3 +821,10 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - A CI revelou que o teste do teto de listeners era inalcançável quando o limite era 64 (16 fontes × 4 eventos). O teto foi ajustado para 48 e o teste usa 13 fontes; a falha foi corrigida.
 - Lua checks [45690682546](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690682546) e Package [45690671644](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45690671644): success no commit `5750718e6bd18779861378f8313e449d72d5b221`.
 - Commit seguinte `e9fd3b49d86624bf0ea68283cd4ef3e810fe758d` adiciona teste para entidade de origem malformada; os dois workflows específicos estavam em execução na última consulta.
+
+
+**Auditoria do lifecycle antes da integração ao Virtual Player:**
+- `Stop(reason)` delega para `_finish(false, reason)`; `_finish` cancela ação ativa quando necessário, remove listeners de morte do alvo, marca o runner parado, limpa `active` e somente depois monta/entrega o relatório.
+- No caminho normal, `_poll_action` limpa `active` e avança para o próximo step; no modo de ataque repetido, há caminhos adicionais de re-submissão, timeout e falha.
+- Portanto, conectar o observador exige um único ponto de encerramento idempotente chamado antes de `_finish` gerar o relatório e também ao concluir normalmente cada ação/step; deve cobrir cancelamento, timeout, substituição do BufferedAction, erro de callback, morte/remoção de entidade e replanejamento/repetição.
+- Não foi feita essa integração nesta etapa. O observador permanece desacoplado para evitar listeners órfãos ou snapshots associados ao step errado. A integração futura deve construir fontes somente a partir de `player.replica.inventory.classified` e `target.replica.container.classified` validados, além dos itens selecionados que realmente emitirem eventos; contêineres especiais/proxy ficam fora do primeiro perfil.
