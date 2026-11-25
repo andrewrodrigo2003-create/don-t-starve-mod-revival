@@ -5,6 +5,7 @@ MOD_RPC = {}
 local admin = false
 local now = 1
 local configured_max_spawn_count = 20
+local laboratory_mode = false
 local responses = {}
 local spawned_items = 0
 local inventory_accepts_items = true
@@ -29,6 +30,7 @@ AddPlayerPostInit = function(fn) player_postinit = fn end
 GetModConfigData = function(name)
     if name == "collect_runtime_components" then error("synthetic optional config failure") end
     if name == "test_mode" then return true end
+    if name == "laboratory_mode" then return laboratory_mode end
     if name == "max_spawn_count" then return configured_max_spawn_count end
     return nil
 end
@@ -221,33 +223,56 @@ assert(unlocked.axe == nil and responses[#responses].success == false)
 admin = true
 now = 1.2
 rpc_server.unlock_recipe(player, 2, "axe")
-assert(unlocked.axe == true and responses[#responses].success == true)
+assert(unlocked.axe == nil and responses[#responses].success == false
+    and string.find(responses[#responses].message, "laboratory mode", 1, true),
+    "recipe unlock must be blocked when disposable laboratory mode is disabled")
+laboratory_mode = true
 now = 1.4
-rpc_server.spawn_item(player, 3, "cutgrass", 2, 0, 0)
+rpc_server.unlock_recipe(player, 3, "axe")
+assert(unlocked.axe == true and responses[#responses].success == true)
+now = 1.6
+rpc_server.spawn_item(player, 4, "cutgrass", 2, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == true)
-rpc_server.spawn_item(player, 4, "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(player, 5, "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false and string.find(responses[#responses].message, "rate limit", 1, true))
 
 -- The configured per-request limit must be enforced by the master, not only displayed in the UI.
 configured_max_spawn_count = 5
-now = 1.6
-rpc_server.spawn_item(player, 5, "cutgrass", 6, 0, 0)
+now = 1.8
+rpc_server.spawn_item(player, 6, "cutgrass", 6, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "configured limit", 1, true))
-now = 1.8
-rpc_server.spawn_item(player, 6, "cutgrass", 5, 0, 0)
+now = 2.0
+rpc_server.spawn_item(player, 7, "cutgrass", 5, 0, 0)
 assert(spawned_items == 7 and responses[#responses].success == true)
 
 -- A created prefab is not a successful spawn_item unless GiveItem confirms inventory delivery.
 inventory_accepts_items = false
-now = 2.0
-rpc_server.spawn_item(player, 7, "cutgrass", 1, 0, 0)
+now = 2.2
+rpc_server.spawn_item(player, 8, "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
 inventory_accepts_items = true
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
 print("MODXPECTOR_CONFIGURED_SPAWN_LIMIT_CONTRACT_OK")
 print("MODXPECTOR_MOD_BOOTSTRAP_SECURITY_CONTRACT_OK")
+
+-- World-changing plans must be rejected unless the server explicitly confirms a disposable lab world.
+laboratory_mode = false
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "blocked_without_laboratory",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = { { kind = "spawn_item", prefab = "cutgrass", count = 1 } },
+}
+rpc_server.set_test_plan(player, "blocked_without_laboratory", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "laboratory mode", 1, true),
+    "Master must reject world-changing plans when laboratory mode is disabled")
+laboratory_mode = true
 
 -- Master rejects malformed Virtual Player plans before storing them.
 admin = true
