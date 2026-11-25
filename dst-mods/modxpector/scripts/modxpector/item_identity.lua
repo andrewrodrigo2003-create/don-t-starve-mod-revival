@@ -292,7 +292,7 @@ function M.CompareExactMove(before, after, selected_guid, protected_call)
     end
 
     return {
-        outcome = "matched_candidate",
+        outcome = "observed_move_candidate",
         reason = "same entity reference and GUID moved from a normal player slot to a normal target slot",
         guid = selected_guid,
         prefab = source_item.prefab,
@@ -300,6 +300,8 @@ function M.CompareExactMove(before, after, selected_guid, protected_call)
         before_slot = source_item.slot,
         after_slot = received_item.slot,
         evidence = "client_replica_snapshot_only",
+        causality = "unproven",
+        server_authority = "unverified",
     }
 end
 
