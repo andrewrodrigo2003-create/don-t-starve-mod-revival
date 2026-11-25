@@ -356,17 +356,21 @@ assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
 inventory_accepts_items = true
 
--- Wrong run IDs, replayed step indices, and RPCs after plan clear must fail closed.
+-- Wrong run IDs, wrong step kinds, replayed steps, and RPCs after plan clear must fail closed.
 now = 2.4
 rpc_server.spawn_item(reconnected_player, 9, 6, "stale_run_id", "cutgrass", 1, 0, 0)
-assert(responses[#responses].success == false and spawned_items == 7)
+assert(responses[#responses].success == false and spawned_items == 8)
 now = 2.6
-rpc_server.unlock_recipe(reconnected_player, 10, 1, "server_rpc_ops", "axe")
+rpc_server.unlock_recipe(reconnected_player, 10, 6, "server_rpc_ops", "axe")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "does not match", 1, true))
+now = 2.8
+rpc_server.unlock_recipe(reconnected_player, 11, 1, "server_rpc_ops", "axe")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "already consumed", 1, true))
 rpc_server.clear_test_plan(reconnected_player, "server_rpc_ops")
-now = 2.8
-rpc_server.spawn_item(reconnected_player, 11, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
+now = 3.0
+rpc_server.spawn_item(reconnected_player, 12, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "no active Master-approved", 1, true))
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
