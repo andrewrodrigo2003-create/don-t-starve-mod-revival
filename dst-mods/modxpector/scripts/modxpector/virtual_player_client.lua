@@ -552,7 +552,8 @@ function VirtualPlayer:_capture_step_transfer_baseline(step_index, target)
                     if tonumber(reference) == step_index then matches = true; break end
                 end
             end
-            if matches and type(assertion.prefab) == "string"
+            if matches and tonumber(assertion.target_step) == step_index
+                and type(assertion.prefab) == "string"
                 and self.allowed_prefabs[assertion.prefab] then
                 if kind == "player_inventory_item_count_increased"
                     or kind == "player_inventory_item_count_decreased" then
@@ -738,8 +739,9 @@ function VirtualPlayer:_evaluate_assertion(assertion)
             "player_near_target radius must be finite and between 0 and 40")
         local target = self:_resolve_assertion_target(assertion)
         local target_valid = self:_is_valid_target(target)
-        actual = false
+        actual = nil
         if target_valid then
+            actual = false
             assert(self.player.Transform ~= nil and target.Transform ~= nil
                 and type(self.player.Transform.GetWorldPosition) == "function"
                 and type(target.Transform.GetWorldPosition) == "function",
