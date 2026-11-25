@@ -285,6 +285,69 @@ assert(responses[#responses].success == true, "master must accept an exact prior
 decoded_plan = {
     schema = "modxpector/test-plan/v1",
     enabled = true,
+    run_id = "valid_store_container_assertion",
+    allowed_prefabs = { "cutgrass", "treasurechest" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
+        { kind = "assert", assertion = { kind = "container_has_item", target_step = 1, prefab = "cutgrass", count = 1 }, verifies_step = 1 },
+        { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass", expected = false } },
+    },
+}
+rpc_server.set_test_plan(player, "valid_store_container_assertion", "{}")
+assert(responses[#responses].success == true, "master must accept STORE with container and carried-inventory postconditions")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "valid_takeitem_action",
+    allowed_prefabs = { "birdcage", "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "TAKEITEM", target = { prefab = "birdcage" }, target_required = true },
+        { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass" }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(player, "valid_takeitem_action", "{}")
+assert(responses[#responses].success == true, "master must accept the real TAKEITEM action with a postcondition")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_legacy_take_action",
+    allowed_prefabs = { "birdcage" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "TAKE", target = { prefab = "birdcage" }, target_required = true },
+    },
+}
+rpc_server.set_test_plan(player, "invalid_legacy_take_action", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "server allowlist", 1, true),
+    "master must reject the nonexistent TAKE action")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_container_count",
+    allowed_prefabs = { "treasurechest", "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "assert", assertion = { kind = "container_has_item", target = { prefab = "treasurechest" }, prefab = "cutgrass", count = 1.5 } },
+    },
+}
+rpc_server.set_test_plan(player, "invalid_container_count", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "container assertion count", 1, true),
+    "master must reject fractional container assertion counts")
+
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
     run_id = "invalid_future_ref",
     allowed_prefabs = { "cutgrass" },
     allowed_recipes = {},
