@@ -235,7 +235,7 @@ local function inconclusive(reason)
     }
 end
 
-function M.CompareExactMove(before, after, selected_guid)
+function M.CompareExactMove(before, after, selected_guid, protected_call)
     if type(before) ~= "table" or before.schema ~= "modxpector/item-identity-capture/v1"
         or type(after) ~= "table" or after.schema ~= "modxpector/item-identity-capture/v1" then
         return inconclusive("snapshot schema is unavailable or unsupported")
@@ -277,6 +277,11 @@ function M.CompareExactMove(before, after, selected_guid)
     end
     if received_item.entity ~= source_item.entity then
         return inconclusive("GUID matched but the local entity reference changed")
+    end
+    local source_valid = valid_entity(source_item.entity, protected_call)
+    local received_valid = valid_entity(received_item.entity, protected_call)
+    if source_valid ~= true or received_valid ~= true then
+        return inconclusive("the captured item entity is no longer valid")
     end
     if received_item.prefab ~= source_item.prefab then
         return inconclusive("item prefab changed during the observed move")
