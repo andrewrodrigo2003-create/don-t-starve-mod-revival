@@ -838,3 +838,53 @@ Foi criado scripts/modxpector/item_identity.lua, módulo sem efeitos colaterais,
 - Lua checks [45691089854](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45691089854): success no commit `9ab2ff419b0b51efec74237373656c09b896ae83`. Package [45691076223](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45691076223): testes Lua e construção/validação do ZIP concluídos com sucesso; upload do artefato ainda em execução na última consulta.
 - Referência de API vanilla: Inventory Replica expõe a entidade `classified`; Container Replica usa `classified` e o estado de abertura. Fontes: https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica e https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/prefabs/container_classified.
 - Sem validação in-game, multiplayer ou dedicated server. STORE, TAKEITEM e TAKESINGLEITEM seguem bloqueados.
+
+
+---
+
+### Correção de pesquisa — fontes reais dos eventos classificados (25/11/2026)
+
+**Esta seção corrige e substitui a afirmação do incremento anterior “resolução segura das fontes de eventos vanilla” de que `inventory.classified` e `container.classified` devem ser as entidades emissoras dos quatro eventos.** Os classified continuam sendo fontes de estado/consulta (`IsBusy`, slots e snapshots), mas não são os emissores reais de todos esses eventos.
+
+#### Roteamento observado nos scripts vanilla consultados
+- `prefabs/inventory_classified.lua`: `OnItemsDirty` encaminha `itemget` e `itemlose` por `inst._parent:PushEvent(...)`. O pai é o jogador. `itemget` inclui `item`, `slot`, `src_pos` e `ignore_stacksize_anim=true`; `itemlose` inclui somente `slot`.
+- `prefabs/container_classified.lua`: `OnItemsDirty` encaminha `itemget`/`itemlose` para `inst._parent`, que é a entidade do contêiner. O payload de saída é slot-only.
+- `OnStackItemDirty` encaminha `stacksizechange` para a entidade do item. O classified do inventário também pode encaminhar esse evento ao jogador para atualizar a interface, mas o evento de origem é o próprio item.
+- `stacksizepreview` é emitido na entidade do item durante a previsão local; permanece somente evidência de preview/predição.
+- Os classified escutam `stackitemdirty` em `TheWorld` e recebem a entidade do item como argumento. É uma possível fonte para descoberta dinâmica, ainda não aprovada nem implementada.
+
+#### Defeito no contrato atual
+- `BuildReplicaSources` retorna os dois classified como `source.entity` e inscreve todos os quatro eventos neles.
+- `test_modxpector_step_event_observer.lua` afirma nas linhas 171–175 que esses classified são as fontes corretas; nas linhas 44–47, emite eventos artificiais diretamente neles. O teste valida o mock, não o roteamento vanilla.
+- Assim, a implementação pode passar nos testes e ainda não receber `itemget`/`itemlose` do player/contêiner nem `stacksizechange`/`stacksizepreview` dos itens.
+- O classificador de eventos não resolve esse problema: ele só classifica o payload depois que o callback é chamado.
+
+#### Consequências para a arquitetura
+1. Separar explicitamente o **listener owner** da **event source**. `EntityScript:ListenForEvent(event, fn, source)` permite essa separação; `RemoveEventCallback(event, fn, source)` deve receber a mesma callback e a mesma source na limpeza.
+2. O classified continua sendo consultado para estado ocupado, slots e snapshots. Não o tratar automaticamente como emissor.
+3. `itemget`/`itemlose` devem ser observados no proprietário real: jogador e entidade-alvo do contêiner.
+4. `stacksizechange`/`stacksizepreview` devem ser observados na entidade do item. Para itens que aparecem depois do baseline, avaliar assinatura dinâmica disparada por `itemget` e/ou descoberta limitada por `stackitemdirty` em `TheWorld`, com filtro de pertencimento e limites estritos.
+5. `TheWorld` é candidato a listener owner estável para eventos de múltiplas entidades e para descoberta via `stackitemdirty`; comparar com o jogador como listener owner antes de escolher. Não assumir que a opção global é mais barata ou melhor.
+6. A remoção de entidade em `EntityScript:Remove` emite `onremove` antes de `RemoveAllEventCallbacks`; `PushEvent` copia a lista de callbacks antes de despachar. Portanto, callbacks já incluídos no snapshot do dispatch ainda podem executar depois de um Stop; manter a guarda `session.active` e testar essa reentrância.
+7. Aguardas deferred dos classified e `IsBusy()==false` devem fazer parte do encerramento/estabilização do snapshot, com timeout e saída inconclusiva.
+
+#### Matriz mínima de regressão
+- `itemget` emitido pelo jogador e pelo contêiner, nunca apenas pelo classified.
+- `itemlose` emitido pelo jogador/contêiner com slot-only.
+- `stacksizechange` e `stacksizepreview` emitidos pelo item correto.
+- Evento disparado apenas no classified não deve ser contado como evento real.
+- Item existente no baseline, item novo por split, stack merge, remoção total e troca de slot.
+- Listener owner distinto da source; remoção usando exatamente callback + event + source.
+- Source removida durante callback, callback em andamento após Stop, cleanup repetido, timeout, cancelamento e repetição.
+- Preview nunca prova transferência; causalidade e autoridade do servidor continuam não provadas.
+
+**Status:** pesquisa confirmada por inspeção dos scripts espelhados e comparação com o código/teste atual. Nenhuma alteração de código foi realizada. A próxima implementação deve corrigir primeiro o roteamento e os testes; somente depois conectar o observador ao lifecycle do Virtual Player.
+
+#### Fontes
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/prefabs/inventory_classified.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/prefabs/container_classified.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/inventory_replica.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/container_replica.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/stackable.lua
+- https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/entityscript.lua
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/entityscript
