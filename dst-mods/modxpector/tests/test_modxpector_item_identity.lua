@@ -199,7 +199,7 @@ local before_move = ItemIdentity.Capture(moving_inventory, player, moving_target
 source_contains_item = false
 target_contains_item = true
 local after_move = ItemIdentity.Capture(moving_inventory, player, moving_target, pcall)
-local exact_move = ItemIdentity.CompareExactMove(before_move, after_move, 501)
+local exact_move = ItemIdentity.CompareExactMove(before_move, after_move, 501, pcall)
 assert(exact_move.outcome == "matched_candidate",
     "same entity/GUID with unchanged stack evidence should produce only a matched candidate")
 assert(exact_move.evidence == "client_replica_snapshot_only",
@@ -216,7 +216,7 @@ local replaced_target = {
     },
 }
 local replaced_after = ItemIdentity.Capture(moving_inventory, player, replaced_target, pcall)
-local replaced_move = ItemIdentity.CompareExactMove(before_move, replaced_after, 501)
+local replaced_move = ItemIdentity.CompareExactMove(before_move, replaced_after, 501, pcall)
 assert(replaced_move.outcome == "inconclusive",
     "matching GUID with a different local entity reference must not be accepted")
 
@@ -237,7 +237,7 @@ local split_target = {
     },
 }
 local split_after = ItemIdentity.Capture(moving_inventory, player, split_target, pcall)
-local split_move = ItemIdentity.CompareExactMove(split_before, split_after, 501)
+local split_move = ItemIdentity.CompareExactMove(split_before, split_after, 501, pcall)
 assert(split_move.outcome == "inconclusive",
     "split stacks with a new GUID must remain inconclusive")
 
@@ -249,7 +249,7 @@ local active_inventory = {
 }
 local active_before = ItemIdentity.Capture(active_inventory, player, moving_target, pcall)
 local active_after = ItemIdentity.Capture(inventory, player, moving_target, pcall)
-local active_move = ItemIdentity.CompareExactMove(active_before, active_after, 501)
+local active_move = ItemIdentity.CompareExactMove(active_before, active_after, 501, pcall)
 assert(active_move.outcome == "inconclusive",
     "active item source must remain unsupported by the narrow exact-move comparator")
 
@@ -258,8 +258,13 @@ local malformed_move = ItemIdentity.CompareExactMove({
     complete = true,
     player = { complete = true },
     target = { complete = true },
-}, after_move, 501)
+}, after_move, 501, pcall)
 assert(malformed_move.outcome == "inconclusive",
     "malformed snapshot maps must fail closed")
+
+moving_item.IsValid = function() return false end
+local stale_move = ItemIdentity.CompareExactMove(before_move, after_move, 501, pcall)
+assert(stale_move.outcome == "inconclusive",
+    "entity removed after capture must fail exact move comparison")
 
 print("ModXpector item identity snapshot tests passed")
