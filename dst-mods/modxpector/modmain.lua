@@ -616,6 +616,12 @@ local function validate_plan_step(plan, index, step)
         if step.target_required == true and step.target == nil then
             return false, "target_required action needs a target selector"
         end
+        if step.action == "STORE" and (step.target_required ~= true or step.invobject == nil) then
+            return false, "STORE requires a target and an allowlisted invobject"
+        end
+        if step.action == "TAKEITEM" and step.target_required ~= true then
+            return false, "TAKEITEM requires a target"
+        end
         if step.invobject ~= nil and not prefab_is_allowed(step.invobject, plan) then
             return false, "action inventory object is not in the plan allowlist"
         end
@@ -658,6 +664,63 @@ local function validate_plan_step(plan, index, step)
     return false, "unsupported test step kind"
 end
 
+local function assertion_verifies_action(step, action_index)
+    if type(step) ~= "table" or step.kind ~= "assert" then return false end
+    if step.verifies_step == action_index then return true end
+    for _, reference in ipairs(step.verifies_steps or {}) do
+        if reference == action_index then return true end
+    end
+    return false
+end
+
+local function validate_transfer_action_postconditions(plan)
+    for action_index, action in ipairs(plan.steps) do
+        if type(action) == "table" and action.kind == "action" and action.action == "STORE" then
+            local player_delta, container_delta
+            for _, candidate in ipairs(plan.steps) do
+                if assertion_verifies_action(candidate, action_index) then
+                    local assertion = candidate.assertion
+                    if type(assertion) == "table" and assertion.target_step == action_index then
+                        if assertion.kind == "player_inventory_item_count_decreased" then
+                            player_delta = assertion
+                        elseif assertion.kind == "container_item_count_increased" then
+                            container_delta = assertion
+                        end
+                    end
+                end
+            end
+            if player_delta == nil or container_delta == nil then
+                return false, "STORE requires both player inventory decrease and container increase postconditions"
+            end
+            local player_count = player_delta.count == nil and 1 or player_delta.count
+            local container_count = container_delta.count == nil and 1 or container_delta.count
+            if player_delta.prefab ~= action.invobject or container_delta.prefab ~= action.invobject
+                or player_count ~= container_count then
+                return false, "STORE postconditions must verify the same invobject and transfer count"
+            end
+        elseif type(action) == "table" and action.kind == "action" and action.action == "TAKEITEM" then
+            local inventory_delta, holder_state = nil, nil
+            for _, candidate in ipairs(plan.steps) do
+                if assertion_verifies_action(candidate, action_index) then
+                    local assertion = candidate.assertion
+                    if type(assertion) == "table" and assertion.target_step == action_index then
+                        if assertion.kind == "player_inventory_item_count_increased" then
+                            inventory_delta = assertion
+                        elseif assertion.kind == "target_has_tag" and assertion.expected == false
+                            and (assertion.tag == "takeshelfitem" or assertion.tag == "inventoryitemholder_take") then
+                            holder_state = assertion
+                        end
+                    end
+                end
+            end
+            if inventory_delta == nil or holder_state == nil then
+                return false, "TAKEITEM requires an inventory increase and a holder/shelf state-change postcondition"
+            end
+        end
+    end
+    return true
+end
+
 local function validate_incoming_plan(plan, requested_run_id)
     if type(plan) ~= "table" or plan.schema ~= "modxpector/test-plan/v1" or plan.enabled ~= true then
         return false, "invalid test plan schema or disabled plan"
@@ -678,6 +741,8 @@ local function validate_incoming_plan(plan, requested_run_id)
         local valid, reason = validate_plan_step(plan, index, step)
         if not valid then return false, "step " .. tostring(index) .. ": " .. tostring(reason) end
     end
+    local transfer_valid, transfer_reason = validate_transfer_action_postconditions(plan)
+    if not transfer_valid then return false, transfer_reason end
     return true, "accepted"
 end
 
