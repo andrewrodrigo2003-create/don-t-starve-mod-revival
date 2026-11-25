@@ -54,6 +54,27 @@ SpawnPrefab = function(prefab)
     return { IsValid = function() return true end, Transform = { SetPosition = function() end } }
 end
 
+local ChatTypes = { Message = "message", SystemMessage = "system" }
+local function make_chat_history()
+    local history = { listeners = {}, system_messages = {}, add_count = 0, remove_count = 0 }
+    function history:AddChatHistoryListener(fn)
+        self.listeners[fn] = true
+        self.add_count = self.add_count + 1
+    end
+    function history:RemoveChatHistoryListener(fn)
+        self.listeners[fn] = nil
+        self.remove_count = self.remove_count + 1
+    end
+    function history:OnSystemMessage(message)
+        self.system_messages[#self.system_messages + 1] = message
+        for listener in pairs(self.listeners) do
+            listener({ type = ChatTypes.SystemMessage, message = message })
+        end
+    end
+    return history
+end
+local chat_history = make_chat_history()
+
 local player = {
     userid = "KU_TEST_USER",
     IsValid = function() return true end,
@@ -119,6 +140,7 @@ local env = setmetatable({
     GetModConfigData = GetModConfigData, AddModRPCHandler = AddModRPCHandler,
     AddClientModRPCHandler = AddClientModRPCHandler, AddPlayerPostInit = AddPlayerPostInit,
     TheNet = TheNet, TheWorld = TheWorld, TheSim = TheSim, ThePlayer = player,
+    ChatHistory = chat_history, ChatTypes = ChatTypes,
     Prefabs = Prefabs, AllRecipes = AllRecipes,
     GetTime = GetTime, SendModRPCToClient = SendModRPCToClient, SpawnPrefab = SpawnPrefab,
     MOD_RPC = MOD_RPC, modname = "modxpector_agent_test", print = function() end,
@@ -171,6 +193,56 @@ assert(suite_registered == true and suite_message == "registered", "valid commun
 
 -- Joining a world starts the embedded read-only analysis and never contacts localhost.
 player_postinit(player)
+assert(chat_history.add_count == 1, "the local ChatHistory listener must be registered once")
+local first_chat_listener
+for listener in pairs(chat_history.listeners) do first_chat_listener = listener end
+assert(type(first_chat_listener) == "function")
+first_chat_listener({
+    type = ChatTypes.Message,
+    sender_userid = player.userid,
+    message = "/mx status",
+})
+assert(#chat_history.system_messages == 1
+    and string.find(chat_history.system_messages[1], "ModXpector: IA", 1, true),
+    "the chat listener must answer supported commands through OnSystemMessage")
+
+-- The listener must resolve the current player after reconnect rather than retaining a stale entity.
+player.userid = nil
+local reconnected_player = {
+    userid = "KU_TEST_USER",
+    IsValid = function() return true end,
+    DoTaskInTime = function(_, delay, callback) if delay >= 20 then pending_master_timeout = callback else callback() end end,
+    components = player.components,
+}
+env.ThePlayer = reconnected_player
+engine_globals.ThePlayer = reconnected_player
+player_postinit(reconnected_player)
+assert(chat_history.add_count == 1 and chat_history.remove_count == 0,
+    "reconnect with the same history manager must not duplicate the listener")
+first_chat_listener({
+    type = ChatTypes.Message,
+    sender_userid = reconnected_player.userid,
+    message = "/mx status",
+})
+assert(#chat_history.system_messages == 2,
+    "the existing listener must use the replacement local player entity")
+
+-- If DST replaces the ChatHistory manager, remove the old callback and bind to the new manager.
+local replacement_history = make_chat_history()
+engine_globals.ChatHistory = replacement_history
+player_postinit(reconnected_player)
+assert(chat_history.remove_count == 1 and next(chat_history.listeners) == nil)
+assert(replacement_history.add_count == 1)
+local replacement_listener
+for listener in pairs(replacement_history.listeners) do replacement_listener = listener end
+replacement_listener({
+    type = ChatTypes.Message,
+    sender_userid = reconnected_player.userid,
+    message = "/mx status",
+})
+assert(#replacement_history.system_messages == 1,
+    "the replacement history manager must receive chat command responses")
+
 assert(query_calls == 0, "embedded AI must not make localhost HTTP calls")
 assert(type(engine_globals.MODXPECTOR_RUN_EMBEDDED_AI) == "function")
 assert(type(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT) == "table",
