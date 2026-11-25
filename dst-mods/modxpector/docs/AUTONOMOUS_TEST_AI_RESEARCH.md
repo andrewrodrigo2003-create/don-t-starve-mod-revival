@@ -226,3 +226,10 @@ Fontes de código consultadas: [entityscript.lua](https://github.com/vietnd69/ds
 ### Estado de validação
 
 A alteração e os testes foram gravados na branch do PR #76. O último CI concluído (run 45655539612) passou para o incremento anterior de modo laboratório, mas é anterior à correção de cancelamento. A nova suíte de cancelamento ainda aguarda uma execução de CI no HEAD atual; não declarar esse incremento testado até isso ocorrer. A API e a semântica foram conferidas por fontes de scripts, mas ainda falta validar no DST real.
+
+
+## 15. Política final de isolamento para movimento — 25/11/2026
+
+O Virtual Player usa o personagem real local. Por isso, WALKTO não é uma operação de observação: muda a posição do jogador e pode expô-lo a perigos do mundo. A classificação foi endurecida para exigir laboratory_mode para qualquer etapa kind=action, inclusive WALKTO. Somente inspeções/asserções sem movimento ou efeitos podem ser realizadas fora do laboratório.
+
+Foi adicionado um contrato no bootstrap do Master que envia um plano WALKTO com laboratory_mode=false e exige rejeição. As suites comunitárias continuam limitadas a WALKTO, mas agora só podem ser executadas em mundo/cluster descartável com o modo laboratório ativado.
