@@ -151,4 +151,20 @@ local throwing_inventory = {
 local throwing_result = ItemIdentity.Capture(throwing_inventory, player, nil, pcall)
 assert(throwing_result.complete == false, "replica exceptions must fail closed")
 
+local oversized_items = {}
+for index = 1, 513 do
+    oversized_items[index] = entity(1000 + index, "log")
+end
+local oversized_inventory = {
+    GetItems = function() return oversized_items end,
+    GetEquips = function() return {} end,
+    GetActiveItem = function() return nil end,
+    GetOverflowContainer = function() return nil end,
+}
+local oversized_result = ItemIdentity.Capture(oversized_inventory, player, nil, pcall)
+assert(oversized_result.complete == false,
+    "inventory collections above the safety limit must fail closed")
+assert(oversized_result.player.item_count <= 512,
+    "snapshot collector must not retain more than 512 entries")
+
 print("ModXpector item identity snapshot tests passed")
