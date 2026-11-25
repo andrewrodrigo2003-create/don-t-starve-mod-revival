@@ -233,3 +233,23 @@ A alteração e os testes foram gravados na branch do PR #76. O último CI concl
 O Virtual Player usa o personagem real local. Por isso, WALKTO não é uma operação de observação: muda a posição do jogador e pode expô-lo a perigos do mundo. A classificação foi endurecida para exigir laboratory_mode para qualquer etapa kind=action, inclusive WALKTO. Somente inspeções/asserções sem movimento ou efeitos podem ser realizadas fora do laboratório.
 
 Foi adicionado um contrato no bootstrap do Master que envia um plano WALKTO com laboratory_mode=false e exige rejeição. As suites comunitárias continuam limitadas a WALKTO, mas agora só podem ser executadas em mundo/cluster descartável com o modo laboratório ativado.
+
+
+## 16. Autorização de RPC por etapa declarada — 25/11/2026
+
+### Lacuna encontrada
+
+Os RPCs de spawn e desbloqueio de receitas verificavam modo de teste, administrador e allowlists, mas não exigiam que a operação fosse uma etapa do plano atualmente aprovado pelo Master. Isso deixava uma lacuna entre o plano e a autorização efetiva do efeito.
+
+### Correção
+
+- O cliente agora envia request_id, índice 1-based da etapa e run_id nos RPCs de spawn e unlock_recipe.
+- O Master exige plano ativo aprovado, run_id correspondente, índice válido, etapa do tipo correto e correspondência exata de prefab/receita e quantidade.
+- Cada etapa de efeito pode ser consumida uma única vez. Replays, run IDs antigos, etapas de outro tipo e chamadas depois de limpar o plano são rejeitados.
+- O Master cria a tabela de consumo após validar o plano; dados enviados pelo cliente não controlam esse estado.
+- A verificação continua combinada com administrador, test_mode, laboratory_mode, allowlists e limites de taxa/quantidade.
+
+### Contratos adicionados
+
+O bootstrap cobre aprovação do plano, bloqueio sem laboratório, execução da etapa autorizada, rate limit, limite de quantidade, falha de entrega ao inventário, run_id incorreto, índice de etapa com tipo errado, replay e chamada após clear_test_plan. O resultado da CI no HEAD mais recente ainda precisa ser consultado antes de declarar o incremento aprovado.
+
