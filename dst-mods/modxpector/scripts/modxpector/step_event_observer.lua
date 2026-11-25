@@ -12,7 +12,7 @@ local ALLOWED_EVENTS = {
 local DEFAULT_MAX_EVENTS = 64
 local HARD_MAX_EVENTS = 256
 local MAX_SOURCES = 16
-local MAX_LISTENERS = 64
+local MAX_LISTENERS = 48
 
 local function safe_call(protected_call, fn, ...)
     if type(protected_call) ~= "function" or type(fn) ~= "function" then
