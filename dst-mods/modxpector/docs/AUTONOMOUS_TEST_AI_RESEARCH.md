@@ -640,3 +640,8 @@ A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais
 - Próxima implementação segura: capturar identidade do item selecionado (GUID/prefab/stack), verificar destino e transferência real; tratar active item, slots equipados, pilhas parciais, inventário cheio, overflow e containers proxy. Não reabilitar com base apenas em contagem agregada.
 
 **Estado:** STORE, TAKEITEM e TAKESINGLEITEM permanecem fail-closed. Nenhuma validação in-game, multiplayer ou dedicated server.
+
+
+### CI final da contenção STORE — 25/11/2026
+- Package/testes [45685429266](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45685429266): **success**; suíte Lua, geração do ZIP e upload do artefato concluídos no commit de teste `85f774f61c58958440372218779d9b4de86f6b7c`.
+- Package da documentação no commit `2bcfe4ee982219da9365c232437816c548d92298` ainda estava em execução na última consulta.
