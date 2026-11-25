@@ -575,3 +575,36 @@ A pesquisa usa espelhos comunitários de scripts e documentação de API, não o
 - Os contratos cobrem os oráculos e as validações do Master via mocks/harness. Não são execução da ação real no DST.
 - PR #76 permanece draft/open, sem merge/publicação. PR #177 permanece draft/open, sem merge.
 - Não houve teste real no DST, multiplayer ou dedicated server. A IA permanece incompleta e STORE/TAKEITEM não foram liberados no perfil comunitário.
+
+
+### Auditoria adicional — identidade e transição de estado em TAKEITEM (25/11/2026)
+
+**Resultado: bloqueio encontrado; não liberar TAKEITEM/TAKESINGLEITEM.**
+
+A inspeção do código do PR #76 encontrou uma lacuna real nos oráculos atuais:
+
+1. O plano pode pedir aumento de inventário para qualquer prefab allowlisted, mesmo que esse prefab não seja o item que estava no alvo. O contrato Master de TAKEITEM aceita, por exemplo, alvo `birdcage` + aumento de `cutgrass`.
+2. A segunda prova atualmente aceita `target_has_tag expected=false`. Essa asserção verifica somente o estado posterior; não exige que a tag estivesse presente antes da ação. Se o alvo já não tinha a tag antes, a pós-condição pode passar sem que TAKEITEM tenha removido item algum.
+3. O teste atual de TAKEITEM cobre tag presente que depois desaparece, mas não cobre a regressão de tag ausente antes e depois, nem vincula o GUID/prefab do item retirado ao item que entrou no inventário.
+4. O código vanilla consultado mostra que `ACTIONS.TAKEITEM.fn` chama `shelf:TakeItem(doer)` ou `inventoryitemholder:TakeItem(doer)`; `TAKESINGLEITEM.fn` chama `inventoryitemholder:TakeItem(doer, false)`. Portanto, a ação pode transferir a entidade/stack do alvo e tem semântica diferente de retirar de baú.
+5. A prateleira usa a tag `takeshelfitem`; inventoryitemholder usa `inventoryitemholder_take`. O oráculo deve identificar o tipo de alvo e comprovar a transição correspondente.
+
+**Correção exigida antes de habilitar a ação:**
+- Capturar, antes de `PlayerController:DoAction`, a identidade verificável do item mantido pelo alvo (GUID + prefab e, quando aplicável, tamanho da pilha), usando somente uma API cliente replicada comprovada.
+- Depois da ação, exigir prova de que o mesmo item/entidade foi recebido pelo inventário; contagem agregada por prefab isolada não basta.
+- Registrar baseline da tag correta (`inventoryitemholder_take` ou `takeshelfitem`) e exigir transição presente → ausente. Estado ausente antes da ação deve resultar em falha/inconclusivo, nunca em sucesso.
+- Cobrir TAKEITEM integral, TAKESINGLEITEM parcial, item já ausente, alvo despawnado, item empilhado/stack parcial, inventário cheio e item que cai no chão.
+- Master deve validar que a pós-condição de identidade se refere ao mesmo step e prefab/item declarado.
+
+**Fontes de semântica consultadas:**
+- Código vanilla `actions.lua`: TAKEITEM/TAKESINGLEITEM e caminhos de execução — https://github.com/jupitersh/dst-scripts-source-code/blob/master/actions.lua
+- `inventoryitemholder.lua`: CanTake, TakeItem, transferência para inventário, pilha parcial e atualização da tag — https://github.com/vietnd69/dst-scripts/blob/main/components/inventoryitemholder.lua
+- API/descrição de shelf — https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/shelf
+- Mapeamento de ações por tags/componentes — https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/componentactions
+
+**Estado operacional:** o incremento STORE/TAKEITEM anterior continua coberto por CI automatizado, mas isso não valida a correção acima. STORE permanece fora do perfil comunitário; TAKEITEM e TAKESINGLEITEM também permanecem bloqueados. Não houve execução real dentro do DST, multiplayer ou dedicated server.
+
+### CI documental mais recente — 25/11/2026
+- Lua checks [45682409667](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45682409667): **success** no HEAD documental `444ea2571aee36cc43a98cf6f6bf1bdcd8463532`.
+- O resultado confirma parse Lua 5.1, contratos e verificação de credenciais no commit testado; não cobre a nova lacuna de semântica identificada nesta auditoria.
+- PR #76 e PR #177 continuam draft/open, sem merge ou publicação.
