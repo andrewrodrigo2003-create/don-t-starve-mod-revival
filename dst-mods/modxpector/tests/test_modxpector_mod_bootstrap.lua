@@ -190,6 +190,9 @@ assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.community_events.enabled == 
 assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 1,
     "active community suites should be selected by the embedded AI")
 
+-- The generated WALKTO suite moves the real local character, so the successful
+-- Master-acceptance path must explicitly opt into a disposable lab world.
+laboratory_mode = true
 local suite_request_ok, suite_request_message = engine_globals.MODXPECTOR_RUN_AI_SUITE(
     "community_grass_smoke", "approach_grass")
 assert(suite_request_ok == true and sent_plan_rpc ~= nil,
