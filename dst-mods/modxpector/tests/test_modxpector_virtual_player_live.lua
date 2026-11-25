@@ -305,14 +305,18 @@ local stale_near = controller:_evaluate_assertion({
 assert(stale_exists.passed and stale_dead.inconclusive and stale_tag.passed and stale_near.passed,
     "stale captured targets must not satisfy existence, death, tag, or proximity assertions")
 
+local previous_index_for_near = controller.index
+local previous_target_for_near = controller.step_targets[1]
+controller.index = 2
+controller.step_targets[1] = target
 local invalid_radius_negative = pcall(function()
-    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = -1 })
+    controller:_evaluate_assertion({ kind = "player_near_target", target_step = 1, radius = -1 })
 end)
 local invalid_radius_large = pcall(function()
-    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = 41 })
+    controller:_evaluate_assertion({ kind = "player_near_target", target_step = 1, radius = 41 })
 end)
 local invalid_radius_nan = pcall(function()
-    controller:_evaluate_assertion({ kind = "player_near_target", target = target, radius = 0 / 0 })
+    controller:_evaluate_assertion({ kind = "player_near_target", target_step = 1, radius = 0 / 0 })
 end)
 assert(not invalid_radius_negative and not invalid_radius_large and not invalid_radius_nan,
     "near-target assertion must reject negative, excessive, and non-finite radii")
@@ -322,11 +326,14 @@ local malformed_position_target = {
     IsValid = function() return true end,
     Transform = { GetWorldPosition = function() return 0 / 0, 0, 0 end },
 }
+controller.step_targets[1] = malformed_position_target
 local malformed_near = controller:_evaluate_assertion({
-    kind = "player_near_target", target = malformed_position_target, expected = false,
+    kind = "player_near_target", target_step = 1, expected = false,
 })
 assert(malformed_near.inconclusive and not malformed_near.passed,
     "invalid world coordinates must be inconclusive, not pass a negative proximity assertion")
+controller.step_targets[1] = previous_target_for_near
+controller.index = previous_index_for_near
 controller.target_death_events[1] = true
 assert(controller:_is_target_entity_dead(removed_captured_target, 1) == true,
     "a captured death event must remain authoritative after the target entity is removed")
