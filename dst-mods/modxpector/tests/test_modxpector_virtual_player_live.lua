@@ -273,6 +273,19 @@ local invalid_container_count_ok = pcall(function()
     })
 end)
 assert(not invalid_container_count_ok, "fractional container assertion counts must be rejected")
+
+local stale_open_container = {
+    IsValid = function() return false end,
+    replica = { container = { Has = function() return true, 99 end } },
+}
+local stale_inventory = {
+    Has = function() return false, 0 end,
+    GetOpenContainers = function() return { [stale_open_container] = true } end,
+    GetOverflowContainer = function() return nil end,
+    GetEquippedItem = function() return nil end,
+}
+assert(controller:_count_player_prefab(stale_inventory, "goldnugget", true) == 0,
+    "removed open containers must not contribute ghost inventory counts")
 TheSim.FindEntities = function() return {} end
 local removed_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
 assert(removed_result.actual == nil and removed_result.inconclusive == true and removed_result.passed == false,
