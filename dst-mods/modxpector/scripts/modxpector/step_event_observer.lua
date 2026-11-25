@@ -51,6 +51,7 @@ function M.Start(sources, protected_call, get_time, max_events)
         return nil, "invalid_event_limit"
     end
 
+    if #sources == 0 then return nil, "no_event_sources" end
     if #sources > MAX_SOURCES then return nil, "too_many_event_sources" end
 
     local session = {
@@ -68,13 +69,20 @@ function M.Start(sources, protected_call, get_time, max_events)
 
     for _, source in ipairs(sources) do
         if type(source) ~= "table" or source.entity == nil
-            or type(source.label) ~= "string" or type(source.events) ~= "table"
+            or type(source.label) ~= "string" or #source.label == 0 or #source.label > 64
+            or type(source.events) ~= "table" or #source.events == 0 or #source.events > 4
             or type(source.entity.ListenForEvent) ~= "function"
             or type(source.entity.RemoveEventCallback) ~= "function" then
             cleanup(session)
             return nil, "invalid_event_source"
         end
+        local source_event_names = {}
         for _, event_name in ipairs(source.events) do
+            if source_event_names[event_name] then
+                cleanup(session)
+                return nil, "duplicate_event_subscription"
+            end
+            source_event_names[event_name] = true
             if #session.listeners >= MAX_LISTENERS then
                 cleanup(session)
                 return nil, "too_many_event_listeners"
