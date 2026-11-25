@@ -317,4 +317,48 @@ local invalid_stack_event = ItemIdentity.ClassifyReplicaEvent("stacksizechange",
 assert(invalid_stack_event == "unverified",
     "invalid stack size event must fail closed")
 
+local busy_reads = 0
+local busy_inventory = {
+    classified = { IsBusy = function() return true end },
+    GetItems = function()
+        busy_reads = busy_reads + 1
+        return { [1] = wood }
+    end,
+    GetEquips = function() return {} end,
+    GetActiveItem = function() return nil end,
+    GetOverflowContainer = function() return nil end,
+}
+local busy_inventory_result = ItemIdentity.Capture(busy_inventory, player, nil, pcall)
+assert(busy_inventory_result.complete == false and busy_reads == 0,
+    "busy inventory classified must be rejected before reading predicted items")
+
+local busy_overflow = {
+    IsBusy = function() return true end,
+    GetItems = function() return { [1] = backpack_item } end,
+}
+local busy_overflow_inventory = {
+    classified = { IsBusy = function() return false end },
+    GetItems = function() return {} end,
+    GetEquips = function() return {} end,
+    GetActiveItem = function() return nil end,
+    GetOverflowContainer = function() return busy_overflow end,
+}
+local busy_overflow_result = ItemIdentity.Capture(busy_overflow_inventory, player, nil, pcall)
+assert(busy_overflow_result.complete == false,
+    "busy overflow container must make the player snapshot incomplete")
+
+local busy_target = {
+    IsValid = function() return true end,
+    replica = {
+        container = {
+            IsBusy = function() return true end,
+            IsOpenedBy = function() return true end,
+            GetItems = function() return { [1] = chest_item } end,
+        },
+    },
+}
+local busy_target_result = ItemIdentity.Capture(inventory, player, busy_target, pcall)
+assert(busy_target_result.complete == false and busy_target_result.target.complete == false,
+    "busy target container must be rejected before reading predicted items")
+
 print("ModXpector item identity snapshot tests passed")
