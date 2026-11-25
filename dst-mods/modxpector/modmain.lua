@@ -262,7 +262,7 @@ local function current_test_plan()
     return active_test_plan or TEST_PLAN
 end
 
-local function consume_declared_server_operation(plan, step_index, run_id, kind, value, count)
+local function consume_declared_server_operation(plan, step_index, run_id, kind, value, count, player, x, z)
     if active_test_plan == nil or plan ~= active_test_plan then
         return false, "there is no active Master-approved test plan"
     end
@@ -291,6 +291,26 @@ local function consume_declared_server_operation(plan, step_index, run_id, kind,
         local expected_count = step.count == nil and 1 or step.count
         if step.prefab ~= value or expected_count ~= count then
             return false, "spawn request does not match the declared test plan step"
+        end
+        local expected_x, expected_z
+        if type(step.position) == "table" then
+            expected_x, expected_z = step.position.x, step.position.z
+        else
+            local transform = player ~= nil and player.Transform or nil
+            if transform == nil or type(transform.GetWorldPosition) ~= "function" then
+                return false, "authoritative player position is unavailable for spawn authorization"
+            end
+            local position_ok, px, py, pz = pcall(transform.GetWorldPosition, transform)
+            if not position_ok then
+                return false, "could not read authoritative player position"
+            end
+            expected_x, expected_z = px, pz
+        end
+        if type(expected_x) ~= "number" or expected_x ~= expected_x
+            or type(expected_z) ~= "number" or expected_z ~= expected_z
+            or type(x) ~= "number" or x ~= x or type(z) ~= "number" or z ~= z
+            or math.abs(x - expected_x) > 4 or math.abs(z - expected_z) > 4 then
+            return false, "spawn coordinates are outside the authorized plan position"
         end
     else
         return false, "unsupported server operation kind"
@@ -731,7 +751,7 @@ local function handle_spawn(player, request_id, step_index, run_id, prefab, coun
     end
     local operation_kind = as_item and "spawn_item" or "spawn_entity"
     local authorized, authorization_reason = consume_declared_server_operation(
-        plan, step_index, run_id, operation_kind, prefab, count)
+        plan, step_index, run_id, operation_kind, prefab, count, player, x, z)
     if not authorized then
         send_result(player, request_id, false, authorization_reason)
         return
