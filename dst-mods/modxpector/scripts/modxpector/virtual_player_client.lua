@@ -418,6 +418,7 @@ function VirtualPlayer:Start(plan)
     end
     self.unverified_steps = {}
     self.step_targets = {}
+    self.step_inventory_baselines = {}
     self.target_death_events = {}
     self.target_death_callbacks = {}
     self.run_inconclusive = false
@@ -515,6 +516,36 @@ function VirtualPlayer:_count_player_prefab(inventory, prefab, include_open_cont
     return total
 end
 
+function VirtualPlayer:_capture_step_inventory_baseline(step_index)
+    local prefabs = {}
+    for future_index = step_index + 1, #self.queue do
+        local candidate = self.queue[future_index]
+        if type(candidate) == "table" and candidate.kind == "assert"
+            and candidate.assertion ~= nil and candidate.assertion.kind == "player_item_count_increased" then
+            local assertion = candidate.assertion
+            local references = candidate.verifies_steps ~= nil and candidate.verifies_steps or candidate.verifies_step
+            local matches = references == step_index
+            if type(references) == "table" then
+                for _, reference in ipairs(references) do
+                    if tonumber(reference) == step_index then matches = true; break end
+                end
+            end
+            if matches and type(assertion.prefab) == "string"
+                and self.allowed_prefabs[assertion.prefab] then
+                prefabs[assertion.prefab] = true
+            end
+        end
+    end
+    if next(prefabs) == nil then return end
+    local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+    assert(inventory ~= nil, "inventory replica unavailable for action baseline")
+    self.step_inventory_baselines = self.step_inventory_baselines or {}
+    self.step_inventory_baselines[step_index] = {}
+    for prefab in pairs(prefabs) do
+        self.step_inventory_baselines[step_index][prefab] = self:_count_player_prefab(inventory, prefab, true)
+    end
+end
+
 function VirtualPlayer:_evaluate_assertion(assertion)
     assert(type(assertion) == "table", "assertion must be an object")
     local kind = assertion.kind
@@ -542,6 +573,25 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         assert(replica ~= nil and type(replica.GetCurrent) == "function", replica_name .. " replica unavailable")
         actual, expected = replica:GetCurrent(), tonumber(assertion.value)
         assert(expected ~= nil, replica_name .. " assertion value required")
+    elseif kind == "player_item_count_increased" then
+        local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
+        assert(inventory ~= nil, "inventory replica unavailable")
+        local prefab = assert(assertion.prefab, "assertion item prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "assertion item prefab is not in the test plan allowlist")
+        local step_index = tonumber(assertion.target_step)
+        assert(is_finite_number(step_index) and step_index == math.floor(step_index)
+            and step_index >= 1 and step_index < self.index,
+            "item-count increase must reference a previous action step")
+        local baseline = self.step_inventory_baselines ~= nil
+            and self.step_inventory_baselines[step_index] ~= nil
+            and self.step_inventory_baselines[step_index][prefab] or nil
+        assert(is_finite_number(baseline), "item-count baseline was not captured for the referenced action")
+        local count = assertion.count == nil and 1 or tonumber(assertion.count)
+        assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
+            "item-count increase must be an integer between 1 and 10000")
+        actual = self:_count_player_prefab(inventory, prefab, true) - baseline >= count
+        expected = true
     elseif kind == "player_has_item_count_gte" then
         local inventory = self.player.replica ~= nil and self.player.replica.inventory or nil
         assert(inventory ~= nil, "inventory replica unavailable")
@@ -737,6 +787,8 @@ function VirtualPlayer:_next_impl()
     local step = self.queue[self.index]
     if step == nil then self:_finish(true, "all steps processed"); return end
     if type(step) ~= "table" then self:_finish(false, "invalid step " .. tostring(self.index)); return end
+
+    self:_capture_step_inventory_baseline(self.index)
 
     if step.kind == "wait" then
         local seconds = tonumber(step.seconds) or 1
