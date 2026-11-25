@@ -435,3 +435,17 @@ HEAD atual de código/testes: `626e6881482c7e1d4463d5f2df0a2c694926b3ac`.
 - O commit de código anterior `873ca82` passou no pacote [45673772572](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673772572), mas o teste adicional está no commit seguinte e aguarda a execução do pacote.
 
 Sem teste in-game; mocks não substituem validação no DST real.
+
+
+## 31. Alvo de contêiner capturado removido — 25/11/2026
+
+A asserção `container_has_item` agora exige que o alvo resolvido continue válido (`IsValid() == true`) antes de acessar `replica.container`. Isso cobre referências capturadas por `target_step` que foram removidas entre a ação e a pós-condição. Sem essa guarda, uma réplica residual poderia responder que o contêiner removido ainda contém itens.
+
+Teste de regressão: alvo capturado inválido com réplica falsa que afirma conter 99 unidades; a asserção deve falhar antes de consultar a réplica.
+
+HEAD: `3545e2fc26249a79563259b60feb0e81e0a8bba0`.
+- [CI Lua 5.1, parse, contratos e exclusão de credenciais — 45674510077](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674510077): sucesso.
+- [CI testes, ZIP e artefato — 45674502369](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674502369): em execução na última consulta; não declarar aprovado ainda.
+- [Pacote do commit anterior 8eecc02 — 45674493553](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45674493553): verificar separadamente; não inclui o teste final no HEAD 3545e2f.
+
+Sem teste in-game. A correção impede consulta de réplica stale, mas não prova integração no servidor real.
