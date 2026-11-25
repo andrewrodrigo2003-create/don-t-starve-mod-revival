@@ -244,23 +244,33 @@ function VirtualPlayer:_cancel_active_action()
         return false
     end
 
-    local components = self.player.components
-    local locomotor = type(components) == "table" and components.locomotor or nil
-    if locomotor ~= nil then
+    local locomotor = type(self.player.components) == "table"
+        and self.player.components.locomotor or nil
+    local entity_action = self.player.bufferedaction
+    local locomotor_action = locomotor ~= nil and locomotor.bufferedaction or nil
+    if entity_action ~= active.action and locomotor_action ~= active.action then
+        return false
+    end
+
+    local cancelled = false
+    if locomotor ~= nil and locomotor_action == active.action then
         if type(locomotor.Stop) == "function" then
             pcall(locomotor.Stop, locomotor)
         end
         if type(locomotor.Clear) == "function" then
-            -- Clear removes the locomotor's buffered action as well as its destination.
-            pcall(locomotor.Clear, locomotor)
+            -- LocoMotor:Clear removes its destination and buffered action.
+            local clear_ok = pcall(locomotor.Clear, locomotor)
+            cancelled = clear_ok or cancelled
         end
     end
 
-    if type(self.player.ClearBufferedAction) == "function" then
+    if self.player.bufferedaction == active.action
+        and type(self.player.ClearBufferedAction) == "function" then
         -- EntityScript:ClearBufferedAction clears the entity-side buffered action.
-        pcall(self.player.ClearBufferedAction, self.player)
+        local clear_ok = pcall(self.player.ClearBufferedAction, self.player)
+        cancelled = clear_ok or cancelled
     end
-    return true
+    return cancelled
 end
 
 function VirtualPlayer:_finish(ok, message)
