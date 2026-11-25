@@ -305,6 +305,30 @@ local stale_inventory = {
 }
 assert(controller:_count_player_prefab(stale_inventory, "goldnugget", true) == 0,
     "removed open containers must not contribute ghost inventory counts")
+
+
+-- Invalid replica counts must fail closed rather than being normalized to zero.
+local negative_inventory_count_ok = pcall(function()
+    controller:_count_player_prefab({ Has = function() return false, -5 end }, "goldnugget", false)
+end)
+assert(not negative_inventory_count_ok, "negative inventory counts must be rejected")
+local nan_inventory_count_ok = pcall(function()
+    controller:_count_player_prefab({ Has = function() return false, 0 / 0 end }, "goldnugget", false)
+end)
+assert(not nan_inventory_count_ok, "NaN inventory counts must be rejected")
+local invalid_count_container = {
+    IsValid = function() return true end,
+    replica = { container = { Has = function() return false, -9 end } },
+}
+local invalid_open_count_ok = pcall(function()
+    controller:_count_player_prefab({
+        Has = function() return false, 0 end,
+        GetOpenContainers = function() return { [invalid_count_container] = true } end,
+        GetOverflowContainer = function() return nil end,
+        GetEquippedItem = function() return nil end,
+    }, "goldnugget", true)
+end)
+assert(not invalid_open_count_ok, "negative open-container counts must be rejected")
 TheSim.FindEntities = function() return {} end
 local removed_result = controller:_evaluate_assertion({ kind = "target_dead", target = { prefab = "tree" } })
 assert(removed_result.actual == nil and removed_result.inconclusive == true and removed_result.passed == false,
