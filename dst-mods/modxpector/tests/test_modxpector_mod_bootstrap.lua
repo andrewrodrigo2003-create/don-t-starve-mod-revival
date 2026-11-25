@@ -467,8 +467,8 @@ decoded_plan = {
     allowed_actions = {},
     steps = {
         { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "assert", assertion = { kind = "container_has_item", target_step = 1, prefab = "cutgrass", count = 1 }, verifies_step = 1 },
-        { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass", expected = false } },
+        { kind = "assert", assertion = { kind = "container_item_count_increased", target_step = 1, prefab = "cutgrass", count = 1 }, verifies_step = 1 },
+        { kind = "assert", assertion = { kind = "player_inventory_item_count_decreased", target_step = 1, prefab = "cutgrass", count = 1 }, verifies_step = 1 },
     },
 }
 rpc_server.set_test_plan(reconnected_player, "valid_store_container_assertion", "{}")
@@ -483,7 +483,8 @@ decoded_plan = {
     allowed_actions = {},
     steps = {
         { kind = "action", action = "TAKEITEM", target = { prefab = "birdcage" }, target_required = true },
-        { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass" }, verifies_step = 1 },
+        { kind = "assert", assertion = { kind = "player_inventory_item_count_increased", target_step = 1, prefab = "cutgrass", count = 1 }, verifies_step = 1 },
+        { kind = "assert", assertion = { kind = "target_has_tag", target_step = 1, tag = "inventoryitemholder_take", expected = false }, verifies_step = 1 },
     },
 }
 rpc_server.set_test_plan(reconnected_player, "valid_takeitem_action", "{}")
@@ -568,3 +569,25 @@ rpc_server.set_test_plan(reconnected_player, "invalid_inventory_count", "{}")
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory assertion count", 1, true))
 print("MODXPECTOR_MASTER_TEST_PLAN_VALIDATION_CONTRACT_OK")
+
+
+-- Transfer assertions must be bound to the same action they verify.
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "invalid_transfer_target_mismatch",
+    allowed_prefabs = { "cutgrass", "treasurechest" },
+    allowed_recipes = {},
+    allowed_actions = {},
+    steps = {
+        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
+        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
+        { kind = "assert", assertion = {
+            kind = "player_inventory_item_count_decreased", target_step = 1, prefab = "cutgrass", count = 1,
+        }, verifies_step = 2 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "invalid_transfer_target_mismatch", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "target_step must match", 1, true),
+    "Master must reject transfer baselines bound to a different action than the verified step")
