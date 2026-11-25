@@ -482,3 +482,39 @@ Auditoria do Virtual Player identificou que `_count_player_prefab` normalizava r
 - Consulta de workflows para o commit de testes não retornou execução. CI deste incremento permanece pendente.
 - A auditoria de STORE/TAKEITEM confirmou que a construção da ação é testada, mas ainda falta prova de transferência real de saída/entrada; esse fluxo permanece próximo alvo.
 - Sem validação in-game, multiplayer ou servidor dedicado.
+
+
+## Auditoria adicional — integridade de contagem em contêineres (25/11/2026)
+
+Foi encontrado um caso que ainda não seguia o padrão fail-closed: a asserção `container_has_item` convertia `nil`, NaN ou contagem inválida em zero por meio de `tonumber(found) or 0`. Isso poderia mascarar uma réplica quebrada como ausência válida de itens.
+
+Correção:
+- A leitura de `ContainerReplica:Has` agora exige contagem numérica, finita e não negativa.
+- Contagem inválida interrompe a avaliação com erro explícito; não é normalizada para zero.
+- Testes negativos adicionados para contagem negativa e NaN.
+- Código: `5adfc938454d1c3769590bf498c878b9684c48e5`.
+- Testes: `53c28545da3e7ff7b1c0bda6534cdfe990dfe105`.
+- CI associada aos commits ainda não foi encontrada na consulta inicial; não declarar o incremento validado até consultar novamente.
+
+### Semântica real das ações de transferência — pesquisa de scripts
+
+Fontes comunitárias consultadas no espelho de scripts DST:
+- [actions.lua](https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/actions.lua)
+- [inventoryitemholder.lua](https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/inventoryitemholder.lua)
+- [shelf.lua](https://github.com/taichunmin/dont-starve-together-game-scripts/blob/master/components/shelf.lua)
+- [Container Replica API](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/container_replica)
+- [Inventory Replica API](https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/inventory_replica)
+
+Descobertas:
+- `STORE` é uma transferência de item: remove o objeto do dono/inventário com `RemoveFromOwner(target.components.container.acceptsstacks)`, tenta `Container:GiveItem` e, se a inserção falhar, devolve o item ao inventário/active item. Portanto, aprovação exige evidência dos dois lados: redução no inventário carregado e aumento no contêiner-alvo. A contagem agregada mochila + baús abertos não serve como oráculo, pois pode permanecer igual.
+- `TAKEITEM` vanilla não é uma retirada genérica de baú. Em `actions.lua`, chama `Shelf:TakeItem` quando o alvo é uma prateleira habilitada, ou `InventoryItemHolder:TakeItem` quando o alvo tem esse componente. Ambos tentam entregar o item ao inventário do jogador; o holder também remove o estado de item guardado. O item pode não ser inferível com segurança apenas pelo prefab do alvo.
+- `TAKESINGLEITEM` não apareceu na lista de ações vanilla consultada; sua presença em `ACTIONS` deve ser tratada como extensão/mod action possível, não como capacidade vanilla garantida.
+- O teste atual apenas constrói BufferedActions STORE/TAKEITEM/TAKESINGLEITEM. Ainda não executa transferência nem verifica deltas reais. Não habilitar essas ações no perfil comunitário.
+
+Próximo desenho seguro:
+1. Para STORE, capturar baseline de contagem carregada do jogador e do contêiner-alvo depois de resolver/revalidar o alvo e imediatamente antes de submeter a ação; exigir delta coerente nos dois lados, com quantidade mínima explícita para aceitar transferência parcial.
+2. Para TAKEITEM, suportar inicialmente somente alvos cujo item possa ser identificado por uma API/netvar observável e estável; exigir aumento no inventário carregado e mudança observável do estado do holder/prateleira. Sem item identificável ou réplica disponível, resultado inconclusivo/blocked.
+3. Cobrir rollback, baú removido, alvo removido, inventário cheio, transferência parcial, réplica indisponível e contagens inválidas.
+4. Não tratar sucesso do retorno da ação como prova de transferência.
+
+A pesquisa usa espelhos comunitários de scripts e documentação de API, não o build instalado da Klei; validar contra os scripts/runtime do jogo e em staging descartável antes de declarar compatibilidade.
