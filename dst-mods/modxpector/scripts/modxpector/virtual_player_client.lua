@@ -275,7 +275,13 @@ end
 
 function VirtualPlayer:_finish(ok, message)
     if not ok then
-        self:_cancel_active_action()
+        if self.active ~= nil and self.active.action ~= nil then
+            local cancel_ok, cancelled = pcall(self._cancel_active_action, self)
+            self.active_action_cancellation = cancel_ok and (cancelled and "cancelled" or "not_cancelled")
+                or "error"
+        else
+            self.active_action_cancellation = "not_needed"
+        end
     end
     self:_cleanup_target_listeners()
     if not ok then
@@ -325,6 +331,7 @@ function VirtualPlayer:Start(plan)
     self.started_at = safe_get_time()
     self.finished_at = nil
     self.step_started_at = nil
+    self.active_action_cancellation = nil
     self.results = {}
     self.steps_completed = 0
     self.steps_verified = 0
@@ -989,6 +996,7 @@ function VirtualPlayer:GetReport()
         assertions_passed = assertions_passed,
         outcome = outcome,
         failure = self.failure,
+        active_action_cancellation = self.active_action_cancellation,
         on_finished_error = self.on_finished_error,
         results = self.results,
     }
