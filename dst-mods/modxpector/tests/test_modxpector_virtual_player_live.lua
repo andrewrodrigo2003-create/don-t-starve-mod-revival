@@ -859,6 +859,15 @@ assert(unrelated_controller:GetReport().active_action_cancellation == "not_cance
 print("MODXPECTOR_VIRTUAL_PLAYER_CANCEL_ACTION_CONTRACT_OK")
 
 -- A stalled WALKTO requests one fresh native path search, then fails safely if still stuck.
+-- Earlier contracts deliberately replace FindEntities with an empty result; isolate this scenario.
+local path_original_find_entities = TheSim.FindEntities
+local path_target = {
+    prefab = "tree",
+    IsValid = function() return true end,
+    HasTag = function() return true end,
+    Transform = { GetWorldPosition = function() return 3, 0, 0 end },
+}
+TheSim.FindEntities = function() return { path_target } end
 local path_tasks = {}
 local path_reset_count, path_find_count, path_stop_count = 0, 0, 0
 local path_player_position = 0
@@ -930,4 +939,5 @@ assert(path_finished.active_action_cancellation == "cancelled")
 assert(path_locomotor.bufferedaction == nil and path_stop_count == 1,
     "a still-stuck WALKTO must cancel its own action after the bounded replan")
 assert(path_controller.running == false)
+TheSim.FindEntities = path_original_find_entities
 print("MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK")
