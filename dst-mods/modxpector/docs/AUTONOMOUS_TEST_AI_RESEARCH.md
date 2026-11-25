@@ -408,3 +408,16 @@ Validação final no HEAD `a941a2510e760032843aaa4743f1860815fa29ec`:
 Os commits intermediários `af5f452` e `8ff6d8b` não são a validação final: o primeiro falhou porque a verificação de validade precedia a evidência do evento de morte. A correção reordenou as verificações, e o HEAD final acima passou nos dois fluxos.
 
 **Limite:** testes com harness/mocks; não houve validação dentro do DST real.
+
+
+## 29. Validação de proximidade do Virtual Player — 25/11/2026
+
+A asserção `player_near_target` agora valida o raio antes de procurar o alvo: deve ser finito e estar entre 0 e 40. Coordenadas inválidas ou não finitas não podem produzir uma aprovação negativa; o resultado fica inconclusivo. A API de Transform ausente é tratada como erro de verificação, não como distância zero.
+
+Os testes cobrem raio negativo, acima do limite, NaN e coordenadas não finitas. A primeira versão do teste usava o seletor de alvo e revelou que `ResolveTarget` normaliza o raio de busca separadamente; o contrato foi corrigido para referenciar um alvo previamente capturado, isolando a propriedade que a asserção deve validar.
+
+HEAD final: `c4fbb873a21cf468cbb1d90bde078849b5491080`.
+- [CI Lua 5.1, contratos e exclusão de credenciais — 45673470169](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673470169): sucesso.
+- [CI testes, ZIP e upload do artefato — 45673459863](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45673459863): sucesso.
+
+Os commits intermediários `dbb0548` e `450e6cc` tiveram falha de contrato; a correção final passou nos dois fluxos. A validação continua sendo automatizada por harness, sem execução dentro do DST real.
