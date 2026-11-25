@@ -1118,7 +1118,7 @@ local function handle_modxpector_chat_command(player, message)
 end
 
 local function install_chat_command_listener(player)
-    if player == nil or player ~= rawget(DST_GLOBAL, "ThePlayer") then
+    if player == nil or player ~= ThePlayer then
         return false
     end
     local history = rawget(DST_GLOBAL, "ChatHistory")
@@ -1138,7 +1138,8 @@ local function install_chat_command_listener(player)
 
     local listener = function(message)
         -- Resolve ThePlayer at dispatch time; reconnects may replace the local entity.
-        local current_player = rawget(DST_GLOBAL, "ThePlayer")
+        local current_player = ThePlayer
+        if current_player == nil then current_player = rawget(DST_GLOBAL, "ThePlayer") end
         if current_player == nil then return end
         local ok, err = pcall(handle_modxpector_chat_command, current_player, message)
         if not ok then print("[ModXpector] CHAT_COMMAND_HANDLER_FAILED " .. tostring(err)) end
