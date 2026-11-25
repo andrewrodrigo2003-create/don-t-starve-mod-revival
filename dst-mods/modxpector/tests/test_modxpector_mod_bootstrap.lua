@@ -92,7 +92,7 @@ local player = {
 
 local engine_globals = { pcall = pcall, rawset = rawset }
 engine_globals.Prefabs = Prefabs
-engine_globals.ThePlayer = player
+-- ThePlayer is exposed by the mod environment, not required to be a raw GLOBAL field.
 engine_globals.ChatHistory = chat_history
 engine_globals.ChatTypes = ChatTypes
 local env = setmetatable({
@@ -221,7 +221,7 @@ local reconnected_player = {
     components = player.components,
 }
 env.ThePlayer = reconnected_player
-engine_globals.ThePlayer = reconnected_player
+-- The mod environment's ThePlayer binding is replaced on reconnect.
 player_postinit(reconnected_player)
 assert(chat_history.add_count == 1 and chat_history.remove_count == 0,
     "reconnect with the same history manager must not duplicate the listener")
