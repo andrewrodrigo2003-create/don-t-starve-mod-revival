@@ -215,6 +215,7 @@ assert(#chat_history.system_messages == 1
 player.userid = nil
 local reconnected_player = {
     userid = "KU_TEST_USER",
+    Transform = { GetWorldPosition = function() return 0, 0, 0 end },
     IsValid = function() return true end,
     DoTaskInTime = function(_, delay, callback) if delay >= 20 then pending_master_timeout = callback else callback() end end,
     components = player.components,
@@ -358,21 +359,25 @@ assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
 inventory_accepts_items = true
 
--- Wrong run IDs, wrong step kinds, replayed steps, and RPCs after plan clear must fail closed.
+-- Wrong positions, run IDs, step kinds, replays and calls after plan clear fail closed.
 now = 2.4
-rpc_server.spawn_item(reconnected_player, 9, 6, "stale_run_id", "cutgrass", 1, 0, 0)
-assert(responses[#responses].success == false and spawned_items == 8)
+rpc_server.spawn_item(reconnected_player, 9, 6, "server_rpc_ops", "cutgrass", 1, 100, 100)
+assert(responses[#responses].success == false and spawned_items == 8
+    and string.find(responses[#responses].message, "outside the authorized plan position", 1, true))
 now = 2.6
-rpc_server.unlock_recipe(reconnected_player, 10, 6, "server_rpc_ops", "axe")
+rpc_server.spawn_item(reconnected_player, 10, 6, "stale_run_id", "cutgrass", 1, 0, 0)
+assert(responses[#responses].success == false and spawned_items == 8)
+now = 2.8
+rpc_server.unlock_recipe(reconnected_player, 11, 6, "server_rpc_ops", "axe")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "does not match", 1, true))
-now = 2.8
-rpc_server.unlock_recipe(reconnected_player, 11, 1, "server_rpc_ops", "axe")
+now = 3.0
+rpc_server.unlock_recipe(reconnected_player, 12, 1, "server_rpc_ops", "axe")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "already consumed", 1, true))
 rpc_server.clear_test_plan(reconnected_player, "server_rpc_ops")
-now = 3.0
-rpc_server.spawn_item(reconnected_player, 12, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
+now = 3.2
+rpc_server.spawn_item(reconnected_player, 13, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "no active Master-approved", 1, true))
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
