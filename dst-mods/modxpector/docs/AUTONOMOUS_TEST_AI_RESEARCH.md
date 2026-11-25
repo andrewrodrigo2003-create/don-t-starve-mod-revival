@@ -342,3 +342,12 @@ Isso permite linguagem natural limitada e segura, não conversa geral como ChatG
 O run [45659771990](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45659771990), no commit `b08ab077dbe5317a2041f37bc2b4328f260274b2`, concluiu parse Lua 5.1 com sucesso, mas falhou na suíte `test_modxpector_virtual_player_live.lua` na linha 915: `expected a scheduled Virtual Player poll`. Os contratos anteriores (bootstrap, configuração, cancelamento, etc.) passaram até esse ponto.
 
 Causa identificada no teste novo: o `VirtualPlayer.new` do cenário de recuperação não recebeu `allowed_actions = { "WALKTO" }`; `BuildAction` rejeitou a ação antes de agendar o poll. Correção aplicada no commit `5ac39b2e341fa3c833409e9e4310ccf62c8dd1f6`, adicionando a allowlist ao cenário. A correção é coerente com o contrato do Virtual Player, mas ainda não foi reexecutada em CI; não marcar como aprovada até novo run.
+
+
+## 23. CI verde após isolamento do teste WALKTO — 25/11/2026
+
+A segunda falha também era do ambiente de teste, não do executor: contratos anteriores deixavam `TheSim.FindEntities` retornando lista vazia. O cenário de recuperação agora injeta um `path_target` próprio, executa a sequência de polls e restaura a função original ao final (commit `e75dadc8043b7a274a2f2807cb8ed107bc4950c6`).
+
+CI [run 45663743437](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45663743437) concluiu com sucesso no commit `e75dadc8043b7a274a2f2807cb8ed107bc4950c6`: parse Lua 5.1, todos os contratos Lua do ModXpector e verificação de que o pacote não inclui credenciais locais. O contrato `MODXPECTOR_VIRTUAL_PLAYER_BOUNDED_PATH_REPLAN_CONTRACT_OK` passou, confirmando uma única solicitação de ResetPath/FindPath e cancelamento após a segunda janela sem progresso.
+
+Escopo da evidência: validação automatizada em harness Lua 5.1. Não prova comportamento real do locomotor no jogo, compatibilidade multiplayer ou dedicated server; teste in-game ainda pendente.
