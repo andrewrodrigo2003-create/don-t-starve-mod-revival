@@ -81,6 +81,12 @@ if not EMBEDDED_AI_OK or type(EMBEDDED_AI) ~= "table" or type(EMBEDDED_AI.Analyz
     EMBEDDED_AI_OK = false
     EMBEDDED_AI = nil
 end
+local CHAT_COMMANDS_OK, CHAT_COMMANDS = pcall(require, "modxpector/chat_commands")
+if not CHAT_COMMANDS_OK or type(CHAT_COMMANDS) ~= "table" or type(CHAT_COMMANDS.Parse) ~= "function" then
+    print("[ModXpector] CHAT_COMMAND_PARSER_UNAVAILABLE " .. tostring(CHAT_COMMANDS))
+    CHAT_COMMANDS_OK = false
+    CHAT_COMMANDS = nil
+end
 local PLAN_OK, TEST_PLAN = pcall(require, "modxpector/test_plan")
 if not PLAN_OK or type(TEST_PLAN) ~= "table" then
     TEST_PLAN = { schema = "modxpector/test-plan/v1", enabled = false, allowed_prefabs = {}, allowed_recipes = {}, allowed_actions = {}, steps = {} }
@@ -916,13 +922,119 @@ if type(AddClientModRPCHandler) == "function" then
     end)
 end
 
+local chat_command_listener_installed = false
+local function chat_system_message(message)
+    local history = rawget(DST_GLOBAL, "ChatHistory")
+    if history ~= nil and type(history.OnSystemMessage) == "function" then
+        pcall(history.OnSystemMessage, history, tostring(message or ""))
+    else
+        print("[ModXpector Chat] " .. tostring(message or ""))
+    end
+end
+
+local function handle_modxpector_chat_command(player, message)
+    if not CHAT_COMMANDS_OK or player == nil or type(message) ~= "table"
+        or message.sender_userid == nil or message.sender_userid ~= player.userid then
+        return
+    end
+    local chat_types = rawget(DST_GLOBAL, "ChatTypes")
+    if type(chat_types) == "table" and message.type ~= chat_types.Message then return end
+    local parsed = CHAT_COMMANDS.Parse(message.message)
+    if parsed == nil then return end
+
+    if parsed.kind == "analyze" then
+        chat_system_message("ModXpector: iniciando análise offline dos mods.")
+        run_embedded_ai_diagnostics(function(success, result_message)
+            chat_system_message("ModXpector: " .. tostring(result_message)
+                .. (success and "" or " (não concluído)"))
+        end)
+    elseif parsed.kind == "status" then
+        local state = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_STATUS")
+        local status = type(state) == "table" and tostring(state.status or "desconhecido") or "aguardando"
+        local detail = type(state) == "table" and tostring(state.detail or "") or ""
+        local active = virtual_player ~= nil and virtual_player.running == true
+        chat_system_message("ModXpector: IA " .. status .. " | Virtual Player ativo: "
+            .. tostring(active) .. (detail ~= "" and " | " .. detail or ""))
+    elseif parsed.kind == "list_suites" then
+        local report = rawget(DST_GLOBAL, "MODXPECTOR_EMBEDDED_AI_REPORT")
+        local suites = type(report) == "table" and report.selected_suites or {}
+        if #suites == 0 then
+            chat_system_message("ModXpector: nenhuma suite disponível. Execute /mx analisar e verifique os mods ativos.")
+        else
+            local names = {}
+            for _, entry in ipairs(suites) do
+                local suite = type(entry) == "table" and entry.suite or nil
+                local scenario = type(suite) == "table" and suite.scenarios and suite.scenarios[1] or nil
+                if suite ~= nil and scenario ~= nil and #names < 3 then
+                    names[#names + 1] = suite.id .. " " .. scenario.id
+                end
+            end
+            chat_system_message("ModXpector suites: " .. table.concat(names, " | ")
+                .. ". Use /mx testar <suite_id> <cenario_id>.")
+        end
+    elseif parsed.kind == "run_suite" then
+        run_embedded_ai_suite(parsed.suite_id, parsed.scenario_id, function(success, result_message)
+            chat_system_message("ModXpector: " .. tostring(result_message)
+                .. (success and "" or " (não iniciado)"))
+        end)
+    elseif parsed.kind == "stop" then
+        local stopped = false
+        if virtual_player ~= nil and virtual_player.running == true
+            and type(virtual_player.Stop) == "function" then
+            virtual_player:Stop("cancelled_by_chat")
+            stopped = true
+        end
+        if pending_ai_plan ~= nil then
+            local run_id = pending_ai_plan.run_id
+            pending_ai_plan = nil
+            if type(SendModRPCToServer) == "function" and MOD_RPC[MODNAME] ~= nil
+                and MOD_RPC[MODNAME].clear_test_plan ~= nil then
+                pcall(SendModRPCToServer, MOD_RPC[MODNAME].clear_test_plan, run_id)
+            end
+            stopped = true
+        end
+        chat_system_message(stopped and "ModXpector: solicitação de parada enviada."
+            or "ModXpector: não há teste ativo para parar.")
+    elseif parsed.kind == "help" then
+        chat_system_message("Comandos: /mx analisar | /mx status | /mx testar | /mx testar <suite_id> <cenario_id> | /mx parar")
+    else
+        chat_system_message("ModXpector: comando inválido. Use /mx ajuda.")
+    end
+end
+
+local function install_chat_command_listener(player)
+    if chat_command_listener_installed or player == nil or player ~= rawget(DST_GLOBAL, "ThePlayer") then
+        return false
+    end
+    local history = rawget(DST_GLOBAL, "ChatHistory")
+    if history == nil or type(history.AddChatHistoryListener) ~= "function" then
+        print("[ModXpector] ChatHistory API indisponível; comandos por chat não foram ativados.")
+        return false
+    end
+    local listener = function(message)
+        local ok, err = pcall(handle_modxpector_chat_command, player, message)
+        if not ok then print("[ModXpector] CHAT_COMMAND_HANDLER_FAILED " .. tostring(err)) end
+    end
+    local ok, err = pcall(history.AddChatHistoryListener, history, listener)
+    if not ok then
+        print("[ModXpector] CHAT_COMMAND_LISTENER_FAILED " .. tostring(err))
+        return false
+    end
+    chat_command_listener_installed = true
+    print("[ModXpector] CHAT_COMMAND_LISTENER_READY")
+    return true
+end
+
 if type(AddPlayerPostInit) == "function" then
     AddPlayerPostInit(function(inst)
         if inst == nil or TheNet == nil then return end
         local dedicated_ok, is_dedicated = pcall(function() return TheNet:IsDedicated() end)
         if not dedicated_ok or is_dedicated then return end
         inst:DoTaskInTime(0, function()
-            if inst == ThePlayer then inst:DoTaskInTime(8, function() run_embedded_ai_diagnostics() end) end
+            if inst == ThePlayer then
+                install_chat_command_listener(inst)
+                inst:DoTaskInTime(8, function() run_embedded_ai_diagnostics() end)
+            end
             if inst == ThePlayer and is_test_mode_enabled(TEST_PLAN) then start_virtual_player(inst, TEST_PLAN) end
         end)
     end)
