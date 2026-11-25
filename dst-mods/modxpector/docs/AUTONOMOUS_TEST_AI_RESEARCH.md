@@ -391,3 +391,20 @@ Validação no HEAD `4184874e1026083073743d9a3d9f7407385b7d56`:
 - [Suíte Lua, ZIP e upload de artefato — run 45671890553](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45671890553): sucesso.
 
 **Limite:** harness e mocks não comprovam cancelamento dentro do DST real. Ainda exige validação em mundo descartável e cenários multiplayer/dedicado.
+
+
+## 28. Revalidação de entidades capturadas nas pós-condições — 25/11/2026
+
+A auditoria das asserções identificou que referências de entidade capturadas por uma ação podiam ser consultadas depois de a entidade ter sido removida. Agora existe `_is_valid_target`, que exige `IsValid()` disponível e retorno verdadeiro, protegendo as asserções `target_exists`, `target_health_lte`, `target_dead`, `target_has_tag` e `player_near_target`.
+
+Entidades capturadas inválidas não podem satisfazer asserções de existência, proximidade ou tags. A asserção de saúde rejeita referência inválida. A morte continua inconclusiva se a entidade desapareceu sem confirmação. Importante: evento `death` previamente registrado continua sendo evidência autoritativa mesmo depois de a entidade deixar de ser válida; a ordem de checagem preserva esse evento.
+
+Contratos adicionados para entidade capturada removida e para evento de morte seguido de remoção.
+
+Validação final no HEAD `a941a2510e760032843aaa4743f1860815fa29ec`:
+- [Lua 5.1, contratos e segurança — run 45672485678](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45672485678): sucesso.
+- [Testes Lua, ZIP e artefato — run 45672481059](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45672481059): sucesso.
+
+Os commits intermediários `af5f452` e `8ff6d8b` não são a validação final: o primeiro falhou porque a verificação de validade precedia a evidência do evento de morte. A correção reordenou as verificações, e o HEAD final acima passou nos dois fluxos.
+
+**Limite:** testes com harness/mocks; não houve validação dentro do DST real.
