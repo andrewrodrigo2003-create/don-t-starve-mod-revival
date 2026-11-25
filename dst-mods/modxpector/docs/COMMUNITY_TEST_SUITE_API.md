@@ -101,7 +101,7 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 
 ## Segurança: mundo normal versus laboratório descartável
 
- - O perfil comunitário atual continua limitado a WALKTO e verificações observacionais; ele não exige laboratory_mode.
+ - O perfil comunitário atual continua limitado a WALKTO e verificações observacionais. WALKTO move o personagem real, portanto também exige laboratory_mode; apenas inspeção sem movimento/ação pode permanecer fora do laboratório.
  - test_mode é a autorização geral para iniciar testes controlados. Não significa que o mundo esteja isolado.
  - Planos com ações que alteram entidades, inventário, receitas ou o mundo exigem a opção separada Confirmar mundo de laboratório descartável (laboratory_mode), cujo padrão é desativado.
  - O ModXpector não consegue provar, apenas pelo runtime do jogo, que o save atual é descartável. O usuário precisa criar um mundo/cluster separado e habilitar a opção somente nele.
