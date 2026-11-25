@@ -220,3 +220,9 @@ end
 - Payloads são tratados como dados, nunca executados. Eventos de erro/compatibilidade aparecem como aviso com confiança `unknown`.
 - A API não substitui `print`, `error`, `pcall` ou `xpcall`, nem intercepta chamadas globais.
 - Esta API é uma extensão para mods comunitários que venham a adotá-la; não implica que os mods já catalogados a implementem.
+
+
+## Autorização dos RPCs de efeitos
+
+As chamadas server-authoritative de spawn_item, spawn_entity e unlock_recipe devem incluir request_id, step_index (índice 1-based), run_id e os parâmetros específicos da operação. O Master confere esses campos contra a etapa exata do plano aprovado, confirma que a etapa ainda não foi consumida e só então executa o efeito. Uma etapa não pode ser reutilizada. Não invoque esses RPCs fora de um plano ativo aprovado; limpar o plano invalida chamadas subsequentes. Essa autorização é adicional a administrator, test_mode, laboratory_mode, allowlists e limites de taxa/quantidade.
+
