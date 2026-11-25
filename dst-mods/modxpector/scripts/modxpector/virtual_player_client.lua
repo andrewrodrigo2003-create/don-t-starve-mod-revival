@@ -623,8 +623,11 @@ function VirtualPlayer:_evaluate_assertion(assertion)
         local count = assertion.count == nil and 1 or tonumber(assertion.count)
         assert(is_finite_number(count) and count == math.floor(count) and count >= 1 and count <= 10000,
             "container assertion count must be an integer between 1 and 10000")
-        local _, found = container:Has(prefab, count, false)
-        actual = (tonumber(found) or 0) >= count
+        local _, raw_found = container:Has(prefab, count, false)
+        local found = tonumber(raw_found)
+        assert(is_finite_number(found) and found >= 0,
+            "target container replica returned an invalid item count")
+        actual = found >= count
         expected = assertion.expected ~= false
     elseif kind == "player_knows_recipe" then
         local recipe_name = assert(assertion.recipe, "assertion recipe required")
