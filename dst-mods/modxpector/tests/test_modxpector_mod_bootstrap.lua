@@ -315,58 +315,58 @@ decoded_plan = {
         { kind = "spawn_item", prefab = "cutgrass", count = 1 },
     },
 }
-rpc_server.set_test_plan(player, "server_rpc_ops", "{}")
+rpc_server.set_test_plan(reconnected_player, "server_rpc_ops", "{}")
 assert(responses[#responses].success == true, "Master must accept the disposable-lab operation plan")
 
 admin = false
-rpc_server.unlock_recipe(player, 1, 1, "server_rpc_ops", "axe")
+rpc_server.unlock_recipe(reconnected_player, 1, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == nil and responses[#responses].success == false)
 admin = true
 laboratory_mode = false
 now = 1.2
-rpc_server.unlock_recipe(player, 2, 1, "server_rpc_ops", "axe")
+rpc_server.unlock_recipe(reconnected_player, 2, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == nil and responses[#responses].success == false
     and string.find(responses[#responses].message, "laboratory mode", 1, true),
     "recipe unlock must be blocked when disposable laboratory mode is disabled")
 laboratory_mode = true
 now = 1.4
-rpc_server.unlock_recipe(player, 3, 1, "server_rpc_ops", "axe")
+rpc_server.unlock_recipe(reconnected_player, 3, 1, "server_rpc_ops", "axe")
 assert(unlocked.axe == true and responses[#responses].success == true)
 now = 1.6
-rpc_server.spawn_item(player, 4, 2, "server_rpc_ops", "cutgrass", 2, 0, 0)
+rpc_server.spawn_item(reconnected_player, 4, 2, "server_rpc_ops", "cutgrass", 2, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == true)
-rpc_server.spawn_item(player, 5, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(reconnected_player, 5, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false and string.find(responses[#responses].message, "rate limit", 1, true))
 
 -- The configured per-request limit must be enforced by the master, not only displayed in the UI.
 configured_max_spawn_count = 5
 now = 1.8
-rpc_server.spawn_item(player, 6, 4, "server_rpc_ops", "cutgrass", 6, 0, 0)
+rpc_server.spawn_item(reconnected_player, 6, 4, "server_rpc_ops", "cutgrass", 6, 0, 0)
 assert(spawned_items == 2 and responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "configured limit", 1, true))
 now = 2.0
-rpc_server.spawn_item(player, 7, 5, "server_rpc_ops", "cutgrass", 5, 0, 0)
+rpc_server.spawn_item(reconnected_player, 7, 5, "server_rpc_ops", "cutgrass", 5, 0, 0)
 assert(spawned_items == 7 and responses[#responses].success == true)
 
 -- A created prefab is not a successful spawn_item unless GiveItem confirms inventory delivery.
 inventory_accepts_items = false
 now = 2.2
-rpc_server.spawn_item(player, 8, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(reconnected_player, 8, 3, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory rejected", 1, true))
 inventory_accepts_items = true
 
 -- Wrong run IDs, replayed step indices, and RPCs after plan clear must fail closed.
 now = 2.4
-rpc_server.spawn_item(player, 9, 6, "stale_run_id", "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(reconnected_player, 9, 6, "stale_run_id", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false and spawned_items == 7)
 now = 2.6
-rpc_server.unlock_recipe(player, 10, 1, "server_rpc_ops", "axe")
+rpc_server.unlock_recipe(reconnected_player, 10, 1, "server_rpc_ops", "axe")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "already consumed", 1, true))
-rpc_server.clear_test_plan(player, "server_rpc_ops")
+rpc_server.clear_test_plan(reconnected_player, "server_rpc_ops")
 now = 2.8
-rpc_server.spawn_item(player, 11, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
+rpc_server.spawn_item(reconnected_player, 11, 6, "server_rpc_ops", "cutgrass", 1, 0, 0)
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "no active Master-approved", 1, true))
 print("MODXPECTOR_SPAWN_ITEM_INVENTORY_DELIVERY_CONTRACT_OK")
@@ -386,7 +386,7 @@ decoded_plan = {
         { kind = "action", action = "WALKTO", target = { prefab = "cutgrass" }, target_required = true },
     },
 }
-rpc_server.set_test_plan(player, "walkto_requires_laboratory", "{}")
+rpc_server.set_test_plan(reconnected_player, "walkto_requires_laboratory", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "laboratory mode", 1, true),
     "Master must reject movement plans outside the disposable laboratory")
@@ -402,7 +402,7 @@ decoded_plan = {
     allowed_actions = {},
     steps = { { kind = "spawn_item", prefab = "cutgrass", count = 1 } },
 }
-rpc_server.set_test_plan(player, "blocked_without_laboratory", "{}")
+rpc_server.set_test_plan(reconnected_player, "blocked_without_laboratory", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "laboratory mode", 1, true),
     "Master must reject world-changing plans when laboratory mode is disabled")
@@ -423,7 +423,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 2 }, verifies_steps = { 1, 2 } },
     },
 }
-rpc_server.set_test_plan(player, "valid_plan_1", "{}")
+rpc_server.set_test_plan(reconnected_player, "valid_plan_1", "{}")
 assert(responses[#responses].success == true, "master must accept valid multiple-postcondition plans")
 
 decoded_plan = {
@@ -438,7 +438,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "target_dead", target_step = 1 }, verifies_step = 1 },
     },
 }
-rpc_server.set_test_plan(player, "valid_target_1", "{}")
+rpc_server.set_test_plan(reconnected_player, "valid_target_1", "{}")
 assert(responses[#responses].success == true, "master must accept an exact prior-action target reference")
 
 decoded_plan = {
@@ -454,7 +454,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass", expected = false } },
     },
 }
-rpc_server.set_test_plan(player, "valid_store_container_assertion", "{}")
+rpc_server.set_test_plan(reconnected_player, "valid_store_container_assertion", "{}")
 assert(responses[#responses].success == true, "master must accept STORE with container and carried-inventory postconditions")
 
 decoded_plan = {
@@ -469,7 +469,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "player_inventory_has_item", prefab = "cutgrass" }, verifies_step = 1 },
     },
 }
-rpc_server.set_test_plan(player, "valid_takeitem_action", "{}")
+rpc_server.set_test_plan(reconnected_player, "valid_takeitem_action", "{}")
 assert(responses[#responses].success == true, "master must accept the real TAKEITEM action with a postcondition")
 
 decoded_plan = {
@@ -483,7 +483,7 @@ decoded_plan = {
         { kind = "action", action = "TAKE", target = { prefab = "birdcage" }, target_required = true },
     },
 }
-rpc_server.set_test_plan(player, "invalid_legacy_take_action", "{}")
+rpc_server.set_test_plan(reconnected_player, "invalid_legacy_take_action", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "server allowlist", 1, true),
     "master must reject the nonexistent TAKE action")
@@ -499,7 +499,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "container_has_item", target = { prefab = "treasurechest" }, prefab = "cutgrass", count = 1.5 } },
     },
 }
-rpc_server.set_test_plan(player, "invalid_container_count", "{}")
+rpc_server.set_test_plan(reconnected_player, "invalid_container_count", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "container assertion count", 1, true),
     "master must reject fractional container assertion counts")
@@ -516,7 +516,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "player_has_item", prefab = "cutgrass" }, verifies_step = 3 },
     },
 }
-rpc_server.set_test_plan(player, "invalid_future_ref", "{}")
+rpc_server.set_test_plan(reconnected_player, "invalid_future_ref", "{}")
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "invalid postcondition reference", 1, true))
 
@@ -532,7 +532,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "target_dead", target_step = 1 } },
     },
 }
-rpc_server.set_test_plan(player, "invalid_target_ref", "{}")
+rpc_server.set_test_plan(reconnected_player, "invalid_target_ref", "{}")
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "target_step must reference a previous action", 1, true))
 
@@ -547,7 +547,7 @@ decoded_plan = {
         { kind = "assert", assertion = { kind = "player_has_item_count_gte", prefab = "cutgrass", count = 1.5 } },
     },
 }
-rpc_server.set_test_plan(player, "invalid_inventory_count", "{}")
+rpc_server.set_test_plan(reconnected_player, "invalid_inventory_count", "{}")
 assert(responses[#responses].success == false)
 assert(string.find(responses[#responses].message, "inventory assertion count", 1, true))
 print("MODXPECTOR_MASTER_TEST_PLAN_VALIDATION_CONTRACT_OK")
