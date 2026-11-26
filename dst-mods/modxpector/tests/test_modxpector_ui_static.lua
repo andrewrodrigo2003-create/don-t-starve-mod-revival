@@ -358,6 +358,10 @@ assert(main:find('WORLD_INVENTORY.Collect, DST_GLOBAL', 1, true),
     "embedded AI must consume the in-game read-only mod inventory")
 assert(main:find('EMBEDDED_AI.Analyze, snapshot', 1, true),
     "embedded AI must analyze the observed inventory")
+assert(screen_source:find('EMBEDDED_AI_UI_RESULT success=" .. tostring(success) .. " message=" .. tostring(message or "")', 1, true),
+    "AI analysis log must include the callback reason, not only a boolean")
+assert(screen_source:find('EMBEDDED_AI_CONFIG_RESULT success=" .. tostring(success) .. " message=" .. tostring(message or "")', 1, true),
+    "AI config analysis log must include the callback reason, not only a boolean")
 assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_STATUS', 1, true),
     "dashboard must show embedded AI status")
 assert(screen_source:find('MODXPECTOR_EMBEDDED_AI_REPORT', 1, true),
