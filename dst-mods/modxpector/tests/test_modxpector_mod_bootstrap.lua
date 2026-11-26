@@ -116,6 +116,8 @@ local env = setmetatable({
             return dofile("dst-mods/modxpector/scripts/modxpector/chat_commands.lua")
         elseif path == "modxpector/embedded_ai" then
             return dofile("dst-mods/modxpector/scripts/modxpector/embedded_ai.lua")
+        elseif path == "modxpector/test_plan_policy" then
+            return dofile("dst-mods/modxpector/scripts/modxpector/test_plan_policy.lua")
         elseif path == "modxpector/world_inventory" then
             return { Collect = function()
                 return {
