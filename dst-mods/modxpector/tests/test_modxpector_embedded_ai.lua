@@ -376,17 +376,87 @@ local selected_with_prefab = AI.SelectSuites({ community_suite }, {
 assert(#selected_with_prefab == 1, "suite should be offered when its owner and prefab are both present")
 
 local builtin_suites = AI.GetBuiltinSuites()
-assert(#builtin_suites == 0,
-    "no built-in community suite should be active without current compatibility and license evidence")
+assert(#builtin_suites == 1,
+    "the user-owned Metals and More suite should be the only enabled built-in candidate")
+local mam_suite = builtin_suites[1]
+assert(mam_suite.id == "mam_donharpoon_pickup"
+    and mam_suite.owner_mod_id == "metals-and-reforged"
+    and mam_suite.allowed_prefabs[1] == "donharpoon",
+    "the built-in pickup suite must bind to the verified local MAM mod and prefab")
+assert(AI.ValidateSuite(mam_suite) == false,
+    "built-in fixture steps must not pass through the untrusted community registration path")
+
 local stale_friendly_snapshot = {
     schema = "modxpector/world-inventory/v2",
     mods = {
         { id = "workshop-2323760467", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
     },
 }
-local stale_friendly_selected = AI.SelectSuites(builtin_suites, stale_friendly_snapshot, { skeletonservant = true })
+local stale_friendly_selected = AI.SelectSuites(
+    builtin_suites, stale_friendly_snapshot, { skeletonservant = true, donharpoon = true })
 assert(#stale_friendly_selected == 0,
     "removed/incompatible Friendly Skeleton must not be selected as an active built-in suite")
+
+local mam_snapshot = {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "metals-and-reforged", enabled = true, loaded = true, loaded_known = true, load_state = "loaded" },
+    },
+}
+local mam_selected = AI.SelectSuites(builtin_suites, mam_snapshot, { donharpoon = true })
+assert(#mam_selected == 1 and mam_selected[1].confidence == "confirmed",
+    "MAM suite must be selected only when the local mod and donharpoon prefab are confirmed")
+local mam_plan, mam_plan_error = AI.BuildVirtualPlayerPlan(
+    mam_selected[1].suite, "pickup_donharpoon", "mam_suite_run_1")
+assert(mam_plan ~= nil and mam_plan_error == nil,
+    "the trusted MAM suite should compile to a server-validated Virtual Player plan")
+assert(mam_plan.steps[1].kind == "spawn_entity"
+    and mam_plan.steps[1].prefab == "donharpoon" and mam_plan.steps[1].count == 1,
+    "the built-in fixture must spawn exactly one allowlisted Don Harpoon on the server")
+assert(mam_plan.steps[2].action == "PICKUP"
+    and mam_plan.steps[3].assertion.kind == "player_inventory_item_count_increased"
+    and mam_plan.steps[3].assertion.target_step == 2
+    and mam_plan.steps[3].verifies_step == 2,
+    "the suite must verify the inventory delta from the PICKUP action")
+
+local mam_missing_prefab = AI.SelectSuites(builtin_suites, mam_snapshot, {})
+assert(#mam_missing_prefab == 0,
+    "MAM suite must not be offered when donharpoon is not registered")
+local mam_disabled = AI.SelectSuites(builtin_suites, {
+    schema = "modxpector/world-inventory/v2",
+    mods = {
+        { id = "metals-and-reforged", enabled = true, loaded = false, loaded_known = true, load_state = "failed" },
+    },
+}, { donharpoon = true })
+assert(#mam_disabled == 0,
+    "MAM suite must not be offered when the owner mod failed to load")
+
+local external_fixture_suite = {
+    schema = "modxpector/test-suite/v1",
+    id = "community_fixture_attempt",
+    owner_mod_id = "metals-and-reforged",
+    title = "Untrusted fixture attempt",
+    allowed_prefabs = { "donharpoon" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        {
+            id = "untrusted_spawn",
+            title = "Try to spawn a fixture",
+            steps = {
+                { kind = "fixture", operation = "spawn_entity", prefab = "donharpoon", count = 1 },
+                { kind = "action", action = "PICKUP",
+                    target = { prefab = "donharpoon", radius = 12 }, target_required = true },
+                { kind = "assert", assertion = {
+                    kind = "player_inventory_item_count_increased",
+                    target_step = 2, prefab = "donharpoon", count = 1,
+                }, verifies_step = 2 },
+            },
+        },
+    },
+}
+assert(AI.ValidateSuite(external_fixture_suite) == false,
+    "third-party/community suites must not be able to request server-side spawn fixtures")
 local vp_plan, vp_error = AI.BuildVirtualPlayerPlan(community_suite, "approach_grass", "suite_run_1")
 assert(vp_plan ~= nil and vp_error == nil, "valid suite should compile into a Virtual Player plan")
 assert(vp_plan.schema == "modxpector/test-plan/v1" and vp_plan.enabled == true)
