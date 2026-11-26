@@ -728,3 +728,51 @@ assert(responses[#responses].success == false
         "community suite action is not in the server-side AI allowlist", 1, true),
     "Master must reject client-supplied community-suite actions outside its independent allowlist")
 
+
+
+now = now + 1
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "suite_pickup_missing_postcondition",
+    suite_id = "pickup_smoke",
+    owner_mod_id = "workshop-100",
+    scenario_id = "pickup_item",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    steps = {
+        { kind = "action", action = "PICKUP",
+            target = { prefab = "cutgrass", radius = 12 }, target_required = true },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "suite_pickup_missing_postcondition", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "PICKUP requires a matching player inventory increase", 1, true),
+    "Master must reject PICKUP without a matching inventory delta postcondition")
+
+now = now + 1
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "suite_pickup_mismatched_prefab",
+    suite_id = "pickup_smoke",
+    owner_mod_id = "workshop-100",
+    scenario_id = "pickup_item",
+    allowed_prefabs = { "cutgrass", "grass" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    steps = {
+        { kind = "action", action = "PICKUP",
+            target = { prefab = "cutgrass", radius = 12 }, target_required = true },
+        { kind = "assert", assertion = {
+            kind = "player_inventory_item_count_increased",
+            target_step = 1, prefab = "grass", count = 1,
+        }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "suite_pickup_mismatched_prefab", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "PICKUP requires a matching player inventory increase", 1, true),
+    "Master must reject a pickup postcondition for a different prefab")
+
