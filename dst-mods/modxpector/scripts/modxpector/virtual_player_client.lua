@@ -1336,7 +1336,14 @@ function VirtualPlayer:_poll_action()
         return
     end
     if active.step.action == "PICKUP" then
-        self:_stop_step_event_observer(self.index)
+        local observer_snapshot = self:_stop_step_event_observer(self.index)
+        if observer_snapshot ~= nil and observer_snapshot.cleanup_complete ~= true then
+            self.run_inconclusive = true
+            self:_record(active.step, "inconclusive",
+                "step observer cleanup remains pending; later steps were aborted to prevent cross-step event attribution")
+            self:_finish(false, "step observer listener cleanup incomplete")
+            return
+        end
     end
     if active.step.repeat_until_target_dead == true then
         local repeat_count = (active.repeat_count or 0) + 1
@@ -1478,6 +1485,7 @@ function VirtualPlayer:GetReport()
         results = self.results,
         step_event_observer_results = self.step_event_observer_results or {},
         step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
+        player_onremove_cleanup_pending = self.player_onremove_callback ~= nil,
     }
 end
 
