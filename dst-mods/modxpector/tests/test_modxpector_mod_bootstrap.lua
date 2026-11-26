@@ -128,8 +128,10 @@ local env = setmetatable({
                         failed_mod_list = true,
                     },
                     mods = {
-                        { id = "workshop-100", name = "Community Test Mod", enabled = true,
-                            loaded = true, loaded_known = true, load_state = "loaded" },
+                        { id = "workshop-100", name = "Community Test Mod",
+                            enabled = true, enabled_known = true,
+                            loaded = true, loaded_known = true, load_state = "loaded",
+                            metadata_available = true, server_enabled = true, server_enabled_known = true },
                     },
                 }
             end }
