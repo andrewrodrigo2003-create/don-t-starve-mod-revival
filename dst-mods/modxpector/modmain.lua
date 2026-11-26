@@ -1063,9 +1063,23 @@ local function run_embedded_ai_suite(suite_id, scenario_id, callback)
         return false
     end
     local suite = selected_entry.suite
+    if selected_entry.confidence ~= "confirmed" then
+        finish(false, "Suite não executada: o último inventário não confirmou o carregamento do mod proprietário.")
+        return false
+    end
+    if not INVENTORY_OK or type(WORLD_INVENTORY) ~= "table"
+        or type(WORLD_INVENTORY.Collect) ~= "function" then
+        finish(false, "Suite não executada: o inventário runtime não está disponível para confirmar o mod proprietário.")
+        return false
+    end
+    local inventory_ok, current_snapshot = pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)
+    if not inventory_ok then
+        finish(false, "Suite não executada: falha ao atualizar o inventário runtime.")
+        return false
+    end
     local owner_loaded, owner_reason = TEST_PLAN_POLICY.IsOwnerModConfirmedLoaded(
-        type(report) == "table" and report.snapshot or nil, suite.owner_mod_id)
-    if selected_entry.confidence ~= "confirmed" or not owner_loaded then
+        current_snapshot, suite.owner_mod_id)
+    if not owner_loaded then
         finish(false, "Suite não executada: o mod proprietário não está confirmado como carregado e habilitado no cliente (" .. tostring(owner_reason) .. ").")
         return false
     end
