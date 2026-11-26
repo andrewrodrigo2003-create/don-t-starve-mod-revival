@@ -919,3 +919,76 @@ Mesmo depois de corrigir a origem dos eventos, o registro atual ainda não prese
 **Correção futura:** extrair sob proteção e validar somente campos escalares mínimos (por exemplo, slot, GUID/prefab do item quando presente, stack size, old stack size e origem quando finita), sem guardar referências de entidade no relatório. A ausência de campos deve permanecer explícita/inconclusiva. Esses metadados servem para correlação e diagnóstico, não como prova independente de causalidade ou autoridade do servidor.
 
 Testes devem verificar payload completo, payload parcial, GUID inválido, slot inválido, stack size NaN/infinito, item removido antes do callback e eventos de preview. A identidade e o resultado continuam dependendo de snapshots independentes antes/depois e de evidência adicional.
+
+
+---
+
+## Reorientação do objetivo — agente temporário de testes, não jogador de sobrevivência (25/11/2026)
+
+O objetivo do usuário foi esclarecido: **não construir uma IA que jogue uma partida inteira nem que sobreviva indefinidamente**. O Virtual Player é um instrumento temporário do laboratório. Deve executar cenários delimitados, observar pós-condições, registrar evidências e encerrar. A pesquisa sobre auto_starve permanece como referência de planejamento, timeouts, receipts e recuperação, mas sua arquitetura de sobrevivência não deve ser reproduzida.
+
+### Auditoria do que já existe — não criar um segundo Virtual Player
+
+A branch do ModXpector já contém a implementação parcial:
+
+- **scripts/modxpector/virtual_player_client.lua**: controla a entidade do jogador local real; exige player válido; cria BufferedAction; usa allowlist, limite de etapas, seleção de alvo por prefab/tag/raio, timeouts, cancelamento e verificações posteriores.
+- **modmain.lua**: só inicia o executor quando inst == ThePlayer, recusa servidor dedicado, exige modo de teste, envia o plano ao Master para validação e só inicia após resposta positiva.
+- O executor chama **player.components.playercontroller:DoAction(action)**. Não cria jogador falso nem substitui o servidor. A ação segue o pipeline nativo de PlayerController/BufferedAction e a autoridade normal do jogo.
+- **embedded_ai.lua**: interpreta suites declarativas e transforma um cenário validado em modxpector/test-plan/v1.
+- **COMMUNITY_TEST_SUITE_API.md**: permite que mods declarem suites sem modelo ou serviço externo.
+- **test_plan.lua** continua sendo um plano desativado/placeholder, não uma biblioteca de cenários.
+
+### Limite funcional atual da camada de suites
+
+A existência do Virtual Player não significa que todas as categorias de teste já estejam liberadas:
+
+- A allowlist da API de suites (SUITE_ACTION_ALLOWLIST) permite atualmente somente WALKTO.
+- A suite embutida localizada é friendly_skeleton_servant_smoke, do mod Friendly Skeleton, e testa apenas aproximação a um skeletonservant seguida de player_near_target.
+- Mods sem suite declarada continuam sujeitos à análise passiva; o ModXpector não deve inventar ações ou resultados a partir de uma descrição vaga do mod.
+- O executor interno conhece outras ações, mas elas não ficam automaticamente disponíveis pela API de suites.
+- STORE, TAKEITEM e TAKESINGLEITEM permanecem fail-closed; não liberar com base apenas em contagens agregadas de prefabs.
+
+### Confirmação do pipeline nativo
+
+No mirror comunitário CN-DST-DEVELOPER/scripts, commit db27167b158f81b739e30287c0756fe8484a8763 (mensagem 763928), foi observado que PlayerController:DoAction valida e encaminha ações para locomotor ou RPC; EntityScript:ListenForEvent(event, fn, source) e RemoveEventCallback(event, fn, source) permitem separar o dono do listener da entidade emissora. O mirror é comunitário e não foi autenticado como publicação oficial da Klei.
+
+A documentação comunitária da API descreve PlayerController:DoAction como o ponto que valida BufferedAction, trata auto-equip/target e encaminha ao locomotor ou servidor; DoAction em Behavior Tree usa Locomotor:PushAction e monitora sucesso, falha, invalidação e timeout. Fontes:
+- https://github.com/CN-DST-DEVELOPER/scripts/commit/db27167b158f81b739e30287c0756fe8484a8763
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/components/playercontroller
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/behaviours/doaction
+- https://vietnd69.github.io/dst-api-webdocs/docs/game-scripts/entityscript
+
+**Decisão:** manter o controle do personagem real por PlayerController:DoAction no cliente local, com o Master validando o plano e o servidor executando as ações autorizadas. Não substituir isso por teleporte, comandos de debug ou um NPC artificial quando o teste exigir comportamento real.
+
+### Correção aplicada no observador de eventos — 26/11/2026
+
+Foram corrigidos step_event_observer.lua e test_modxpector_step_event_observer.lua:
+
+1. Separação explícita entre owner (entidade que instala/remove o listener) e entity (origem real do evento).
+2. itemget/itemlose agora são observados no jogador e no contêiner-alvo; os classified continuam sendo consultados para estado busy/snapshot, mas não são tratados como emissores desses eventos.
+3. itemget pode instalar observação limitada de stacksizechange/stacksizepreview na entidade do item; itens conhecidos podem ser passados como tracked_items.
+4. RemoveEventCallback recebe a mesma origem usada em ListenForEvent.
+5. Cleanup preserva inscrições pendentes, permite retry e não declara sucesso enquanto houver listener pendente.
+6. Se o registro parcial falhar e a limpeza também falhar, Start devolve um handle recuperável como terceiro retorno.
+7. Eventos registram somente metadados escalares validados (GUID, prefab, slot, stack sizes e marcador de sincronização); referências de entidades não são copiadas para o relatório.
+8. stacksizepreview continua sendo preview; eventos e snapshots client-side não provam causalidade nem autoridade do servidor.
+
+### Verificação da alteração
+
+- Branch: security/modxpector-5.0.14-opt-in-2026-11-23.
+- HEAD: cfaaf4b6c1872ef02a0cd2310635ed3b5ac83157.
+- Lua checks: run 45732648990 — sucesso; parsing de todos os Lua com Lua 5.1, contratos da suíte e verificação de credenciais do pacote.
+- Package: run 45732638175 — sucesso; suíte Lua, ZIP e upload do artefato.
+- Os commits intermediários 9b7a479, 10ba6a3 e c77058e tiveram falhas de contrato durante a correção; a expectativa foi ajustada e o HEAD cfaaf4b ficou verde.
+- PR #76 continua aberta, draft e sem merge; 471 commits à frente e 0 atrás de main na última comparação.
+- Nenhum teste foi executado dentro do motor DST, em multiplayer ou em servidor dedicado. CI Lua não prova funcionamento in-game.
+
+### Próxima sequência técnica
+
+1. Manter a IA como executor de cenários curtos.
+2. Criar/validar um cenário de smoke test disponível no ambiente alvo, sem presumir que Friendly Skeleton esteja instalado.
+3. Expandir a allowlist de suites uma ação por vez, começando por ações de baixo risco e oráculos independentes; não liberar uma ação apenas porque existe em ACTIONS.
+4. Antes de liberar inventário/transferência, integrar snapshots de identidade e eventos corretos ao lifecycle por step; manter STORE/TAKEITEM/TAKESINGLEITEM bloqueados até prova suficiente.
+5. Integrar o observador ao Virtual Player somente depois de validar cleanup em sucesso, falha, timeout, cancelamento, remoção de entidade e substituição de ação.
+6. Depois do smoke test, acrescentar combate/receitas/estruturas como suites específicas, não como uma IA de sobrevivência geral.
+
