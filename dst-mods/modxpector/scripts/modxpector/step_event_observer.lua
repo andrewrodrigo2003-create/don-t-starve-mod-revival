@@ -92,9 +92,8 @@ local function register_listener(session, owner, event_source, label, event_name
         end
 
         local callback_ok = safe_call(session.pcall, function()
-            local event_entity = observed_event_name == "stacksizechange"
-                or observed_event_name == "stacksizepreview" and observed_source
-                or nil
+            local event_entity = (observed_event_name == "stacksizechange"
+                or observed_event_name == "stacksizepreview") and observed_source or nil
             if observed_event_name == "itemget" then
                 local item_ok, item = read_field(session.pcall, data, "item")
                 if item_ok and valid_entity(session.pcall, item) then
