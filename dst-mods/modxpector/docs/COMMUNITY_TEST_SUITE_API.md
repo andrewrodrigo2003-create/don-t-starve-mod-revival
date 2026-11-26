@@ -248,7 +248,7 @@ A partir da revisão de 26/11/2026, a API aceita PICKUP em cenários declarativo
 
 Exemplo de cenário:
 
-\`\`\`lua
+```lua
 {
     kind = "action",
     action = "PICKUP",
@@ -265,7 +265,7 @@ Exemplo de cenário:
     },
     verifies_step = 1,
 }
-\`\`\`
+```
 
 A verificação mede o aumento da quantidade total daquele prefab no inventário antes/depois do step. Ela não prova identidade de GUID em cenários com pickups concorrentes do mesmo prefab; execute o smoke test em ambiente isolado, sem outras fontes simultâneas do item. Não reutilize essa contagem como prova suficiente de STORE/TAKEITEM/TAKESINGLEITEM: essas operações continuam bloqueadas até uma verificação de transferência específica.
 
