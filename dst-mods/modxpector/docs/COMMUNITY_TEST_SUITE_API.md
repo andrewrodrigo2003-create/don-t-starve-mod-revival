@@ -101,7 +101,7 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 
 ## Segurança: mundo normal versus laboratório descartável
 
- - O perfil comunitário atual continua limitado a WALKTO e verificações observacionais. WALKTO move o personagem real, portanto também exige laboratory_mode; apenas inspeção sem movimento/ação pode permanecer fora do laboratório.
+ - O perfil comunitário atual permite `WALKTO` e `PICKUP`, ambos sob `laboratory_mode` porque movem o jogador real ou alteram seu inventário. `PICKUP` exige alvo obrigatório, prefab permitido e pós-condição `player_inventory_item_count_increased` vinculada ao mesmo step e prefab. O oráculo atual compara contagem por prefab, não GUID; use apenas em cenário isolado sem pickups concorrentes do mesmo prefab.
  - test_mode é a autorização geral para iniciar testes controlados. Não significa que o mundo esteja isolado.
  - Planos com ações que alteram entidades, inventário, receitas ou o mundo exigem a opção separada Confirmar mundo de laboratório descartável (laboratory_mode), cujo padrão é desativado.
  - O ModXpector não consegue provar, apenas pelo runtime do jogo, que o save atual é descartável. O usuário precisa criar um mundo/cluster separado e habilitar a opção somente nele.
@@ -118,23 +118,22 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 
 ## Estado atual
 
-O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. A cobertura atual limita-se ao perfil seguro com `WALKTO` e verificações observacionais. É necessário ampliar os adaptadores de ação e pós-condição gradualmente, com testes e evidências por subsistema.
+O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. A cobertura atual limita-se ao perfil seguro com `WALKTO` e `PICKUP` controlado, cada um com pós-condição explícita. O catálogo embutido não inclui suites comunitárias ativas até que uma referência atual, compatível e auditável seja confirmada. É necessário ampliar os adaptadores de ação e pós-condição gradualmente, com testes e evidências por subsistema.
 
 
-## Adaptador comunitário embutido: Friendly Skeleton - AI
+## Catálogo de suites embutidas
 
-O catálogo interno inclui um smoke test opcional para o Workshop **2323760467**:
+Nenhuma suite comunitária embutida está ativa nesta versão. O adaptador anterior para **Friendly Skeleton - AI** (Workshop `2323760467`, prefab candidato `skeletonservant`) foi retirado do catálogo ativo após nova verificação da [página oficial da Oficina](https://steamcommunity.com/sharedfiles/filedetails/?id=2323760467): o item aparece removido da comunidade e incompatível com Don't Starve Together. Não foi localizado código-fonte/licença auditável para esse item.
 
-- Prefab observado: `skeletonservant`.
-- Pré-condições: o mod precisa estar habilitado/carregado, o prefab precisa existir no registro `Prefabs` da sessão e um Skeleton Servant precisa já estar presente no mundo.
-- Cenário: o Virtual Player se aproxima do servant e verifica a distância.
-- Ação permitida: somente `WALKTO`; não cria, equipa, consome, ataca ou altera entidades.
-- Origem da referência: [página do mod na Oficina](https://steamcommunity.com/sharedfiles/filedetails/?id=2323760467) e descrição do mod original que identifica os nomes de spawn [808788274](https://steamcommunity.com/sharedfiles/filedetails/?id=808788274).
-- O código do mod comunitário não foi copiado. O nome do prefab é tratado como candidato derivado da página original; a suite só aparece quando o runtime confirma que `Prefabs.skeletonservant` está registrado.
-- O teste verifica existência do alvo e capacidade de aproximação; **não certifica** coleta, combate, mineração, persistência nem compatibilidade geral do mod.
+Não registrar um adaptador apenas porque um prefab histórico é conhecido. Uma nova suite embutida exige:
+- Workshop ID e proprietário confirmados por fonte primária;
+- compatibilidade atual com a build do DST;
+- código e licença auditáveis, sem reutilização não autorizada;
+- prefab confirmado em código e registro runtime;
+- mod efetivamente habilitado/carregado no ambiente-alvo;
+- cenário não destrutivo, allowlists mínimas e pós-condições explícitas.
 
-O catálogo só apresenta suites quando o mod proprietário está ativo e todos os prefabs declarados existem no registro local. Isso evita oferecer um teste cujo alvo não está registrado.
-
+Mods externos ainda podem registrar suites declarativas pela API. A ausência de suite embutida não impede inspeção read-only nem validação de suites fornecidas por mods carregados.
 
 ## Integração opcional com Dev Tools (Workshop 2220506640)
 
