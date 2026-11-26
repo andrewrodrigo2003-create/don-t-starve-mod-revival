@@ -262,6 +262,34 @@ assert(replica_sources[1].owner == source_player and replica_sources[1].entity =
 assert(replica_sources[2].owner == source_player and replica_sources[2].entity == source_target)
 assert(replica_sources[1].label == "player_inventory"
     and replica_sources[2].label == "target_container")
+
+local player_only_sources = assert(Observer.BuildPlayerSources(source_player, pcall))
+assert(#player_only_sources == 1
+    and player_only_sources[1].owner == source_player
+    and player_only_sources[1].entity == source_player
+    and player_only_sources[1].events[1] == "itemget"
+    and player_only_sources[1].events[2] == "itemlose",
+    "pickup observation must subscribe to player inventory events only")
+player_classified.IsBusy = function() return true end
+local busy_player_only, busy_player_only_reason =
+    Observer.BuildPlayerSources(source_player, pcall)
+assert(busy_player_only == nil
+    and busy_player_only_reason == "player_inventory_classified_busy_or_unknown",
+    "pickup observation must fail closed while the player inventory is busy")
+player_classified.IsBusy = function() return false end
+local missing_inventory_player = entity(1306, "wilson")
+local missing_inventory_sources, missing_inventory_reason =
+    Observer.BuildPlayerSources(missing_inventory_player, pcall)
+assert(missing_inventory_sources == nil
+    and missing_inventory_reason == "player_inventory_replica_unavailable",
+    "pickup observation must reject a player without an inventory replica")
+local invalid_player_only = entity(1307, "wilson")
+invalid_player_only.valid = false
+local invalid_player_only_sources, invalid_player_only_reason =
+    Observer.BuildPlayerSources(invalid_player_only, pcall)
+assert(invalid_player_only_sources == nil and invalid_player_only_reason == "invalid_player",
+    "pickup observation must reject an invalid player entity")
+
 local replica_session = assert(Observer.Start(replica_sources, pcall))
 source_player:Emit("itemget", { item = item, slot = 1, ignore_stacksize_anim = true })
 source_target:Emit("itemlose", { slot = 1 })
