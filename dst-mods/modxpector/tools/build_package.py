@@ -9,14 +9,48 @@ ROOT = HERE.parents[1]
 DIST = ROOT / "dist" / "modxpector"
 PACKAGE_ROOT = "dst_mod_inspector"
 
+def _validate_runtime_file(path, root):
+    relative = path.relative_to(HERE).as_posix()
+    current = path
+    while current != HERE:
+        if current.is_symlink():
+            raise SystemExit(f"Symlink bloqueado no pacote: {relative}")
+        current = current.parent
+
+    try:
+        resolved = path.resolve(strict=True)
+        resolved.relative_to(root)
+    except (OSError, RuntimeError, ValueError):
+        raise SystemExit(f"Caminho de runtime fora da raiz ou inválido: {relative}")
+    if not resolved.is_file():
+        raise SystemExit(f"Arquivo de runtime inválido: {relative}")
+
+
 def runtime_files():
+    root = HERE.resolve()
     required = [HERE / "modinfo.lua", HERE / "modmain.lua"]
     for path in required:
+        if path.is_symlink():
+            raise SystemExit(f"Symlink bloqueado no pacote: {path.relative_to(HERE)}")
         if not path.is_file():
             raise SystemExit(f"Arquivo obrigatório ausente: {path.relative_to(HERE)}")
-    files = [path for path in required + sorted((HERE / "scripts").rglob("*.lua"))
-             if path.name != "bridge_token.txt"]
-    if not any(path.is_file() for path in files[2:]):
+        _validate_runtime_file(path, root)
+
+    scripts_dir = HERE / "scripts"
+    if scripts_dir.is_symlink():
+        raise SystemExit("Symlink bloqueado no pacote: scripts")
+    files = list(required)
+    if scripts_dir.exists():
+        if not scripts_dir.is_dir():
+            raise SystemExit("Diretório de runtime inválido: scripts")
+        for path in sorted(scripts_dir.rglob("*")):
+            if path.is_symlink():
+                raise SystemExit(f"Symlink bloqueado no pacote: {path.relative_to(HERE)}")
+            if path.is_file() and path.suffix == ".lua" and path.name != "bridge_token.txt":
+                _validate_runtime_file(path, root)
+                files.append(path)
+
+    if len(files) <= 2:
         raise SystemExit("Nenhum script de runtime encontrado.")
     return files
 
