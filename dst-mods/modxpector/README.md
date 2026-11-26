@@ -23,6 +23,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - A IA principal é embarcada em Lua e funciona offline, sem Ollama, Python, FastAPI, servidor, modelo local, token ou serviço externo.
 - O primeiro núcleo analisa inventário e estados dos mods, identifica falhas/dependências/flags e cria uma fila determinística de investigação somente leitura.
 - A seleção de suites declarativas, a compilação de cenário e o início do Virtual Player estão conectados. O catálogo embutido continua vazio; nenhuma suite de mod comunitário real foi aprovada para o ambiente atual.
+- Listeners de lifecycle são registrados somente durante uma execução ativa. Se a limpeza do observador de PICKUP continuar pendente após retry, a execução é encerrada como inconclusiva e etapas seguintes são abortadas para evitar atribuição cruzada de eventos.
 - Conflito suspeito não é falha confirmada.
 - Testes Lua automatizados não substituem validação no jogo real, em multiplayer ou em servidores dedicados.
 
