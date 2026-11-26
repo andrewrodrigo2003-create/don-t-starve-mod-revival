@@ -83,8 +83,9 @@ O perfil inicial é intencionalmente não destrutivo:
 - As asserções de estado do jogador aceitas pelo validador podem ser usadas como pós-condições observacionais.
 - Toda ação deve ter uma asserção com `verifies_step` apontando para ela.
 - Para asserções de alvo, `target_step` deve ser a mesma etapa indicada em `verifies_step`.
+- Suites registradas por outros mods aceitam somente `action` e `assert`. A única exceção é um fixture interno, fixo e restrito ao catálogo embutido do próprio ModXpector; a API pública de registro não aceita `fixture`, `spawn_entity` ou qualquer operação de spawn.
 
-São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coordenadas arbitrárias, funções, callbacks, strings de código e tipos de etapa desconhecidos. A suite é copiada para uma estrutura normalizada; o ModXpector não executa código Lua fornecido por outro mod. `STORE`, `TAKEITEM` e `TAKESINGLEITEM` são bloqueados pela política compartilhada no cliente e no Master; adicionar essas ações a `allowed_actions` não as habilita.
+São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coordenadas arbitrárias, funções, callbacks, strings de código e tipos de etapa desconhecidos em suites comunitárias. O fixture embutido não é uma ação fornecida pelo mod autor: é uma etapa server-authoritative compilada a partir de uma política interna exata, com prefab e quantidade fixos. A suite é copiada para uma estrutura normalizada; o ModXpector não executa código Lua fornecido por outro mod. `STORE`, `TAKEITEM` e `TAKESINGLEITEM` são bloqueados pela política compartilhada no cliente e no Master; adicionar essas ações a `allowed_actions` não as habilita.
 
 ## Seleção e execução
 
@@ -101,7 +102,8 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 
 ## Segurança: mundo normal versus laboratório descartável
 
- - O perfil comunitário atual permite `WALKTO` e `PICKUP`, ambos sob `laboratory_mode` porque movem o jogador real ou alteram seu inventário. `PICKUP` exige alvo obrigatório, prefab permitido e pós-condição `player_inventory_item_count_increased` vinculada ao mesmo step e prefab. O oráculo atual compara contagem por prefab, não GUID; use apenas em cenário isolado sem pickups concorrentes do mesmo prefab.
+ - O perfil comunitário público permite `WALKTO` e `PICKUP`, ambos sob `laboratory_mode` porque movem o jogador real ou alteram seu inventário. `PICKUP` exige alvo obrigatório, prefab permitido e pós-condição `player_inventory_item_count_increased` vinculada ao mesmo step e prefab. O oráculo atual compara contagem por prefab, não GUID; use apenas em cenário isolado sem pickups concorrentes do mesmo prefab.
+- A suite embutida `mam_donharpoon_pickup` usa um único fixture interno `spawn_entity(donharpoon, 1)`, validado no Master. Esse fixture não pode ser declarado por mods externos e continua sujeito a administrador, `test_mode`, `laboratory_mode`, owner mod carregado e allowlist.
  - test_mode é a autorização geral para iniciar testes controlados. Não significa que o mundo esteja isolado.
  - Planos com ações que alteram entidades, inventário, receitas ou o mundo exigem a opção separada Confirmar mundo de laboratório descartável (laboratory_mode), cujo padrão é desativado.
  - O ModXpector não consegue provar, apenas pelo runtime do jogo, que o save atual é descartável. O usuário precisa criar um mundo/cluster separado e habilitar a opção somente nele.
@@ -118,20 +120,22 @@ A execução pode falhar por ausência do prefab, condições do mundo ou limita
 
 ## Estado atual
 
-O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. A cobertura atual limita-se ao perfil seguro com `WALKTO` e `PICKUP` controlado, cada um com pós-condição explícita. O catálogo embutido não inclui suites comunitárias ativas até que uma referência atual, compatível e auditável seja confirmada. É necessário ampliar os adaptadores de ação e pós-condição gradualmente, com testes e evidências por subsistema.
+O registro, validação, seleção, compilação para o schema do Virtual Player e o caminho de RPC aguardando aprovação do Master estão implementados. O perfil comunitário público continua limitado a `WALKTO` e `PICKUP`, cada um com pós-condição explícita. O catálogo embutido agora contém uma suite MAM estreita, selecionada somente quando o snapshot runtime confirma `metals-and-reforged` carregado e o prefab `donharpoon` registrado. A execução requer `test_mode`, `laboratory_mode` e permissão de administrador. A suite ainda não foi validada in-game; a ampliação para combate, receitas e estruturas continua separada e gradual.
 
 
 ## Catálogo de suites embutidas
 
-Nenhuma suite comunitária embutida está ativa nesta versão. O adaptador anterior para **Friendly Skeleton - AI** (Workshop `2323760467`, prefab candidato `skeletonservant`) foi retirado do catálogo ativo após nova verificação da [página oficial da Oficina](https://steamcommunity.com/sharedfiles/filedetails/?id=2323760467): o item aparece removido da comunidade e incompatível com Don't Starve Together. Não foi localizado código-fonte/licença auditável para esse item.
+O catálogo embutido contém uma única suite: **Metals and More Reforged — Don Harpoon pickup**.
 
-Não registrar um adaptador apenas porque um prefab histórico é conhecido. Uma nova suite embutida exige:
-- Workshop ID e proprietário confirmados por fonte primária;
-- compatibilidade atual com a build do DST;
-- código e licença auditáveis, sem reutilização não autorizada;
-- prefab confirmado em código e registro runtime;
-- mod efetivamente habilitado/carregado no ambiente-alvo;
-- cenário não destrutivo, allowlists mínimas e pós-condições explícitas.
+- Mod ID local: `metals-and-reforged`; Workshop associado: `3413236278`.
+- O inventário Crash Never Mind de 22/11/2026 registra a cópia local carregada na versão 2.9.6. Esse snapshot é histórico, não prova o estado atual.
+- A proveniência foi confirmada no código do projeto do usuário, branch `feature/mam-universal-alchemy-station-2026-11-18`: `modinfo.lua` declara versão 2.9.6; `modmain.lua` registra `donharpoon` em `PrefabFiles`; `scripts/prefabs/donharpoon.lua` declara `Prefab("donharpoon")` e o componente `inventoryitem`.
+- A suite usa somente o nome do prefab e não copia código nem assets do mod-alvo.
+- O runtime só a seleciona quando o snapshot atual confirma o mod carregado e `donharpoon` disponível.
+- O cenário cria um único `donharpoon` no servidor e testa a coleta por `PICKUP`, com delta de inventário como pós-condição. Não testa crafting, dano, durabilidade, balanceamento nem estruturas.
+- O fixture é autorizado apenas para esse ID de suite e esse prefab/quantidade fixos. Suites registradas por terceiros continuam sem permissão para spawn.
+
+O adaptador anterior para **Friendly Skeleton - AI** (Workshop `2323760467`, prefab candidato `skeletonservant`) permanece retirado após verificação da [página oficial da Oficina](https://steamcommunity.com/sharedfiles/filedetails/?id=2323760467): o item aparece removido da comunidade e incompatível com Don't Starve Together. Não foi localizado código-fonte/licença auditável para esse item.
 
 Mods externos ainda podem registrar suites declarativas pela API. A ausência de suite embutida não impede inspeção read-only nem validação de suites fornecidas por mods carregados.
 
@@ -283,7 +287,7 @@ O Virtual Player agora inicia uma sessão passiva de `step_event_observer` para 
 - A aprovação do step continua dependendo da pós-condição explícita e independente do plano. O evento não substitui a assertion de aumento de inventário.
 - Se a fonte de eventos não puder ser validada, a observação fica incompleta; isso não amplia allowlists nem ignora a validação do Master.
 
-Esta integração não libera `STORE`, `TAKEITEM` ou `TAKESINGLEITEM`, não valida transferências para contêineres e não constitui uma suite comunitária real. O catálogo embutido permanece vazio; nenhum mod real foi confirmado como habilitado/carregado no ambiente atual.
+Esta integração não libera `STORE`, `TAKEITEM` ou `TAKESINGLEITEM` nem valida transferências para contêineres. O catálogo embutido contém somente a suite MAM de coleta do `donharpoon`; ela ainda não foi executada in-game. O único inventário disponível para confirmar a presença de MAM é o snapshot histórico de 22/11/2026. A seleção em runtime depende de nova confirmação de mod carregado e prefab registrado.
 
 
 ### Falha de cleanup e aborto seguro
