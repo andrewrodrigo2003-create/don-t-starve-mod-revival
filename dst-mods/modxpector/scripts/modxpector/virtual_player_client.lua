@@ -75,7 +75,7 @@ function VirtualPlayer.new(player, options)
     for _, recipe_name in ipairs(self.options.allowed_recipes or {}) do
         if type(recipe_name) == "string" then self.allowed_recipes[recipe_name] = true end
     end
-    self:_bind_events()
+    -- Bind lifecycle listeners only when a run starts; idle controllers must not retain the player.
     return self
 end
 
