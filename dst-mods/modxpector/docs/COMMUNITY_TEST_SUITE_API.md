@@ -284,3 +284,10 @@ O Virtual Player agora inicia uma sessão passiva de `step_event_observer` para 
 - Se a fonte de eventos não puder ser validada, a observação fica incompleta; isso não amplia allowlists nem ignora a validação do Master.
 
 Esta integração não libera `STORE`, `TAKEITEM` ou `TAKESINGLEITEM`, não valida transferências para contêineres e não constitui uma suite comunitária real. O catálogo embutido permanece vazio; nenhum mod real foi confirmado como habilitado/carregado no ambiente atual.
+
+
+### Falha de cleanup e aborto seguro
+
+Se a remoção de qualquer listener do observador de PICKUP falhar, o módulo preserva a inscrição pendente e tenta novamente. Se a limpeza continuar incompleta, o Virtual Player marca o step como inconclusivo, encerra a execução e não inicia os steps seguintes. O handle permanece recuperável para uma nova tentativa de cleanup. O listener `onremove` do jogador só é registrado durante uma execução ativa e é removido no encerramento.
+
+Esse mecanismo impede que eventos tardios de um step sejam associados a outro. A falha de observação nunca libera uma ação, substitui a pós-condição ou transforma evidência cliente em confirmação do servidor.
