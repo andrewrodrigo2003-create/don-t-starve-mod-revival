@@ -297,8 +297,16 @@ assert(community_event_ok == false and community_event_reason == "disabled_by_co
     "community event ingestion must remain opt-in by default")
 assert(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.community_events.enabled == false,
     "the embedded AI report must expose community event ingestion as disabled by default")
-assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 1,
-    "active community suites should be selected by the embedded AI")
+local selected_suite_ids = {}
+for _, entry in ipairs(engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites) do
+    if type(entry) == "table" and type(entry.suite) == "table" then
+        selected_suite_ids[entry.suite.id] = true
+    end
+end
+assert(#engine_globals.MODXPECTOR_EMBEDDED_AI_REPORT.selected_suites == 2,
+    "both active community suites with available prefabs should be selected")
+assert(selected_suite_ids.community_grass_smoke == true and selected_suite_ids.pickup_smoke == true,
+    "the embedded AI should select both the WALKTO and PICKUP suites")
 
 -- The generated WALKTO suite moves the real local character, so the successful
 -- Master-acceptance path must explicitly opt into a disposable lab world.
