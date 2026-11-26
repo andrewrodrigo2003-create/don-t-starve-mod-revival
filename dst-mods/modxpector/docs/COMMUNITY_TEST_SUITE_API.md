@@ -270,3 +270,17 @@ A verificação mede o aumento da quantidade total daquele prefab no inventário
 
 A allowlist do servidor é independente da declaração do mod. No estado atual, suites comunitárias só podem usar WALKTO e PICKUP; ATTACK, STORE, TAKEITEM, TAKESINGLEITEM, execução arbitrária e outras ações permanecem recusadas pela política do servidor e pela camada de suites. O Master também rejeita planos comunitários não idênticos ao cenário registrado.
 
+
+
+## Evidência de eventos no step PICKUP — 26/11/2026
+
+O Virtual Player agora inicia uma sessão passiva de `step_event_observer` para steps `PICKUP`:
+
+- A fonte observada é a réplica de inventário do jogador, após validar a entidade e confirmar que `inventory.classified:IsBusy()` retorna `false`.
+- O observador registra `itemget`/`itemlose` e pode correlacionar o GUID do alvo selecionado com um `itemget` de formato compatível com sincronização de réplica.
+- A sessão termina quando o step deixa de ter uma ação ativa e também é encerrada no caminho geral de falha/cancelamento/timeout/remoção do jogador. O relatório expõe o estado de cleanup e eventos por índice de step.
+- O evento correspondente é evidência auxiliar da réplica cliente. O relatório mantém `causality = "unproven"` e `server_authority = "unverified"`; isso não demonstra que a ação causou o evento nem que o servidor confirmou a transição.
+- A aprovação do step continua dependendo da pós-condição explícita e independente do plano. O evento não substitui a assertion de aumento de inventário.
+- Se a fonte de eventos não puder ser validada, a observação fica incompleta; isso não amplia allowlists nem ignora a validação do Master.
+
+Esta integração não libera `STORE`, `TAKEITEM` ou `TAKESINGLEITEM`, não valida transferências para contêineres e não constitui uma suite comunitária real. O catálogo embutido permanece vazio; nenhum mod real foi confirmado como habilitado/carregado no ambiente atual.
