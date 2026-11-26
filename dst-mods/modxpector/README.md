@@ -12,7 +12,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - Estados de carregamento observados e falhas, quando as estruturas internas do jogo estão disponíveis.
 - Workshop ID, metadados, classificação client/server e dependências.
 - Diagnóstico de servidor, sondagem opcional de TMI, snapshot de configurações e tela de inspeção.
-- Virtual Player observacional/simulador e contratos de teste.
+- Virtual Player que executa cenários delimitados pelo jogador real, usando o pipeline nativo PlayerController/BufferedAction e allowlists.
 - Relatórios que distinguem evidência confirmada de inferência.
 
 ## Limites importantes
@@ -22,7 +22,7 @@ Mod nativo de diagnóstico para Don't Starve Together (PC), independente dos mod
 - A coleta é passiva: não modifica configurações nem arquivos dos mods analisados.
 - A IA principal é embarcada em Lua e funciona offline, sem Ollama, Python, FastAPI, servidor, modelo local, token ou serviço externo.
 - O primeiro núcleo analisa inventário e estados dos mods, identifica falhas/dependências/flags e cria uma fila determinística de investigação somente leitura.
-- O Virtual Player é um executor separado. A integração do planejador de testes com ele está em desenvolvimento; a IA ainda não deve ser descrita como completa.
+- A seleção de suites declarativas, a compilação de cenário e o início do Virtual Player estão conectados. O catálogo embutido continua vazio; nenhuma suite de mod comunitário real foi aprovada para o ambiente atual.
 - Conflito suspeito não é falha confirmada.
 - Testes Lua automatizados não substituem validação no jogo real, em multiplayer ou em servidores dedicados.
 
@@ -62,11 +62,11 @@ A IA principal está dentro do próprio mod, em Lua. Ela observa o inventário d
 5. Mods comunitários podem registrar suites declarativas pela API documentada em [COMMUNITY_TEST_SUITE_API.md](docs/COMMUNITY_TEST_SUITE_API.md). O ModXpector só seleciona suites de mods ativos e carregados.
 6. Se houver uma suite compatível, ative **Modo de testes controlados** e clique em **Executar suite**. O Master valida permissões, allowlists e pós-condições antes de iniciar o Virtual Player.
 
-A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. As suites são dados declarativos, sem callbacks ou código arbitrário; o perfil atual só permite WALKTO e verificações observacionais. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
+A análise não altera arquivos ou configurações de outros mods e não executa código dos mods analisados. As suites são dados declarativos, sem callbacks ou código arbitrário; o perfil comunitário atual permite WALKTO e PICKUP com alvo permitido e pós-condição explícita. PICKUP ainda usa aumento de contagem por prefab como oráculo de aceitação, portanto exige cenário isolado sem pickups concorrentes do mesmo prefab. "Não foi observado carregamento" é tratado como suspeita, não como prova de falha. A ausência de achados não comprova compatibilidade total.
 
-**Proteção do mundo principal:** a opção **Modo de testes controlados** continua desativada por padrão. As suites comunitárias atuais usam apenas WALKTO e verificações observacionais; embora WALKTO não destrua objetos, ele move o personagem real do jogador e também exige **Confirmar mundo de laboratório descartável**. Qualquer plano com ações (incluindo movimento, ataque, coleta, crafting, spawn ou desbloqueio de receitas) exige essa segunda opção, igualmente desativada por padrão. Essa confirmação não cria nem detecta automaticamente um mundo isolado: crie um mundo/save separado para laboratório e ative a opção somente nele. Nunca habilite esse modo na sua partida principal. A documentação oficial da Klei permite separar clusters por -cluster e diretórios de configuração por -conf_dir: https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide.
+**Proteção do mundo principal:** a opção **Modo de testes controlados** continua desativada por padrão. As suites comunitárias atuais permitem WALKTO e PICKUP. WALKTO move o personagem real e PICKUP altera o inventário; ambos exigem **Confirmar mundo de laboratório descartável**. Qualquer plano com ações (incluindo movimento, ataque, coleta, crafting, spawn ou desbloqueio de receitas) exige essa segunda opção, igualmente desativada por padrão. Essa confirmação não cria nem detecta automaticamente um mundo isolado: crie um mundo/save separado para laboratório e ative a opção somente nele. Nunca habilite esse modo na sua partida principal. A documentação oficial da Klei permite separar clusters por -cluster e diretórios de configuração por -conf_dir: https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide.
 
-O contrato interno do Virtual Player também reconhece as ações DST `STORE`, `TAKEITEM` e `TAKESINGLEITEM`, além das pós-condições `player_inventory_has_item` (itens carregados, equipados e no overflow; exclui baús abertos) e `container_has_item` (contagem no contêiner-alvo). Essa cobertura foi verificada em Lua 5.1/harness, não no jogo real. A API de suites comunitárias continua limitada a `WALKTO`; retirar itens de baús por slot ainda requer um adaptador específico de `ContainerReplica` e permanece pendente.
+O contrato interno do Virtual Player também reconhece as ações DST `STORE`, `TAKEITEM` e `TAKESINGLEITEM`, além das pós-condições `player_inventory_has_item` (itens carregados, equipados e no overflow; exclui baús abertos) e `container_has_item` (contagem no contêiner-alvo). Essa cobertura foi verificada em Lua 5.1/harness, não no jogo real. A API de suites comunitárias permite `WALKTO` e `PICKUP`. A observação passiva por step está integrada ao Virtual Player para PICKUP: captura itemget/itemlose na réplica do inventário e correlaciona GUID do alvo quando disponível. Essa evidência é apenas da réplica cliente (`causality=unproven`, `server_authority=unverified`) e não substitui a pós-condição explícita. Retirar/guardar itens em baús por slot ainda requer contrato próprio de transferência com identidade exata e permanece bloqueado.
 
 
 ### Recuperação limitada de navegação
