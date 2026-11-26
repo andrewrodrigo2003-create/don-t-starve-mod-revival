@@ -885,37 +885,7 @@ function M.RunReadOnlyPlan(plan, session, snapshot, limit)
     }
 end
 
-local BUILTIN_COMMUNITY_SUITES = {
-    {
-        schema = "modxpector/test-suite/v1",
-        id = "friendly_skeleton_servant_smoke",
-        owner_mod_id = "workshop-2323760467",
-        title = "Friendly Skeleton - AI: aproximação ao Servant",
-        priority = 60,
-        allowed_prefabs = { "skeletonservant" },
-        allowed_recipes = {},
-        allowed_actions = { "WALKTO" },
-        scenarios = {
-            {
-                id = "approach_existing_servant",
-                title = "Aproximar-se de um Skeleton Servant existente",
-                steps = {
-                    {
-                        kind = "action",
-                        action = "WALKTO",
-                        target = { prefab = "skeletonservant", radius = 12 },
-                        target_required = true,
-                    },
-                    {
-                        kind = "assert",
-                        assertion = { kind = "player_near_target", target_step = 1, radius = 4 },
-                        verifies_step = 1,
-                    },
-                },
-            },
-        },
-    },
-}
+local BUILTIN_COMMUNITY_SUITES = {}
 
 function M.GetBuiltinSuites()
     -- Return fresh data so callers cannot mutate the embedded catalog.
