@@ -1086,12 +1086,13 @@ function M.ValidateSuite(suite, options)
         local fixture_count = 0
         for index, step in ipairs(scenario.steps) do
             if type(step) ~= "table" then return false, "invalid_step:" .. tostring(index) end
-            if step.kind == "fixture" then
+            if step.kind == "fixture" or step.kind == "spawn_entity" then
                 local policy = BUILTIN_FIXTURE_POLICIES[suite.id]
+                local operation = step.kind == "fixture" and step.operation or "spawn_entity"
                 if not allow_builtin_fixtures or policy == nil
                     or suite.owner_mod_id ~= policy.owner_mod_id
                     or index ~= 1 or fixture_count >= 1
-                    or step.operation ~= "spawn_entity"
+                    or operation ~= "spawn_entity"
                     or step.prefab ~= policy.prefab
                     or (step.count ~= nil and step.count ~= policy.count)
                     or step.position ~= nil or step.offset ~= nil then
