@@ -1482,4 +1482,47 @@ assert(store_submissions == 0,
     "STORE must not reach PlayerController while verification relies only on aggregate prefab deltas")
 assert(store_report ~= nil and store_report.outcome == "inconclusive",
     "STORE identity gap must be reported as inconclusive")
+-- A failed observer cleanup must abort later steps rather than attribute later events to PICKUP.
+local cleanup_finished
+local original_remove_event_callback = player.RemoveEventCallback
+player.RemoveEventCallback = function()
+    error("synthetic listener cleanup failure")
+end
+local cleanup_controller = VirtualPlayer.new(player, {
+    allowed_actions = { "MOD_ACTION" },
+    allowed_prefabs = { "cutgrass" },
+    on_finished = function(report) cleanup_finished = report end,
+})
+local cleanup_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "live-vp-observer-cleanup-failure",
+    steps = {
+        { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
+        { kind = "wait", seconds = 0 },
+    },
+}
+assert(cleanup_controller:Start(cleanup_plan))
+assert(cleanup_finished ~= nil and cleanup_finished.outcome == "inconclusive",
+    "pending observer cleanup must make the run inconclusive")
+assert(cleanup_finished.step_event_observer_cleanup_pending == true
+    and cleanup_finished.player_onremove_cleanup_pending == true,
+    "the report must expose pending observer and player listener cleanup")
+assert(cleanup_finished.results[#cleanup_finished.results - 1].status == "inconclusive",
+    "the PICKUP step must be inconclusive when its observer listeners remain")
+assert(cleanup_finished.results[#cleanup_finished.results].status == "failed",
+    "the run must fail closed rather than execute subsequent steps")
+assert(cleanup_controller.active_step_event_observer ~= nil,
+    "the observer recovery handle must be retained while cleanup is pending")
+player.RemoveEventCallback = original_remove_event_callback
+local recovered_observer = cleanup_controller:_stop_step_event_observer()
+assert(recovered_observer ~= nil and recovered_observer.cleanup_complete == true,
+    "pending observer listeners must remain recoverable after a transient cleanup failure")
+assert(cleanup_controller:_cleanup_player_listener() == true,
+    "the player onremove listener must also be recoverable")
+assert(player:ListenerCount("itemget") == 0
+    and player:ListenerCount("itemlose") == 0
+    and player:ListenerCount("onremove") == 0,
+    "all recovered listeners must be removed")
+
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
