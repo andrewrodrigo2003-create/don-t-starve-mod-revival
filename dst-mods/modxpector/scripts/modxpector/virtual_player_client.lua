@@ -4,6 +4,13 @@
 local DST_GLOBAL = GLOBAL or _G
 local pcall = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
 local ItemIdentity = require("modxpector/item_identity")
+local STEP_EVENT_OBSERVER_OK, StepEventObserver = pcall(require, "modxpector/step_event_observer")
+if not STEP_EVENT_OBSERVER_OK or type(StepEventObserver) ~= "table"
+    or type(StepEventObserver.BuildPlayerSources) ~= "function"
+    or type(StepEventObserver.Start) ~= "function"
+    or type(StepEventObserver.Stop) ~= "function" then
+    StepEventObserver = nil
+end
 local TEST_PLAN_POLICY_OK, TEST_PLAN_POLICY = pcall(require, "modxpector/test_plan_policy")
 if not TEST_PLAN_POLICY_OK or type(TEST_PLAN_POLICY) ~= "table"
     or type(TEST_PLAN_POLICY.IsClientActionAllowed) ~= "function" then
@@ -73,10 +80,32 @@ function VirtualPlayer.new(player, options)
 end
 
 function VirtualPlayer:_bind_events()
-    if self.player.ListenForEvent == nil then return end
-    self.player:ListenForEvent("onremove", function()
+    if self.player_onremove_callback ~= nil
+        or self.player == nil or type(self.player.ListenForEvent) ~= "function" then
+        return false
+    end
+    local callback = function()
         self:Stop("player entity removed")
-    end)
+    end
+    local ok = pcall(self.player.ListenForEvent, self.player, "onremove", callback)
+    if ok then
+        self.player_onremove_callback = callback
+        return true
+    end
+    return false
+end
+
+function VirtualPlayer:_cleanup_player_listener()
+    local callback = self.player_onremove_callback
+    if callback == nil then return true end
+    local player = self.player
+    if player == nil or type(player.RemoveEventCallback) ~= "function" then
+        self.player_onremove_callback = nil
+        return false
+    end
+    local ok = pcall(player.RemoveEventCallback, player, "onremove", callback)
+    if ok then self.player_onremove_callback = nil end
+    return ok
 end
 
 function VirtualPlayer:ResolveTarget(selector)
@@ -342,7 +371,9 @@ function VirtualPlayer:_finish(ok, message)
             self.active_action_cancellation = "not_needed"
         end
     end
+    self:_stop_step_event_observer()
     self:_cleanup_target_listeners()
+    self:_cleanup_player_listener()
     if not ok then
         local current_step = self.queue[self.index]
         if current_step ~= nil then
@@ -398,6 +429,11 @@ function VirtualPlayer:Start(plan)
     self.verification_assertions_passed = 0
     self.verification_requirements = {}
     self.verification_assertions = {}
+    self:_stop_step_event_observer()
+    assert(self.active_step_event_observer == nil,
+        "previous step observer still has pending listener cleanup")
+    self.step_event_observer_results = {}
+    self:_bind_events()
     for _, candidate in ipairs(plan.steps) do
         if type(candidate) == "table" and candidate.kind == "assert" then
             if candidate.verifies_step ~= nil then
@@ -450,6 +486,108 @@ function VirtualPlayer:_cleanup_target_listeners()
         end
     end
     self.target_death_callbacks = {}
+end
+
+function VirtualPlayer:_start_step_event_observer(step, target)
+    if step == nil or step.kind ~= "action" or step.action ~= "PICKUP" then
+        return false
+    end
+    if StepEventObserver == nil then
+        self.step_event_observer_results[self.index] = {
+            complete = false,
+            reason = "step_event_observer_unavailable",
+        }
+        return false
+    end
+
+    local sources, source_error = StepEventObserver.BuildPlayerSources(self.player, pcall)
+    if sources == nil then
+        self.step_event_observer_results[self.index] = {
+            complete = false,
+            reason = tostring(source_error or "player_inventory_event_sources_unavailable"),
+        }
+        return false
+    end
+
+    local session, start_error, partial_session =
+        StepEventObserver.Start(sources, pcall, safe_get_time, 64)
+    if session == nil then
+        if partial_session ~= nil then
+            self.active_step_event_observer = {
+                index = self.index,
+                session = partial_session,
+                target_guid = target ~= nil and target.GUID or nil,
+            }
+            self:_stop_step_event_observer(self.index)
+        else
+            self.step_event_observer_results[self.index] = {
+                complete = false,
+                reason = tostring(start_error or "step_event_observer_start_failed"),
+            }
+        end
+        return false
+    end
+
+    local target_guid = target ~= nil and target.GUID or nil
+    if not is_finite_number(target_guid) or target_guid < 1
+        or target_guid ~= math.floor(target_guid) then
+        target_guid = nil
+    end
+    self.active_step_event_observer = {
+        index = self.index,
+        session = session,
+        target_guid = target_guid,
+    }
+    return true
+end
+
+function VirtualPlayer:_stop_step_event_observer(index)
+    local active = self.active_step_event_observer
+    if active == nil or (index ~= nil and active.index ~= index) then return nil end
+    if StepEventObserver == nil then
+        self.active_step_event_observer = nil
+        self.step_event_observer_results[active.index] = {
+            complete = false,
+            reason = "step_event_observer_unavailable_during_cleanup",
+        }
+        return self.step_event_observer_results[active.index]
+    end
+
+    local snapshot, stop_error = StepEventObserver.Stop(active.session)
+    if snapshot ~= nil and snapshot.cleanup_complete ~= true then
+        local retry_snapshot = StepEventObserver.Stop(active.session)
+        if retry_snapshot ~= nil then snapshot = retry_snapshot end
+    end
+    if type(snapshot) ~= "table" then
+        snapshot = {
+            complete = false,
+            cleanup_complete = false,
+            reason = tostring(stop_error or "step_event_observer_stop_failed"),
+            events = {},
+        }
+    end
+
+    local target_observed = false
+    if active.target_guid ~= nil then
+        for _, event in ipairs(snapshot.events or {}) do
+            if event.event == "itemget"
+                and event.classification == "network_shape_candidate"
+                and event.item_guid == active.target_guid then
+                target_observed = true
+                break
+            end
+        end
+    end
+    snapshot.target_item_guid = active.target_guid
+    snapshot.target_item_observed = target_observed
+    snapshot.target_item_observation = target_observed
+        and "matching_client_replica_itemget_event"
+        or "not_observed_or_not_correlated"
+    self.step_event_observer_results[active.index] = snapshot
+    if snapshot.cleanup_complete == true then
+        self.active_step_event_observer = nil
+    end
+    return snapshot
 end
 
 function VirtualPlayer:_is_valid_target(target)
@@ -977,6 +1115,17 @@ function VirtualPlayer:_next_impl()
             return
         end
         local action = action_or_error
+        if step.action == "PICKUP" then
+            local observer_ok, observer_error = pcall(function()
+                self:_start_step_event_observer(step, target_entity)
+            end)
+            if not observer_ok then
+                self.step_event_observer_results[self.index] = {
+                    complete = false,
+                    reason = "observer_start_error: " .. tostring(observer_error),
+                }
+            end
+        end
         controller:DoAction(action)
         self.active = {
             step = step, action = action, started = GetTime(),
@@ -1186,6 +1335,9 @@ function VirtualPlayer:_poll_action()
         end
         return
     end
+    if active.step.action == "PICKUP" then
+        self:_stop_step_event_observer(self.index)
+    end
     if active.step.repeat_until_target_dead == true then
         local repeat_count = (active.repeat_count or 0) + 1
         local check_ok, target_dead = pcall(function()
@@ -1324,6 +1476,8 @@ function VirtualPlayer:GetReport()
         path_replan_requests = self.path_replan_requests or 0,
         on_finished_error = self.on_finished_error,
         results = self.results,
+        step_event_observer_results = self.step_event_observer_results or {},
+        step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
     }
 end
 
