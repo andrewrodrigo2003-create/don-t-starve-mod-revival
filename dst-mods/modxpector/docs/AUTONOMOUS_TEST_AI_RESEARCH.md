@@ -960,7 +960,7 @@ A documentação comunitária da API descreve PlayerController:DoAction como o p
 
 **Decisão:** manter o controle do personagem real por PlayerController:DoAction no cliente local, com o Master validando o plano e o servidor executando as ações autorizadas. Não substituir isso por teleporte, comandos de debug ou um NPC artificial quando o teste exigir comportamento real.
 
-### Correção aplicada no observador de eventos — 26/11/2026
+### Correção aplicada no observador de eventos — 25/11/2026
 
 Foram corrigidos step_event_observer.lua e test_modxpector_step_event_observer.lua:
 
@@ -994,7 +994,7 @@ Foram corrigidos step_event_observer.lua e test_modxpector_step_event_observer.l
 
 
 
-## Primeiro passo além de WALKTO — pickup controlado (26/11/2026)
+## Primeiro passo além de WALKTO — pickup controlado (25/11/2026)
 
 A camada de suites agora permite também PICKUP, sem liberar combate ou transferências de contêiner:
 
