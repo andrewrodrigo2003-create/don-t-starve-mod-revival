@@ -474,4 +474,104 @@ for _, limitation in ipairs(incomplete.limitations) do
 end
 assert(runtime_observer_limitation, "disabled runtime component observation must be an explicit limitation")
 
+
+local pickup_suite = {
+    schema = "modxpector/test-suite/v1",
+    id = "community_pickup_smoke",
+    owner_mod_id = "workshop-100",
+    title = "Community mod pickup smoke test",
+    allowed_prefabs = { "my_test_item" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        {
+            id = "pickup_my_test_item",
+            title = "Pick up the mod test item",
+            steps = {
+                { kind = "action", action = "PICKUP",
+                    target = { prefab = "my_test_item", radius = 12 }, target_required = true },
+                { kind = "assert", assertion = {
+                    kind = "player_inventory_item_count_increased",
+                    target_step = 1, prefab = "my_test_item", count = 1,
+                }, verifies_step = 1 },
+            },
+        },
+    },
+}
+local pickup_suite_ok, normalized_pickup_suite = AI.ValidateSuite(pickup_suite)
+assert(pickup_suite_ok == true and normalized_pickup_suite.scenarios[1].steps[1].action == "PICKUP",
+    "bounded PICKUP suites with inventory-delta postconditions should be accepted")
+local pickup_plan, pickup_plan_error = AI.BuildVirtualPlayerPlan(
+    normalized_pickup_suite, "pickup_my_test_item", "pickup_suite_run_1")
+assert(pickup_plan ~= nil and pickup_plan_error == nil)
+assert(pickup_plan.allowed_actions[1] == "PICKUP")
+assert(pickup_plan.steps[2].assertion.kind == "player_inventory_item_count_increased"
+    and pickup_plan.steps[2].assertion.target_step == 1
+    and pickup_plan.steps[2].assertion.prefab == "my_test_item"
+    and pickup_plan.steps[2].assertion.count == 1,
+    "pickup plan must preserve its exact inventory delta postcondition")
+
+local pickup_without_postcondition = {
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_unverified",
+    owner_mod_id = "workshop-100",
+    title = "Unverified pickup",
+    allowed_prefabs = { "my_test_item" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        { id = "pickup_without_assertion", title = "Unverified pickup", steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "my_test_item" }, target_required = true },
+        } },
+    },
+}
+local unverified_pickup_ok = AI.ValidateSuite(pickup_without_postcondition)
+assert(unverified_pickup_ok == false, "PICKUP must have a postcondition")
+
+local pickup_bad_count = {
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_bad_count",
+    owner_mod_id = "workshop-100",
+    title = "Bad pickup count",
+    allowed_prefabs = { "my_test_item" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        { id = "pickup_bad_count", title = "Bad pickup count", steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "my_test_item" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "player_inventory_item_count_increased",
+                target_step = 1, prefab = "my_test_item", count = 0,
+            }, verifies_step = 1 },
+        } },
+    },
+}
+local bad_pickup_count_ok = AI.ValidateSuite(pickup_bad_count)
+assert(bad_pickup_count_ok == false, "PICKUP inventory delta must be a positive bounded integer")
+
+local pickup_wrong_action_reference = {
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_wrong_reference",
+    owner_mod_id = "workshop-100",
+    title = "Wrong action reference",
+    allowed_prefabs = { "my_test_item" },
+    allowed_recipes = {},
+    allowed_actions = { "WALKTO" },
+    scenarios = {
+        { id = "wrong_reference", title = "Wrong action reference", steps = {
+            { kind = "action", action = "WALKTO",
+                target = { prefab = "my_test_item" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "player_inventory_item_count_increased",
+                target_step = 1, prefab = "my_test_item", count = 1,
+            }, verifies_step = 1 },
+        } },
+    },
+}
+local wrong_pickup_reference_ok = AI.ValidateSuite(pickup_wrong_action_reference)
+assert(wrong_pickup_reference_ok == false,
+    "inventory-delta pickup assertions must reference a PICKUP action, not WALKTO")
+
 print("ModXpector embedded AI tests passed")
