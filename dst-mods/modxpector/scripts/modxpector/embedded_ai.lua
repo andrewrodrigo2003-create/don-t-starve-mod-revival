@@ -927,8 +927,9 @@ function M.GetBuiltinSuites()
     return suites
 end
 
-local SUITE_ACTION_ALLOWLIST = { WALKTO = true }
+local SUITE_ACTION_ALLOWLIST = { WALKTO = true, PICKUP = true }
 local SUITE_ASSERTION_ALLOWLIST = {
+    player_inventory_item_count_increased = true,
     player_health_gte = true,
     player_hunger_gte = true,
     player_sanity_gte = true,
@@ -985,10 +986,23 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
         or kind == "target_health_lte" then
         if not finite_in_range(assertion.value, 0, 100000) then return nil end
         result.value = assertion.value
+    elseif kind == "player_inventory_item_count_increased" then
+        local target_step = assertion.target_step
+        if not finite_in_range(target_step, 1, index - 1)
+            or target_step ~= math.floor(target_step)
+            or previous_actions[target_step] ~= "PICKUP"
+            or not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true then
+            return nil
+        end
+        local count = assertion.count == nil and 1 or assertion.count
+        if not finite_in_range(count, 1, 10000) or count ~= math.floor(count) then return nil end
+        result.target_step = target_step
+        result.prefab = assertion.prefab
+        result.count = count
     elseif kind == "player_near_target" or kind == "target_exists" or kind == "target_has_tag" then
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
-            or target_step ~= math.floor(target_step) or previous_actions[target_step] ~= true then return nil end
+            or target_step ~= math.floor(target_step) or previous_actions[target_step] == nil then return nil end
         result.target_step = target_step
         if kind == "player_near_target" then
             if assertion.radius ~= nil and not finite_in_range(assertion.radius, 0, 100) then return nil end
@@ -1048,13 +1062,15 @@ function M.ValidateSuite(suite)
         for index, step in ipairs(scenario.steps) do
             if type(step) ~= "table" then return false, "invalid_step:" .. tostring(index) end
             if step.kind == "action" then
-                if step.action ~= "WALKTO" or action_set.WALKTO ~= true
-                    or step.target_required ~= true then return false, "unsafe_action_step:" .. tostring(index) end
+                if type(step.action) ~= "string" or SUITE_ACTION_ALLOWLIST[step.action] ~= true
+                    or action_set[step.action] ~= true or step.target_required ~= true then
+                    return false, "unsafe_action_step:" .. tostring(index)
+                end
                 local target = copy_target(step.target, prefab_set)
                 if target == nil then return false, "invalid_action_target:" .. tostring(index) end
                 local normalized_step = {
                     kind = "action",
-                    action = "WALKTO",
+                    action = step.action,
                     target = target,
                     target_required = true,
                 }
@@ -1063,13 +1079,13 @@ function M.ValidateSuite(suite)
                     normalized_step.timeout = step.timeout
                 end
                 steps[#steps + 1] = normalized_step
-                previous_actions[index] = true
+                previous_actions[index] = step.action
             elseif step.kind == "assert" then
                 local assertion = copy_assertion(step.assertion, index, previous_actions, prefab_set, recipe_set)
                 if assertion == nil then return false, "invalid_assertion_step:" .. tostring(index) end
                 local verifies_step = step.verifies_step
                 if not finite_in_range(verifies_step, 1, index - 1)
-                    or verifies_step ~= math.floor(verifies_step) or previous_actions[verifies_step] ~= true then
+                    or verifies_step ~= math.floor(verifies_step) or previous_actions[verifies_step] == nil then
                     return false, "assertion_must_verify_prior_action:" .. tostring(index)
                 end
                 if assertion.target_step ~= nil and assertion.target_step ~= verifies_step then
