@@ -378,7 +378,7 @@ local SERVER_ACTION_ALLOWLIST = {
     LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
     ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKEITEM = true, TAKESINGLEITEM = true,
 }
-local AI_ACTION_ALLOWLIST = { WALKTO = true }
+local AI_ACTION_ALLOWLIST = { WALKTO = true, PICKUP = true }
 local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
     player_has_item = true, player_has_item_count_gte = true, player_inventory_has_item = true, container_has_item = true, player_equipped = true,
@@ -603,9 +603,12 @@ local function validate_plan_step(plan, index, step)
         return finite_number(seconds) and seconds >= 0 and seconds <= 120,
             "invalid wait duration"
     elseif step.kind == "action" then
-        if type(step.action) ~= "string"
-            or (SERVER_ACTION_ALLOWLIST[step.action] ~= true and not contains_value(plan.allowed_actions, step.action)) then
+        if type(step.action) ~= "string" or SERVER_ACTION_ALLOWLIST[step.action] ~= true then
             return false, "action is not in the server allowlist"
+        end
+        if plan.suite_id ~= nil and (AI_ACTION_ALLOWLIST[step.action] ~= true
+            or not contains_value(plan.allowed_actions, step.action)) then
+            return false, "action is not in the server-side AI suite allowlist"
         end
         if step.target ~= nil and not valid_target_selector(step.target, plan) then
             return false, "invalid action target selector"
@@ -733,6 +736,19 @@ local function validate_incoming_plan(plan, requested_run_id)
         or not safe_name_list(plan.allowed_recipes or {}, "^[%w_%-]+$", 200)
         or not safe_name_list(plan.allowed_actions or {}, "^[A-Z0-9_]+$", 200) then
         return false, "invalid test plan allowlist"
+    end
+    if plan.suite_id ~= nil then
+        if not safe_tag(plan.suite_id) or not safe_tag(plan.owner_mod_id)
+            or not safe_tag(plan.scenario_id) then
+            return false, "invalid community suite plan identity"
+        end
+        for _, action in ipairs(plan.allowed_actions or {}) do
+            if AI_ACTION_ALLOWLIST[action] ~= true then
+                return false, "community suite action is not in the server-side AI allowlist"
+            end
+        end
+    elseif plan.owner_mod_id ~= nil or plan.scenario_id ~= nil then
+        return false, "community suite metadata requires suite_id"
     end
     if type(plan.steps) ~= "table" or #plan.steps < 1 or #plan.steps > 200 then
         return false, "test plan must contain 1 to 200 steps"
