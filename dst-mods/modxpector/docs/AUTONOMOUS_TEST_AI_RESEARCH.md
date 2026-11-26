@@ -1065,3 +1065,14 @@ Esta seção atualiza os checkpoints históricos acima. As afirmações antigas 
 2. Adicionar testes negativos para `BuildPlayerSources` (classified ausente/ocupado e jogador inválido) e garantir que observação incompleta nunca altera a decisão de segurança.
 3. Recuperar do Cérebro Secundário o inventário mais recente de mods e validar o candidato real sem instalar ou habilitar mods.
 4. Só depois avaliar observação de outras ações. Não liberar transferências nem ampliar allowlists sem oráculo de identidade/estado independente.
+
+
+### Endurecimento do lifecycle após falha de cleanup — 26/11/2026
+
+- O listener `onremove` do jogador agora é vinculado somente em `Start`; criar um controller ocioso não registra listener nem retém o player. O callback é removido no encerramento da execução.
+- Se o cleanup do observador de PICKUP continuar pendente após a tentativa de retry, o Virtual Player marca o step como inconclusivo e aborta as etapas seguintes. Isso evita que eventos tardios sejam atribuídos ao step anterior.
+- O handle da sessão permanece no controller quando há listeners pendentes. Depois que a falha transitória de remoção é resolvida, o cleanup pode ser repetido; o relatório expõe `step_event_observer_cleanup_pending` e `player_onremove_cleanup_pending`.
+- O teste de regressão simula falha persistente de `RemoveEventCallback`, verifica aborto do plano e recupera os listeners depois que a remoção volta a funcionar.
+- Run [45868404853 — ModXpector Lua checks](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45868404853): **success** no commit de código `19fa2360c97c7546e2a775150606263f74bf83f2`. Parsing Lua 5.1, contratos Lua e teste de exclusão de credenciais concluídos com sucesso.
+- A falha anterior no run 45868042392 identificou o cenário de fixture sem alvo; a fixture foi corrigida. O run 45868208530 então expôs listeners ociosos registrados durante a construção do controller; a vinculação foi movida para `Start`. O run 45868404853 validou a correção.
+- Nível comprovado: CI automatizada Lua 5.1. Não houve execução no motor DST, multiplayer ou servidor dedicado.
