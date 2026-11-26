@@ -686,7 +686,7 @@ decoded_plan = {
 rpc_server.set_test_plan(reconnected_player, "suite_attack_rejected", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message,
-        "action is not in the server-side AI suite allowlist", 1, true),
+        "community suite action is not in the server-side AI allowlist", 1, true),
     "Master must reject client-supplied community-suite actions outside its independent allowlist")
 
 
