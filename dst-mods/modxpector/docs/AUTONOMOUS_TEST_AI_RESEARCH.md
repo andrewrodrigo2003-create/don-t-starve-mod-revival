@@ -1019,3 +1019,9 @@ Estado do CI:
 
 Próxima tarefa: verificar/selecionar uma suite real de um mod habilitado no ambiente alvo. Se nenhuma estiver disponível, não inventar prefab ou suite; documentar a ausência e preparar a integração declarativa com um mod cujo código e licença possam ser auditados.
 
+
+
+### Verificação de adoção pública da API de suites — 25/11/2026
+
+Buscas exatas por MODXPECTOR_REGISTER_TEST_SUITE, modxpector/test-suite/v1 e player_inventory_item_count_increased não retornaram resultados públicos indexados. Isso não prova que nenhum mod use a API: Steam Workshop, repositórios pequenos, forks e conteúdo não indexado podem ficar fora da busca. No momento, não foi confirmado um consumidor externo real da API. O primeiro cenário de pickup permanece um contrato sintético; a próxima validação exige um mod ativo que registre uma suite ou uma integração declarativa em um repositório auditado com licença compatível.
+
