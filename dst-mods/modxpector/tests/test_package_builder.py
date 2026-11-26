@@ -43,5 +43,49 @@ class PackageBuilderSecurityTests(unittest.TestCase):
                 self.assertNotIn("dst_mod_inspector/bridge_token.txt", names)
 
 
+    def test_runtime_symlink_to_external_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mod_root = root / "mod"
+            mod_root.mkdir()
+            (mod_root / "modinfo.lua").write_text('version = "test"\\n', encoding="utf-8")
+            (mod_root / "modmain.lua").write_text("-- runtime\\n", encoding="utf-8")
+            scripts = mod_root / "scripts"
+            scripts.mkdir()
+            outside = root / "outside.lua"
+            outside.write_text("SYNTHETIC_EXTERNAL_CONTENT", encoding="utf-8")
+            (scripts / "external.lua").symlink_to(outside)
+
+            original_here = BUILDER.HERE
+            try:
+                BUILDER.HERE = mod_root
+                with self.assertRaisesRegex(SystemExit, "Symlink bloqueado"):
+                    BUILDER.runtime_files()
+            finally:
+                BUILDER.HERE = original_here
+
+    def test_runtime_symlink_directory_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            mod_root = root / "mod"
+            mod_root.mkdir()
+            (mod_root / "modinfo.lua").write_text('version = "test"\\n', encoding="utf-8")
+            (mod_root / "modmain.lua").write_text("-- runtime\\n", encoding="utf-8")
+            scripts = mod_root / "scripts"
+            scripts.mkdir()
+            outside = root / "external"
+            outside.mkdir()
+            (outside / "leak.lua").write_text("SYNTHETIC_EXTERNAL_CONTENT", encoding="utf-8")
+            (scripts / "external").symlink_to(outside, target_is_directory=True)
+
+            original_here = BUILDER.HERE
+            try:
+                BUILDER.HERE = mod_root
+                with self.assertRaisesRegex(SystemExit, "Symlink bloqueado"):
+                    BUILDER.runtime_files()
+            finally:
+                BUILDER.HERE = original_here
+
+
 if __name__ == "__main__":
     unittest.main()
