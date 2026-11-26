@@ -1484,6 +1484,8 @@ assert(store_report ~= nil and store_report.outcome == "inconclusive",
     "STORE identity gap must be reported as inconclusive")
 -- A failed observer cleanup must abort later steps rather than attribute later events to PICKUP.
 local cleanup_finished
+local cleanup_original_find_entities = TheSim.FindEntities
+TheSim.FindEntities = function() return { pickup_target } end
 local original_remove_event_callback = player.RemoveEventCallback
 player.RemoveEventCallback = function()
     error("synthetic listener cleanup failure")
@@ -1515,6 +1517,7 @@ assert(cleanup_finished.results[#cleanup_finished.results].status == "failed",
 assert(cleanup_controller.active_step_event_observer ~= nil,
     "the observer recovery handle must be retained while cleanup is pending")
 player.RemoveEventCallback = original_remove_event_callback
+TheSim.FindEntities = cleanup_original_find_entities
 local recovered_observer = cleanup_controller:_stop_step_event_observer()
 assert(recovered_observer ~= nil and recovered_observer.cleanup_complete == true,
     "pending observer listeners must remain recoverable after a transient cleanup failure")
