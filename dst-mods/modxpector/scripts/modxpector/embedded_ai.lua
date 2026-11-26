@@ -885,14 +885,66 @@ function M.RunReadOnlyPlan(plan, session, snapshot, limit)
     }
 end
 
-local BUILTIN_COMMUNITY_SUITES = {}
+local BUILTIN_SUITE_TOKEN = {}
+local BUILTIN_FIXTURE_POLICIES = {
+    mam_donharpoon_pickup = {
+        owner_mod_id = "metals-and-reforged",
+        prefab = "donharpoon",
+        count = 1,
+    },
+}
+local BUILTIN_COMMUNITY_SUITES = {
+    {
+        schema = "modxpector/test-suite/v1",
+        id = "mam_donharpoon_pickup",
+        owner_mod_id = "metals-and-reforged",
+        title = "Metals and More Reforged — Don Harpoon pickup",
+        priority = 70,
+        allowed_prefabs = { "donharpoon" },
+        allowed_recipes = {},
+        allowed_actions = { "PICKUP" },
+        scenarios = {
+            {
+                id = "pickup_donharpoon",
+                title = "Spawn and pick up the Don Harpoon",
+                steps = {
+                    {
+                        kind = "fixture",
+                        operation = "spawn_entity",
+                        prefab = "donharpoon",
+                        count = 1,
+                    },
+                    {
+                        kind = "action",
+                        action = "PICKUP",
+                        target = { prefab = "donharpoon", radius = 12 },
+                        target_required = true,
+                    },
+                    {
+                        kind = "assert",
+                        assertion = {
+                            kind = "player_inventory_item_count_increased",
+                            target_step = 2,
+                            prefab = "donharpoon",
+                            count = 1,
+                        },
+                        verifies_step = 2,
+                    },
+                },
+            },
+        },
+    },
+}
 
 function M.GetBuiltinSuites()
     -- Return fresh data so callers cannot mutate the embedded catalog.
     local suites = {}
-    for index, suite in ipairs(BUILTIN_COMMUNITY_SUITES) do
-        local valid, normalized = M.ValidateSuite(suite)
-        if valid then suites[index] = normalized end
+    for _, suite in ipairs(BUILTIN_COMMUNITY_SUITES) do
+        local valid, normalized = M.ValidateSuite(suite, { allow_builtin_fixtures = true })
+        if valid then
+            normalized._builtin_suite_token = BUILTIN_SUITE_TOKEN
+            suites[#suites + 1] = normalized
+        end
     end
     return suites
 end
@@ -987,10 +1039,12 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
     return result
 end
 
-function M.ValidateSuite(suite)
+function M.ValidateSuite(suite, options)
     if type(suite) ~= "table" or suite.schema ~= "modxpector/test-suite/v1" then
         return false, "unsupported_suite_schema"
     end
+    local allow_builtin_fixtures = type(options) == "table"
+        and options.allow_builtin_fixtures == true
     if not safe_identifier(suite.id) or not safe_identifier(suite.owner_mod_id)
         or type(suite.title) ~= "string" or #suite.title < 1 or #suite.title > 160 then
         return false, "invalid_suite_identity"
@@ -1029,9 +1083,30 @@ function M.ValidateSuite(suite)
         end
         seen_scenarios[scenario.id] = true
         local previous_actions, steps, verified = {}, {}, {}
+        local fixture_count = 0
         for index, step in ipairs(scenario.steps) do
             if type(step) ~= "table" then return false, "invalid_step:" .. tostring(index) end
-            if step.kind == "action" then
+            if step.kind == "fixture" then
+                local policy = BUILTIN_FIXTURE_POLICIES[suite.id]
+                if not allow_builtin_fixtures or policy == nil
+                    or suite.owner_mod_id ~= policy.owner_mod_id
+                    or index ~= 1 or fixture_count >= 1
+                    or step.operation ~= "spawn_entity"
+                    or step.prefab ~= policy.prefab
+                    or (step.count ~= nil and step.count ~= policy.count)
+                    or step.position ~= nil or step.offset ~= nil then
+                    return false, "fixture_not_allowed:" .. tostring(index)
+                end
+                if prefab_set[policy.prefab] ~= true then
+                    return false, "fixture_prefab_not_allowlisted:" .. tostring(index)
+                end
+                steps[#steps + 1] = {
+                    kind = "spawn_entity",
+                    prefab = policy.prefab,
+                    count = policy.count,
+                }
+                fixture_count = fixture_count + 1
+            elseif step.kind == "action" then
                 if type(step.action) ~= "string" or SUITE_ACTION_ALLOWLIST[step.action] ~= true
                     or action_set[step.action] ~= true or step.target_required ~= true then
                     return false, "unsafe_action_step:" .. tostring(index)
@@ -1095,7 +1170,14 @@ function M.SelectSuites(suites, snapshot, available_prefabs)
     end
     local selected = {}
     for _, candidate in ipairs(type(suites) == "table" and suites or {}) do
-        local valid, suite = M.ValidateSuite(candidate)
+        local allow_builtin_fixtures = type(candidate) == "table"
+            and candidate._builtin_suite_token == BUILTIN_SUITE_TOKEN
+        local valid, suite = M.ValidateSuite(candidate, {
+            allow_builtin_fixtures = allow_builtin_fixtures,
+        })
+        if valid and allow_builtin_fixtures then
+            suite._builtin_suite_token = BUILTIN_SUITE_TOKEN
+        end
         local prefabs_available = valid and type(available_prefabs) == "table"
         if prefabs_available then
             for _, prefab in ipairs(suite.allowed_prefabs) do
@@ -1121,7 +1203,11 @@ function M.SelectSuites(suites, snapshot, available_prefabs)
 end
 
 function M.BuildVirtualPlayerPlan(suite, scenario_id, run_id)
-    local valid, normalized = M.ValidateSuite(suite)
+    local allow_builtin_fixtures = type(suite) == "table"
+        and suite._builtin_suite_token == BUILTIN_SUITE_TOKEN
+    local valid, normalized = M.ValidateSuite(suite, {
+        allow_builtin_fixtures = allow_builtin_fixtures,
+    })
     if not valid then return nil, normalized end
     if not safe_identifier(run_id) then return nil, "invalid_run_id" end
     local scenario
