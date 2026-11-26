@@ -115,6 +115,16 @@ end
 
 local embedded_ai_session = EMBEDDED_AI_OK and EMBEDDED_AI.NewSession("world-session") or nil
 local embedded_ai_test_suites = {}
+if EMBEDDED_AI_OK and type(EMBEDDED_AI.GetBuiltinSuites) == "function" then
+    local builtin_ok, builtin_suites = pcall(EMBEDDED_AI.GetBuiltinSuites)
+    if builtin_ok and type(builtin_suites) == "table" then
+        for _, suite in ipairs(builtin_suites) do
+            embedded_ai_test_suites[#embedded_ai_test_suites + 1] = suite
+        end
+    else
+        print("[ModXpector] BUILTIN_TEST_SUITE_REGISTRY_FAILED " .. tostring(builtin_suites))
+    end
+end
 local function register_embedded_test_suite(suite)
     if not EMBEDDED_AI_OK then return false, "embedded_ai_unavailable" end
     local valid, normalized = EMBEDDED_AI.ValidateSuite(suite)
@@ -224,7 +234,7 @@ local function run_embedded_ai_diagnostics(callback)
     end
     local task_execution = EMBEDDED_AI.RunReadOnlyPlan(plan, embedded_ai_session, snapshot, 200)
     local next_task = task_execution.next_task
-    local candidate_suites = EMBEDDED_AI.GetBuiltinSuites()
+    local candidate_suites = {}
     for _, suite in ipairs(embedded_ai_test_suites) do
         candidate_suites[#candidate_suites + 1] = suite
     end
