@@ -992,3 +992,30 @@ Foram corrigidos step_event_observer.lua e test_modxpector_step_event_observer.l
 5. Integrar o observador ao Virtual Player somente depois de validar cleanup em sucesso, falha, timeout, cancelamento, remoção de entidade e substituição de ação.
 6. Depois do smoke test, acrescentar combate/receitas/estruturas como suites específicas, não como uma IA de sobrevivência geral.
 
+
+
+## Primeiro passo além de WALKTO — pickup controlado (26/11/2026)
+
+A camada de suites agora permite também PICKUP, sem liberar combate ou transferências de contêiner:
+
+- Suite action allowlist: WALKTO e PICKUP.
+- PICKUP exige target selector com prefab na allowlist, target_required=true e uma assertion player_inventory_item_count_increased ligada ao mesmo step e ao mesmo prefab.
+- A contagem usa baseline antes/depois do step. É adequada para um smoke test isolado sem pickups concorrentes do mesmo prefab; não é prova de identidade GUID.
+- O Master valida independentemente suite_id, owner_mod_id, scenario_id, sua própria allowlist de ações e o postcondition correspondente ao prefab-alvo. Uma suite que tente declarar ATTACK é recusada.
+- Toda ação do Virtual Player continua exigindo modo de teste e modo de laboratório descartável.
+- STORE, TAKEITEM e TAKESINGLEITEM permanecem bloqueados; PICKUP não libera transferências de inventário entre contêineres.
+
+Testes adicionados:
+- Suite declarativa PICKUP válida compila em plano.
+- PICKUP sem postcondition, count inválido e assertion associada a WALKTO são recusados.
+- Master aceita PICKUP com aumento de inventário correspondente e rejeita ATTACK fora da allowlist e PICKUP sem postcondition/prefab correspondente.
+- Virtual Player valida o delta de inventário antes/depois de PICKUP.
+
+Estado do CI:
+- Package run 45733353919 para HEAD 2f8a7d40d68834a3f8973399a5d655f10f1be143 executou testes Lua, construiu ZIP e concluiu upload com sucesso; no último polling, apenas o post-checkout ainda estava finalizando.
+- Lua checks run 45733357289 estava em andamento no último polling; não declarar esse check concluído até consultar o resultado final.
+- Nenhum teste no motor DST, multiplayer ou servidor dedicado foi executado.
+- Ainda não há suite PICKUP para um mod real verificada no jogo; a suíte de teste sintética valida contratos, não compatibilidade in-game.
+
+Próxima tarefa: verificar/selecionar uma suite real de um mod habilitado no ambiente alvo. Se nenhuma estiver disponível, não inventar prefab ou suite; documentar a ausência e preparar a integração declarativa com um mod cujo código e licença possam ser auditados.
+
