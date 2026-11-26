@@ -678,7 +678,23 @@ end
 
 local function validate_transfer_action_postconditions(plan)
     for action_index, action in ipairs(plan.steps) do
-        if type(action) == "table" and action.kind == "action" and action.action == "STORE" then
+        if type(action) == "table" and action.kind == "action" and action.action == "PICKUP" then
+            local inventory_delta
+            for _, candidate in ipairs(plan.steps) do
+                if assertion_verifies_action(candidate, action_index) then
+                    local assertion = candidate.assertion
+                    if type(assertion) == "table"
+                        and assertion.kind == "player_inventory_item_count_increased"
+                        and assertion.target_step == action_index then
+                        inventory_delta = assertion
+                    end
+                end
+            end
+            if action.target_required ~= true or type(action.target) ~= "table"
+                or inventory_delta == nil or inventory_delta.prefab ~= action.target.prefab then
+                return false, "PICKUP requires a matching player inventory increase postcondition for its target prefab"
+            end
+        elseif type(action) == "table" and action.kind == "action" and action.action == "STORE" then
             local player_delta, container_delta
             for _, candidate in ipairs(plan.steps) do
                 if assertion_verifies_action(candidate, action_index) then
