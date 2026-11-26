@@ -1025,3 +1025,43 @@ Próxima tarefa: verificar/selecionar uma suite real de um mod habilitado no amb
 
 Buscas exatas por MODXPECTOR_REGISTER_TEST_SUITE, modxpector/test-suite/v1 e player_inventory_item_count_increased não retornaram resultados públicos indexados. Isso não prova que nenhum mod use a API: Steam Workshop, repositórios pequenos, forks e conteúdo não indexado podem ficar fora da busca. No momento, não foi confirmado um consumidor externo real da API. O primeiro cenário de pickup permanece um contrato sintético; a próxima validação exige um mod ativo que registre uma suite ou uma integração declarativa em um repositório auditado com licença compatível.
 
+
+
+## Integração inicial do observador no Virtual Player — 26/11/2026
+
+Esta seção atualiza os checkpoints históricos acima. As afirmações antigas de que o observador ainda não estava integrado descrevem o estado anterior à mudança abaixo.
+
+### Implementado no HEAD `6e08351f16f0fd19803d12b4d242675eaa2b6b99`
+
+- `step_event_observer.lua` agora oferece `BuildPlayerSources`, que valida jogador, réplica de inventário e estado `classified` não ocupado antes de registrar fontes de eventos do inventário do jogador.
+- O Virtual Player inicia uma sessão passiva e limitada do observador no step `PICKUP`, antes de submeter a ação ao `PlayerController`.
+- Ao a ação terminar, a sessão é parada e os listeners são removidos. O encerramento geral também tenta limpar a sessão em falha, timeout, cancelamento, substituição de ação e remoção do jogador.
+- O relatório registra eventos e cleanup por índice de step. Quando há GUID válido, correlaciona o evento `itemget` com o GUID do alvo selecionado.
+- A correlação é explicitamente classificada como `client_replica_event_shape_only`, com causalidade `unproven` e autoridade do servidor `unverified`. Ela não promove um evento cliente a prova de sucesso; a assertion de inventário antes/depois continua obrigatória.
+- O listener `onremove` do jogador agora tem callback nomeado, limpeza no fim da execução e re-registro ao iniciar uma nova execução.
+- Falha ao inicializar o observador não bloqueia nem autoriza a ação: o relatório registra a observação como incompleta, e a política/validação da ação continua independente.
+
+### Regressão e CI
+
+- O contrato `test_modxpector_virtual_player_live.lua` agora simula `itemget` para o alvo com GUID conhecido, verifica correlação do evento, preservação dos rótulos de evidência e remoção de listeners `itemget`, `itemlose` e `onremove`.
+- Run [45867084049 — ModXpector Lua checks](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45867084049): **success**. Steps confirmados: checkout, instalação Lua 5.1, parsing de todos os Lua, contratos Lua e teste de exclusão de credenciais do pacote.
+- Commits desta mudança: `bd4ab58` (fontes do inventário), `900fd74` (integração do observador e cleanup do listener do jogador), `6e08351` (teste de regressão).
+- Compare da branch `security/modxpector-5.0.14-opt-in-2026-11-23` com `main`: 502 commits à frente, 0 atrás; 41 arquivos no diff. A PR #76 permanece aberta e em draft.
+- Nível comprovado: testes automatizados Lua 5.1 em CI. Nenhum teste dentro do motor DST, multiplayer ou servidor dedicado foi executado.
+
+### Limites que permanecem
+
+- A integração atual é somente para observação de eventos de `PICKUP` no inventário do jogador. Não é um observador genérico para todas as ações.
+- O evento `itemget` com GUID correspondente é evidência da forma de sincronização da réplica cliente, não prova causal nem autoridade server-side.
+- O oráculo de aceitação continua sendo a assertion explícita de aumento de inventário; cenários com pickups concorrentes do mesmo prefab permanecem inadequados para a assertion agregada.
+- `STORE`, `TAKEITEM` e `TAKESINGLEITEM` permanecem bloqueados. A observação de `itemlose`/contêineres não basta para liberar transferência.
+- O catálogo embutido de suites comunitárias continua vazio. Não foi verificado um mod comunitário real e ativo que registre uma suite compatível.
+- O inventário de 59 mods datado de 22/11 é histórico; não comprova quais mods estão habilitados/carregados atualmente.
+- A seleção da primeira suite real depende de inventário atual verificável, prefab confirmado e contrato declarativo seguro. Se isso não puder ser confirmado, manter os contratos sintéticos e registrar a limitação; não inventar suite comunitária.
+
+### Próximas ações técnicas
+
+1. Auditar o estado de `PICKUP` quando o alvo é removido antes do evento, o inventário está ocupado, ocorre overflow, o listener falha parcialmente ou o jogador é removido durante o step.
+2. Adicionar testes negativos para `BuildPlayerSources` (classified ausente/ocupado e jogador inválido) e garantir que observação incompleta nunca altera a decisão de segurança.
+3. Recuperar do Cérebro Secundário o inventário mais recente de mods e validar o candidato real sem instalar ou habilitar mods.
+4. Só depois avaliar observação de outras ações. Não liberar transferências nem ampliar allowlists sem oráculo de identidade/estado independente.
