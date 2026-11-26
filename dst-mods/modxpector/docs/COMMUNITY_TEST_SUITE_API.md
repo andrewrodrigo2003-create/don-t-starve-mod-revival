@@ -71,7 +71,7 @@ Substitua o Workshop ID e o prefab pelo identificador real do mod. O proprietár
 - `priority`: 0–100; maior valor ganha prioridade em caso de empate de seleção.
 - `allowed_prefabs`: até 40 identificadores.
 - `allowed_recipes`: até 40 identificadores.
-- `allowed_actions`: até 10; o perfil inicial permite somente `WALKTO`.
+- `allowed_actions`: até 10; o perfil atual permite somente `WALKTO` e `PICKUP`.
 - `scenarios`: 1–20 cenários, cada um com 1–20 etapas.
 
 ### Etapas aceitas
@@ -231,3 +231,43 @@ As chamadas server-authoritative de spawn_item, spawn_entity e unlock_recipe dev
 ### Coordenadas de spawn
 
 Além da etapa exata, run_id e quantidade, o Master valida a posição. Se a etapa tiver position, o spawn deve ocorrer a até 4 unidades desse ponto; caso contrário, deve ficar a até 4 unidades da posição autoritativa do jogador no servidor. Coordenadas não numéricas, NaN, infinitas ou fora do limite são rejeitadas. A etapa não é consumida quando a validação espacial falha.
+
+
+## Ação adicional liberada: PICKUP
+
+A partir da revisão de 26/11/2026, a API aceita PICKUP em cenários declarativos, com as seguintes condições:
+
+- O prefab do item precisa constar em allowed_prefabs e no target selector.
+- target_required precisa ser true.
+- A ação precisa ser verificada por player_inventory_item_count_increased.
+- A assertion precisa referenciar o mesmo step da ação em target_step.
+- prefab deve corresponder ao item esperado e estar na allowlist.
+- count é inteiro entre 1 e 10000; o padrão é 1.
+- O Master revalida suite_id, owner_mod_id, scenario_id e a allowlist de ações do servidor. Não basta o cliente declarar uma ação permitida.
+- Qualquer ação do Virtual Player exige test_mode e laboratory_mode; use somente mundo descartável.
+
+Exemplo de cenário:
+
+\`\`\`lua
+{
+    kind = "action",
+    action = "PICKUP",
+    target = { prefab = "my_mod_test_item", radius = 12 },
+    target_required = true,
+},
+{
+    kind = "assert",
+    assertion = {
+        kind = "player_inventory_item_count_increased",
+        target_step = 1,
+        prefab = "my_mod_test_item",
+        count = 1,
+    },
+    verifies_step = 1,
+}
+\`\`\`
+
+A verificação mede o aumento da quantidade total daquele prefab no inventário antes/depois do step. Ela não prova identidade de GUID em cenários com pickups concorrentes do mesmo prefab; execute o smoke test em ambiente isolado, sem outras fontes simultâneas do item. Não reutilize essa contagem como prova suficiente de STORE/TAKEITEM/TAKESINGLEITEM: essas operações continuam bloqueadas até uma verificação de transferência específica.
+
+A allowlist do servidor é independente da declaração do mod. No estado atual, suites comunitárias só podem usar WALKTO e PICKUP; ATTACK, STORE, TAKEITEM, execução arbitrária e outras ações permanecem recusadas pela camada de suites.
+
