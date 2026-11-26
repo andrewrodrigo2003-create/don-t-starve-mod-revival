@@ -674,3 +674,57 @@ rpc_server.set_test_plan(reconnected_player, "invalid_store_prefab_mismatch", "{
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "same invobject", 1, true),
     "Master must reject STORE postconditions that do not match the action's invobject")
+
+
+-- Community-suite plans are independently constrained by the Master AI allowlist.
+admin = true
+laboratory_mode = true
+now = now + 1
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "suite_pickup_valid",
+    suite_id = "pickup_smoke",
+    owner_mod_id = "workshop-100",
+    scenario_id = "pickup_item",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    steps = {
+        { kind = "action", action = "PICKUP",
+            target = { prefab = "cutgrass", radius = 12 }, target_required = true },
+        { kind = "assert", assertion = {
+            kind = "player_inventory_item_count_increased",
+            target_step = 1, prefab = "cutgrass", count = 1,
+        }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "suite_pickup_valid", "{}")
+assert(responses[#responses].success == true,
+    "Master should accept a bounded PICKUP suite with an inventory-delta postcondition")
+
+now = now + 1
+decoded_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "suite_attack_rejected",
+    suite_id = "unapproved_attack_suite",
+    owner_mod_id = "workshop-100",
+    scenario_id = "attack_item",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = { "ATTACK" },
+    steps = {
+        { kind = "action", action = "ATTACK",
+            target = { prefab = "cutgrass", radius = 12 }, target_required = true },
+        { kind = "assert", assertion = {
+            kind = "target_exists", target_step = 1, expected = true,
+        }, verifies_step = 1 },
+    },
+}
+rpc_server.set_test_plan(reconnected_player, "suite_attack_rejected", "{}")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message,
+        "community suite action is not in the server-side AI allowlist", 1, true),
+    "Master must reject client-supplied community-suite actions outside its independent allowlist")
+
