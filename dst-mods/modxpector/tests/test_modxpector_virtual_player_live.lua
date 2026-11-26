@@ -767,6 +767,31 @@ assert(baseline_guard_report ~= nil and baseline_guard_report.outcome == "failed
     "an unchanged pre-existing inventory count must not verify a pickup")
 assert(string.find(baseline_guard_report.failure, "assertion failed", 1, true))
 
+
+
+-- PICKUP uses an isolated before/after inventory delta, not the container-transfer oracle.
+local previous_pickup_state = player.picked_up
+player.picked_up = false
+local pickup_controller = VirtualPlayer.new(player, { allowed_prefabs = { "cutgrass" } })
+pickup_controller.queue = {
+    { kind = "action", action = "PICKUP", target_required = true },
+    { kind = "assert", assertion = {
+        kind = "player_inventory_item_count_increased",
+        prefab = "cutgrass", target_step = 1, count = 1,
+    }, verifies_step = 1 },
+}
+pickup_controller.index = 1
+pickup_controller:_capture_step_transfer_baseline(1, target)
+player.picked_up = true
+pickup_controller.index = 2
+local pickup_delta = pickup_controller:_evaluate_assertion({
+    kind = "player_inventory_item_count_increased",
+    prefab = "cutgrass", target_step = 1, count = 1,
+})
+assert(pickup_delta.passed == true,
+    "PICKUP should pass only after the carried item count increases from its captured baseline")
+player.picked_up = previous_pickup_state
+
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
 
 -- Interrupted and malformed steps must leave a step-level failure event in the report.
