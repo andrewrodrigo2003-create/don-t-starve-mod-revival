@@ -174,7 +174,7 @@ assert(first_cleanup.cleanup_complete == false and first_cleanup.complete == fal
 assert(first_cleanup.pending_cleanup_count == 1)
 retry_owner.RemoveEventCallback = original_remove
 local second_cleanup = assert(Observer.Stop(retry_session))
-assert(second_cleanup.cleanup_complete == true and second_cleanup.complete == false)
+assert(second_cleanup.cleanup_complete == true and second_cleanup.complete == true)
 assert(second_cleanup.pending_cleanup_count == 0)
 assert(retry_owner:ListenerCount("itemget") == 0)
 
