@@ -476,7 +476,9 @@ decoded_plan = {
     },
 }
 rpc_server.set_test_plan(reconnected_player, "valid_store_container_assertion", "{}")
-assert(responses[#responses].success == true, "master must accept STORE with container and carried-inventory postconditions")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "inventory transfer actions are disabled", 1, true),
+    "Master must keep STORE blocked until exact item identity and container transition are verified")
 
 decoded_plan = {
     schema = "modxpector/test-plan/v1",
@@ -492,7 +494,9 @@ decoded_plan = {
     },
 }
 rpc_server.set_test_plan(reconnected_player, "valid_takeitem_action", "{}")
-assert(responses[#responses].success == true, "master must accept the real TAKEITEM action with a postcondition")
+assert(responses[#responses].success == false
+    and string.find(responses[#responses].message, "inventory transfer actions are disabled", 1, true),
+    "Master must keep TAKEITEM blocked until exact item identity and container transition are verified")
 
 decoded_plan = {
     schema = "modxpector/test-plan/v1",
@@ -575,110 +579,33 @@ assert(string.find(responses[#responses].message, "inventory assertion count", 1
 print("MODXPECTOR_MASTER_TEST_PLAN_VALIDATION_CONTRACT_OK")
 
 
--- Transfer assertions must be bound to the same action they verify.
-decoded_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "invalid_transfer_target_mismatch",
-    allowed_prefabs = { "cutgrass", "treasurechest" },
-    allowed_recipes = {},
-    allowed_actions = {},
-    steps = {
-        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "assert", assertion = {
-            kind = "player_inventory_item_count_decreased", target_step = 1, prefab = "cutgrass", count = 1,
-        }, verifies_step = 2 },
-    },
-}
-rpc_server.set_test_plan(reconnected_player, "invalid_transfer_target_mismatch", "{}")
-assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "target_step must match", 1, true),
-    "Master must reject transfer baselines bound to a different action than the verified step")
-
-
-decoded_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "invalid_negative_transfer_expectation",
-    allowed_prefabs = { "cutgrass", "treasurechest" },
-    allowed_recipes = {},
-    allowed_actions = {},
-    steps = {
-        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "assert", assertion = {
-            kind = "container_item_count_increased", target_step = 1,
-            prefab = "cutgrass", count = 1, expected = false,
-        }, verifies_step = 1 },
-    },
-}
-rpc_server.set_test_plan(reconnected_player, "invalid_negative_transfer_expectation", "{}")
-assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "expected=true", 1, true),
-    "Master must reject negative expectations for transfer-delta assertions")
-
-
-decoded_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "invalid_store_single_sided_proof",
-    allowed_prefabs = { "cutgrass", "treasurechest" },
-    allowed_recipes = {},
-    allowed_actions = {},
-    steps = {
-        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "assert", assertion = {
-            kind = "container_item_count_increased", target_step = 1, prefab = "cutgrass", count = 1,
-        }, verifies_step = 1 },
-    },
-}
-rpc_server.set_test_plan(reconnected_player, "invalid_store_single_sided_proof", "{}")
-assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "both player inventory decrease", 1, true),
-    "Master must reject STORE when only the container side is verified")
-
-decoded_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "invalid_takeitem_without_holder_state",
-    allowed_prefabs = { "birdcage", "cutgrass" },
-    allowed_recipes = {},
-    allowed_actions = {},
-    steps = {
-        { kind = "action", action = "TAKEITEM", target = { prefab = "birdcage" }, target_required = true },
-        { kind = "assert", assertion = {
-            kind = "player_inventory_item_count_increased", target_step = 1, prefab = "cutgrass", count = 1,
-        }, verifies_step = 1 },
-    },
-}
-rpc_server.set_test_plan(reconnected_player, "invalid_takeitem_without_holder_state", "{}")
-assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "holder/shelf state-change", 1, true),
-    "Master must reject TAKEITEM without an independent holder/shelf state-change proof")
-
-
-decoded_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "invalid_store_prefab_mismatch",
-    allowed_prefabs = { "cutgrass", "twigs", "treasurechest" },
-    allowed_recipes = {},
-    allowed_actions = {},
-    steps = {
-        { kind = "action", action = "STORE", target = { prefab = "treasurechest" }, target_required = true, invobject = "cutgrass" },
-        { kind = "assert", assertion = {
-            kind = "container_item_count_increased", target_step = 1, prefab = "twigs", count = 1,
-        }, verifies_step = 1 },
-        { kind = "assert", assertion = {
-            kind = "player_inventory_item_count_decreased", target_step = 1, prefab = "twigs", count = 1,
-        }, verifies_step = 1 },
-    },
-}
-rpc_server.set_test_plan(reconnected_player, "invalid_store_prefab_mismatch", "{}")
-assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "same invobject", 1, true),
-    "Master must reject STORE postconditions that do not match the action's invobject")
-
+-- Inventory transfer actions remain fail-closed regardless of declared targets or postconditions.
+for _, blocked_action in ipairs({ "STORE", "TAKEITEM", "TAKESINGLEITEM" }) do
+    decoded_plan = {
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        run_id = "blocked_" .. string.lower(blocked_action),
+        allowed_prefabs = { "cutgrass", "treasurechest", "birdcage" },
+        allowed_recipes = {},
+        allowed_actions = { blocked_action },
+        steps = {
+            {
+                kind = "action", action = blocked_action,
+                target = { prefab = blocked_action == "STORE" and "treasurechest" or "birdcage" },
+                target_required = true, invobject = "cutgrass",
+            },
+            {
+                kind = "assert",
+                assertion = { kind = "player_inventory_item_count_increased", target_step = 1, prefab = "cutgrass", count = 1 },
+                verifies_step = 1,
+            },
+        },
+    }
+    rpc_server.set_test_plan(reconnected_player, "blocked_" .. string.lower(blocked_action), "{}")
+    assert(responses[#responses].success == false
+        and string.find(responses[#responses].message, "inventory transfer actions are disabled", 1, true),
+        blocked_action .. " must remain blocked even when a plan declares target and postcondition evidence")
+end
 
 -- Community-suite plans are independently constrained by the Master AI allowlist.
 admin = true
