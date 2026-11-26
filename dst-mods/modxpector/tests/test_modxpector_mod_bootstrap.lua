@@ -206,6 +206,28 @@ local suite_registered, suite_message = engine_globals.MODXPECTOR_REGISTER_TEST_
 })
 assert(suite_registered == true and suite_message == "registered", "valid community suite must register")
 
+local pickup_suite_registered, pickup_suite_message = engine_globals.MODXPECTOR_REGISTER_TEST_SUITE({
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_smoke",
+    owner_mod_id = "workshop-100",
+    title = "Community pickup smoke test",
+    allowed_prefabs = { "cutgrass" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        { id = "pickup_item", title = "Pick up cut grass", steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "cutgrass", radius = 12 }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "player_inventory_item_count_increased",
+                target_step = 1, prefab = "cutgrass", count = 1,
+            }, verifies_step = 1 },
+        } },
+    },
+})
+assert(pickup_suite_registered == true and pickup_suite_message == "registered",
+    "valid bounded PICKUP suite must register on the Master")
+
 -- Joining a world starts the embedded read-only analysis and never contacts localhost.
 player_postinit(player)
 assert(chat_history.add_count == 1, "the local ChatHistory listener must be registered once")
@@ -656,8 +678,8 @@ decoded_plan = {
 rpc_server.set_test_plan(reconnected_player, "suite_attack_rejected", "{}")
 assert(responses[#responses].success == false
     and string.find(responses[#responses].message,
-        "community suite action is not in the server-side AI allowlist", 1, true),
-    "Master must reject client-supplied community-suite actions outside its independent allowlist")
+        "community_suite_not_registered_on_master", 1, true),
+    "Master must reject a client-declared suite that was not registered on the server")
 
 
 
@@ -679,8 +701,8 @@ decoded_plan = {
 }
 rpc_server.set_test_plan(reconnected_player, "suite_pickup_missing_postcondition", "{}")
 assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "PICKUP requires a matching player inventory increase", 1, true),
-    "Master must reject PICKUP without a matching inventory delta postcondition")
+    and string.find(responses[#responses].message, "community_plan_differs_from_registered_declaration", 1, true),
+    "Master must reject a client plan that removes the registered PICKUP postcondition")
 
 now = now + 1
 decoded_plan = {
@@ -704,6 +726,6 @@ decoded_plan = {
 }
 rpc_server.set_test_plan(reconnected_player, "suite_pickup_mismatched_prefab", "{}")
 assert(responses[#responses].success == false
-    and string.find(responses[#responses].message, "PICKUP requires a matching player inventory increase", 1, true),
-    "Master must reject a pickup postcondition for a different prefab")
+    and string.find(responses[#responses].message, "community_plan_differs_from_registered_declaration", 1, true),
+    "Master must reject a client plan that changes the registered pickup prefab proof")
 
