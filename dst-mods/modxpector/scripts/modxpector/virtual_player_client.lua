@@ -4,19 +4,16 @@
 local DST_GLOBAL = GLOBAL or _G
 local pcall = (DST_GLOBAL and DST_GLOBAL.pcall) or pcall
 local ItemIdentity = require("modxpector/item_identity")
+local TEST_PLAN_POLICY_OK, TEST_PLAN_POLICY = pcall(require, "modxpector/test_plan_policy")
+if not TEST_PLAN_POLICY_OK or type(TEST_PLAN_POLICY) ~= "table"
+    or type(TEST_PLAN_POLICY.IsClientActionAllowed) ~= "function" then
+    TEST_PLAN_POLICY = {
+        IsBlockedAction = function() return true end,
+        IsClientActionAllowed = function() return false end,
+    }
+end
 local VirtualPlayer = {}
 VirtualPlayer.__index = VirtualPlayer
-
-local ACTION_ALLOWLIST = {
-    ATTACK = true, CHOP = true, MINE = true, DIG = true, HAMMER = true,
-    PICK = true, HARVEST = true, PICKUP = true, TILL = true, REPAIR = true,
-    WALKTO = true, EAT = true, USEITEM = true, CASTAOE = true, CASTSPELL = true,
-    RUMMAGE = true, DISMOUNT = true, MOUNT = true, TALKTO = true, DEPLOY = true,
-    PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
-    COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
-    LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
-    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKEITEM = true, TAKESINGLEITEM = true,
-}
 
 local SIDE_EFFECT_STEPS = {
     action = true, craft = true, craft_at_point = true,
@@ -172,7 +169,10 @@ end
 function VirtualPlayer:BuildAction(step, target_override)
     assert(type(step) == "table", "action step must be an object")
     local action_name = step.action
-    assert(type(action_name) == "string" and (ACTION_ALLOWLIST[action_name] or self.allowed_actions[action_name]), "action is not allowed")
+    assert(type(action_name) == "string" and not TEST_PLAN_POLICY.IsBlockedAction(action_name),
+        "inventory transfer action is blocked until exact item identity and container transition are verified")
+    assert(TEST_PLAN_POLICY.IsClientActionAllowed(action_name, self.allowed_actions),
+        "action is not allowed by the test plan")
     assert(ACTIONS ~= nil and ACTIONS[action_name] ~= nil, "action is not available in this DST build: " .. action_name)
     assert(type(BufferedAction) == "function", "BufferedAction API unavailable")
     local target = target_override ~= nil and target_override or self:ResolveTarget(step.target)

@@ -411,19 +411,19 @@ local custom = controller:BuildAction({ action = "MOD_ACTION", invobject = "cutg
 assert(custom.action == ACTIONS.MOD_ACTION and custom.invobject.prefab == "cutgrass")
 local ok, err = pcall(function() controller:BuildAction({ action = "UNSAFE_EXEC" }) end)
 assert(not ok and string.find(tostring(err), "not allowed", 1, true))
-local store_action = controller:BuildAction({
-    kind = "action", action = "STORE", target = { prefab = "treasurechest", radius = 10 },
-    target_required = true, invobject = "cutgrass",
-}, open_container)
-local take_item_action = controller:BuildAction({
-    kind = "action", action = "TAKEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
-}, birdcage_target)
-local take_single_action = controller:BuildAction({
-    kind = "action", action = "TAKESINGLEITEM", target = { prefab = "birdcage", radius = 10 }, target_required = true,
-}, birdcage_target)
-assert(store_action.action == ACTIONS.STORE and store_action.target == open_container
-    and store_action.invobject.prefab == "cutgrass")
-assert(take_item_action.action == ACTIONS.TAKEITEM and take_single_action.action == ACTIONS.TAKESINGLEITEM)
+for _, blocked_action in ipairs({ "STORE", "TAKEITEM", "TAKESINGLEITEM" }) do
+    controller.allowed_actions[blocked_action] = true
+    local blocked_ok, blocked_error = pcall(function()
+        return controller:BuildAction({
+            kind = "action", action = blocked_action,
+            target = { prefab = "birdcage", radius = 10 },
+            target_required = true, invobject = "cutgrass",
+        }, birdcage_target)
+    end)
+    assert(not blocked_ok and string.find(tostring(blocked_error), "blocked", 1, true),
+        blocked_action .. " must remain blocked even when a plan attempts to allow it")
+    controller.allowed_actions[blocked_action] = nil
+end
 local invalid_take_ok, invalid_take_error = pcall(function() controller:BuildAction({ kind = "action", action = "TAKE" }) end)
 assert(not invalid_take_ok and string.find(tostring(invalid_take_error), "not allowed", 1, true),
     "nonexistent TAKE action must not be accepted in place of TAKEITEM/TAKESINGLEITEM")

@@ -81,6 +81,20 @@ if not EMBEDDED_AI_OK or type(EMBEDDED_AI) ~= "table" or type(EMBEDDED_AI.Analyz
     EMBEDDED_AI_OK = false
     EMBEDDED_AI = nil
 end
+local TEST_PLAN_POLICY_OK, TEST_PLAN_POLICY = pcall(require, "modxpector/test_plan_policy")
+if not TEST_PLAN_POLICY_OK or type(TEST_PLAN_POLICY) ~= "table"
+    or type(TEST_PLAN_POLICY.IsServerActionAllowed) ~= "function"
+    or type(TEST_PLAN_POLICY.ValidateCommunityPlan) ~= "function"
+    or type(TEST_PLAN_POLICY.IsOwnerModConfirmedLoaded) ~= "function" then
+    print("[ModXpector] TEST_PLAN_POLICY_MODULE_UNAVAILABLE " .. tostring(TEST_PLAN_POLICY))
+    TEST_PLAN_POLICY = {
+        IsBlockedAction = function() return true end,
+        IsServerActionAllowed = function() return false end,
+        IsCommunityActionAllowed = function() return false end,
+        IsOwnerModConfirmedLoaded = function() return false, "policy_unavailable" end,
+        ValidateCommunityPlan = function() return false, "policy_unavailable" end,
+    }
+end
 local CHAT_COMMANDS_OK, CHAT_COMMANDS = pcall(require, "modxpector/chat_commands")
 if not CHAT_COMMANDS_OK or type(CHAT_COMMANDS) ~= "table" or type(CHAT_COMMANDS.Parse) ~= "function" then
     print("[ModXpector] CHAT_COMMAND_PARSER_UNAVAILABLE " .. tostring(CHAT_COMMANDS))
@@ -368,17 +382,6 @@ local function safe_name_list(values, pattern, maximum)
     return true
 end
 
-local SERVER_ACTION_ALLOWLIST = {
-    ATTACK = true, CHOP = true, MINE = true, DIG = true, HAMMER = true,
-    PICK = true, HARVEST = true, PICKUP = true, TILL = true, REPAIR = true,
-    WALKTO = true, EAT = true, USEITEM = true, CASTAOE = true, CASTSPELL = true,
-    RUMMAGE = true, DISMOUNT = true, MOUNT = true, TALKTO = true, DEPLOY = true,
-    PLANT = true, EQUIP = true, UNEQUIP = true, GIVE = true, DROP = true,
-    COOK = true, READ = true, SADDLE = true, FISH = true, CATCH = true,
-    LIGHT = true, EXTINGUISH = true, SLEEPIN = true, TURNON = true, TURNOFF = true,
-    ACTIVATE = true, OPEN = true, CLOSE = true, STORE = true, TAKEITEM = true, TAKESINGLEITEM = true,
-}
-local AI_ACTION_ALLOWLIST = { WALKTO = true, PICKUP = true }
 local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
     player_has_item = true, player_has_item_count_gte = true, player_inventory_has_item = true, container_has_item = true, player_equipped = true,
@@ -603,10 +606,16 @@ local function validate_plan_step(plan, index, step)
         return finite_number(seconds) and seconds >= 0 and seconds <= 120,
             "invalid wait duration"
     elseif step.kind == "action" then
-        if type(step.action) ~= "string" or SERVER_ACTION_ALLOWLIST[step.action] ~= true then
+        if type(step.action) ~= "string" then
+            return false, "invalid action name"
+        end
+        if TEST_PLAN_POLICY.IsBlockedAction(step.action) then
+            return false, "inventory transfer actions are disabled until exact item identity and container transition are verified"
+        end
+        if not TEST_PLAN_POLICY.IsServerActionAllowed(step.action) then
             return false, "action is not in the server allowlist"
         end
-        if plan.suite_id ~= nil and (AI_ACTION_ALLOWLIST[step.action] ~= true
+        if plan.suite_id ~= nil and (not TEST_PLAN_POLICY.IsCommunityActionAllowed(step.action)
             or not contains_value(plan.allowed_actions, step.action)) then
             return false, "action is not in the server-side AI suite allowlist"
         end
@@ -618,12 +627,6 @@ local function validate_plan_step(plan, index, step)
         end
         if step.target_required == true and step.target == nil then
             return false, "target_required action needs a target selector"
-        end
-        if step.action == "STORE" and (step.target_required ~= true or step.invobject == nil) then
-            return false, "STORE requires a target and an allowlisted invobject"
-        end
-        if step.action == "TAKEITEM" and step.target_required ~= true then
-            return false, "TAKEITEM requires a target"
         end
         if step.invobject ~= nil and not prefab_is_allowed(step.invobject, plan) then
             return false, "action inventory object is not in the plan allowlist"
@@ -678,62 +681,26 @@ end
 
 local function validate_transfer_action_postconditions(plan)
     for action_index, action in ipairs(plan.steps) do
-        if type(action) == "table" and action.kind == "action" and action.action == "PICKUP" then
-            local inventory_delta
-            for _, candidate in ipairs(plan.steps) do
-                if assertion_verifies_action(candidate, action_index) then
-                    local assertion = candidate.assertion
-                    if type(assertion) == "table"
-                        and assertion.kind == "player_inventory_item_count_increased"
-                        and assertion.target_step == action_index then
-                        inventory_delta = assertion
-                    end
-                end
+        if type(action) == "table" and action.kind == "action" then
+            if TEST_PLAN_POLICY.IsBlockedAction(action.action) then
+                return false, "inventory transfer actions are disabled until exact item identity and container transition are verified"
             end
-            if action.target_required ~= true or type(action.target) ~= "table"
-                or inventory_delta == nil or inventory_delta.prefab ~= action.target.prefab then
-                return false, "PICKUP requires a matching player inventory increase postcondition for its target prefab"
-            end
-        elseif type(action) == "table" and action.kind == "action" and action.action == "STORE" then
-            local player_delta, container_delta
-            for _, candidate in ipairs(plan.steps) do
-                if assertion_verifies_action(candidate, action_index) then
-                    local assertion = candidate.assertion
-                    if type(assertion) == "table" and assertion.target_step == action_index then
-                        if assertion.kind == "player_inventory_item_count_decreased" then
-                            player_delta = assertion
-                        elseif assertion.kind == "container_item_count_increased" then
-                            container_delta = assertion
-                        end
-                    end
-                end
-            end
-            if player_delta == nil or container_delta == nil then
-                return false, "STORE requires both player inventory decrease and container increase postconditions"
-            end
-            local player_count = player_delta.count == nil and 1 or player_delta.count
-            local container_count = container_delta.count == nil and 1 or container_delta.count
-            if player_delta.prefab ~= action.invobject or container_delta.prefab ~= action.invobject
-                or player_count ~= container_count then
-                return false, "STORE postconditions must verify the same invobject and transfer count"
-            end
-        elseif type(action) == "table" and action.kind == "action" and action.action == "TAKEITEM" then
-            local inventory_delta, holder_state = nil, nil
-            for _, candidate in ipairs(plan.steps) do
-                if assertion_verifies_action(candidate, action_index) then
-                    local assertion = candidate.assertion
-                    if type(assertion) == "table" and assertion.target_step == action_index then
-                        if assertion.kind == "player_inventory_item_count_increased" then
+            if action.action == "PICKUP" then
+                local inventory_delta
+                for _, candidate in ipairs(plan.steps) do
+                    if assertion_verifies_action(candidate, action_index) then
+                        local assertion = candidate.assertion
+                        if type(assertion) == "table"
+                            and assertion.kind == "player_inventory_item_count_increased"
+                            and assertion.target_step == action_index then
                             inventory_delta = assertion
-                        elseif assertion.kind == "target_has_tag" and assertion.expected == false
-                            and (assertion.tag == "takeshelfitem" or assertion.tag == "inventoryitemholder_take") then
-                            holder_state = assertion
                         end
                     end
                 end
-            end
-            if inventory_delta == nil or holder_state == nil then
-                return false, "TAKEITEM requires an inventory increase and a holder/shelf state-change postcondition"
+                if action.target_required ~= true or type(action.target) ~= "table"
+                    or inventory_delta == nil or inventory_delta.prefab ~= action.target.prefab then
+                    return false, "PICKUP requires a matching player inventory increase postcondition for its target prefab"
+                end
             end
         end
     end
@@ -759,9 +726,14 @@ local function validate_incoming_plan(plan, requested_run_id)
             return false, "invalid community suite plan identity"
         end
         for _, action in ipairs(plan.allowed_actions or {}) do
-            if AI_ACTION_ALLOWLIST[action] ~= true then
+            if not TEST_PLAN_POLICY.IsCommunityActionAllowed(action) then
                 return false, "community suite action is not in the server-side AI allowlist"
             end
+        end
+        local registered_plan_ok, registered_plan_reason = TEST_PLAN_POLICY.ValidateCommunityPlan(
+            plan, embedded_ai_test_suites, EMBEDDED_AI)
+        if not registered_plan_ok then
+            return false, registered_plan_reason
         end
     elseif plan.owner_mod_id ~= nil or plan.scenario_id ~= nil then
         return false, "community suite metadata requires suite_id"
@@ -817,6 +789,23 @@ local function handle_set_test_plan(player, run_id, plan_json)
     if not decoded_ok then reply(false, "test plan JSON could not be decoded"); return end
     local valid, reason = validate_incoming_plan(plan, run_id)
     if not valid then reply(false, reason); return end
+    if plan.suite_id ~= nil then
+        if not INVENTORY_OK or WORLD_INVENTORY == nil then
+            reply(false, "Master cannot verify the community suite owner mod load state")
+            return
+        end
+        local inventory_ok, snapshot = pcall(WORLD_INVENTORY.Collect, DST_GLOBAL)
+        if not inventory_ok then
+            reply(false, "Master failed to collect the community suite owner mod inventory")
+            return
+        end
+        local owner_loaded, owner_reason = TEST_PLAN_POLICY.IsOwnerModConfirmedLoaded(
+            snapshot, plan.owner_mod_id)
+        if not owner_loaded then
+            reply(false, "community suite owner mod is not confirmed loaded on Master: " .. tostring(owner_reason))
+            return
+        end
+    end
     if plan_requires_laboratory(plan) and not laboratory_mode_enabled() then
         reply(false, "laboratory mode is disabled; world-changing steps require a separate disposable test world")
         return
@@ -1062,15 +1051,22 @@ local function run_embedded_ai_suite(suite_id, scenario_id, callback)
     end
     local report = DST_GLOBAL.MODXPECTOR_EMBEDDED_AI_REPORT
     local selected = type(report) == "table" and report.selected_suites or {}
-    local suite
+    local selected_entry
     for _, entry in ipairs(selected or {}) do
         if type(entry) == "table" and type(entry.suite) == "table" and entry.suite.id == suite_id then
-            suite = entry.suite
+            selected_entry = entry
             break
         end
     end
-    if suite == nil then
+    if selected_entry == nil then
         finish(false, "A suite não está registrada para um mod ativo e carregado.")
+        return false
+    end
+    local suite = selected_entry.suite
+    local owner_loaded, owner_reason = TEST_PLAN_POLICY.IsOwnerModConfirmedLoaded(
+        type(report) == "table" and report.snapshot or nil, suite.owner_mod_id)
+    if selected_entry.confidence ~= "confirmed" or not owner_loaded then
+        finish(false, "Suite não executada: o mod proprietário não está confirmado como carregado e habilitado no cliente (" .. tostring(owner_reason) .. ").")
         return false
     end
     local clock = 0

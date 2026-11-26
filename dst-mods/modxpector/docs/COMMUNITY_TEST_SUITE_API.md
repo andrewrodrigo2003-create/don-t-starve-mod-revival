@@ -61,7 +61,7 @@ AddSimPostInit(function()
 end)
 ```
 
-Substitua o Workshop ID e o prefab pelo identificador real do mod. O proprietário é autodeclarado; o ModXpector só seleciona a suite se esse ID aparecer no inventário local como mod habilitado e não observado em falha.
+Substitua o Workshop ID e o prefab pelo identificador real do mod. O proprietário é autodeclarado, mas isso não basta para autorizar a execução. O Master exige que a mesma suite/cenário esteja registrada no servidor, que o plano corresponda exatamente à declaração registrada e que o mod proprietário esteja confirmado como habilitado, carregado e server-enabled. Um candidato com estado de carregamento apenas provável pode aparecer na análise, mas não pode ser executado.
 
 ## Schema e limites atuais
 
@@ -84,16 +84,16 @@ O perfil inicial é intencionalmente não destrutivo:
 - Toda ação deve ter uma asserção com `verifies_step` apontando para ela.
 - Para asserções de alvo, `target_step` deve ser a mesma etapa indicada em `verifies_step`.
 
-São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coordenadas arbitrárias, funções, callbacks, strings de código e tipos de etapa desconhecidos. A suite é copiada para uma estrutura normalizada; o ModXpector não executa código Lua fornecido por outro mod.
+São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coordenadas arbitrárias, funções, callbacks, strings de código e tipos de etapa desconhecidos. A suite é copiada para uma estrutura normalizada; o ModXpector não executa código Lua fornecido por outro mod. `STORE`, `TAKEITEM` e `TAKESINGLEITEM` são bloqueados pela política compartilhada no cliente e no Master; adicionar essas ações a `allowed_actions` não as habilita.
 
 ## Seleção e execução
 
 1. O ModXpector coleta o inventário local.
-2. A IA seleciona suites cujo `owner_mod_id` corresponde a um mod habilitado e não observado em falha.
+2. A IA pode listar candidatos compatíveis, mas a execução exige que o snapshot confirme carregamento e habilitação no lado cliente; estado provável não autoriza execução.
 3. A interface mostra as suites compatíveis.
 4. O usuário precisa ativar **Modo de testes controlados**.
 5. Ao executar, o plano é enviado ao Master do DST.
-6. O Master verifica permissão de administrador, configuração, schema, allowlists, referências e pós-condições.
+6. O Master verifica permissão de administrador, configuração, schema, allowlists, referências e pós-condições; confirma que o proprietário está carregado no servidor e que o plano é idêntico ao cenário da suite registrada no próprio Master.
 7. Só após resposta positiva do Master o cliente inicia o Virtual Player.
 8. O resultado é guardado na sessão local e exibido no painel.
 
@@ -268,5 +268,5 @@ Exemplo de cenário:
 
 A verificação mede o aumento da quantidade total daquele prefab no inventário antes/depois do step. Ela não prova identidade de GUID em cenários com pickups concorrentes do mesmo prefab; execute o smoke test em ambiente isolado, sem outras fontes simultâneas do item. Não reutilize essa contagem como prova suficiente de STORE/TAKEITEM/TAKESINGLEITEM: essas operações continuam bloqueadas até uma verificação de transferência específica.
 
-A allowlist do servidor é independente da declaração do mod. No estado atual, suites comunitárias só podem usar WALKTO e PICKUP; ATTACK, STORE, TAKEITEM, execução arbitrária e outras ações permanecem recusadas pela camada de suites.
+A allowlist do servidor é independente da declaração do mod. No estado atual, suites comunitárias só podem usar WALKTO e PICKUP; ATTACK, STORE, TAKEITEM, TAKESINGLEITEM, execução arbitrária e outras ações permanecem recusadas pela política do servidor e pela camada de suites. O Master também rejeita planos comunitários não idênticos ao cenário registrado.
 
