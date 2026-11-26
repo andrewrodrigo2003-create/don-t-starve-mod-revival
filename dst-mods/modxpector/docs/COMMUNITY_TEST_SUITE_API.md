@@ -235,7 +235,7 @@ Além da etapa exata, run_id e quantidade, o Master valida a posição. Se a eta
 
 ## Ação adicional liberada: PICKUP
 
-A partir da revisão de 26/11/2026, a API aceita PICKUP em cenários declarativos, com as seguintes condições:
+A partir da revisão de 25/11/2026, a API aceita PICKUP em cenários declarativos, com as seguintes condições:
 
 - O prefab do item precisa constar em allowed_prefabs e no target selector.
 - target_required precisa ser true.
