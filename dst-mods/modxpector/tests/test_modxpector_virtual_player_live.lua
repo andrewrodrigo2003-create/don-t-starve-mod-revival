@@ -32,6 +32,8 @@ GetValidRecipe = function(name)
 end
 
 local crafted_calls, placed_calls = 0, 0
+local player_event_listeners = {}
+local pickup_target
 local open_container = {
     prefab = "treasurechest",
     IsValid = function() return true end,
@@ -56,6 +58,11 @@ player = {
         if action.action == ACTIONS.PICKUP then
             player.last_pickup_action = action
             player.picked_up = true
+            player:PushEvent("itemget", {
+                item = pickup_target,
+                slot = 1,
+                ignore_stacksize_anim = true,
+            })
         end
     end } },
     replica = {
@@ -80,6 +87,10 @@ player = {
             GetEquippedItem = function(_, slot)
                 return slot == "hands" and { prefab = "axe" } or nil
             end,
+            classified = {
+                IsValid = function() return true end,
+                IsBusy = function() return false end,
+            },
         },
         health = { GetCurrent = function() return 120 end },
         hunger = { GetCurrent = function() return 80 end },
@@ -106,7 +117,32 @@ player = {
     },
     Transform = { GetWorldPosition = function() return 0, 0, 0 end },
     IsValid = function() return true end,
-    ListenForEvent = function() end,
+    ListenForEvent = function(self, event, callback, source)
+        player_event_listeners[event] = player_event_listeners[event] or {}
+        table.insert(player_event_listeners[event], { callback = callback, source = source })
+    end,
+    RemoveEventCallback = function(self, event, callback, source)
+        local listeners = player_event_listeners[event] or {}
+        for index = #listeners, 1, -1 do
+            local listener = listeners[index]
+            if listener.callback == callback and listener.source == source then
+                table.remove(listeners, index)
+            end
+        end
+    end,
+    PushEvent = function(self, event, data)
+        local listeners = player_event_listeners[event] or {}
+        local snapshot = {}
+        for index, listener in ipairs(listeners) do snapshot[index] = listener end
+        for _, listener in ipairs(snapshot) do
+            if listener.source == nil or listener.source == self then
+                listener.callback(self, data)
+            end
+        end
+    end,
+    ListenerCount = function(self, event)
+        return #(player_event_listeners[event] or {})
+    end,
     DoTaskInTime = function(_, delay, fn) current_time = current_time + (delay or 0); fn() end,
     GetBufferedAction = function() return nil end,
 }
@@ -116,7 +152,8 @@ local structure_target = {
     HasTag = function() return false end,
     Transform = { GetWorldPosition = function() return 2, 0, 3 end },
 }
-local pickup_target = {
+pickup_target = {
+    GUID = 501,
     prefab = "cutgrass",
     IsValid = function() return true end,
     HasTag = function() return false end,
@@ -248,6 +285,22 @@ assert(finished.steps_verified == 6 and finished.steps_unverified == 0,
 assert(finished.verification_assertions_passed == 7,
     "craft must remain pending until both postconditions pass")
 assert(player.last_pickup_action.action == ACTIONS.PICKUP and player.picked_up == true)
+local pickup_observation = finished.step_event_observer_results[24]
+assert(pickup_observation ~= nil and pickup_observation.target_item_guid == pickup_target.GUID,
+    "PICKUP should include a step-scoped observer record correlated to the selected item GUID")
+assert(pickup_observation.target_item_observed == true,
+    "PICKUP observer should record the matching client-replica itemget event")
+assert(pickup_observation.evidence == "client_replica_event_shape_only"
+    and pickup_observation.causality == "unproven"
+    and pickup_observation.server_authority == "unverified",
+    "observer evidence must not claim causal or server-authoritative proof")
+assert(pickup_observation.cleanup_complete == true
+    and finished.step_event_observer_cleanup_pending == false,
+    "PICKUP observer listeners must be removed before the run finishes")
+assert(player:ListenerCount("itemget") == 0
+    and player:ListenerCount("itemlose") == 0
+    and player:ListenerCount("onremove") == 0,
+    "Virtual Player must clean event listeners after the run")
 local equipped_invobject_action = controller:BuildAction({ kind = "action", action = "MOD_ACTION", invobject = "axe" })
 assert(equipped_invobject_action.invobject ~= nil and equipped_invobject_action.invobject.prefab == "axe",
     "an equipped allowlisted tool must be usable as an explicit action inventory object")
