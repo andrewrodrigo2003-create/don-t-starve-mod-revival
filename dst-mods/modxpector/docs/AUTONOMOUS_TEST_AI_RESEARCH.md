@@ -1076,3 +1076,14 @@ Esta seção atualiza os checkpoints históricos acima. As afirmações antigas 
 - Run [45868404853 — ModXpector Lua checks](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/actions/runs/45868404853): **success** no commit de código `19fa2360c97c7546e2a775150606263f74bf83f2`. Parsing Lua 5.1, contratos Lua e teste de exclusão de credenciais concluídos com sucesso.
 - A falha anterior no run 45868042392 identificou o cenário de fixture sem alvo; a fixture foi corrigida. O run 45868208530 então expôs listeners ociosos registrados durante a construção do controller; a vinculação foi movida para `Start`. O run 45868404853 validou a correção.
 - Nível comprovado: CI automatizada Lua 5.1. Não houve execução no motor DST, multiplayer ou servidor dedicado.
+
+
+### Revalidação pública do candidato NPC Friends — 26/11/2026
+
+A consulta direta atual à página Steam Workshop do item **NPC Friends (3684000581)** mostra aviso explícito de remoção da Comunidade por violação das diretrizes Steam e incompatibilidade com Don't Starve Together. Portanto, o item fica **desqualificado como candidato de suite** nesta etapa; não instalar, não reativar e não basear integração nele. A página ainda pode ser visível ao proprietário, mas isso não equivale a disponibilidade pública/compatibilidade. Fonte: [Steam Workshop — NPC Friends, ID 3684000581](https://steamcommunity.com/sharedfiles/filedetails/?id=3684000581).
+
+O snapshot Crash Never Mind de 22/11/2026 continua provando apenas que o item aparecia entre os 59 mods habilitados naquele momento. Esse registro histórico não supera o aviso de incompatibilidade nem prova que o item esteja habilitado no ambiente atual. O código-fonte/licença também não foram confirmados; não reutilizar código ou assets.
+
+O item associado **Admin Panel / DstAdmin (3678857150)** não teve sua página direta recuperada nesta consulta; manter seu status como **não verificado**, sem presumir disponibilidade, compatibilidade ou licença.
+
+**Decisão:** remover NPC Friends da lista de candidatos executáveis. A seleção da primeira suite real fica bloqueada até identificar outro mod do inventário atual, com prefab observável, licença/proveniência compatível e estado habilitado/carregado confirmado. Não inventar suite nem usar o snapshot antigo como inventário atual.
