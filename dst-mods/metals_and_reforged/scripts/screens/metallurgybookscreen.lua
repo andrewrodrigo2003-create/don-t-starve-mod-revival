@@ -37,7 +37,7 @@ local function format_requirements(recipe)
     local parts = {}
     local cost = recipe.cost
     if cost == nil then
-        return L("Carga mista (receita legada)", "Mixed load (legacy recipe)")
+        return L("Requisitos não documentados", "Requirements not documented")
     end
     for tag, amount in pairs(cost.tags or {}) do
         table.insert(parts, (TAG_LABELS[tag] or tag) .. " × " .. tostring(amount))
@@ -159,6 +159,13 @@ local function build_pages(owner)
                     "Marble: natural marble trees and shrubs provide metallurgy drops; planted trees do not receive the natural-tree bonus."),
                 L("Criaturas: cães de fogo e gelo podem fornecer fragmentos de gemas; tubarões fornecem escamas de tubarão.",
                     "Creatures: fire and ice hounds can provide gem shards; sharks provide sharkscale."),
+                L("Outras fontes: Rocky selvagem pode fornecer poeiras; Slurtle e Snurtle podem fornecer poeira de ferro; escombros de cavernas e estátuas antigas das Ruínas podem fornecer poeiras metálicas.",
+                    "Other sources: wild Rocky can provide dust; Slurtle and Snurtle can provide iron dust; cave rubble and ancient Ruins statues can provide metal dust."),
+                "",
+                L("A lista é um resumo, não um catálogo exaustivo. O toggle mestre de drops extras e os toggles individuais precisam estar ativos. Rocky seguindo o jogador não recebe drops MAM; árvores de mármore plantadas são excluídas.",
+                    "This is a summary, not an exhaustive catalog. The extra-drops master toggle and individual source toggles must be enabled. Player-following Rocky do not receive MAM drops; planted marble trees are excluded."),
+                L("Drops de cães usam Auto por padrão: cedem ao Uncompromising Mode. A opção Always força os drops MAM; Never os desativa.",
+                    "Hound drops default to Auto: they yield to Uncompromising Mode. Always forces MAM drops; Never disables them."),
                 "",
                 L("As chances são controladas pelas configurações do mod. Desativar uma fonte não remove os drops vanilla.",
                     "Drop chances are controlled by the mod settings. Disabling a source does not remove vanilla drops."),
