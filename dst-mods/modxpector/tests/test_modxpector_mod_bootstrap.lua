@@ -16,6 +16,28 @@ local pending_master_timeout
 local unlocked = {}
 local decoded_plan
 
+local function add_entity_lifecycle(entity)
+    entity.event_listeners = {}
+    function entity:ListenForEvent(event, callback)
+        self.event_listeners[event] = self.event_listeners[event] or {}
+        self.event_listeners[event][callback] = true
+    end
+    function entity:RemoveEventCallback(event, callback)
+        if self.event_listeners[event] ~= nil then
+            self.event_listeners[event][callback] = nil
+        end
+    end
+    function entity:Remove()
+        local callbacks = {}
+        for callback in pairs(self.event_listeners.onremove or {}) do
+            callbacks[#callbacks + 1] = callback
+        end
+        for _, callback in ipairs(callbacks) do callback(self) end
+    end
+    return entity
+end
+
+
 AddModRPCHandler = function(mod, name, fn)
     rpc_server[name] = fn
     MOD_RPC[mod] = MOD_RPC[mod] or {}
@@ -95,6 +117,8 @@ local player = {
         end },
     },
 }
+
+add_entity_lifecycle(player)
 
 local engine_globals = { pcall = pcall, rawset = rawset }
 engine_globals.Prefabs = Prefabs
@@ -252,6 +276,7 @@ local reconnected_player = {
     DoTaskInTime = function(_, delay, callback) if delay >= 20 then pending_master_timeout = callback else callback() end end,
     components = player.components,
 }
+add_entity_lifecycle(reconnected_player)
 env.ThePlayer = reconnected_player
 -- The mod environment's ThePlayer binding is replaced on reconnect.
 player_postinit(reconnected_player)
@@ -751,6 +776,7 @@ local second_admin = {
     end,
     components = reconnected_player.components,
 }
+add_entity_lifecycle(second_admin)
 local function make_isolation_plan(run_id, step_count)
     local steps = {}
     for index = 1, step_count do
@@ -809,3 +835,46 @@ assert(spawned_items == isolation_spawn_baseline + 5 and responses[#responses].s
     and string.find(responses[#responses].message, "no active Master-approved", 1, true),
     "clearing a player's plan must invalidate only that player's subsequent RPCs")
 print("MODXPECTOR_PLAYER_PLAN_ISOLATION_CONTRACT_OK")
+
+-- A plan belongs to the exact server player entity and is invalidated on entity removal.
+decoded_plan = make_isolation_plan("disconnect_cleanup", 1)
+rpc_server.set_test_plan(reconnected_player, "disconnect_cleanup", "{}")
+assert(responses[#responses].success == true,
+    "Master should bind the approved plan to the current player entity")
+local stale_remove_callback
+for callback in pairs(reconnected_player.event_listeners.onremove or {}) do
+    stale_remove_callback = callback
+end
+assert(type(stale_remove_callback) == "function",
+    "an accepted plan must register an onremove cleanup callback")
+
+local replacement_player = add_entity_lifecycle({
+    userid = "KU_TEST_USER",
+    Transform = { GetWorldPosition = function() return 0, 0, 0 end },
+    IsValid = function() return true end,
+    DoTaskInTime = function(_, delay, callback)
+        if delay >= 20 then pending_master_timeout = callback else callback() end
+    end,
+    components = reconnected_player.components,
+})
+now = now + 0.2
+local disconnect_spawn_baseline = spawned_items
+rpc_server.spawn_item(replacement_player, 107, 1, "disconnect_cleanup", "cutgrass", 1, 0, 0)
+assert(spawned_items == disconnect_spawn_baseline and responses[#responses].success == false
+    and string.find(responses[#responses].message, "no active Master-approved", 1, true),
+    "a replacement entity with the same userid must not consume the previous entity's plan")
+
+reconnected_player:Remove()
+decoded_plan = make_isolation_plan("reconnected_cleanup", 1)
+rpc_server.set_test_plan(replacement_player, "reconnected_cleanup", "{}")
+assert(responses[#responses].success == true,
+    "removing the previous player entity must release its stale plan for reconnect")
+
+-- A delayed callback from the old entity must not clear the replacement entity's plan.
+stale_remove_callback()
+now = now + 0.2
+rpc_server.spawn_item(replacement_player, 108, 1, "reconnected_cleanup", "cutgrass", 1, 0, 0)
+assert(spawned_items == disconnect_spawn_baseline + 1 and responses[#responses].success == true,
+    "a stale onremove callback must not clear a newer plan for the same userid")
+rpc_server.clear_test_plan(replacement_player, "reconnected_cleanup")
+print("MODXPECTOR_PLAYER_DISCONNECT_CLEANUP_CONTRACT_OK")
