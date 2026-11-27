@@ -1,7 +1,7 @@
 name = "Metals and More Reforged"
 description = "Fabrique equipamentos metálicos, recupere materiais e consulte o guia de metalurgia na Bancada de Guerra. / Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
-version = "2.9.6"
+version = "2.9.7"
 forumthread = ""
 
 api_version = 10

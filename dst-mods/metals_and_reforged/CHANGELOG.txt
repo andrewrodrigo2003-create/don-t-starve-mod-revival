@@ -1,7 +1,19 @@
 Metals and More Reforged — Changelog
 =====================================
 
-Universal Alchemy and equipment balance — 2026-11-20 (unreleased)
+Version 2.9.7 — development candidate for real DST validation (2026-11-27)
+----------------------------------------------------------------------------
+This is a complete installable development candidate, not a certified release. Certification requires the real in-game validation.
+
+Included in this candidate:
+- Register the ALCHEMY, CRAFTSBOOK and MAM_FORGE tech trees and stamp custom tech keys safely across recipes.
+- Make the Mad Scientist Lab a year-round, all-survivor MAM alchemy station; give advanced metal equipment its own War Workbench progression.
+- Gate axe/chisel crafting, balance equipment recipes, and honor per-weapon optional Forge recipe settings.
+- Complete material provenance classifications and safe deconstruction contracts without inventing reverse recipes.
+- Harden smelter batch persistence, partial recovery and robot output delivery; document all extra mining/drop sources.
+- Keep the metallurgy book read-only, bilingual and consistent with executable recipes and source toggles.
+
+Universal Alchemy and equipment balance — 2026-11-20 (included in 2.9.7 candidate)
 --------------------------------------------------------------------
 - Extend the vanilla Mad Scientist Lab prototyper tree with MAM ALCHEMY while preserving MADSCIENCE, so migrated ALCHEMY_ONE recipes have a real station and vanilla experiments continue to work.
 - Align the Moonglass Ingot output moon tag with its consumed Moon Rock Nugget (moon=1), preventing downstream tag-value inflation.
@@ -11,25 +23,26 @@ Universal Alchemy and equipment balance — 2026-11-20 (unreleased)
 - Replace Forkstick's random 12–99 base damage with the vanilla spear baseline (34); balance Don Harpoon to 68 damage / 100 uses while preserving its projectile/range and movement penalty.
 - Audit Jagged Armor against Thulecite Suit and keep its premium 1500/85%/+10% profile and War Workbench cost; document Adamantium and lunar conversion economics.
 - Record Nox Helm, Halberd, Scepter and Shears stats/consumption for balance follow-up; no attribute changes until runtime measurements.
-Universal Alchemy Station — 2026-11-18 (unreleased)
+Universal Alchemy Station — 2026-11-18 (included in 2.9.7 candidate)
 ---------------------------------------------------
 - Make the vanilla Mad Scientist Lab craftable year-round without requiring Hallowed Nights, preserving its vanilla prefab and live ingredient list.
 - Move its recipe out of the seasonal filter, remove only the vanilla Hallowed Nights hint, and retain compatibility with third-party ingredient changes.
 - Establish the Mad Scientist Lab as the universal MAM station for future deterministic mineral transmutation; all survivors can use it, with no Wilson skill-tree requirement.
+- The deterministic mineral-transmutation conversion/cost matrix is intentionally not included in 2.9.7 because no concrete safe matrix has been defined; no conversion recipes are invented.
 
-Material deconstruction audit — 2026-11-18 (unreleased)
+Material deconstruction audit — 2026-11-18 (included in 2.9.7 candidate)
 ------------------------------------------------------
 - Inventory every material prefab used by MAM progression, including vanilla goldnugget, and record an explicit provenance disposition.
 - Keep the existing nine reversible smelting/material entries eligible for recovery.
 - Explicitly classify copper/iron/gold dust as raw inputs, junk dust as an ambiguous mixed-load by-product, gem shards as loot materials, and sharkscale as a harvested raw material; these remain non-deconstructible until a safe reverse path exists.
 - Add regression coverage that fails when a new MAM material is missing from the audit or when the reversible allowlist disagrees with its provenance status.
 
-Compatibility correction — 2026-11-18 (unreleased)
+Compatibility correction — 2026-11-18 (included in 2.9.7 candidate)
 --------------------------------------------------
 - Register the legacy Wilson parry StateGraph hook only when Legacy Forge weapon abilities are explicitly enabled.
 - Skip the hook safely if the Wilson hit state or its onenter callback is unavailable; preserve the original callback and arguments when present.
 
-Unreleased — local compatibility work (2026-11-17)
+Local compatibility work — included in 2.9.7 candidate (2026-11-17)
 -------------------------------------------------
 - Harden robot auto-harvest against nil/throwing output prefab constructors; preserve the ready batch and retry only the undelivered remainder, with regression coverage for template and partial-stack failures.
 - Keep MAM independent within Beyond the Forge; retain the current book history, localization, War Bench guards and default-off legacy Forge abilities.

@@ -64,7 +64,7 @@ jobs:
       - name: Parse all Metals and More Lua files
         run: |
           set -euo pipefail
-          find dst-mods/metals_and_reforged -type f -name '*.lua' -print0 |
+          find dst-mods/metals_and_reforged dst-mods/tests -type f -name '*.lua' -print0 |
             while IFS= read -r -d '' file; do
               luac5.1 -p "$file"
             done
@@ -90,7 +90,7 @@ jobs:
             luac5.1 -p "$file"
           done
 
-      - name: Run available Metals and More regression harnesses
+      - name: Run all Metals and More regression harnesses
         run: |
           set -euo pipefail
           for test in \
@@ -126,10 +126,9 @@ jobs:
             dst-mods/tests/simulator_container_test.lua \
             dst-mods/tests/simulator_network_test.lua
           do
-            if [ -f "$test" ]; then
-              echo "Running $test"
-              lua5.1 "$test"
-            fi
+            test -f "$test"
+            echo "Running $test"
+            lua5.1 "$test"
           done
 
       - name: Verify legacy Forge weapon compatibility gate
@@ -160,19 +159,20 @@ jobs:
         run: |
           set -euo pipefail
           cd dst-mods
-          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
-          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip" | grep -q '^metals_and_reforged/tests/'; then
+          zip -qr "$RUNNER_TEMP/metals-and-more-reforged-2.9.7.zip" metals_and_reforged -x 'metals_and_reforged/tests/*'
+          unzip -t "$RUNNER_TEMP/metals-and-more-reforged-2.9.7.zip" >/dev/null
+          if unzip -Z1 "$RUNNER_TEMP/metals-and-more-reforged-2.9.7.zip" | grep -q '^metals_and_reforged/tests/'; then
             echo "Test-only files leaked into the installable package"
             exit 1
           fi
       - name: Verify install package contents
-        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.6.zip"
+        run: python3 dst-mods/tests/install_package_content_contract_test.py "$RUNNER_TEMP/metals-and-more-reforged-2.9.7.zip"
 
       - name: Upload installable mod package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: metals-and-more-reforged-2.9.6
-          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.6.zip
+          name: metals-and-more-reforged-2.9.7
+          path: ${{ runner.temp }}/metals-and-more-reforged-2.9.7.zip
           if-no-files-found: error
           retention-days: 14
 

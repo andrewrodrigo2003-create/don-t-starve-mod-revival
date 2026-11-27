@@ -21,7 +21,7 @@ Repositório de engenharia e manutenção de mods para **Don't Starve Together (
 ## Estado de desenvolvimento
 
 - A branch `main` é a referência integrada; PRs abertas em draft são propostas, não releases.
-- A PR #51 contém a fundação do rework de crafting/metalurgia. Seu título mira 2.9.7, mas o `modinfo.lua` e o pacote continuam em 2.9.6 deliberadamente até build final e validação in-game.
+- A PR #51 consolida a linha aprovada de desenvolvimento 2.9.7. O pacote candidato 2.9.7 está destinado à validação real no DST e não é certificado; 2.9.6 permanece como referência estável até a validação in-game.
 - A PR #57 reconcilia correções da War Bench, ações cliente/servidor e segurança dos workflows sobre a base da #51.
 - Nenhuma dessas PRs foi mesclada ou publicada na Oficina Steam.
 - O último build de jogo observado nos registros recuperados foi 762172 (x64), em 2026-11-14; confirmar o build atual antes de atribuir compatibilidade.
