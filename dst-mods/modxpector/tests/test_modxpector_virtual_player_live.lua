@@ -1563,6 +1563,9 @@ local cleanup_plan = {
     run_id = "live-vp-observer-cleanup-failure",
     steps = {
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
+        { kind = "assert", assertion = {
+            kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+        }, verifies_step = 1 },
         { kind = "wait", seconds = 0 },
     },
 }
