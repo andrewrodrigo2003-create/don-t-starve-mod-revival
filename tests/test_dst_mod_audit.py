@@ -273,5 +273,23 @@ class DstModAuditTests(unittest.TestCase):
             ))
 
 
+    def test_registration_candidates_include_conservative_evidence_metadata(self):
+        candidates = MODULE.extract_registration_candidates(
+            "modmain.lua",
+            "AddPrefabPostInit('lucy', function(inst)\\n    return inst\\nend)\\n",
+        )
+        self.assertTrue(candidates)
+        finding = candidates[0]
+        for key in (
+            "path", "line", "kind", "rule", "evidence", "confidence",
+            "estimated_severity", "explanation", "suggested_fix", "limitations",
+        ):
+            self.assertIn(key, finding)
+        self.assertEqual(finding["path"], "modmain.lua")
+        self.assertEqual(finding["line"], 1)
+        self.assertEqual(finding["confidence"], "low")
+        self.assertEqual(finding["evidence_type"], "textual_indicator")
+
+
 if __name__ == "__main__":
     unittest.main()
