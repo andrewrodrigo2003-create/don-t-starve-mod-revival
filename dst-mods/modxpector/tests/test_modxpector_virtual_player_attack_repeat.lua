@@ -26,6 +26,9 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
         RemoveEventCallback = function(_, event, callback)
             if event == "death" and death_callback == callback then death_callback = nil end
         end,
+        ListenerExists = function(_, event, callback)
+            return event == "death" and death_callback == callback
+        end,
         HasTag = function(_, tag) return tag == "monster" end,
         Transform = { GetWorldPosition = function() return 3, 0, 4 end },
         replica = { health = { GetCurrent = function() return health end } },
@@ -39,10 +42,21 @@ local function run_attack(initial_health, max_repeats, repeat_timeout, hold_buff
         replica = { health = { GetCurrent = function() return second_health end } },
     }
     TheSim = { FindEntities = function() return two_targets and { enemy, second_enemy } or { enemy } end }
+    local player_onremove_callback
     local player = {
         prefab = "wilson",
         IsValid = function() return true end,
-        ListenForEvent = function() end,
+        ListenForEvent = function(_, event, callback)
+            if event == "onremove" then player_onremove_callback = callback end
+        end,
+        RemoveEventCallback = function(_, event, callback)
+            if event == "onremove" and player_onremove_callback == callback then
+                player_onremove_callback = nil
+            end
+        end,
+        ListenerExists = function(_, event, callback)
+            return event == "onremove" and player_onremove_callback == callback
+        end,
         Transform = { GetWorldPosition = function() return 0, 0, 0 end },
         components = {
             playercontroller = {
