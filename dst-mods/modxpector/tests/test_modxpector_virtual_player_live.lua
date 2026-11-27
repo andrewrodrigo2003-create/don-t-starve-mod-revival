@@ -67,6 +67,12 @@ player = {
     end } },
     replica = {
         inventory = {
+            GetItems = function()
+                return player ~= nil and player.picked_up == true and pickup_target ~= nil
+                    and { [1] = pickup_target } or {}
+            end,
+            GetEquips = function() return {} end,
+            GetActiveItem = function() return nil end,
             FindItem = function(_, fn)
                 local items = { { prefab = "cutgrass" } }
                 if player ~= nil and player.crafted_recipe == "axe" then
@@ -820,19 +826,22 @@ local baseline_guard = VirtualPlayer.new(player, {
     allowed_prefabs = { "cutgrass" },
     on_finished = function(report) baseline_guard_report = report end,
 })
-assert(baseline_guard:Start({
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    steps = {
-        { kind = "action", action = "PICKUP" },
-        { kind = "assert", assertion = {
-            kind = "player_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
-        }, verifies_step = 1 },
-    },
-}))
-assert(baseline_guard_report ~= nil and baseline_guard_report.outcome == "failed",
-    "an unchanged pre-existing inventory count must not verify a pickup")
-assert(string.find(baseline_guard_report.failure, "assertion failed", 1, true))
+local legacy_pickup_accepted = pcall(function()
+    baseline_guard:Start({
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "cutgrass" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "player_item_count_increased",
+                prefab = "cutgrass", target_step = 1, count = 1,
+            }, verifies_step = 1 },
+        },
+    })
+end)
+assert(legacy_pickup_accepted == false,
+    "aggregate prefab count must not be accepted as a PICKUP identity postcondition")
 
 
 
@@ -843,20 +852,22 @@ local pickup_controller = VirtualPlayer.new(player, { allowed_prefabs = { "cutgr
 pickup_controller.queue = {
     { kind = "action", action = "PICKUP", target_required = true },
     { kind = "assert", assertion = {
-        kind = "player_inventory_item_count_increased",
-        prefab = "cutgrass", target_step = 1, count = 1,
+        kind = "pickup_target_collected",
+        prefab = "cutgrass", target_step = 1,
     }, verifies_step = 1 },
 }
 pickup_controller.index = 1
-pickup_controller:_capture_step_transfer_baseline(1, target)
+local pickup_baseline_ok, pickup_baseline_error =
+    pickup_controller:_capture_step_pickup_baseline(1, pickup_target)
+assert(pickup_baseline_ok == true, tostring(pickup_baseline_error))
 player.picked_up = true
 pickup_controller.index = 2
 local pickup_delta = pickup_controller:_evaluate_assertion({
-    kind = "player_inventory_item_count_increased",
-    prefab = "cutgrass", target_step = 1, count = 1,
+    kind = "pickup_target_collected",
+    prefab = "cutgrass", target_step = 1,
 })
 assert(pickup_delta.passed == true,
-    "PICKUP should pass only after the carried item count increases from its captured baseline")
+    "PICKUP should pass only after the exact target GUID and entity reference appear in inventory")
 player.picked_up = previous_pickup_state
 
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
