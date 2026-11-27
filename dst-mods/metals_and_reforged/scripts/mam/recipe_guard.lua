@@ -173,6 +173,14 @@ local function same_ingredient_list(a, b)
     return true
 end
 
+local function copy_ingredient_list(ingredients)
+    local copy = {}
+    for i, ingredient in ipairs(ingredients or {}) do
+        copy[i] = { type = ingredient.type, amount = ingredient.amount }
+    end
+    return copy
+end
+
 --- O recipe ainda esta exatamente como o vanilla?
 function M.is_untouched(name)
     local recipe = AllRecipes[name]
@@ -260,7 +268,7 @@ function M.apply(name, ingredients)
     recipe.ingredients = ingredients
     result.applied = true
     result.reason = "applied"
-    result.ingredients = ingredients
+    result.ingredients = copy_ingredient_list(ingredients)
     return true, result.reason
 end
 
@@ -346,12 +354,22 @@ function M.set_station(name, tech, filter)
 
     -- A successful earlier pass is already committed. Do not repeat it during
     -- the world-task fallback; preserving a later mod's change is safer.
+    local filters = GLOBAL.CRAFTING_FILTERS
+    local destination = filter ~= nil and filters ~= nil and filters[filter] or nil
+    local destination_contains = filter == nil or (destination ~= nil
+        and type(destination.default_sort_values) == "table"
+        and destination.default_sort_values[name] ~= nil)
+
     if previous ~= nil and previous.applied
-        and previous.tech_input == tech and previous.filter == filter then
+        and previous.tech_input == tech and previous.filter == filter
+        and previous.ingredients_signature ~= nil
+        and same_signature(previous.ingredients_signature, describe(recipe))
+        and recipe.filter == filter and destination_contains then
         result.applied = true
         result.reason = "already-applied"
         result.tech_input = tech
         result.filter = filter
+        result.ingredients_signature = previous.ingredients_signature
         return true, result.reason
     end
 
@@ -468,6 +486,7 @@ function M.set_station(name, tech, filter)
     result.reason = "applied"
     result.tech_input = tech
     result.filter = filter
+    result.ingredients_signature = describe(recipe)
     MAMLog.Info("receita '%s' movida para tecnologia %s / filtro %s sem reescrever ingredientes",
         name, tostring(tech), tostring(filter))
     return true, result.reason
