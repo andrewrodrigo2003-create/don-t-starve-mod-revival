@@ -57,6 +57,8 @@ Action: `MAM_DECONSTRUCT_METAL`, right-click on a supported item while within 8 
 
 These mappings mirror the corresponding smelting ingredient composition. The return is always to a lower material stage; the smelter remains the route upward.
 
+**Coverage boundary:** this is not a promise that every MAM-owned material can be dismantled. The current `mam/deconstruction.lua` intentionally rejects base inputs and materials without a safe reverse-provenance rule, including copper/iron/gold dust, `junk_dust`, gem shards and `sharkscale`. These are documented as unsupported in `metal_deconstruction_test.lua`. Do not invent reverse recipes for them. Before expanding coverage, inventory every MAM material prefab and give each an explicit disposition: supported with a lower-stage return rule, terminal/base input, by-product with no safe provenance, or deferred pending a balance decision.
+
 ### Crafted equipment
 
 Only the explicit metal/War Bench allowlist is eligible. The action reads the live `AllRecipes[prefab].ingredients` and `numtogive`, preserving recipe changes made by other mods. It does not copy a stale cost list. Recipe entries marked `no_deconstruction` are refused.
