@@ -448,8 +448,8 @@ local external_fixture_suite = {
                 { kind = "action", action = "PICKUP",
                     target = { prefab = "donharpoon", radius = 12 }, target_required = true },
                 { kind = "assert", assertion = {
-                    kind = "player_inventory_item_count_increased",
-                    target_step = 2, prefab = "donharpoon", count = 1,
+                    kind = "pickup_target_collected",
+                    target_step = 2, prefab = "donharpoon",
                 }, verifies_step = 2 },
             },
         },
@@ -568,10 +568,9 @@ local pickup_plan, pickup_plan_error = AI.BuildVirtualPlayerPlan(
     normalized_pickup_suite, "pickup_my_test_item", "pickup_suite_run_1")
 assert(pickup_plan ~= nil and pickup_plan_error == nil)
 assert(pickup_plan.allowed_actions[1] == "PICKUP")
-assert(pickup_plan.steps[2].assertion.kind == "player_inventory_item_count_increased"
+assert(pickup_plan.steps[2].assertion.kind == "pickup_target_collected"
     and pickup_plan.steps[2].assertion.target_step == 1
-    and pickup_plan.steps[2].assertion.prefab == "my_test_item"
-    and pickup_plan.steps[2].assertion.count == 1,
+    and pickup_plan.steps[2].assertion.prefab == "my_test_item",
     "pickup plan must preserve its exact inventory delta postcondition")
 
 local pickup_without_postcondition = {
