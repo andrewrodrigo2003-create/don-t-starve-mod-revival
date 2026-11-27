@@ -171,6 +171,19 @@ AddMinimapAtlas("images/inventoryimages/willowdoll.xml")
 	
 local newtechtoadd = {"ALCHEMY", "CRAFTSBOOK"}
 for _, v in pairs(newtechtoadd) do
+    -- Register the tree name itself before creating TECH/prototyper values.
+    -- AVAILABLE_TECH drives builder replication and TechTree.Create defaults.
+    local found = false
+    for _, available in ipairs(TechTree.AVAILABLE_TECH) do
+        if available == v then
+            found = true
+            break
+        end
+    end
+    if not found then
+        table.insert(TechTree.AVAILABLE_TECH, v)
+    end
+
     local thelower = v:lower()
     TechTree.AVAILABLE_TECH_BONUS[v] = thelower .. "_bonus"
     TechTree.AVAILABLE_TECH_TEMPBONUS[v] = thelower .. "_tempbonus"
