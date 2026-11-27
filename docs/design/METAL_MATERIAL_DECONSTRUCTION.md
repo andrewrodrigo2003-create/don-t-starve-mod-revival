@@ -66,15 +66,9 @@ A equivalência de tags não garante recuperar exatamente os mesmos prefabs que 
 9. Testar conversão repetida, pilhas, inventário cheio, baú metálico, interrupção, save/load e multiplayer.
 10. Preservar compatibilidade com receitas e ingredientes externos: não alterar tags nem código de outros mods.
 
-## 5. Estação recomendada e decisão pendente
+## 5. Estação implementada
 
-Recomendação inicial: usar a `warworkbench` (Armory / `ALCHEMY_ONE`) como estação de desconstrução, mantendo a forja metalúrgica como única rota de avanço. Isso aproveita a estação existente e separa claramente fabricar/desmontar de fundir/processar.
-
-Antes da implementação, confirmar se o usuário prefere:
-- desconstrução na bancada de guerra já existente; ou
-- desconstrução na própria forja metalúrgica, com um modo/receita separado.
-
-Não criar uma nova estação apenas para esta função sem necessidade demonstrada.
+A desconstrução utiliza a `warworkbench` existente (Armory / `ALCHEMY_ONE`). A ação exige proximidade da bancada e validação autoritativa do componente `prototyper` no servidor. Não foi criada uma nova estação. A forja metalúrgica permanece como rota de avanço e processamento.
 
 ## 6. Materiais ainda sem regra segura
 
@@ -92,9 +86,9 @@ Não criar uma nova estação apenas para esta função sem necessidade demonstr
 - Não mudar receitas de outros mods nem editar Uncompromising Mode.
 - Não declarar a funcionalidade pronta antes da validação no motor DST.
 
-## 8. Próxima etapa técnica
+## 8. Fechamento da implementação
 
-Expandir somente quando houver proveniência segura para cada novo prefab; revisar a composição das ligas, os contratos de inventário/overflow, pilhas, save/load e multiplayer. Depois validar a ação no mundo de teste e confirmar que nenhum item não autorizado aparece no menu.
+Não há expansão adicional de allowlist ou conversão reversa a implementar para esta build: as classes de materiais abaixo possuem disposição explícita e os testes rejeitam entradas sem proveniência reversa segura. Os contratos automatizados cobrem a allowlist, os perfis, o limite material-only e a identificação da War Bench. O comportamento real de inventário, estação, save/load e multiplayer permanece sujeito ao teste dentro do DST.
 
 
 ## 9. Estado de implementação na branch 2.9.7 — 2026-11-13
@@ -104,3 +98,32 @@ Allowlist atual: copper_ore, copper_ingot, iron_ore, iron_ingot, goldnugget, gol
 A tela do Guia de Metalurgia foi corrigida para respeitar a configuração pt-BR/English e agora descreve somente a desmontagem de materiais registrada, sem prometer salvage de equipamentos. A ação e a mensagem de inventário cheio também respeitam o idioma selecionado.
 
 Validação disponível nesta etapa: testes Lua 5.1 do planejador de retorno e contratos Python de localização/cópia. Isso não valida o motor DST, o comportamento real de inventário, multiplayer, save/load nem a integração com UM Beta.
+
+## 10. Inventário final de materiais MAM — disposição explícita
+
+Inventário derivado dos prefabs de `scripts/prefabs/metal_dusts.lua`, `metals.lua`, `gem_shards.lua`, `sharkscale.lua`, `goldore.lua` e das receitas em `scripts/smelting_products.lua`. A distinção entre prefabs próprios e ingredientes/resultados vanilla é intencional.
+
+| Prefab/material | Disposição | Regra |
+|---|---|---|
+| `copper_ore` | Recuperável | 2 `copper_dust` |
+| `copper_ingot` | Recuperável | 3 `copper_ore` |
+| `iron_ore` | Recuperável | 2 `iron_dust` |
+| `iron_ingot` | Recuperável | 3 `iron_ore` |
+| `goldnugget` | Recuperável | 2 `gold_dust` |
+| `gold_ingot` | Recuperável | 3 `goldnugget` |
+| `bronze_ingot` | Recuperável | 3 `copper_ore` + 1 `iron_ore` |
+| `moonglass_ingot` | Recuperável | 2 `moonglass` + 1 `moonrocknugget` |
+| `adamantium_ingot` | Recuperável | 3 `nightmarefuel` + 1 `iron_ingot` |
+| `copper_dust`, `iron_dust`, `gold_dust` | Entrada-base terminal | Não existe estágio MAM inferior |
+| `junk_dust` | Subproduto sem proveniência reversa | Receita genérica baseada em tag metal; não identifica composição de origem |
+| `redgem_shard`, `yellowgem_shard`, `bluegem_shard`, `purplegem_shard`, `greengem_shard`, `orangegem_shard` | Ingredientes-base/subprodutos sem retorno reverso | São entradas de receitas de gemas; convertê-los em gemas seria avanço, não desmontagem |
+| `sharkscale` | Drop bruto terminal | Não existe cadeia de processamento MAM que justifique retorno reverso |
+| `gold_ore` | Prefab legado de migração | Converte saves antigos para `goldnugget`; não é material atual da cadeia |
+| `spikyrock`, `ironrock` e estruturas de mineração | Estruturas/fontes, não materiais desmontáveis | Fora do escopo material-only |
+| Armas, armaduras, ferramentas, baús e estações | Equipamentos/estruturas excluídos | Rejeitados pela allowlist; nenhum salvage genérico |
+
+Ingredientes e produtos vanilla usados pelas receitas — como `nitre`, `moonglass`, `moonrocknugget`, `nightmarefuel` e gemas completas — não são reclassificados como prefabs de material MAM apenas por participarem da fundição.
+
+**Resultado da matriz:** nove materiais têm retorno explícito; os demais materiais MAM estão classificados como base terminal, subproduto/entrada sem proveniência reversa ou prefab legado/estrutura excluída. Não existe item de material MAM conhecido deixado como “pendente de decisão” nesta matriz. Isso fecha a auditoria estática de escopo, mas não certifica a ação no motor DST.
+
+**Evidência:** L2 por inspeção dos prefabs e receitas; L3 pelos contratos `metal_deconstruction_test.lua` e `metallurgy_reference_book_contract_test.py`, executados no CI do commit `54832a20a8216ec8d47b546db8ba93994eb2364b`. A nova atualização documental deverá receber CI próprio se alterar o HEAD da PR.
