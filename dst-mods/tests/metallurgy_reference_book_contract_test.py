@@ -35,6 +35,8 @@ for source in ('Rocky selvagem', 'Slurtle', 'Snurtle', 'escombros de cavernas', 
 assert 'catálogo exaustivo' in screen
 assert 'toggle mestre de drops extras' in screen
 assert 'Uncompromising Mode' in screen
+assert 'apenas no modo aditivo' in screen
+assert 'additive-mode only' in screen
 
 assert 'metallurgy_reference_book' in modmain
 assert 'AddRecipe2("metallurgy_reference_book"' in modmain
