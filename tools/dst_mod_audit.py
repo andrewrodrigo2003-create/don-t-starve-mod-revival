@@ -288,19 +288,23 @@ def extract_registration_candidates(path: str, content: str) -> list[dict]:
         ("container_widget_override", r"\bcontainers\.widgetsetup\s*=", "replacement", "high"),
     ]
     found = []
+    original_lines = content.splitlines()
     for kind, pattern, operation, severity in patterns:
         for match in re.finditer(pattern, code):
             line = code.count("\n", 0, match.start()) + 1
             groups = [value for value in match.groups() if value is not None]
             target = "::".join(groups) if groups else kind
-            found.append({
+            evidence = original_lines[line - 1] if line <= len(original_lines) else ""
+            finding = {
                 "path": path,
                 "line": line,
                 "kind": kind,
                 "target": target,
                 "operation": operation,
                 "severity_if_competing": severity,
-            })
+            }
+            finding.update(static_finding_metadata(kind, evidence))
+            found.append(finding)
     return found
 
 
