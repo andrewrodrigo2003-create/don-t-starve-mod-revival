@@ -41,17 +41,37 @@ end
 local function cleanup(session)
     session.cleanup_attempts = (session.cleanup_attempts or 0) + 1
     local remaining = {}
+    local verification_available = true
+    local all_verified = true
     for index = #session.listeners, 1, -1 do
         local listener = session.listeners[index]
         local ok = safe_call(session.pcall, listener.owner.RemoveEventCallback,
             listener.owner, listener.event_name, listener.callback, listener.entity)
+        if ok and type(listener.owner.ListenerExists) == "function" then
+            local verify_ok, exists = safe_call(session.pcall, listener.owner.ListenerExists,
+                listener.owner, listener.event_name, listener.callback, listener.entity)
+            if not verify_ok or exists == true then
+                ok = false
+            elseif exists == false then
+                -- The test/runtime adapter can independently confirm absence.
+            else
+                verification_available = false
+                all_verified = false
+            end
+        elseif ok then
+            verification_available = false
+            all_verified = false
+        end
         if not ok then
+            all_verified = false
             remaining[#remaining + 1] = listener
         end
     end
     session.listeners = remaining
     session.cleaned = #remaining == 0
     session.cleanup_complete = session.cleaned
+    session.cleanup_verification = session.cleaned and verification_available and all_verified
+        and "verified" or "unverified"
     return session.cleaned
 end
 
@@ -328,6 +348,7 @@ function M.Start(sources, protected_call, get_time, max_events)
         get_time = get_time,
         cleanup_complete = false,
         cleanup_attempts = 0,
+        cleanup_verification = "unverified",
         max_events = limit,
     }
 
@@ -411,6 +432,7 @@ function M.Snapshot(session, cleanup_result)
             and session.overflowed ~= true,
         cleanup_complete = cleanup_complete == true,
         cleanup_attempts = session.cleanup_attempts or 0,
+        cleanup_verification = session.cleanup_verification or "unverified",
         pending_cleanup_count = #session.listeners,
         overflowed = session.overflowed == true,
         event_count = session.event_count,
