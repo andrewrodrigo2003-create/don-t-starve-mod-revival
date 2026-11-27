@@ -448,6 +448,15 @@ local incomplete_result = ItemIdentity.ComparePickup(
 assert(incomplete_result.outcome == "inconclusive",
     "incomplete post-pickup snapshots must be inconclusive")
 
+local incomplete_before_inventory = pickup_inventory({})
+incomplete_before_inventory.GetOverflowContainer = nil
+local incomplete_before = ItemIdentity.Capture(
+    incomplete_before_inventory, pickup_player, nil, pcall)
+local incomplete_before_result = ItemIdentity.ComparePickup(
+    incomplete_before, pickup_after, pickup_target_before, pickup_item, 601, pcall)
+assert(incomplete_before_result.outcome == "inconclusive",
+    "incomplete pre-pickup snapshots must be inconclusive")
+
 local invalid_target = entity(607, "donharpoon", 1)
 invalid_target.IsValid = function() return false end
 local invalid_target_snapshot = ItemIdentity.CapturePickupTarget(invalid_target, pcall)
