@@ -151,6 +151,21 @@ If an API cannot be confirmed, remove that adapter from the first milestone or u
 
 This avoids starting a second large project while MAM 2.9.7 and current ModXpector work remain unvalidated in-game.
 
+## 8.1 MAM source audit — observed facts on the development branch
+
+Inspected source on `feature/full-crafting-rework-localization-2026-11-12` (the same branch referenced by the open MAM PR #51 at the time of this audit):
+
+- `scripts/smelting_products.lua` is the product definition table. Entries include executable `test` predicates, priority, cook time, and in several cases a declarative `cost` descriptor populated from `PRODUCT_COSTS`. The cost table is not complete for every legacy product. A Codex must not execute arbitrary recipe predicates to render a page and must not invent exact ingredient counts when `cost` is absent.
+- `scripts/smelting.lua` owns ingredient tags, recipe registration, candidate selection, and random result selection. `CalculateSmelterRecipe` performs weighted random selection; it is not a read-only documentation query and must never be called merely to populate the Codex.
+- `scripts/mam/forecast.lua` exposes a preview path and consumes the server-published plan when a batch is active. It is a possible adapter boundary, but any UI consumer must be proven read-only and must not trigger the start/harvest action.
+- `scripts/components/smelter.lua` is server-side stateful machinery and publishes a compact plan via the prefab's `mam_plan` net string. That is a useful existing pattern for presenting a bounded server snapshot, not a generic player-progress persistence API.
+- `scripts/screens/metallurgybookscreen.lua` already builds the read-only book pages and recent-result page. It currently contains explanatory text for material chains and sources, so those strings must be audited against the authoritative registries before treating them as verified Codex facts.
+- `tests/metallurgy_reference_book_contract_test.py` is located under `dst-mods/tests/` and protects book wiring, absence of prototyper/finiteuses behavior, recent-results behavior, and other guide contracts. It is a static contract test, not a live DST UI test.
+
+**Concrete first-slice rule:** start with a read-only index over entries whose IDs and display names are present in the current MAM registries. Show a generic/unknown requirements label for products whose declarative `cost` metadata is absent. Do not derive missing costs by reverse-engineering predicate closures during rendering. Keep the current book's read-only contract and add tests before extending the UI.
+
+This source review is S1 (static inspection). It does not establish the exact DST runtime signatures, multiplayer behavior, save persistence, or in-game correctness.
+
 ## 9. Test and evidence matrix
 
 Static/contract tests:
