@@ -475,10 +475,15 @@ function VirtualPlayer:Start(plan)
                 "PICKUP requires an exact pickup_target_collected postcondition")
         end
     end
-    assert(self:_cleanup_player_listener(),
+    local previous_player_cleanup_ok = self:_cleanup_player_listener()
+    local previous_target_cleanup_ok = self:_cleanup_target_listeners()
+    self:_stop_step_event_observer()
+    assert(previous_player_cleanup_ok,
         "previous player onremove listener cleanup is still pending")
-    assert(self:_cleanup_target_listeners(),
+    assert(previous_target_cleanup_ok,
         "previous target listener cleanup is still pending")
+    assert(self.active_step_event_observer == nil,
+        "previous step observer still has pending listener cleanup")
     self.queue = plan.steps
     self.index = 0
     self.run_id = type(plan.run_id) == "string" and plan.run_id or nil
@@ -493,9 +498,6 @@ function VirtualPlayer:Start(plan)
     self.verification_assertions_passed = 0
     self.verification_requirements = {}
     self.verification_assertions = {}
-    self:_stop_step_event_observer()
-    assert(self.active_step_event_observer == nil,
-        "previous step observer still has pending listener cleanup")
     self.step_event_observer_results = {}
     assert(self:_bind_events(), "required player event listeners could not be registered")
     for _, candidate in ipairs(plan.steps) do
