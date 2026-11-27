@@ -1682,4 +1682,32 @@ assert(unverified_player_controller:_cleanup_player_listener() == true
     and player:ListenerCount("onremove") == 0,
     "the no-op removal case must remain recoverable")
 
+
+-- A target RemoveEventCallback call that leaves the listener observable is still pending.
+local target_noop_report
+local target_remove_original = pickup_target.RemoveEventCallback
+local target_noop_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) target_noop_report = report end,
+})
+target_noop_controller.step_targets = {}
+target_noop_controller.target_death_events = {}
+target_noop_controller.target_death_callbacks = {}
+target_noop_controller.queue = {}
+target_noop_controller.index = 0
+target_noop_controller.run_id = "live-vp-target-listener-noop-removal"
+target_noop_controller.started_at = GetTime()
+target_noop_controller:_capture_step_target(1, pickup_target)
+pickup_target.RemoveEventCallback = function() return end
+target_noop_controller:_finish(true, "target no-op listener removal")
+assert(target_noop_report ~= nil and target_noop_report.outcome == "inconclusive"
+    and target_noop_report.target_listener_cleanup_pending == true,
+    "a no-error target removal call must not pass while the listener remains observable")
+assert(next(target_noop_controller.target_death_callbacks) ~= nil,
+    "the target listener callback must be retained after an unverified no-op removal")
+pickup_target.RemoveEventCallback = target_remove_original
+assert(target_noop_controller:_cleanup_target_listeners() == true
+    and target_noop_controller.target_listener_cleanup_verified == true
+    and pickup_target:ListenerCount("death") == 0,
+    "target listener cleanup must recover and verify actual removal")
+
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
