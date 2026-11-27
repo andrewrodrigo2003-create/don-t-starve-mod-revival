@@ -281,13 +281,64 @@ end
 
 DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics
 
--- Approved plans are isolated by the server-resolved player identity.
+-- Approved plans are isolated by server-resolved user ID and exact player entity.
 local active_test_plans = {}
+
+local function detach_plan_owner_listener(plan)
+    if type(plan) ~= "table" then return true end
+    local owner = plan._server_owner_player
+    local callback = plan._server_owner_remove_callback
+    local removed = true
+    if owner ~= nil and callback ~= nil and type(owner.RemoveEventCallback) == "function" then
+        removed = pcall(owner.RemoveEventCallback, owner, "onremove", callback)
+    end
+    plan._server_owner_player = nil
+    plan._server_owner_remove_callback = nil
+    return removed
+end
+
+local function clear_active_test_plan(player, run_id)
+    local userid = player ~= nil and player.userid or nil
+    if type(userid) ~= "string" or userid == "" then return false end
+    local plan = active_test_plans[userid]
+    if plan == nil or plan._server_owner_userid ~= userid
+        or plan._server_owner_player ~= player or plan.run_id ~= run_id then
+        return false
+    end
+    active_test_plans[userid] = nil
+    detach_plan_owner_listener(plan)
+    return true
+end
+
+local function bind_plan_owner_lifecycle(player, plan)
+    if player == nil or type(player.ListenForEvent) ~= "function" then
+        return false
+    end
+    local userid = player.userid
+    local callback = function()
+        if active_test_plans[userid] == plan and plan._server_owner_player == player then
+            active_test_plans[userid] = nil
+        end
+        plan._server_owner_player = nil
+        plan._server_owner_remove_callback = nil
+    end
+    local ok = pcall(player.ListenForEvent, player, "onremove", callback)
+    if not ok then return false end
+    plan._server_owner_player = player
+    plan._server_owner_remove_callback = callback
+    return true
+end
+
 local function current_test_plan(player)
     if player ~= nil then
         local userid = player.userid
         if type(userid) ~= "string" or userid == "" then return nil end
-        return active_test_plans[userid]
+        local plan = active_test_plans[userid]
+        if plan == nil or plan._server_owner_userid ~= userid
+            or plan._server_owner_player ~= player then
+            return nil
+        end
+        return plan
     end
     return TEST_PLAN
 end
@@ -298,7 +349,8 @@ local function consume_declared_server_operation(plan, step_index, run_id, kind,
         return false, "server player identity is unavailable"
     end
     local active_plan = active_test_plans[userid]
-    if active_plan == nil or plan ~= active_plan or plan._server_owner_userid ~= userid then
+    if active_plan == nil or plan ~= active_plan or plan._server_owner_userid ~= userid
+        or plan._server_owner_player ~= player then
         return false, "there is no active Master-approved test plan for this player"
     end
     if type(run_id) ~= "string" or plan.run_id ~= run_id then
@@ -835,8 +887,21 @@ local function handle_set_test_plan(player, run_id, plan_json)
         reply(false, "laboratory mode is disabled; world-changing steps require a separate disposable test world")
         return
     end
+    local existing_plan = active_test_plans[player.userid]
+    if existing_plan ~= nil and existing_plan._server_owner_player ~= player then
+        reply(false, "an earlier player entity still owns an active test plan")
+        return
+    end
+    if existing_plan ~= nil then
+        active_test_plans[player.userid] = nil
+        detach_plan_owner_listener(existing_plan)
+    end
     plan._server_consumed_steps = {}
     plan._server_owner_userid = player.userid
+    if not bind_plan_owner_lifecycle(player, plan) then
+        reply(false, "server player lifecycle listener is unavailable")
+        return
+    end
     active_test_plans[player.userid] = plan
     reply(true, "test plan accepted by master simulation")
 end
@@ -957,10 +1022,7 @@ if type(AddModRPCHandler) == "function" then
     AddModRPCHandler(MODNAME, "clear_test_plan", function(player, run_id)
         if TheWorld == nil or not TheWorld.ismastersim or not is_admin_player(player)
             or type(player.userid) ~= "string" then return end
-        local plan = active_test_plans[player.userid]
-        if plan ~= nil and plan._server_owner_userid == player.userid and plan.run_id == run_id then
-            active_test_plans[player.userid] = nil
-        end
+        clear_active_test_plan(player, run_id)
     end)
     AddModRPCHandler(MODNAME, "spawn_item", function(player, request_id, step_index, run_id, prefab, count, x, z)
         handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, true)
