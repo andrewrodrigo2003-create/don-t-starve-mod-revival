@@ -271,7 +271,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
-        { kind = "assert", assertion = { kind = "player_item_count_increased", prefab = "cutgrass", target_step = 24, count = 1 }, verifies_step = 24 },
+        { kind = "assert", assertion = { kind = "pickup_target_collected", prefab = "cutgrass", target_step = 24 }, verifies_step = 24 },
     },
 }
 assert(controller:Start(plan))
