@@ -762,7 +762,7 @@ configuration_options = {
 	{
         name = "mam_extra_drops",
         label = "Extra ore drops",
-		hover = "Master switch for every extra material source this mod adds to the world: gold and moon boulders, cave stalagmites, ruins clockworks and chess junk, fire and ice hounds, marble trees and shrubs, and the shark. Turning it off leaves the world's loot exactly as the game and your other mods define it. The mod's own copper and iron rocks are not affected - they are new content, not an override.",
+		hover = "Master switch for every extra material source this mod adds to the world: gold and moon boulders, cave stalagmites, ruins clockworks and chess junk, fire and ice hounds, natural marble trees and shrubs, sharks, wild Rocky, Slurtles, Snurtles, mined cave rubble and ancient Ruins statues. Turning it off leaves the world's loot exactly as the game and your other mods define it. The mod's own copper and iron rocks are not affected - they are new content, not an override.",
         options =
         {
 			{description = "Off - no extra ore anywhere", data = 0},
