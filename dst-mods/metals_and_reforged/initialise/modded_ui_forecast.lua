@@ -26,8 +26,13 @@ local QUANTITY_FONT = GLOBAL.NUMBERFONT or "stint-ucr"
 
 local unpack = GLOBAL.unpack or unpack
 
+-- DST's Lua 5.1 sandbox does not guarantee the global `select` helper.
+-- Lua 5.1 supplies the vararg `arg` table locally, including its exact count,
+-- so preserve nil/trailing return values without depending on a mutable global.
 local function pack(...)
-    return { n = select("#", ...), ... }
+    local results = { ... }
+    results.n = arg.n
+    return results
 end
 
 local function unpack_results(results)
