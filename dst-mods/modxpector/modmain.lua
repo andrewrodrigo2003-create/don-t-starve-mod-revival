@@ -459,13 +459,13 @@ local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
     player_has_item = true, player_has_item_count_gte = true, player_inventory_has_item = true, container_has_item = true, player_equipped = true,
     pickup_target_collected = true,
-    pickup_target_collected = true,
     player_inventory_item_count_increased = true, player_inventory_item_count_decreased = true,
     container_item_count_increased = true,
     player_near_target = true, player_knows_recipe = true,
     target_exists = true, target_health_lte = true, target_dead = true, target_has_tag = true,
 }
 local TARGET_ASSERTION_ALLOWLIST = {
+    pickup_target_collected = true,
     player_near_target = true, target_exists = true, target_health_lte = true,
     target_dead = true, target_has_tag = true, container_has_item = true,
     player_inventory_item_count_increased = true, player_inventory_item_count_decreased = true,
