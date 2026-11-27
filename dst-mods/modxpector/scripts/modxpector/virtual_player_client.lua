@@ -396,8 +396,18 @@ function VirtualPlayer:_finish(ok, message)
     local target_cleanup_complete = self:_cleanup_target_listeners()
     if not target_cleanup_complete then self.run_inconclusive = true end
     local player_cleanup_complete = self:_cleanup_player_listener()
-    if not player_cleanup_complete or self.player_onremove_callback ~= nil then
+    if not player_cleanup_complete or self.player_onremove_callback ~= nil
+        or self.player_onremove_cleanup_verified ~= true then
         self.run_inconclusive = true
+    end
+    if not target_cleanup_complete or self.target_listener_cleanup_verified ~= true then
+        self.run_inconclusive = true
+    end
+    for _, observer_result in pairs(self.step_event_observer_results or {}) do
+        if type(observer_result) == "table" and observer_result.cleanup_complete == true
+            and observer_result.cleanup_verification ~= "verified" then
+            self.run_inconclusive = true
+        end
     end
     if not ok then
         local current_step = self.queue[self.index]
@@ -485,7 +495,7 @@ function VirtualPlayer:Start(plan)
     assert(self.active_step_event_observer == nil,
         "previous step observer still has pending listener cleanup")
     self.step_event_observer_results = {}
-    self:_bind_events()
+    assert(self:_bind_events(), "required player event listeners could not be registered")
     for _, candidate in ipairs(plan.steps) do
         if type(candidate) == "table" and candidate.kind == "assert" then
             if candidate.verifies_step ~= nil then
