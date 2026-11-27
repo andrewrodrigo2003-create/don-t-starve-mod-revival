@@ -5,6 +5,7 @@ actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
 prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
+modinfo = (root / "modinfo.lua").read_text(encoding="utf-8")
 smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
 smelter_prefab = (root / "scripts/prefabs/metal_smelter.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
@@ -37,6 +38,8 @@ assert 'toggle mestre de drops extras' in screen
 assert 'Uncompromising Mode' in screen
 assert 'apenas no modo aditivo' in screen
 assert 'additive-mode only' in screen
+for source in ('wild Rocky', 'Slurtles', 'Snurtles', 'mined cave rubble', 'ancient Ruins statues'):
+    assert source in modinfo, f"master extra-drops help omits source: {source}"
 
 assert 'metallurgy_reference_book' in modmain
 assert 'AddRecipe2("metallurgy_reference_book"' in modmain
