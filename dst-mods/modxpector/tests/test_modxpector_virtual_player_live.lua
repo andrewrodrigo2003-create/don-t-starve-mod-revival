@@ -1554,6 +1554,7 @@ cleanup_controller = VirtualPlayer.new(player, {
     on_finished = function(report) cleanup_finished = report end,
 })
 cleanup_controller.step_targets = {}
+cleanup_controller.target_death_events = {}
 cleanup_controller.target_death_callbacks = {}
 cleanup_controller.queue = {}
 cleanup_controller.index = 0
