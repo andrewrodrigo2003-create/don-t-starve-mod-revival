@@ -118,6 +118,8 @@ function VirtualPlayer:_cleanup_player_listener()
     local owner = self.player_onremove_owner or self.player
     local removed, verified = remove_event_listener(owner, "onremove", callback)
     self.player_onremove_cleanup_verified = verified
+    self.player_onremove_cleanup_verification = removed
+        and (verified == true and "verified" or "unverified") or "pending"
     if removed then
         self.player_onremove_callback = nil
         self.player_onremove_owner = nil
@@ -416,7 +418,9 @@ function VirtualPlayer:_finish(ok, message)
     self.finished_at = safe_get_time()
     self.step_started_at = nil
     self.run_failed = not ok
-    if ok then
+    if self.run_inconclusive then
+        self.failure = message or "required listener cleanup or verification remains inconclusive"
+    elseif ok then
         self.failure = nil
     else
         self.failure = message
@@ -548,6 +552,8 @@ function VirtualPlayer:_cleanup_target_listeners()
     self.target_death_callbacks = pending
     self.target_listener_cleanup_pending = next(pending) ~= nil
     self.target_listener_cleanup_verified = all_verified and verification_available
+    self.target_listener_cleanup_verification = self.target_listener_cleanup_pending
+        and "pending" or (self.target_listener_cleanup_verified and "verified" or "unverified")
     return not self.target_listener_cleanup_pending
 end
 
@@ -1645,8 +1651,10 @@ function VirtualPlayer:GetReport()
         step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
         player_onremove_cleanup_pending = self.player_onremove_callback ~= nil,
         player_onremove_cleanup_verified = self.player_onremove_cleanup_verified,
+        player_onremove_cleanup_verification = self.player_onremove_cleanup_verification,
         target_listener_cleanup_pending = self.target_listener_cleanup_pending == true,
         target_listener_cleanup_verified = self.target_listener_cleanup_verified,
+        target_listener_cleanup_verification = self.target_listener_cleanup_verification,
     }
 end
 
