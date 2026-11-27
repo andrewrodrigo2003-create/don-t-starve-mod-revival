@@ -243,8 +243,8 @@ local pickup_suite_registered, pickup_suite_message = engine_globals.MODXPECTOR_
             { kind = "action", action = "PICKUP",
                 target = { prefab = "cutgrass", radius = 12 }, target_required = true },
             { kind = "assert", assertion = {
-                kind = "player_inventory_item_count_increased",
-                target_step = 1, prefab = "cutgrass", count = 1,
+                kind = "pickup_target_collected",
+                target_step = 1, prefab = "cutgrass",
             }, verifies_step = 1 },
         } },
     },
@@ -680,14 +680,14 @@ decoded_plan = {
         { kind = "action", action = "PICKUP",
             target = { prefab = "cutgrass", radius = 12 }, target_required = true },
         { kind = "assert", assertion = {
-            kind = "player_inventory_item_count_increased",
-            target_step = 1, prefab = "cutgrass", count = 1,
+            kind = "pickup_target_collected",
+            target_step = 1, prefab = "cutgrass",
         }, verifies_step = 1 },
     },
 }
 rpc_server.set_test_plan(reconnected_player, "suite_pickup_valid", "{}")
 assert(responses[#responses].success == true,
-    "Master should accept a bounded PICKUP suite with an inventory-delta postcondition")
+    "Master should accept a bounded PICKUP suite with an exact identity postcondition")
 
 now = now + 1
 decoded_plan = {
@@ -752,8 +752,8 @@ decoded_plan = {
         { kind = "action", action = "PICKUP",
             target = { prefab = "cutgrass", radius = 12 }, target_required = true },
         { kind = "assert", assertion = {
-            kind = "player_inventory_item_count_increased",
-            target_step = 1, prefab = "grass", count = 1,
+            kind = "pickup_target_collected",
+            target_step = 1, prefab = "grass",
         }, verifies_step = 1 },
     },
 }
