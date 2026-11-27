@@ -188,10 +188,10 @@ class DstModAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "modmain.lua").write_text(
-                "-- debug.getregistry() is documentation\\n"
-                "local note = 'debug.getregistry() is only text'\\n"
-                'local other = "DoPeriodicTask(1, fn)"\\n'
-                "debug.getregistry() -- comment: debug.getregistry()\\n",
+                "-- debug.getregistry() is documentation\n"
+                "local note = 'debug.getregistry() is only text'\n"
+                'local other = "DoPeriodicTask(1, fn)"\n'
+                "debug.getregistry() -- comment: debug.getregistry()\n",
                 encoding="utf-8",
             )
             report = MODULE.audit(root)
@@ -215,15 +215,15 @@ class DstModAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "modmain.lua").write_text(
-                "--[==[ debug.getregistry()\\n"
-                "DoPeriodicTask(1, fn)\\n"
-                "open_list = {}\\n"
-                "]==]\\n"
-                "local docs = [=[\\n"
-                "debug.getregistry()\\n"
-                "AddPrefabPostInit('fake', fn)\\n"
-                "]=]\\n"
-                "debug.getregistry()\\n",
+                "--[==[ debug.getregistry()\n"
+                "DoPeriodicTask(1, fn)\n"
+                "open_list = {}\n"
+                "]==]\n"
+                "local docs = [=[\n"
+                "debug.getregistry()\n"
+                "AddPrefabPostInit('fake', fn)\n"
+                "]=]\n"
+                "debug.getregistry()\n",
                 encoding="utf-8",
             )
             report = MODULE.audit(root)
@@ -236,14 +236,14 @@ class DstModAuditTests(unittest.TestCase):
 
     def test_lua_mask_preserves_offsets_lines_and_code_after_literals(self):
         source = (
-            "-- fake debug.getregistry()\\n"
-            "local short = 'escaped \\\\' quote and fake debug.getregistry()'\\n"
-            "local long = [==[ DoPeriodicTask(1, fn) ]==]\\n"
-            "debug.getregistry()\\n"
+            "-- fake debug.getregistry()\n"
+            "local short = 'escaped \\' quote and fake debug.getregistry()'\n"
+            "local long = [==[ DoPeriodicTask(1, fn) ]==]\n"
+            "debug.getregistry()\n"
         )
         masked = MODULE.mask_lua_noncode(source)
         self.assertEqual(len(masked), len(source))
-        self.assertEqual(masked.count("\\n"), source.count("\\n"))
+        self.assertEqual(masked.count("\n"), source.count("\n"))
         self.assertNotIn("debug.getregistry()", masked.splitlines()[0])
         self.assertNotIn("debug.getregistry()", masked.splitlines()[1])
         self.assertNotIn("DoPeriodicTask", masked.splitlines()[2])
@@ -251,20 +251,20 @@ class DstModAuditTests(unittest.TestCase):
 
     def test_lua_long_comment_and_string_delimiters_do_not_leak(self):
         source = (
-            "--[=[ text ]==] debug.getregistry()\\n"
-            "still comment DoPeriodicTask(1, fn) ]=]\\n"
-            "local text = [==[ -- not a comment ]=] debug.getregistry() ]==]\\n"
-            "debug.getregistry()\\n"
+            "--[=[ text ]==] debug.getregistry()\n"
+            "still comment DoPeriodicTask(1, fn) ]=]\n"
+            "local text = [==[ -- not a comment ]=] debug.getregistry() ]==]\n"
+            "debug.getregistry()\n"
         )
         masked = MODULE.mask_lua_noncode(source)
-        self.assertNotIn("debug.getregistry()", "\\n".join(masked.splitlines()[:3]))
+        self.assertNotIn("debug.getregistry()", "\n".join(masked.splitlines()[:3]))
         self.assertIn("debug.getregistry()", masked.splitlines()[3])
 
     def test_non_lua_text_keeps_existing_scanning_behavior(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "readme.md").write_text(
-                "debug.getregistry()\\n", encoding="utf-8"
+                "debug.getregistry()\n", encoding="utf-8"
             )
             report = MODULE.audit(root)
             self.assertTrue(any(
