@@ -356,7 +356,7 @@ end
 local noop_snapshot = assert(Observer.Stop(noop_session))
 assert(noop_snapshot.cleanup_complete == false
     and noop_snapshot.pending_cleanup_count == 1
-    and noop_snapshot.cleanup_verification == "unverified",
+    and noop_snapshot.cleanup_verification == "pending",
     "a no-error no-op removal must remain pending when the listener is observable")
 noop_owner.RemoveEventCallback = original_noop_remove
 local recovered_noop_snapshot = assert(Observer.Stop(noop_session))
