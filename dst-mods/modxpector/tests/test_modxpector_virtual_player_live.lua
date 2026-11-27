@@ -1035,6 +1035,7 @@ equipment_player = {
         },
     },
 }
+attach_test_event_api(equipment_player)
 local equipment_report
 local equipment_controller = VirtualPlayer.new(equipment_player, {
     allowed_prefabs = { "axe" },
@@ -1091,6 +1092,7 @@ local walk_player = {
 }
 local original_find_entities = TheSim.FindEntities
 TheSim.FindEntities = function() return { walk_target } end
+attach_test_event_api(walk_player)
 local walk_report
 local walk_controller = VirtualPlayer.new(walk_player, {
     allowed_actions = { "WALKTO" },
@@ -1135,6 +1137,7 @@ local cancel_player = {
     DoTaskInTime = function() end, -- retain the scheduled tick; this test stops before it runs
 }
 local cancel_report
+attach_test_event_api(cancel_player)
 local cancel_controller = VirtualPlayer.new(cancel_player, {
     on_finished = function(report) cancel_report = report end,
 })
@@ -1167,6 +1170,7 @@ local noop_player = {
     GetBufferedAction = function() return noop_locomotor.bufferedaction end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(noop_player)
 local noop_controller = VirtualPlayer.new(noop_player, {})
 assert(noop_controller:Start({
     schema = "modxpector/test-plan/v1", enabled = true, run_id = "cancel-noop-clear",
@@ -1201,6 +1205,7 @@ local entity_player = {
     end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(entity_player)
 local entity_controller = VirtualPlayer.new(entity_player, {})
 assert(entity_controller:Start({
     schema = "modxpector/test-plan/v1",
@@ -1236,6 +1241,7 @@ local unrelated_player = {
     end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(unrelated_player)
 local unrelated_controller = VirtualPlayer.new(unrelated_player, {})
 assert(unrelated_controller:Start({
     schema = "modxpector/test-plan/v1",
@@ -1296,6 +1302,7 @@ local path_player = {
     end,
 }
 local path_finished
+attach_test_event_api(path_player)
 local path_controller = VirtualPlayer.new(path_player, {
     allowed_actions = { "WALKTO" },
     allowed_prefabs = { "tree" },
@@ -1358,6 +1365,7 @@ local transfer_player = {
         GetEquippedItem = function() return nil end,
     } },
 }
+attach_test_event_api(transfer_player)
 local transfer_controller = VirtualPlayer.new(transfer_player, {
     allowed_prefabs = { "cutgrass" },
 })
@@ -1449,6 +1457,7 @@ local holder_player = {
         GetEquippedItem = function() return nil end,
     } },
 }
+attach_test_event_api(holder_player)
 local take_controller = VirtualPlayer.new(holder_player, { allowed_prefabs = { "cutgrass" } })
 take_controller.queue = {
     { kind = "action", action = "TAKEITEM", target_required = true },
@@ -1521,6 +1530,7 @@ for _, blocked_action in ipairs({ "TAKEITEM", "TAKESINGLEITEM" }) do
             },
         },
     }
+attach_test_event_api(blocked_player)
     local blocked_controller = VirtualPlayer.new(blocked_player, {
         on_finished = function(report) blocked_report = report end,
     })
@@ -1553,6 +1563,7 @@ local store_player = {
         },
     },
 }
+attach_test_event_api(store_player)
 local store_controller = VirtualPlayer.new(store_player, {
     on_finished = function(report) store_report = report end,
 })
