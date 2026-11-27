@@ -281,14 +281,25 @@ end
 
 DST_GLOBAL.MODXPECTOR_RUN_EMBEDDED_AI = run_embedded_ai_diagnostics
 
-local active_test_plan = nil
-local function current_test_plan()
-    return active_test_plan or TEST_PLAN
+-- Approved plans are isolated by the server-resolved player identity.
+local active_test_plans = {}
+local function current_test_plan(player)
+    if player ~= nil then
+        local userid = player.userid
+        if type(userid) ~= "string" or userid == "" then return nil end
+        return active_test_plans[userid]
+    end
+    return TEST_PLAN
 end
 
 local function consume_declared_server_operation(plan, step_index, run_id, kind, value, count, player, x, z)
-    if active_test_plan == nil or plan ~= active_test_plan then
-        return false, "there is no active Master-approved test plan"
+    local userid = player ~= nil and player.userid or nil
+    if type(userid) ~= "string" or userid == "" then
+        return false, "server player identity is unavailable"
+    end
+    local active_plan = active_test_plans[userid]
+    if active_plan == nil or plan ~= active_plan or plan._server_owner_userid ~= userid then
+        return false, "there is no active Master-approved test plan for this player"
     end
     if type(run_id) ~= "string" or plan.run_id ~= run_id then
         return false, "stale or mismatched test run ID"
@@ -792,6 +803,10 @@ local function handle_set_test_plan(player, run_id, plan_json)
     end
     if GetModConfigData("test_mode") ~= true then reply(false, "test mode is disabled"); return end
     if not is_admin_player(player) then reply(false, "administrator permission required"); return end
+    if type(player.userid) ~= "string" or player.userid == "" or #player.userid > 128 then
+        reply(false, "server player identity is unavailable")
+        return
+    end
     if type(plan_json) ~= "string" or #plan_json < 2 or #plan_json > 48 * 1024 then
         reply(false, "test plan payload is outside the allowed size"); return
     end
@@ -821,19 +836,24 @@ local function handle_set_test_plan(player, run_id, plan_json)
         return
     end
     plan._server_consumed_steps = {}
-    active_test_plan = plan
+    plan._server_owner_userid = player.userid
+    active_test_plans[player.userid] = plan
     reply(true, "test plan accepted by master simulation")
 end
 
 local function handle_unlock_recipe(player, request_id, step_index, run_id, recipe_name)
     if TheWorld == nil or not TheWorld.ismastersim then return end
-    local plan = current_test_plan()
+    local plan = current_test_plan(player)
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
     if not laboratory_mode_enabled() then
         send_result(player, request_id, false, "laboratory mode is disabled; recipe changes require a disposable test world")
         return
     end
     if not is_admin_player(player) then send_result(player, request_id, false, "administrator permission required"); return end
+    if plan == nil or plan._server_owner_userid ~= player.userid then
+        send_result(player, request_id, false, "no active Master-approved test plan for this player")
+        return
+    end
     if not allow_spawn_request(player) then send_result(player, request_id, false, "test action rate limit exceeded"); return end
     if not recipe_is_allowed(recipe_name, plan) or AllRecipes == nil or AllRecipes[recipe_name] == nil then
         send_result(player, request_id, false, "recipe is not in the test plan allowlist or is not registered")
@@ -843,8 +863,12 @@ local function handle_unlock_recipe(player, request_id, step_index, run_id, reci
         send_result(player, request_id, false, "player builder component unavailable")
         return
     end
+    if plan == nil or plan._server_owner_userid ~= player.userid then
+        send_result(player, request_id, false, "no active Master-approved test plan for this player")
+        return
+    end
     local authorized, authorization_reason = consume_declared_server_operation(
-        plan, step_index, run_id, "unlock_recipe", recipe_name)
+        plan, step_index, run_id, "unlock_recipe", recipe_name, nil, player)
     if not authorized then
         send_result(player, request_id, false, authorization_reason)
         return
@@ -855,7 +879,7 @@ end
 
 local function handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, as_item)
     if TheWorld == nil or not TheWorld.ismastersim then return end
-    local plan = current_test_plan()
+    local plan = current_test_plan(player)
     if not is_test_mode_enabled(plan) then send_result(player, request_id, false, "test mode disabled"); return end
     if not laboratory_mode_enabled() then
         send_result(player, request_id, false, "laboratory mode is disabled; spawning requires a disposable test world")
@@ -931,8 +955,12 @@ end
 if type(AddModRPCHandler) == "function" then
     AddModRPCHandler(MODNAME, "set_test_plan", handle_set_test_plan)
     AddModRPCHandler(MODNAME, "clear_test_plan", function(player, run_id)
-        if TheWorld == nil or not TheWorld.ismastersim or not is_admin_player(player) then return end
-        if active_test_plan ~= nil and active_test_plan.run_id == run_id then active_test_plan = nil end
+        if TheWorld == nil or not TheWorld.ismastersim or not is_admin_player(player)
+            or type(player.userid) ~= "string" then return end
+        local plan = active_test_plans[player.userid]
+        if plan ~= nil and plan._server_owner_userid == player.userid and plan.run_id == run_id then
+            active_test_plans[player.userid] = nil
+        end
     end)
     AddModRPCHandler(MODNAME, "spawn_item", function(player, request_id, step_index, run_id, prefab, count, x, z)
         handle_spawn(player, request_id, step_index, run_id, prefab, count, x, z, true)

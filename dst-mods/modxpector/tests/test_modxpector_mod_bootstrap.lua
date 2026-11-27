@@ -737,3 +737,75 @@ assert(responses[#responses].success == false
     and string.find(responses[#responses].message, "community_plan_differs_from_registered_declaration", 1, true),
     "Master must reject a client plan that changes the registered pickup prefab proof")
 
+
+-- Master-approved plans are isolated by the server-resolved player identity.
+admin = true
+laboratory_mode = true
+now = now + 10
+local second_admin = {
+    userid = "KU_TEST_USER_2",
+    Transform = { GetWorldPosition = function() return 0, 0, 0 end },
+    IsValid = function() return true end,
+    DoTaskInTime = function(_, delay, callback)
+        if delay >= 20 then pending_master_timeout = callback else callback() end
+    end,
+    components = reconnected_player.components,
+}
+local function make_isolation_plan(run_id, step_count)
+    local steps = {}
+    for index = 1, step_count do
+        steps[index] = { kind = "spawn_item", prefab = "cutgrass", count = 1 }
+    end
+    return {
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        run_id = run_id,
+        allowed_prefabs = { "cutgrass" },
+        allowed_recipes = {},
+        allowed_actions = {},
+        steps = steps,
+    }
+end
+
+decoded_plan = make_isolation_plan("isolated_user_a", 3)
+rpc_server.set_test_plan(reconnected_player, "isolated_user_a", "{}")
+assert(responses[#responses].success == true, "Master should approve user A's plan")
+rpc_server.clear_test_plan(second_admin, "isolated_user_a")
+local isolation_spawn_baseline = spawned_items
+rpc_server.spawn_item(reconnected_player, 100, 1, "isolated_user_a", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 1 and responses[#responses].success == true,
+    "another administrator must not clear user A's approved plan")
+
+decoded_plan = make_isolation_plan("isolated_user_b", 2)
+rpc_server.set_test_plan(second_admin, "isolated_user_b", "{}")
+assert(responses[#responses].success == true, "Master should approve user B's independent plan")
+now = now + 0.2
+rpc_server.spawn_item(reconnected_player, 101, 2, "isolated_user_a", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 2 and responses[#responses].success == true,
+    "approving user B's plan must not replace user A's active plan")
+now = now + 0.2
+rpc_server.spawn_item(second_admin, 102, 1, "isolated_user_a", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 2 and responses[#responses].success == false
+    and string.find(responses[#responses].message, "stale or mismatched test run ID", 1, true),
+    "user B must not consume user A's plan")
+now = now + 0.2
+rpc_server.spawn_item(second_admin, 103, 1, "isolated_user_b", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 3 and responses[#responses].success == true,
+    "user B must be able to execute their own approved plan")
+now = now + 0.2
+rpc_server.clear_test_plan(second_admin, "isolated_user_a")
+rpc_server.spawn_item(reconnected_player, 104, 3, "isolated_user_a", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 4 and responses[#responses].success == true,
+    "user B must not clear user A's plan while both plans are active")
+now = now + 0.2
+rpc_server.spawn_item(second_admin, 105, 2, "isolated_user_b", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 5 and responses[#responses].success == true,
+    "user B's independent plan must remain usable after cross-user requests")
+rpc_server.clear_test_plan(reconnected_player, "isolated_user_a")
+rpc_server.clear_test_plan(second_admin, "isolated_user_b")
+now = now + 0.2
+rpc_server.spawn_item(reconnected_player, 106, 1, "isolated_user_a", "cutgrass", 1, 0, 0)
+assert(spawned_items == isolation_spawn_baseline + 5 and responses[#responses].success == false
+    and string.find(responses[#responses].message, "no active Master-approved", 1, true),
+    "clearing a player's plan must invalidate only that player's subsequent RPCs")
+print("MODXPECTOR_PLAYER_PLAN_ISOLATION_CONTRACT_OK")

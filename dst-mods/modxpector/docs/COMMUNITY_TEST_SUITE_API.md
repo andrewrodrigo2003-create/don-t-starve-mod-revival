@@ -94,7 +94,7 @@ São rejeitados spawn, craft, ataque, consumo, alteração de inventário, coord
 3. A interface mostra as suites compatíveis.
 4. O usuário precisa ativar **Modo de testes controlados**.
 5. Ao executar, o plano é enviado ao Master do DST.
-6. O Master verifica permissão de administrador, configuração, schema, allowlists, referências e pós-condições; confirma que o proprietário está carregado no servidor e que o plano é idêntico ao cenário da suite registrada no próprio Master.
+6. O Master verifica permissão de administrador, configuração, schema, allowlists, referências e pós-condições; confirma que o proprietário está carregado no servidor e que o plano é idêntico ao cenário da suite registrada no próprio Master. O plano aprovado é vinculado ao `userid` do objeto de jogador recebido pelo RPC, resolvido no servidor, e não a um campo do payload.
 7. Só após resposta positiva do Master o cliente inicia o Virtual Player.
 8. O resultado é guardado na sessão local e exibido no painel.
 
@@ -227,7 +227,7 @@ end
 
 ## Autorização dos RPCs de efeitos
 
-As chamadas server-authoritative de spawn_item, spawn_entity e unlock_recipe devem incluir request_id, step_index (índice 1-based), run_id e os parâmetros específicos da operação. O Master confere esses campos contra a etapa exata do plano aprovado, confirma que a etapa ainda não foi consumida e só então executa o efeito. Uma etapa não pode ser reutilizada. Não invoque esses RPCs fora de um plano ativo aprovado; limpar o plano invalida chamadas subsequentes. Essa autorização é adicional a administrator, test_mode, laboratory_mode, allowlists e limites de taxa/quantidade.
+As chamadas server-authoritative de spawn_item, spawn_entity e unlock_recipe devem incluir request_id, step_index (índice 1-based), run_id e os parâmetros específicos da operação. O Master confere esses campos contra a etapa exata do plano aprovado, confirma que a etapa ainda não foi consumida e só então executa o efeito. Uma etapa não pode ser reutilizada. O plano é armazenado por `userid` resolvido pelo Master: cada jogador mantém no máximo um plano ativo, e os RPCs de efeito e `clear_test_plan` precisam vir do mesmo proprietário. Outro administrador não pode substituir, consumir ou limpar o plano de outro jogador. Não invoque esses RPCs fora de um plano ativo aprovado; limpar o plano invalida chamadas subsequentes. Essa autorização é adicional a administrator, test_mode, laboratory_mode, allowlists e limites de taxa/quantidade.
 
 
 
