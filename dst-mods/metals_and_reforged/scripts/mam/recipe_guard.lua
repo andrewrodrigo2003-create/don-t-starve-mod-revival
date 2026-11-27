@@ -156,6 +156,23 @@ local function same_signature(a, b)
     return true
 end
 
+-- Compare the live ingredient array with the exact override from our previous
+-- pass. This makes retries idempotent without mistaking a later third-party
+-- rewrite for one of our own changes.
+local function same_ingredient_list(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" or #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i] == nil or b[i] == nil
+            or a[i].type ~= b[i].type
+            or a[i].amount ~= b[i].amount then
+            return false
+        end
+    end
+    return true
+end
+
 --- O recipe ainda esta exatamente como o vanilla?
 function M.is_untouched(name)
     local recipe = AllRecipes[name]
@@ -188,6 +205,7 @@ end
 --- Aplica (ou nao) uma reescrita de ingredientes, com registro do motivo.
 -- @return applied (boolean), reason (string)
 function M.apply(name, ingredients)
+    local previous = M.results[name]
     local result = { name = name, applied = false, reason = "unknown" }
     M.results[name] = result
 
@@ -197,6 +215,14 @@ function M.apply(name, ingredients)
         MAMLog.WarnOnce("recipe_guard.missing." .. name,
             "Receita '%s' nao existe mais -- outro mod a removeu. Override de metalurgia ignorado.", name)
         return false, result.reason
+    end
+
+    if previous ~= nil and previous.applied
+        and same_ingredient_list(recipe.ingredients, previous.ingredients) then
+        result.applied = true
+        result.reason = "already-applied"
+        result.ingredients = previous.ingredients
+        return true, result.reason
     end
 
     local m = mode()
@@ -234,6 +260,7 @@ function M.apply(name, ingredients)
     recipe.ingredients = ingredients
     result.applied = true
     result.reason = "applied"
+    result.ingredients = ingredients
     return true, result.reason
 end
 
@@ -304,8 +331,10 @@ end
 --- Move uma receita existente para o filtro/tecnologia da War Bench sem
 --- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
 function M.set_station(name, tech, filter)
+    local key = "station:" .. name
+    local previous = M.results[key]
     local result = { name = name, applied = false, reason = "unknown" }
-    M.results["station:" .. name] = result
+    M.results[key] = result
 
     local recipe = AllRecipes[name]
     if recipe == nil then
@@ -313,6 +342,14 @@ function M.set_station(name, tech, filter)
         MAMLog.WarnOnce("recipe_station.missing." .. name,
             "Receita '%s' ausente; migracao para a War Bench ignorada.", name)
         return false, result.reason
+    end
+
+    -- A successful earlier pass is already committed. Do not repeat it during
+    -- the world-task fallback; preserving a later mod's change is safer.
+    if previous ~= nil and previous.applied then
+        result.applied = true
+        result.reason = "already-applied"
+        return true, result.reason
     end
 
     if type(tech) ~= "table" then
