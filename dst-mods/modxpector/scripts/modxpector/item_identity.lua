@@ -322,12 +322,15 @@ function M.ComparePickup(before, after, target_before, target_entity, selected_g
     end
     if before.complete ~= true or after.complete ~= true
         or type(before.player) ~= "table" or before.player.complete ~= true
-        or type(after.player) ~= "table" or after.player.complete ~= true then
-        return inconclusive("pickup inventory snapshot is incomplete")
+        or type(after.player) ~= "table" or after.player.complete ~= true
+        or type(before.player.by_guid) ~= "table"
+        or type(after.player.by_guid) ~= "table" then
+        return inconclusive("pickup inventory snapshot is incomplete or malformed")
     end
     if type(target_before) ~= "table"
         or target_before.schema ~= "modxpector/item-identity-snapshot/v1"
         or target_before.kind ~= "pickup_target" or target_before.complete ~= true
+        or target_before.item_count ~= 1
         or type(target_before.by_guid) ~= "table" then
         return inconclusive("selected ground-item identity snapshot is incomplete")
     end
