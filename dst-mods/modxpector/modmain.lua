@@ -785,6 +785,11 @@ local function validate_transfer_action_postconditions(plan)
                     if assertion_verifies_action(candidate, action_index) then
                         local assertion = candidate.assertion
                         if type(assertion) == "table"
+                            and (assertion.kind == "player_inventory_item_count_increased"
+                                or assertion.kind == "player_item_count_increased") then
+                            return false, "aggregate prefab-count assertions cannot verify PICKUP identity"
+                        end
+                        if type(assertion) == "table"
                             and assertion.kind == "pickup_target_collected"
                             and assertion.target_step == action_index then
                             inventory_delta = assertion
