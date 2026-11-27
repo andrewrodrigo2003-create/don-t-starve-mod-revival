@@ -554,8 +554,8 @@ local pickup_suite = {
                 { kind = "action", action = "PICKUP",
                     target = { prefab = "my_test_item", radius = 12 }, target_required = true },
                 { kind = "assert", assertion = {
-                    kind = "player_inventory_item_count_increased",
-                    target_step = 1, prefab = "my_test_item", count = 1,
+                    kind = "pickup_target_collected",
+                    target_step = 1, prefab = "my_test_item",
                 }, verifies_step = 1 },
             },
         },
@@ -563,7 +563,7 @@ local pickup_suite = {
 }
 local pickup_suite_ok, normalized_pickup_suite = AI.ValidateSuite(pickup_suite)
 assert(pickup_suite_ok == true and normalized_pickup_suite.scenarios[1].steps[1].action == "PICKUP",
-    "bounded PICKUP suites with inventory-delta postconditions should be accepted")
+    "bounded PICKUP suites with exact identity postconditions should be accepted")
 local pickup_plan, pickup_plan_error = AI.BuildVirtualPlayerPlan(
     normalized_pickup_suite, "pickup_my_test_item", "pickup_suite_run_1")
 assert(pickup_plan ~= nil and pickup_plan_error == nil)
@@ -571,7 +571,7 @@ assert(pickup_plan.allowed_actions[1] == "PICKUP")
 assert(pickup_plan.steps[2].assertion.kind == "pickup_target_collected"
     and pickup_plan.steps[2].assertion.target_step == 1
     and pickup_plan.steps[2].assertion.prefab == "my_test_item",
-    "pickup plan must preserve its exact inventory delta postcondition")
+    "pickup plan must preserve its exact identity postcondition")
 
 local pickup_without_postcondition = {
     schema = "modxpector/test-suite/v1",
