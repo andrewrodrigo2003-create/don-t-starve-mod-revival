@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - security/modxpector-5.0.14-opt-in-2026-11-23
     paths:
       - "dst-mods/modxpector/**"
       - "tools/dst_mod_audit.py"
