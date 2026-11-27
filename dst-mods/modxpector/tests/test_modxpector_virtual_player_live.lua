@@ -880,6 +880,25 @@ local pickup_delta = pickup_controller:_evaluate_assertion({
 })
 assert(pickup_delta.passed == true,
     "PICKUP should pass only after the exact target GUID and entity reference appear in inventory")
+player.picked_up = false
+local event_only_controller = VirtualPlayer.new(player, { allowed_prefabs = { "cutgrass" } })
+event_only_controller.queue = {
+    { kind = "action", action = "PICKUP", target_required = true },
+    { kind = "assert", assertion = {
+        kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+    }, verifies_step = 1 },
+}
+event_only_controller.index = 1
+local event_baseline_ok = event_only_controller:_capture_step_pickup_baseline(1, pickup_target)
+assert(event_baseline_ok == true)
+player:PushEvent("itemget", { item = pickup_target, slot = 1 })
+player:PushEvent("itemget", { item = pickup_target, slot = 1 })
+event_only_controller.index = 2
+local event_only_result = event_only_controller:_evaluate_assertion({
+    kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+})
+assert(event_only_result.inconclusive == true and event_only_result.passed == false,
+    "duplicate client itemget events without an exact inventory transfer must remain inconclusive")
 player.picked_up = previous_pickup_state
 
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
