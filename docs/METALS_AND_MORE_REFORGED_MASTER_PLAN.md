@@ -519,3 +519,33 @@ A PR #51 introduz `legacy_forge_weapon_abilities`, desligado por padrão:
 - preserva os prefabs/configuração base do pacote para evitar quebrar saves que contenham itens antigos.
 
 Esta é uma mitigação de compatibilidade baseada na auditoria estática, **não prova de que o conflito com Woodie Better Skill Tree foi causado por esses hooks**. O teste in-game com o mod de Woodie habilitado e o sistema legado desligado continua obrigatório. O usuário pode reativar as habilidades legadas manualmente se desejar.
+
+
+## Continuidade 2.9.7 — auditoria quantitativa de crafting (2026-11-18)
+
+- PR #66 draft: [inventário completo de custos e contratos](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/66), empilhada sobre #65 → #63 → #60 → #51.
+- Cobertura de código: 21 overrides vanilla, 25 receitas próprias MAM, 35 receitas movidas ao Craftbook e cinco receitas nativas com gate de ferramenta.
+- Novo teste `tests/test_mam_crafting_balance_contract.py` compara assinaturas de ingredientes com a auditoria e está integrado ao workflow. Também verifica baseline de recipe guard, gates de ferramentas, interseção de tags ouro/metal e diferença lunar.
+- Machado/cinzel já implementados na base; não reimplementar. A Mesa de Serragem permanece pendente até verificação real do prefab/API.
+- Histórico da auditoria de 18/11: nenhum custo havia sido alterado. A continuidade PR #73 aplica Marble Suit 6+2+1, Forkstick 34 fixo e Don Harpoon 68/100; os demais atributos/custos seguem sem mudança até medição runtime.
+- A contabilidade da forja confirma que 3 gold nuggets satisfazem simultaneamente gold=3 e metal=3; não contar como seis itens. A tag de saída do moonglass ingot foi corrigida para moon=1, igual ao moonrocknugget consumido.
+- CI da PR #66: run #44349620694 aprovada. PR #73 CI #566 (44735195600) e #567 (44735226014) também aprovadas no HEAD atual.
+- Sem teste in-game, multiplayer, save/load ou UM Beta; sem merge, release ou publicação Steam. Hydrated/Dehydrated, Better Lucy e terceiros permanecem intocados.
+
+Fontes canônicas: `docs/design/FULL_CRAFTING_REWORK_2.9.7.md`, `docs/design/CRAFTING_BALANCE_AUDIT_2.9.7.md` e `docs/design/METAL_ITEM_CRAFTING_MATRIX.md`.
+
+## Continuidade 2.9.7 — estação universal, equipamentos e economia lunar (2026-11-20)
+
+- Linha de trabalho atual: [PR #73](https://github.com/andrewrodrigo2003-create/don-t-starve-mod-revival/pull/73), aberta em draft/mergeable sobre PR #72; branch `balance/mam-tier-equipment-lunar-economy-2026-11-20`, HEAD `de39435ba06e6d0c7f20f262ec2065fd8ad0e7fb`. PR #69 foi fechada sem merge como supersedida por #73.
+- Mad Scientist Lab: a auditoria da fonte vanilla confirmou que o prefab usa `TUNING.PROTOTYPER_TREES.MADSCIENCE` e remove/recria o prototyper durante experimentos. A árvore agora recebe `ALCHEMY=1` mantendo `MADSCIENCE=1`; o laboratório realmente fornece `ALCHEMY_ONE` sem quebrar os experimentos vanilla.
+- Marble Suit: custo ajustado para 6 marble + 2 rope + 1 iron_ingot; mantém os materiais base vanilla e acrescenta 3 iron-value. Continua em Alchemy One, pois é uma receita vanilla migrada. Jagged Armor permanece em War Workbench.
+- Forkstick: dano fixo 34 (lança vanilla), sem rolagem 12–99. Don Harpoon: 68 dano/100 usos, alcance 12–14 e -20% movimento preservados.
+- Jagged Armor: 1500 condição, 85% absorção, +10% movimento; 1765 de capacidade efetiva de absorção, cerca de 26% acima da Thulecite Suit (1400), mas com menor absorção por golpe e sem regen de sanidade. Receita premium mantida: 4 houndstooth + 3 gold ingots + 1 Marble Suit + 3 iron ingots.
+- Adamantium: 3 nightmarefuel + 1 iron_ingot por barra; Night Armor e Dark Sword usam 2 barras cada (6 nightmarefuel + 2 iron_ingots), além de seus materiais básicos. Custo premium mantido para validação de economia.
+- Moonglass: cada barra custa 2 moonglass + 1 moonrocknugget; o tag de saída moon foi corrigido de 2 para 1 para impedir superávit de contabilidade em receitas futuras. Astral Detector custa 2 barras + thulecite (4 moonglass + 2 moonrock + thulecite) e tem 10 usos; custo premium mantido por enquanto.
+- O `archive_resonator_item` troca apenas o tech level TECH.LOST por ALCHEMY_ONE; a guard não altera nounlock/builder tags/estado de aprendizado, então não afirmar remoção da blueprint sem runtime. A desmontagem do `archive_resonator` foi alinhada para 1 moonglass_ingot + 1 thulecite; o martelo retorna 1 lingote (50% dos dois) + thulecite integral.
+- Armazenamento: Marble Chest e Cold Safe têm 25 slots (2,78× vanilla); Cold Safe usa a tag fridge para preservação vanilla; Marble Chest não registra burnable/propagator, mas resistência a fogo depende de runtime.
+- Referências: [Workshop original](https://steamcommunity.com/sharedfiles/filedetails/?id=2792388184), [Thulecite Suit/DST](https://dontstarve.wiki.gg/wiki/Thulecite_Suit/DST), [Night Armor/DST](https://dontstarve.wiki.gg/wiki/Night_Armor/DST), [Dark Sword/DST](https://dontstarve.wiki.gg/wiki/Dark_Sword/DST), [Astral Detector](https://dontstarve.wiki.gg/wiki/Astral_Detector), [Moon Glass](https://dontstarve.wiki.gg/wiki/Moon_Glass), [Moon Rock](https://dontstarve.wiki.gg/wiki/Moon_Rock), [Mad Science Lab prefab](https://raw.githubusercontent.com/vietnd69/dst-scripts/main/prefabs/madscience_lab.lua).
+- Limites: CI está aprovada, mas nenhum teste no motor DST, multiplayer, save/load, UM Beta 6.0.4, água/umidade, fogo ou martelamento foi executado. PR #73 permanece draft; sem merge, release ou publicação Steam.
+- Outros equipamentos auditados sem mudança de stats: Nox Helm 1250/85% +15% dano/+10% velocidade; Halberd 51/150, chop 7, -15% velocidade, -15 sanity/min e 2 hunger/chop; Scepter 32 dano, alcance 1,6, cane speed, luz raio 6 e fuel; Shears 17 dano, 500 usos, raio 4 e 1 uso por ação AREAPICK concluída. Shears e Nox são prioridades de medição em runtime.
+- Pacote The Forge opcional: `legacy_forge_weapon_abilities` e `forge_weapons` permanecem false por padrão; dano base 20/25/30/30, especiais condicionais e durabilidade 0=infinita/configurável. A PR #73 corrige os quatro toggles individuais `*_DISABLE_RECIPE`, antes lidos mas não aplicados ao `AddRecipe2`.

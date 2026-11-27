@@ -24,7 +24,7 @@ The 2.9.6 package remains a separate test candidate. This work is developed on a
 
 Deconstruction applies to **all basic and intermediate materials owned by MAM**, never crafted equipment, weapons, armor, tools, or structures.
 
-Required coverage is an explicit disposition for every MAM material prefab, not a promise that every item is dismantlable. Inventory dusts, ores, ingots/alloys, gem shards, by-products and other registered raw/refined items (including sharkscale where applicable) against actual prefab/recipe lists. Each must be marked as: supported with a safe lower-stage return rule; terminal/base input; by-product with no safe reverse provenance; or deferred pending a balance decision. The current 2.9.6 implementation supports only the explicit return table and intentionally rejects base inputs/by-products such as metal dusts, `junk_dust`, gem shards and `sharkscale`. Do not invent salvage returns to satisfy nominal coverage.
+Required coverage includes every MAM material prefab, not only the current copper/iron/gold/bronze/moonglass/adamantium subset: dusts, ores, ingots/alloys, gem shards, by-products, and other registered raw/refined material items (including sharkscale where applicable). The final registry must be generated/audited against the actual prefab and recipe lists so no MAM material is silently omitted.
 
 - Use reverse provenance from the live smelting/material recipe registry where available; preserve source material identity and prevent upward conversion or profitable loops.
 - Handle tagged/alternative ingredients through the authoritative smelting planner, not a guessed fixed recipe.
@@ -73,7 +73,7 @@ Balance decisions must compare equivalent progression tiers and expected playtim
 
 ## 7. Implementation sequence and release gates
 
-1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale still need provenance-based decisions before claiming complete material coverage.
+1. Inventory all MAM material prefabs, recipes, strings, stone/wood recipes, tool tags, vanilla survivors and relevant UM Beta changes. The current reversible registry covers the copper/iron/gold/bronze/moonglass/adamantium progression; dusts, gem shards, junk dust and sharkscale now have explicit provenance dispositions recorded in [the 2026-11-18 material audit](../compatibility/MAM_MATERIAL_DECONSTRUCTION_PROVENANCE_2026-11-18.md); only materials with safe reverse rules remain eligible, while raw inputs and ambiguous by-products stay excluded.
 2. Implement the localization registry and language selection; add complete string-coverage tests.
 3. Replace the narrow deconstruction allowlist with a material-only registry and explicit character profile resolver; add full survivor/material coverage tests.
 4. Implement non-consuming tool validation for chisel/axe and verified Sawing Table integration; remove the replaced vanilla board/cut-stone crafting routes without disabling unrelated recipes.
@@ -149,4 +149,33 @@ The branch now adds three independently configurable secondary sources, all usin
 
 Each source has its own On/Off setting and a separate 25–150% chance multiplier. These are deliberately low-yield secondary routes: no guaranteed ingots, no replacement of primary ore progression, and no shared loot-table edits in the default mode. Runtime harness coverage has been added for registration, chance scaling, independent disablement and follower exclusion; CI and in-game balance verification remain pending.
 
-These settings and harness assertions are implemented on the branch, but the full 2.9.7 package is not yet ready: mandatory axe/chisel crafting, verified Sawing Table integration, complete recipe/drop adapter coverage, and the remaining rework/localization work are still pending. Automated CI is running; in-game/multiplayer/save-load verification remains required.
+Historical status as of 2026-11-12: at that point mandatory axe/chisel crafting and Sawing Table verification were still pending. The later section “Local implementation — installed-source verification (2026-11-17)” and the 2026-11-18 checkpoint supersede the axe/chisel pending status: the tool gates are now implemented and covered by the dedicated harness. Sawing Table integration remains unimplemented because its target prefab/API has not been verified. The full 2.9.7 package still requires CI on the latest HEAD and real in-game, multiplayer and save/load validation.
+
+
+---
+
+## Checkpoint de implementação e balanceamento — 2026-11-18
+
+Esta seção atualiza o estado posterior às notas históricas de 12–17/11 e deve ser usada como referência atual para os itens abaixo.
+
+- **Machado/cinzel:** implementação já presente em `scripts/mam/tool_crafting.lua`, com wrappers específicos de Builder e Builder Replica, revalidação final no servidor e atualização de disponibilidade do HUD. Cinco receitas nativas estão cobertas: `boards`, `woodie_boards`, `boards_bunch`, `cutstone`, `cutstone_bunch`. O harness tem 63 cenários com stubs (64 com fontes locais do DST). Isso não é teste no motor; host/cliente, quebra/recuperação de ferramenta, inventário/overflow e combinação Woodie/Lucy/UM ainda precisam de runtime real.
+- **Mesa de Serragem:** não implementada. Não foi confirmado prefab/API apropriado no build alvo; não inventar integração nem reativar a receita vanilla substituída.
+- **Inventário de crafting:** PR #66 registra 21 overrides vanilla, 25 receitas próprias MAM e 35 receitas migradas ao Craftbook, com assinaturas exatas e teste de cobertura ligado à CI. O Craftbook continua sendo prototyper separado da War Workbench.
+- **Matriz de estações:** `metal_storage_chest` é apenas prefab legado para saves existentes, sem receita nova. `metal_smelter` é Science One; `warworkbench` é Science Two. `marble_chest`, `cold_safe`, livro e cinzel estão incluídos na matriz.
+- **Balanceamento:** checkpoint histórico de 18/11; supersedido pela continuidade de 20/11. A branch atual ajusta Marble Suit para 6 marble + 2 rope + 1 iron_ingot, fixa Forkstick em 34 e Don Harpoon em 68/100; Jagged Armor e Adamantium mantêm custos/atributos premium após comparação com baselines vanilla.
+- **Contabilidade da forja:** tags podem se sobrepor; três gold nuggets fornecem simultaneamente gold=3 e metal=3. A tag de saída do moonglass ingot foi alinhada a moon=1, igual ao custo físico de um moonrocknugget. Adamantium continua 3 nightmarefuel + 1 iron_ingot por barra.
+- **CI:** PR #66 run #44349620694 aprovada; PR #73 runs #566 (`44735195600`) e #567 (`44735226014`) aprovadas no HEAD `de39435ba06e6d0c7f20f262ec2065fd8ad0e7fb`.
+- **Governança:** PR #73 é draft, empilhada sobre PR #72 (linha #70 → #71 → #72 → #73); PR #69 foi fechada sem merge como supersedida. Sem merge, release, upload Steam ou alteração de Hydrated/Dehydrated, Better Lucy, UM ou arquivos de terceiros. `modinfo.lua` permanece 2.9.6 até build final e teste real.
+
+Auditoria de referência: [CRAFTING_BALANCE_AUDIT_2.9.7.md](CRAFTING_BALANCE_AUDIT_2.9.7.md). A matriz de itens e bancadas está em [METAL_ITEM_CRAFTING_MATRIX.md](METAL_ITEM_CRAFTING_MATRIX.md).
+
+## Continuidade técnica — 2026-11-20
+
+- A PR #72 integra o Laboratório de Alquimia universal como receita year-round; a PR #73 estende `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1` sem apagar `MADSCIENCE=1`, porque o prefab vanilla recria o prototyper após cada experimento. CI #566/#567 aprovadas.
+- O `archive_resonator_item` troca apenas `recipe.level` de `TECH.LOST` para `ALCHEMY_ONE`; a migração não altera `nounlock`, builder tags ou estado de aprendizado/blueprint. Portanto, a exigência de blueprint não é declarada removida sem teste runtime. A desmontagem por martelo foi alinhada a 1 moonglass_ingot + 1 thulecite, devolvendo 1 lingote (50% do custo de dois) e thulecite integral.
+- Balanceamento portado para a linha atual: Marble Suit 6 marble + 2 rope + 1 iron_ingot; Forkstick 34 dano fixo; Don Harpoon 68 dano/100 usos. Jagged Armor permanece 1500/85%/+10% e exige War Workbench.
+- A tag `moon` do moonglass ingot agora é 1, igual ao moonrocknugget consumido. Adamantium mantém 3 nightmarefuel + 1 iron_ingot por lingote.
+- A auditoria de armazenamento confirma 25 slots para Marble Chest e Cold Safe; a tag `fridge` já fornece a preservação vanilla. Fogo e martelamento continuam sem validação no motor.
+- O checkpoint não certifica a versão 2.9.7: runtime, multiplayer, save/load e UM Beta 6.0.4 continuam pendentes.
+- Outros equipamentos auditados: Nox Helm (1250/85%, +15% dano, +10% velocidade), Halberd (51/150, chop 7 e penalidades), Scepter (32 dano, cane speed/luz/fuel) e Shears (500 usos, raio 4, 1 uso por ação AREAPICK). Manter atributos por enquanto; medir rendimento de Shears e stacking do Nox Helm.
+- Pacote opcional The Forge: os dois gates globais seguem false por padrão; receitas novas 20/25/30/30 e especiais só quando habilitadas. A PR #73 faz os quatro toggles individuais `*_DISABLE_RECIPE` realmente suprimirem cada AddRecipe2; durabilidade 0 continua infinita/configurável.

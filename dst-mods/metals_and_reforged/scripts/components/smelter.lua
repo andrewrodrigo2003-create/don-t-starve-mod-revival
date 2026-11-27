@@ -16,9 +16,8 @@ local stack_size = function(item)
     return 1
 end
 
--- Normal public batch settings top out at 20. Keep a wider defensive ceiling
--- for legacy/modded saves and stress-tested partial harvest recovery, while
--- preventing corrupt values from driving effectively unbounded output loops.
+-- Public configuration tops out at 20. This wider defensive cap protects
+-- legacy/modded saves and partial-harvest recovery from corrupt output counts.
 local MAX_BATCH_OUTPUT = 100
 
 local function valid_batch(value)
@@ -179,7 +178,7 @@ function Smelter:PublishPlan()
     local cap = MAMConfig.int("mam_batch_cap", 10)
     local growth = MAMConfig.int("mam_batch_time", 25)
 
-    self.inst.mam_plan:set(("c|%d|%d|%d p|%s|%d|%s"):format(batch, cap, growth, product, self.batch or 1, phase))
+    self.inst.mam_plan:set(("c|%d|%d|%d p|%s|%d|%s"):format(batch, cap, growth, product, normalized_batch(self.batch), phase))
 end
 
 --- Alias historico: a configuracao sempre viaja junto com o plano.
@@ -224,7 +223,7 @@ function Smelter:StartSmelting(doer, supplied_plan)
     self.issmelting = true
     self.canharvest = nil
     self.product = plan.product
-    self.batch = plan.count or 1
+    self.batch = normalized_batch(plan.count)
     self.smelttime = plan.smelttime or 1
     self.active_receipt = {}
     self.refund_pending = nil
@@ -442,8 +441,12 @@ function Smelter:TryAutoHarvestToStorage()
     end
 
     local remaining = normalized_batch(self.batch)
-    local template = SpawnPrefab(self.product)
-    if template == nil then
+    -- A prefab constructor can throw as well as return nil. Keep the ready
+    -- entitlement intact so the periodic robot task can retry on its next pass.
+    local template_ok, template = pcall(SpawnPrefab, self.product)
+    if not template_ok or template == nil then
+        MAMLog.Warn("produto %s indisponivel para coleta automatica; lote preservado (%s)",
+            tostring(self.product), tostring(template))
         return false
     end
 
@@ -461,12 +464,15 @@ function Smelter:TryAutoHarvestToStorage()
     end
 
     while remaining > 0 do
-        local loot = SpawnPrefab(self.product)
-        if loot == nil then
+        -- The template preflight above does not guarantee that every
+        -- subsequent stack can be constructed. Preserve only the undelivered
+        -- remainder after a nil result or constructor exception.
+        local spawn_ok, loot = pcall(SpawnPrefab, self.product)
+        if not spawn_ok or loot == nil then
             self.batch = remaining
             self:PublishPlan()
-            MAMLog.Warn("produto %s aguardando espaco/retentativa automatica: %d unidade(s)",
-                tostring(self.product), remaining)
+            MAMLog.Warn("produto %s aguardando geracao/retentativa automatica: %d unidade(s) (%s)",
+                tostring(self.product), remaining, tostring(loot))
             return false
         end
 

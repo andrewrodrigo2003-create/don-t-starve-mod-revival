@@ -17,6 +17,40 @@ local MAMRecipeGuard = require("mam/recipe_guard")
 -- bancada. Idempotente: modded_craftbook.lua faz o mesmo.
 MAMRecipeGuard.Init(AddRecipe2, AddRecipeToFilter, RemoveRecipeFromFilter)
 
+-- The MAM Astral Detector costs two Moonglass Ingots, while vanilla's
+-- archive_resonator deconstruction recipe still returns one Moon Rock Nugget.
+-- Keep the standard 50% hammer return aligned with the new recipe: one ingot
+-- (half of two) plus the full single Thulecite. Preserve third-party overrides.
+AddRecipePostInit("archive_resonator", function(recipe)
+    if recipe == nil or not recipe.is_deconstruction_recipe then
+        return
+    end
+
+    local moonrock_amount = 0
+    local thulecite_amount = 0
+    local baseline_matches = #recipe.ingredients == 2
+    for _, ingredient in ipairs(recipe.ingredients or {}) do
+        if ingredient.type == "moonrocknugget" then
+            moonrock_amount = ingredient.amount
+        elseif ingredient.type == "thulecite" then
+            thulecite_amount = ingredient.amount
+        else
+            baseline_matches = false
+        end
+    end
+
+    if baseline_matches and moonrock_amount == 1 and thulecite_amount == 1 then
+        recipe.ingredients = {
+            Ingredient("moonglass_ingot", 1),
+            Ingredient("thulecite", 1),
+        }
+        MAMLog.Info("Astral Detector hammer return aligned: 1 Moonglass Ingot + 1 Thulecite (50% ingot refund)")
+    else
+        MAMLog.WarnOnce("archive_resonator.deconstruction.third_party",
+            "Third-party Astral Detector deconstruction recipe preserved; MAM did not override it.")
+    end
+end)
+
 local IRON_ORE_ATLAS = "images/inventoryimages/iron_ore.xml"
 local IRON_INGOT_ATLAS = "images/inventoryimages/iron_ingot.xml"
 local COPPER_INGOT_ATLAS = "images/inventoryimages/copper_ingot.xml"
@@ -105,7 +139,7 @@ local OVERRIDES =
     -- --- Marmore e cozinha portatil ---
     -- vanilla: marble 6, rope 2
     { name = "armormarble", ingredients = {
-        Ingredient("marble", 12), Ingredient("rope", 4), Ingredient("iron_ingot", 1, IRON_INGOT_ATLAS) } },
+        Ingredient("marble", 6), Ingredient("rope", 2), Ingredient("iron_ingot", 1, IRON_INGOT_ATLAS) } },
     -- vanilla: goldnugget 2, charcoal 6, twigs 6
     { name = "portablecookpot_item", ingredients = {
         Ingredient("iron_ore", 3, IRON_ORE_ATLAS), Ingredient("charcoal", 6), Ingredient("twigs", 6) } },
@@ -180,9 +214,22 @@ local function apply_vanilla_overrides(where, force)
         end
     end
 
+    -- The vanilla Mad Scientist Lab is gated by Hallowed Nights. MAM keeps the
+    -- vanilla prefab/ingredients but makes its construction year-round, moving
+    -- it out of the seasonal filter and clearing only the vanilla event hint.
+    local lab_moved, lab_reason = MAMRecipeGuard.set_station(
+        "madscience_lab", TECH.NONE, "STRUCTURES",
+        { remove_special_event = true, clear_hint_msg_if = "NEEDSHALLOWED_NIGHTS" })
+    if lab_moved then
+        station_moved = station_moved + 1
+    elseif lab_reason == "missing" or lab_reason == "filter-api-unavailable"
+        or lab_reason == "invalid-tech" or lab_reason == "invalid-filter" then
+        pending = pending + 1
+    end
+
     has_been_applied = pending == 0
-    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d; pendentes: %d",
-        where, applied, total, station_moved, #station_recipes, pending)
+    MAMLog.Info("reescritas de receitas vanilla (%s): %d/%d; bancadas metalurgicas: %d/%d (inclui laboratorio sazonal); pendentes: %d",
+        where, applied, total, station_moved, #station_recipes + 1, pending)
     MAMRecipeGuard.dump()
 
     return pending, applied, total

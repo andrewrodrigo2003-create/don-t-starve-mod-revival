@@ -147,6 +147,26 @@ local function build_pages(owner)
             }, "\n"),
         },
         {
+            title = L("Machado e cinzel", "Axe & chisel"),
+            body = table.concat({
+                MAMConfig.on("mam_axe_crafting")
+                    and L("Tábuas: carregue um machado funcional no inventário, equipado ou na mochila. A fabricação não consome nem desgasta a ferramenta.",
+                        "Boards: carry a working axe in your inventory, equipped or in your backpack. Crafting does not consume or wear the tool.")
+                    or L("O requisito de machado está desativado neste servidor.", "The axe requirement is disabled on this server."),
+                "",
+                L("Com a opção de machado ligada, a receita comum mantém o custo vanilla de 4 toras. A receita de habilidade do Woodie continua com 3 toras e Lucy; a skill tree não é alterada.",
+                    "With the axe option enabled, the common recipe keeps its vanilla cost of 4 logs. Woodie's skill recipe remains 3 logs plus Lucy; his skill tree is not modified."),
+                "",
+                MAMConfig.on("mam_chisel_crafting")
+                    and L("Pedra trabalhada: carregue um Cinzel de Entalhe em Pedra. Fabrique-o com 2 gravetos e 2 pedras lascadas, sem estação. Ele não possui durabilidade nem é consumido.",
+                        "Cut stone: carry a Stone-Carving Chisel. Craft it with 2 twigs and 2 flint, without a station. It has no durability and is not consumed.")
+                    or L("O requisito de cinzel está desativado neste servidor.", "The chisel requirement is disabled on this server."),
+                "",
+                L("As receitas de lote nativas também exigem a ferramenta quando a opção está ligada; seus custos, quantidades e estações não mudam. Transmutações de personagem permanecem separadas.",
+                    "Native batch recipes also require the corresponding tool when enabled; their costs, quantities and stations stay unchanged. Character transmutations remain separate."),
+            }, "\n"),
+        },
+        {
             title = L("Mineração e fontes", "Mining & sources"),
             body = table.concat({
                 L("Rochas: rochas de ouro podem fornecer pó de ouro; rochas lunares e suas conchas podem fornecer materiais de ferro.",
@@ -159,13 +179,6 @@ local function build_pages(owner)
                     "Marble: natural marble trees and shrubs provide metallurgy drops; planted trees do not receive the natural-tree bonus."),
                 L("Criaturas: cães de fogo e gelo podem fornecer fragmentos de gemas; tubarões fornecem escamas de tubarão.",
                     "Creatures: fire and ice hounds can provide gem shards; sharks provide sharkscale."),
-                L("Outras fontes: Rocky selvagem pode fornecer poeiras; Slurtle e Snurtle podem fornecer poeira de ferro; escombros de cavernas e estátuas antigas das Ruínas podem fornecer poeiras metálicas.",
-                    "Other sources: wild Rocky can provide dust; Slurtle and Snurtle can provide iron dust; cave rubble and ancient Ruins statues can provide metal dust."),
-                "",
-                L("A lista é um resumo, não um catálogo exaustivo. O toggle mestre de drops extras e os toggles individuais precisam estar ativos. Rocky seguindo o jogador não recebe drops MAM; árvores de mármore plantadas são excluídas. Slurtle e Snurtle recebem drops apenas no modo aditivo, não em Rewrite.",
-                    "This is a summary, not an exhaustive catalog. The extra-drops master toggle and individual source toggles must be enabled. Player-following Rocky do not receive MAM drops; planted marble trees are excluded. Slurtle and Snurtle drops are additive-mode only, not available in Rewrite."),
-                L("Drops de cães usam Auto por padrão: cedem ao Uncompromising Mode. A opção Always força os drops MAM; Never os desativa.",
-                    "Hound drops default to Auto: they yield to Uncompromising Mode. Always forces MAM drops; Never disables them."),
                 "",
                 L("As chances são controladas pelas configurações do mod. Desativar uma fonte não remove os drops vanilla.",
                     "Drop chances are controlled by the mod settings. Disabling a source does not remove vanilla drops."),
@@ -174,8 +187,8 @@ local function build_pages(owner)
         {
             title = L("Bancada de Guerra", "War Bench"),
             body = table.concat({
-                L("Equipamentos, ferramentas e estruturas metálicas selecionadas ficam disponíveis na Bancada de Guerra (ALCHEMY_ONE).",
-                    "Metal equipment, tools and selected metal structures are available at the War Bench (ALCHEMY_ONE)."),
+                L("Armas e armaduras metálicas do MAM são fabricadas exclusivamente na Bancada de Guerra. Ferramentas e estruturas selecionadas mantêm suas estações próprias.",
+                    "MAM metal weapons and armor are crafted exclusively at the War Bench. Selected tools and structures keep their own stations."),
                 "",
                 L("Itens da progressão da Máquina de Ciência, do Motor de Alquimia e o transistor permanecem no caminho científico para evitar ciclos de pré-requisitos.",
                     "Science Machine and Alchemy Engine progression items, plus the transistor, remain on the science path to avoid prerequisite loops."),

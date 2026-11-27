@@ -181,6 +181,19 @@ local function copy_ingredient_list(ingredients)
     return copy
 end
 
+local function copy_tech_level(level)
+    local copy = {}
+    for key, value in pairs(level or {}) do copy[key] = value end
+    return copy
+end
+
+local function same_tech_level(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+    for key, value in pairs(a) do if b[key] ~= value then return false end end
+    for key, value in pairs(b) do if a[key] ~= value then return false end end
+    return true
+end
+
 --- O recipe ainda esta exatamente como o vanilla?
 function M.is_untouched(name)
     local recipe = AllRecipes[name]
@@ -338,9 +351,10 @@ end
 
 --- Move uma receita existente para o filtro/tecnologia da War Bench sem
 --- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
-function M.set_station(name, tech, filter)
+function M.set_station(name, tech, filter, options)
     local key = "station:" .. name
     local previous = M.results[key]
+    options = type(options) == "table" and options or {}
     local result = { name = name, applied = false, reason = "unknown" }
     M.results[key] = result
 
@@ -360,16 +374,34 @@ function M.set_station(name, tech, filter)
         and type(destination.default_sort_values) == "table"
         and destination.default_sort_values[name] ~= nil)
 
+    local previous_options = previous ~= nil and previous.options or {}
+    local options_match = previous_options.remove_special_event == (options.remove_special_event == true)
+        and previous_options.clear_hint_msg_if == options.clear_hint_msg_if
+    local special_event = filters ~= nil and filters.SPECIAL_EVENT or nil
+    local special_event_removed = options.remove_special_event ~= true
+        or special_event == nil or type(special_event.default_sort_values) ~= "table"
+        or special_event.default_sort_values[name] == nil
+    local hint_cleared = options.clear_hint_msg_if == nil
+        or recipe.hint_msg ~= options.clear_hint_msg_if
+
     if previous ~= nil and previous.applied
-        and previous.tech_input == tech and previous.filter == filter
+        and previous.tech_input == tech and previous.filter == filter and options_match
         and previous.ingredients_signature ~= nil
         and same_signature(previous.ingredients_signature, describe(recipe))
-        and recipe.filter == filter and destination_contains then
+        and previous.level_signature ~= nil
+        and same_tech_level(recipe.level, previous.level_signature)
+        and recipe.filter == filter and destination_contains
+        and special_event_removed and hint_cleared then
         result.applied = true
         result.reason = "already-applied"
         result.tech_input = tech
         result.filter = filter
+        result.options = {
+            remove_special_event = options.remove_special_event == true,
+            clear_hint_msg_if = options.clear_hint_msg_if,
+        }
         result.ingredients_signature = previous.ingredients_signature
+        result.level_signature = previous.level_signature
         return true, result.reason
     end
 
@@ -420,7 +452,8 @@ function M.set_station(name, tech, filter)
         target_needs_add = target_filter.default_sort_values[name] == nil
         for filter_name, filter_def in pairs(filters) do
             if filter_name ~= filter and filter_name ~= "FAVORITES"
-                and filter_name ~= "CHARACTER" and filter_name ~= "SPECIAL_EVENT"
+                and filter_name ~= "CHARACTER"
+                and (filter_name ~= "SPECIAL_EVENT" or options.remove_special_event == true)
                 and type(filter_def.default_sort_values) == "table"
                 and filter_def.default_sort_values[name] ~= nil then
                 old_filters[#old_filters + 1] = filter_name
@@ -481,12 +514,20 @@ function M.set_station(name, tech, filter)
     if filter ~= nil then
         recipe.filter = filter
     end
+    if options.clear_hint_msg_if ~= nil and recipe.hint_msg == options.clear_hint_msg_if then
+        recipe.hint_msg = nil
+    end
 
     result.applied = true
     result.reason = "applied"
     result.tech_input = tech
     result.filter = filter
+    result.options = {
+        remove_special_event = options.remove_special_event == true,
+        clear_hint_msg_if = options.clear_hint_msg_if,
+    }
     result.ingredients_signature = describe(recipe)
+    result.level_signature = copy_tech_level(recipe.level)
     MAMLog.Info("receita '%s' movida para tecnologia %s / filtro %s sem reescrever ingredientes",
         name, tostring(tech), tostring(filter))
     return true, result.reason

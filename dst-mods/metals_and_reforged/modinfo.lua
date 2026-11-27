@@ -1,5 +1,5 @@
 name = "Metals and More Reforged"
-description = "Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
+description = "Fabrique equipamentos metálicos, recupere materiais e consulte o guia de metalurgia na Bancada de Guerra. / Forge metal equipment, recover materials and study the metallurgy guide at your War Bench."
 author = "NevilleDST"
 version = "2.9.6"
 forumthread = ""
@@ -20,7 +20,7 @@ configuration_options = {
     {
         name = "mam_language",
         label = "Language / Idioma",
-        hover = "Choose Brazilian Portuguese or English for Metals and More Reforged.",
+        hover = "Escolha Português (Brasil) ou Inglês para Metals and More Reforged. / Choose Brazilian Portuguese or English for Metals and More Reforged.",
         options = {
             { description = "Português (Brasil)", data = "ptbr" },
             { description = "English", data = "en" },
@@ -29,61 +29,61 @@ configuration_options = {
     },
 	{
         name = "craftingbook",
-        label = "Crafting book",
-		hover = "If enabled, you'll need the book to craft clothing items (backpacks, etc.) and some other recipes",
+        label = "Livro de criação / Crafting book",
+		hover = "Ativado: exige o livro para fabricar roupas, mochilas e algumas outras receitas. / If enabled, you'll need the book to craft clothing items (backpacks, etc.) and some other recipes.",
         options = 
         {
-			{description = "Off", data = false},
-			{description = "On", data = true},
+			{description = "Desligado / Off", data = false},
+			{description = "Ligado / On", data = true},
         }, 
         default = false,
 	},
 	{
         name = "cookbookcook",
-        label = "Cookbook cooking",
-		hover = "If enabled, you'll need the Cookbook equipped to be able to cook.",
+        label = "Cozinhar com o livro de receitas / Cookbook cooking",
+		hover = "Ativado: é necessário equipar o Livro de Receitas para cozinhar. / If enabled, you'll need the Cookbook equipped to be able to cook.",
         options = 
         {
-			{description = "Off", data = false},
-			{description = "On", data = true},
+			{description = "Desligado / Off", data = false},
+			{description = "Ligado / On", data = true},
         }, 
         default = false,
 	},
 	{
         name = "Disable Normal Map",
-        label = "Map survival",
-		hover = "If enabled, You need to equip the compass to access the map.",
+        label = "Sobrevivência do mapa / Map survival",
+		hover = "Ativado: equipe a bússola para acessar o mapa. / If enabled, you need to equip the compass to access the map.",
         options = 
         {
-			{description = "Off", data = false},
-			{description = "On", data = true},
+			{description = "Desligado / Off", data = false},
+			{description = "Ligado / On", data = true},
         }, 
         default = false,
 	},
 	{
         name = "disablemapchanges",
-        label = "Using Minimap mod?",
-		hover = "If you choose OFF, it's safe to use Minimap mod.",
+        label = "Usa mod de minimapa? / Using Minimap mod?",
+		hover = "Ao escolher Desligado, o uso de um mod de minimapa fica seguro. / If you choose OFF, it's safe to use a minimap mod.",
         options = 
         {
-			{description = "Off", data = false},
-			{description = "On", data = true},
+			{description = "Desligado / Off", data = false},
+			{description = "Ligado / On", data = true},
         }, 
         default = false,
 	},
 ----------------------------------------------
     {
         name = "legacy_forge_weapon_abilities",
-        label = "Legacy Forge weapon abilities",
-        hover = "Enables the old Forge Event weapon abilities and global combat/StateGraph hooks. Disabled by default for compatibility; does not affect metallurgy.",
+        label = "Habilidades antigas das armas da Forja / Legacy Forge weapon abilities",
+        hover = "Ativa as habilidades antigas das armas do evento The Forge e hooks globais de combate/StateGraph. Desativado por padrão por compatibilidade; não afeta a metalurgia. / Enables the old Forge Event weapon abilities and global combat/StateGraph hooks. Disabled by default for compatibility; does not affect metallurgy.",
         options = {
-            { description = "Off - Compatibility mode", data = false },
-            { description = "On - Enable legacy abilities", data = true },
+            { description = "Desligado - modo de compatibilidade / Off - Compatibility mode", data = false },
+            { description = "Ligado - ativar habilidades antigas / On - Enable legacy abilities", data = true },
         },
         default = false,
     },
     {
-        name = "Global Weapons options",
+        name = "Opções gerais de armas / Global Weapons options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -91,18 +91,18 @@ configuration_options = {
 	},
 	{
         name = "forge_weapons",
-        label = "Old vs New Forge weapons",
-		hover = "Selects the recipe variant only when Legacy Forge weapon abilities are enabled.",
+        label = "Armas antigas ou novas da Forja / Old vs New Forge weapons",
+		hover = "Seleciona a variante da receita somente quando as habilidades antigas da Forja estão ativadas. / Selects the recipe variant only when Legacy Forge weapon abilities are enabled.",
         options = 
         {
-			{description = "Off - Give me old weapons.", data = false},
-			{description = "On - Give me those abilities.", data = true},
+			{description = "Desligado - usar armas antigas / Off - Give me old weapons.", data = false},
+			{description = "Ligado - usar essas habilidades / On - Give me those abilities.", data = true},
         }, 
         default = false,
 	},
 ------------------------------------------------
 	{
-		name = "Global Forge options",
+		name = "Opções gerais da Forja / Global Forge options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -110,17 +110,17 @@ configuration_options = {
 	},
 	{
 		name = "PREVENT_COMPAGNION_ATTACK",
-		label = "Disable compagnion attack",
-		hover = "Prevent compagnions to be attacked by players",
+		label = "Impedir ataques a companheiros / Disable companion attacks",
+		hover = "Impede que jogadores ataquem companheiros. / Prevents players from attacking companions.",
 		options = {
-			{description = "No", data = false},
-			{description = "Yes", data = true},
+			{description = "Não / No", data = false},
+			{description = "Sim / Yes", data = true},
 		},
 		default = false,
 	},
 	-- Forging hammer
 	{
-		name = "Forging Hammer options",
+		name = "Opções do Martelo de Forja / Forging Hammer options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -128,17 +128,17 @@ configuration_options = {
 	},
 	{
 		name = "FORGING_HAMMER_DISABLE_RECIPE",
-		label = "Disable recipe",
-		hover = "You can still get this item by using console command.",
+		label = "Desativar receita / Disable recipe",
+		hover = "O item ainda pode ser obtido pelo comando do console. / You can still get this item by using a console command.",
 		options = {
-			{description = "No", data = false},
-			{description = "Yes", data = true},
+			{description = "Não / No", data = false},
+			{description = "Sim / Yes", data = true},
 		},
 		default = false,
 	},
 	{
 		name = "FORGINGHAMMER_DAMAGE",
-		label = "Damages",
+		label = "Dano / Damage",
 		options = {
 			{description = "5", data = 5},
 			{description = "10", data = 10},
@@ -155,7 +155,7 @@ configuration_options = {
 	},
 	{
 		name = "FORGINGHAMMER_ALT_DAMAGE",
-		label = "Special damages",
+		label = "Dano especial / Special damage",
 		options = {
 			{description = "15", data = 15},
 			{description = "20", data = 20},
@@ -174,25 +174,25 @@ configuration_options = {
 	},
 	{
 		name = "FORGING_HAMMER_DURABILITY",
-		label = "Durability",
+		label = "Durabilidade / Durability",
 		options = {
-			{description = "Infinite", data = 0},
-			{description = "100 Uses", data = 100},
-			{description = "200 Uses", data = 200},
-			{description = "300 Uses", data = 300},
-			{description = "400 Uses", data = 400},
-			{description = "500 Uses", data = 500},
-			{description = "750 Uses", data = 750},
-			{description = "1000 Uses", data = 1000},
-			{description = "1500 Uses", data = 1500},
-			{description = "2000 Uses", data = 2000},
+			{description = "Infinita / Infinite", data = 0},
+			{description = "100 usos / 100 Uses", data = 100},
+			{description = "200 usos / 200 Uses", data = 200},
+			{description = "300 usos / 300 Uses", data = 300},
+			{description = "400 usos / 400 Uses", data = 400},
+			{description = "500 usos / 500 Uses", data = 500},
+			{description = "750 usos / 750 Uses", data = 750},
+			{description = "1000 usos / 1000 Uses", data = 1000},
+			{description = "1500 usos / 1500 Uses", data = 1500},
+			{description = "2000 usos / 2000 Uses", data = 2000},
 		},
 		default = 0,
 	},
 	{
 		name = "FORGING_HAMMER_DURABILITY_NORMAL",
-		label = "Normal consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo normal / Normal consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1/Use", data = 1},
 			{description = "2/Use", data = 2},
@@ -213,8 +213,8 @@ configuration_options = {
 	},
 	{
 		name = "FORGING_HAMMER_DURABILITY_SPECIAL",
-		label = "Special consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo especial / Special consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1%", data = 1},
 			{description = "2%", data = 2},
@@ -235,13 +235,13 @@ configuration_options = {
 	},
 	{
 		name = "FORGING_HAMMER_COOLDOWN",
-		label = "Cooldown",
+		label = "Tempo de recarga / Cooldown",
 		options = {
 			{description = "-75%", data = 3},
 			{description = "-50%", data = 9},
 			{description = "-25%", data = 13.5},
 			{description = "-10%", data = 16.2},
-			{description = "Default (18s)", data = 18},
+			{description = "Padrão (18s) / Default (18s)", data = 18},
 			{description = "+10%", data = 19.8},
 			{description = "+25%", data = 22.5},
 			{description = "+50%", data = 27},
@@ -252,7 +252,7 @@ configuration_options = {
 	},
 	-- Pith pike
 	{
-		name = "Pith Pike options",
+		name = "Opções da Lança de Pith / Pith Pike options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -260,17 +260,17 @@ configuration_options = {
 	},
 	{
 		name = "PITHPIKE_DISABLE_RECIPE",
-		label = "Disable recipe",
-		hover = "You can still get this item by using console command.",
+		label = "Desativar receita / Disable recipe",
+		hover = "O item ainda pode ser obtido pelo comando do console. / You can still get this item by using a console command.",
 		options = {
-			{description = "No", data = false},
-			{description = "Yes", data = true},
+			{description = "Não / No", data = false},
+			{description = "Sim / Yes", data = true},
 		},
 		default = false,
 	},
 	{
 		name = "PITHPIKE_DAMAGE",
-		label = "Damages",
+		label = "Dano / Damage",
 		options = {
 			{description = "10", data = 10},
 			{description = "15", data = 15},
@@ -287,7 +287,7 @@ configuration_options = {
 	},
 	{
 		name = "PITHPIKE_ALT_DAMAGE",
-		label = "Special damages",
+		label = "Dano especial / Special damage",
 		options = {
 			{description = "10", data = 10},
 			{description = "15", data = 15},
@@ -310,25 +310,25 @@ configuration_options = {
 	},
 	{
 		name = "PITHPIKE_DURABILITY",
-		label = "Durability",
+		label = "Durabilidade / Durability",
 		options = {
-			{description = "Infinite", data = 0},
-			{description = "100 Uses", data = 100},
-			{description = "200 Uses", data = 200},
-			{description = "300 Uses", data = 300},
-			{description = "400 Uses", data = 400},
-			{description = "500 Uses", data = 500},
-			{description = "750 Uses", data = 750},
-			{description = "1000 Uses", data = 1000},
-			{description = "1500 Uses", data = 1500},
-			{description = "2000 Uses", data = 2000},
+			{description = "Infinita / Infinite", data = 0},
+			{description = "100 usos / 100 Uses", data = 100},
+			{description = "200 usos / 200 Uses", data = 200},
+			{description = "300 usos / 300 Uses", data = 300},
+			{description = "400 usos / 400 Uses", data = 400},
+			{description = "500 usos / 500 Uses", data = 500},
+			{description = "750 usos / 750 Uses", data = 750},
+			{description = "1000 usos / 1000 Uses", data = 1000},
+			{description = "1500 usos / 1500 Uses", data = 1500},
+			{description = "2000 usos / 2000 Uses", data = 2000},
 		},
 		default = 0,
 	},
 	{
 		name = "PITHPIKE_DURABILITY_NORMAL",
-		label = "Normal consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo normal / Normal consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1/Use", data = 1},
 			{description = "2/Use", data = 2},
@@ -349,8 +349,8 @@ configuration_options = {
 	},
 	{
 		name = "PITHPIKE_DURABILITY_SPECIAL",
-		label = "Special consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo especial / Special consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1%", data = 1},
 			{description = "2%", data = 2},
@@ -371,14 +371,14 @@ configuration_options = {
 	},
 	{
 		name = "PITHPIKE_COOLDOWN",
-		label = "Cooldown",
+		label = "Tempo de recarga / Cooldown",
 		options = {
 			{description = "-90%", data = 1},
 			{description = "-75%", data = 3},
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -389,7 +389,7 @@ configuration_options = {
 	},
 	-- Spiral spear
 	{
-		name = "Spiral Spear options",
+		name = "Opções da Lança Espiral / Spiral Spear options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -397,17 +397,17 @@ configuration_options = {
 	},
 	{
 		name = "SPIRALSPEAR_DISABLE_RECIPE",
-		label = "Disable recipe",
-		hover = "You can still get this item by using console command.",
+		label = "Desativar receita / Disable recipe",
+		hover = "O item ainda pode ser obtido pelo comando do console. / You can still get this item by using a console command.",
 		options = {
-			{description = "No", data = false},
-			{description = "Yes", data = true},
+			{description = "Não / No", data = false},
+			{description = "Sim / Yes", data = true},
 		},
 		default = false,
 	},
 	{
 		name = "SPIRALSPEAR_DAMAGE",
-		label = "Damages",
+		label = "Dano / Damage",
 		options = {
 			{description = "15", data = 15},
 			{description = "20", data = 20},
@@ -424,7 +424,7 @@ configuration_options = {
 	},
 	{
 		name = "SPIRALSPEAR_ALT_DAMAGE",
-		label = "Special damages",
+		label = "Dano especial / Special damage",
 		options = {
 			{description = "60", data = 60},
 			{description = "65", data = 65},
@@ -442,25 +442,25 @@ configuration_options = {
 	},
 	{
 		name = "SPIRALSPEAR_DURABILITY",
-		label = "Durability",
+		label = "Durabilidade / Durability",
 		options = {
-			{description = "Infinite", data = 0},
-			{description = "100 Uses", data = 100},
-			{description = "200 Uses", data = 200},
-			{description = "300 Uses", data = 300},
-			{description = "400 Uses", data = 400},
-			{description = "500 Uses", data = 500},
-			{description = "750 Uses", data = 750},
-			{description = "1000 Uses", data = 1000},
-			{description = "1500 Uses", data = 1500},
-			{description = "2000 Uses", data = 2000},
+			{description = "Infinita / Infinite", data = 0},
+			{description = "100 usos / 100 Uses", data = 100},
+			{description = "200 usos / 200 Uses", data = 200},
+			{description = "300 usos / 300 Uses", data = 300},
+			{description = "400 usos / 400 Uses", data = 400},
+			{description = "500 usos / 500 Uses", data = 500},
+			{description = "750 usos / 750 Uses", data = 750},
+			{description = "1000 usos / 1000 Uses", data = 1000},
+			{description = "1500 usos / 1500 Uses", data = 1500},
+			{description = "2000 usos / 2000 Uses", data = 2000},
 		},
 		default = 0,
 	},
 	{
 		name = "SPIRALSPEAR_DURABILITY_NORMAL",
-		label = "Normal consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo normal / Normal consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1/Use", data = 1},
 			{description = "2/Use", data = 2},
@@ -481,8 +481,8 @@ configuration_options = {
 	},
 	{
 		name = "SPIRALSPEAR_DURABILITY_SPECIAL",
-		label = "Special consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo especial / Special consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1%", data = 1},
 			{description = "2%", data = 2},
@@ -503,14 +503,14 @@ configuration_options = {
 	},
 	{
 		name = "SPIRALSPEAR_COOLDOWN",
-		label = "Cooldown",
+		label = "Tempo de recarga / Cooldown",
 		options = {
 			{description = "-90%", data = 1},
 			{description = "-75%", data = 3},
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -521,7 +521,7 @@ configuration_options = {
 	},
 	-- Blacksmith Edge
 	{
-		name = "Blacksmith Edge options",
+		name = "Opções do Fio do Ferreiro / Blacksmith Edge options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -529,17 +529,17 @@ configuration_options = {
 	},
 	{
 		name = "BLACKSMITH_EDGE_DISABLE_RECIPE",
-		label = "Disable recipe",
-		hover = "You can still get this item by using console command.",
+		label = "Desativar receita / Disable recipe",
+		hover = "O item ainda pode ser obtido pelo comando do console. / You can still get this item by using a console command.",
 		options = {
-			{description = "No", data = false},
-			{description = "Yes", data = true},
+			{description = "Não / No", data = false},
+			{description = "Sim / Yes", data = true},
 		},
 		default = false,
 	},
 	{
 		name = "BLACKSMITH_EDGE_DAMAGE",
-		label = "Damages",
+		label = "Dano / Damage",
 		options = {
 			{description = "15", data = 15},
 			{description = "20", data = 20},
@@ -556,7 +556,7 @@ configuration_options = {
 	},
 	{
 		name = "BLACKSMITH_EDGE_HELMSPLIT_DAMAGE",
-		label = "Jump damages",
+		label = "Dano do salto / Jump damage",
 		options = {
 			{description = "25", data = 25},
 			{description = "50", data = 50},
@@ -570,25 +570,25 @@ configuration_options = {
 	},
 	{
 		name = "BLACKSMITH_EDGE_DURABILITY",
-		label = "Durability",
+		label = "Durabilidade / Durability",
 		options = {
-			{description = "Infinite", data = 0},
-			{description = "100 Uses", data = 100},
-			{description = "200 Uses", data = 200},
-			{description = "300 Uses", data = 300},
-			{description = "400 Uses", data = 400},
-			{description = "500 Uses", data = 500},
-			{description = "750 Uses", data = 750},
-			{description = "1000 Uses", data = 1000},
-			{description = "1500 Uses", data = 1500},
-			{description = "2000 Uses", data = 2000},
+			{description = "Infinita / Infinite", data = 0},
+			{description = "100 usos / 100 Uses", data = 100},
+			{description = "200 usos / 200 Uses", data = 200},
+			{description = "300 usos / 300 Uses", data = 300},
+			{description = "400 usos / 400 Uses", data = 400},
+			{description = "500 usos / 500 Uses", data = 500},
+			{description = "750 usos / 750 Uses", data = 750},
+			{description = "1000 usos / 1000 Uses", data = 1000},
+			{description = "1500 usos / 1500 Uses", data = 1500},
+			{description = "2000 usos / 2000 Uses", data = 2000},
 		},
 		default = 0,
 	},
 	{
 		name = "BLACKSMITH_EDGE_DURABILITY_NORMAL",
-		label = "Normal consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo normal / Normal consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1/Use", data = 1},
 			{description = "2/Use", data = 2},
@@ -609,8 +609,8 @@ configuration_options = {
 	},
 	{
 		name = "BLACKSMITH_EDGE_DURABILITY_SPECIAL",
-		label = "Damage blocking consumption",
-		hover = "Enable durability to use this option",
+		label = "Consumo ao bloquear dano / Damage-blocking consumption",
+		hover = "Ative a durabilidade para usar esta opção. / Enable durability to use this option.",
 		options = {
 			{description = "1%", data = 1},
 			{description = "2%", data = 2},
@@ -631,14 +631,14 @@ configuration_options = {
 	},
 	{
 		name = "BLACKSMITH_EDGE_COOLDOWN",
-		label = "Cooldown",
+		label = "Tempo de recarga / Cooldown",
 		options = {
 			{description = "-90%", data = 1},
 			{description = "-75%", data = 3},
 			{description = "-50%", data = 6},
 			{description = "-25%", data = 9},
 			{description = "-10%", data = 9.6},
-			{description = "Default (12s)", data = 12},
+			{description = "Padrão (12s) / Default (12s)", data = 12},
 			{description = "+10%", data = 14.4},
 			{description = "+25%", data = 15},
 			{description = "+50%", data = 18},
@@ -648,7 +648,7 @@ configuration_options = {
 		default = 12,
 	},
 	{
-		name = "Global Weapons options",
+		name = "Opções gerais de armas / Global Weapons options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -657,18 +657,18 @@ configuration_options = {
 --------------------------------------
 	{
         name = "cursedpig",
-        label = "Summon Cursed Pig or not",
-		hover = "If enabled, you'll have Cursed Pig when killing normal pigs",
+        label = "Invocar o Porco Amaldiçoado? / Summon Cursed Pig?",
+		hover = "Ativado: um Porco Amaldiçoado aparece ao matar porcos comuns. / If enabled, a Cursed Pig appears when killing normal pigs.",
         options = 
         {
-			{description = "Off", data = false},
-			{description = "On - Give me that challenge", data = true},
+			{description = "Desligado / Off", data = false},
+			{description = "Ligado - ativar esse desafio / On - Give me that challenge", data = true},
         }, 
         default = true,
 	},
 --------------------------------------
 	{
-		name = "Global Metallurgy options",
+		name = "Opções gerais de metalurgia / Global Metallurgy options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -676,65 +676,65 @@ configuration_options = {
 	},
 	{
         name = "mam_batch",
-        label = "Batch smelting",
-		hover = "The furnace smelts several units of the same result in one operation, and its slots accept stacks of ore. Off keeps the original one-unit, one-item-per-slot behaviour. The server decides this one; the furnace tells clients what value is in force.",
+        label = "Fundição em lotes / Batch smelting",
+		hover = "A forja processa várias unidades do mesmo resultado por operação e aceita pilhas de minério. Desligado mantém uma unidade por operação e um item por espaço. O servidor define a opção e a forja informa os clientes. / The furnace smelts several units of the same result in one operation, and its slots accept stacks of ore. Off keeps the original one-unit, one-item-per-slot behaviour. The server decides this one; the furnace tells clients what value is in force.",
         options =
         {
-			{description = "Off - one unit per operation", data = 0},
-			{description = "On - smelt in batches", data = 1},
+			{description = "Desligado - uma unidade por operação / Off - one unit per operation", data = 0},
+			{description = "Ligado - fundir em lotes / On - smelt in batches", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_batch_cap",
-        label = "Batch size limit",
-		hover = "Hard ceiling on units produced by a single operation, whatever the load. Some products cap lower on their own: ore pass-through always gives 1, adamantium gives at most 5.",
+        label = "Limite do tamanho do lote / Batch size limit",
+		hover = "Limite máximo de unidades produzidas por operação. Alguns produtos têm limites próprios: minério repassado sempre gera 1; adamantium gera no máximo 5. / Hard ceiling on units produced by a single operation, whatever the load. Some products cap lower on their own: ore pass-through always gives 1, adamantium gives at most 5.",
         options =
         {
-			{description = "4 units", data = 4},
-			{description = "10 units", data = 10},
-			{description = "20 units", data = 20},
+			{description = "4 unidades / 4 units", data = 4},
+			{description = "10 unidades / 10 units", data = 10},
+			{description = "20 unidades / 20 units", data = 20},
         },
         default = 10,
 	},
 	{
         name = "mam_batch_time",
-        label = "Batch time growth",
-		hover = "Extra furnace time per unit beyond the first. 0% means a 10-ingot batch takes the same time as a single ingot, which is a big throughput gain; 25% keeps time roughly in step with the materials used.",
+        label = "Aumento de tempo por lote / Batch time growth",
+		hover = "Tempo adicional de forja por unidade após a primeira. 0% faz um lote de 10 lingotes levar o mesmo tempo de um único lingote; 25% mantém o tempo proporcional aos materiais usados. / Extra furnace time per unit beyond the first. 0% means a 10-ingot batch takes the same time as a single ingot; 25% keeps time roughly in step with the materials used.",
         options =
         {
-			{description = "0% - no extra time", data = 0},
-			{description = "25% per extra unit", data = 25},
-			{description = "50% per extra unit", data = 50},
-			{description = "75% per extra unit", data = 75},
+			{description = "0% - sem tempo extra / 0% - no extra time", data = 0},
+			{description = "25% por unidade extra / 25% per extra unit", data = 25},
+			{description = "50% por unidade extra / 50% per extra unit", data = 50},
+			{description = "75% por unidade extra / 75% per extra unit", data = 75},
         },
         default = 25,
 	},
 	{
         name = "mam_leftovers",
-        label = "Unsmelted leftovers",
-		hover = "A batch consumes only the materials it needs. What is left in the slots comes back to you on harvest instead of being destroyed. Off restores the original behaviour, where the whole load was consumed even if part of it was never used.",
+        label = "Materiais não fundidos / Unsmelted leftovers",
+		hover = "O lote consome somente os materiais necessários. O restante volta ao jogador na coleta em vez de ser destruído. Desligado restaura o comportamento original, que consumia toda a carga. / A batch consumes only the materials it needs. What is left in the slots comes back to you on harvest instead of being destroyed. Off restores the original behaviour, where the whole load was consumed even if part of it was never used.",
         options =
         {
-			{description = "Destroy them - original", data = 0},
-			{description = "Return them to me", data = 1},
+			{description = "Destruir - original / Destroy them - original", data = 0},
+			{description = "Devolver ao jogador / Return them to me", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_forecast",
-        label = "Furnace forecast",
-		hover = "Shows what the current load will produce, how many and how long, on the furnace button, before you start smelting. When a mixed load could yield more than one alloy, 'Full forecast' lists the possibilities and 'Certain result only' just warns that the outcome is a coin flip.",
+        label = "Previsão da forja / Furnace forecast",
+		hover = "Mostra no botão da forja o resultado previsto, a quantidade e o tempo antes de iniciar. Se uma carga mista puder gerar mais de uma liga, Previsão completa lista as possibilidades; Resultado certo apenas avisa sobre a incerteza. / Shows what the current load will produce, how many and how long, on the furnace button, before you start smelting. When a mixed load could yield more than one alloy, 'Full forecast' lists the possibilities and 'Certain result only' just warns that the outcome is a coin flip.",
         options =
         {
-			{description = "Off - original Smelt button", data = 0},
-			{description = "Certain result only", data = 1},
-			{description = "Full forecast", data = 2},
+			{description = "Desligado - botão Fundir original / Off - original Smelt button", data = 0},
+			{description = "Somente resultado certo / Certain result only", data = 1},
+			{description = "Previsão completa / Full forecast", data = 2},
         },
         default = 2,
 	},
 	{
-		name = "Global Compatibility options",
+		name = "Opções gerais de compatibilidade / Global Compatibility options",
 		options = {
 			{description = "", data = 0}
 		},
@@ -742,18 +742,18 @@ configuration_options = {
 	},
 	{
         name = "mam_recipe_overrides",
-        label = "Recipe overrides",
-		hover = "Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. The separate third-party recipe integration switch controls whether supported recipes changed by other mods may be moved to our progression. Neither option controls MAM-owned axe, chisel or Sawing Table mechanics. Recipes added by this mod are unaffected.",
+        label = "Substituição de receitas / Recipe overrides",
+		hover = "Controla as alterações de ingredientes/custos em receitas VANILLA do MAM. Seguro preserva ingredientes alterados por outros mods; Completo força os valores originais 2.9.3; Desligado desativa essas alterações. A integração de receitas de terceiros é controlada separadamente. Nenhuma dessas opções controla o machado, cinzel ou Mesa de Serragem do MAM. Receitas próprias não são afetadas. / Controls this mod's VANILLA ingredient/cost overrides. Safe keeps another mod's changed ingredients; Full forces our original 2.9.3 ingredient values; Off disables those cost overrides. The separate third-party recipe integration switch controls whether supported recipes changed by other mods may be moved to our progression. Neither option controls MAM-owned axe, chisel or Sawing Table mechanics. Recipes added by this mod are unaffected.",
         options =
         {
-			{description = "Never - leave vanilla recipes to other mods", data = 0},
-			{description = "Safe - only while a recipe is still vanilla", data = 1},
-			{description = "Full - original Metals and More behaviour", data = 2},
+			{description = "Nunca - deixar receitas vanilla para outros mods / Never - leave vanilla recipes to other mods", data = 0},
+			{description = "Seguro - somente enquanto a receita for vanilla / Safe - only while a recipe is still vanilla", data = 1},
+			{description = "Completo - comportamento original do Metals and More / Full - original Metals and More behaviour", data = 2},
         },
         default = 1,
 	},
 	{
-		name = "Mining and ore drops",
+		name = "Mineração e drops de minério / Mining and ore drops",
 		options = {
 			{description = "", data = 0}
 		},
@@ -761,112 +761,112 @@ configuration_options = {
 	},
 	{
         name = "mam_extra_drops",
-        label = "Extra ore drops",
+        label = "Drops extras de minério / Extra ore drops",
 		hover = "Master switch for every extra material source this mod adds to the world: gold and moon boulders, cave stalagmites, ruins clockworks and chess junk, fire and ice hounds, natural marble trees and shrubs, sharks, wild Rocky, Slurtles, Snurtles, mined cave rubble and ancient Ruins statues. Turning it off leaves the world's loot exactly as the game and your other mods define it. The mod's own copper and iron rocks are not affected - they are new content, not an override.",
         options =
         {
-			{description = "Off - no extra ore anywhere", data = 0},
-			{description = "On - use the per-source switches below", data = 1},
+			{description = "Desligado - sem minério extra / Off - no extra ore anywhere", data = 0},
+			{description = "Ligado - usar controles por fonte abaixo / On - use the per-source switches below", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drops_mode",
-        label = "Ore drop mode",
-		hover = "Additive attaches our materials to each rock or creature when it spawns, on top of whatever loot table is live at that moment. Nothing is overwritten, mod load order stops mattering, and only OUR materials are added - vanilla rocks, flint and gold yields are left alone. Rewrite restores the original 2.9.3 behaviour of replacing whole vanilla loot tables, which also lowers some vanilla yields and can overwrite (or be overwritten by) My Moar Metals and Uncompromising Mode, since both write the same tables. Additive is the compatible default; Rewrite is there if you want the old numbers back.",
+        label = "Modo de drops de minério / Ore drop mode",
+		hover = "Aditivo adiciona os materiais do MAM ao loot de cada rocha/criatura sem substituir tabelas existentes; ordem de carregamento deixa de importar e os drops vanilla são preservados. Substituir restaura o comportamento 2.9.3, que troca tabelas inteiras e pode conflitar com My Moar Metals e Uncompromising Mode. Aditivo é o padrão compatível. / Additive attaches our materials to each rock or creature without replacing live loot tables; load order stops mattering and vanilla yields remain unchanged. Rewrite restores the 2.9.3 behaviour of replacing whole vanilla loot tables and can conflict with My Moar Metals and Uncompromising Mode. Additive is the compatible default.",
         options =
         {
-			{description = "Additive - keep other mods' loot (recommended)", data = 1},
-			{description = "Rewrite - original 2.9.3 loot tables", data = 2},
+			{description = "Aditivo - preservar drops de outros mods (recomendado) / Additive - keep other mods' loot (recommended)", data = 1},
+			{description = "Substituir - tabelas de loot originais 2.9.3 / Rewrite - original 2.9.3 loot tables", data = 2},
         },
         default = 1,
 	},
 	{
         name = "mam_drops_normalise",
-        label = "Cap repeated rolls",
-		hover = "The original mod rolls the same material several times on one source - a marble tree rolls gold dust at 1.0, 0.75 and 0.75, so 2.5 pieces on average. On rescales those rolls so a single source averages at most 1 of each material, keeping their relative weights. Off keeps the original numbers exactly. This is the 'no easy farming' knob; it is off by default so the mod's balance is not changed without you asking.",
+        label = "Limitar rolagens repetidas / Cap repeated rolls",
+		hover = "O mod original pode rolar o mesmo material várias vezes na mesma fonte; uma árvore de mármore, por exemplo, tem média de 2,5 poeiras de ouro. Ligado normaliza as rolagens para no máximo 1 unidade média de cada material por fonte, preservando pesos relativos. Desligado mantém os números originais. / The original mod can roll the same material several times from one source; a marble tree averages 2.5 gold dust. On rescales rolls to at most 1 average unit of each material per source while preserving relative weights. Off keeps original numbers.",
         options =
         {
-			{description = "Off - original 2.9.3 chances", data = 0},
-			{description = "On - at most 1 per material per source", data = 1},
+			{description = "Desligado - chances originais 2.9.3 / Off - original 2.9.3 chances", data = 0},
+			{description = "Ligado - no máximo 1 por material por fonte / On - at most 1 per material per source", data = 1},
         },
         default = 0,
 	},
 	{
         name = "mam_drop_boulders",
-        label = "Boulders: gold and moon rocks",
-		hover = "Gold dust from gold boulders (rock2), iron ore from moon rocks and iron ore plus iron dust from moon rock shells. Chances are the ones 2.9.3 declared.",
+        label = "Rochas: ouro e rochas lunares / Boulders: gold and moon rocks",
+		hover = "Poeira de ouro em rochas douradas (rock2), minério de ferro em rochas lunares e minério de ferro + poeira de ferro nas conchas lunares. As chances seguem os valores declarados na versão 2.9.3. / Gold dust from gold boulders (rock2), iron ore from moon rocks and iron ore plus iron dust from moon rock shells. Chances match 2.9.3.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_stalagmites",
-        label = "Cave stalagmites and stalactites",
-		hover = "Copper ore, copper dust and gold dust from every mining stage of stalagmites and tall stalagmites, plus the occasional gem shard and gold ore. Cave rock is the mod's main copper source, so turning this off makes copper noticeably scarcer.",
+        label = "Estalagmites e estalactites / Cave stalagmites and stalactites",
+		hover = "Minério e poeira de cobre, além de poeira de ouro, em cada estágio de mineração de estalagmites e estalagmites altas; ocasionalmente, fragmentos de gema e minério de ouro. Rochas de cavernas são a principal fonte de cobre do mod, então desligar esta opção torna o cobre mais raro. / Copper ore, copper dust and gold dust from every mining stage of stalagmites and tall stalagmites, plus occasional gem shards and gold ore. Cave rock is the mod's main copper source, so turning this off makes copper scarcer.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_chess",
-        label = "Ruins: clockworks and chess junk",
-		hover = "Knights drop copper ore, rooks and bishops drop copper and iron ingots, nightmare variants drop more, and hammerable chess junk drops gem shards and copper dust. Dangerous ruins creatures giving refined metal is intentional: it is the reward for the risk.",
+        label = "Ruínas: mecanismos e sucata de xadrez / Ruins: clockworks and chess junk",
+		hover = "Cavaleiros soltam minério de cobre; torres e bispos soltam lingotes de cobre e ferro; variantes de pesadelo soltam mais; sucata de xadrez quebrável solta fragmentos de gema e poeira de cobre. Metais refinados de criaturas perigosas das Ruínas são uma recompensa intencional pelo risco. / Knights drop copper ore, rooks and bishops drop copper and iron ingots, nightmare variants drop more, and hammerable chess junk drops gem shards and copper dust. Refined metal from dangerous Ruins creatures is intentional risk reward.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_hounds",
-        label = "Fire and ice hounds: gem shards",
-		hover = "Uncompromising Mode Beta already reworks fire and ice hound loot to drop red and blue gems. Auto skips our gem shards while UM is enabled, so the same creature is not two gem sources at once; with UM absent, Auto behaves exactly like the original mod. Always adds our shards regardless, which stacks with UM's gems.",
+        label = "Cães de fogo e gelo: fragmentos de gema / Fire and ice hounds: gem shards",
+		hover = "O Uncompromising Mode Beta já altera o loot dos cães de fogo e gelo para soltar gemas vermelhas e azuis. Automático ignora os fragmentos do MAM quando UM está ativo, evitando duas fontes de gema na mesma criatura; sem UM, funciona como o mod original. Sempre adiciona nossos fragmentos, acumulando com as gemas de UM. / Uncompromising Mode Beta already makes fire and ice hounds drop red and blue gems. Auto skips MAM shards while UM is enabled; without UM it behaves like the original mod. Always adds our shards alongside UM.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "Auto - skip when Uncompromising Mode is on", data = 1},
-			{description = "Always - even alongside Uncompromising Mode", data = 2},
+			{description = "Desligado / Off", data = 0},
+			{description = "Automático - ignorar quando Uncompromising Mode estiver ativo / Auto - skip when Uncompromising Mode is on", data = 1},
+			{description = "Sempre - mesmo com Uncompromising Mode / Always - even alongside Uncompromising Mode", data = 2},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_marbletree",
-        label = "Marble trees (natural only)",
-		hover = "Marble seeds, gold dust and copper ore from the marble trees the world generates. Trees grown from a planted marble seed are deliberately excluded, so ore cannot be farmed by replanting seeds.",
+        label = "Árvores de mármore (somente naturais) / Marble trees (natural only)",
+		hover = "Sementes de mármore, poeira de ouro e minério de cobre das árvores geradas naturalmente pelo mundo. Árvores cultivadas de sementes plantadas são excluídas para impedir farm de minério por replantio. / Marble seeds, gold dust and copper ore from naturally generated marble trees. Trees grown from planted seeds are excluded to prevent ore farming by replanting.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_marbleshrub",
-        label = "Marble shrubs: iron ore",
-		hover = "Iron ore from marble shrubs, one at the normal stage and two at the tall stage, as in 2.9.3. In Additive mode the game's own marble and marble bean roll is kept and our ore is added to it; in Rewrite mode the original fixed loot lists are used.",
+        label = "Arbustos de mármore: minério de ferro / Marble shrubs: iron ore",
+		hover = "Minério de ferro de arbustos de mármore: uma unidade no estágio normal e duas no alto, como na versão 2.9.3. No modo Aditivo, os drops vanilla de mármore e feijão de mármore são preservados e o minério é acrescentado; em Substituir, usam-se as listas fixas antigas. / Iron ore from marble shrubs: one at normal stage and two at tall stage, as in 2.9.3. Additive keeps vanilla marble and marble-bean rolls; Rewrite uses the original fixed loot lists.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
 	{
         name = "mam_drop_shark",
-        label = "Shark: sharkscale",
-		hover = "Sharkscale from sharks, used by the mod's own equipment. Uncompromising Mode adds its own leather to the same creature through a separate roll, so the two do not conflict.",
+        label = "Tubarão: escama de tubarão / Shark: sharkscale",
+		hover = "Escamas de tubarão usadas nos equipamentos do MAM. O Uncompromising Mode adiciona seu couro por uma rolagem separada, então os dois drops não entram em conflito. / Sharkscale is used by MAM equipment. Uncompromising Mode adds its leather through a separate roll, so the drops do not conflict.",
         options =
         {
-			{description = "Off", data = 0},
-			{description = "On", data = 1},
+			{description = "Desligado / Off", data = 0},
+			{description = "Ligado / On", data = 1},
         },
         default = 1,
 	},
@@ -874,220 +874,234 @@ configuration_options = {
         name = "mam_drop_rocky",
         label = "Rocky: poeira mineral / Rock Lobsters: mineral dust",
         hover = "Rocky selvagens podem soltar pequenas quantidades de poeira de cobre e, raramente, ferro. Rockies seguindo um jogador nao geram esses drops. / Wild Rockys may drop small amounts of copper dust and rarely iron dust. Player-following Rockies are excluded.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_rubble",
         label = "Escombros de cavernas / Cave rubble",
         hover = "Minerar escombros naturais de cavernas pode revelar poeira de cobre e, raramente, ferro. Os drops originais de pedra sao preservados. / Mining natural cave rubble may reveal copper dust and rarely iron dust. Original rock drops are preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_ancient_statues",
         label = "Estatuas antigas das Ruinas / Ancient Ruins statues",
         hover = "Minerar estatuas antigas pode revelar poeira metalica em pequenas quantidades. Gemas e Thulecite originais nao sao alteradas. / Mining ancient statues may reveal small amounts of metal dust. Original gems and Thulecite are unchanged.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_rocky_chance", label = "Chance: Rocky / Rocky chance",
         hover = "Multiplicador apenas dos drops MAM de Rockys selvagens. / Scales only MAM drops from wild Rockys.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_rubble_chance", label = "Chance: escombros / Rubble chance",
         hover = "Multiplicador apenas dos drops MAM de escombros naturais de cavernas. / Scales only MAM drops from natural cave rubble.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_ancient_statues_chance", label = "Chance: estatuas antigas / Ancient statues chance",
         hover = "Multiplicador apenas dos drops MAM de estatuas das Ruinas. / Scales only MAM drops from ancient Ruins statues.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_knight",
         label = "Cavaleiro mecânico / Clockwork Knight",
         hover = "Minério de cobre. Também respeita o controle geral de criaturas das Ruínas. / Copper ore. Also obeys the Ruins family master switch.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_knight_chance",
         label = "Chance: Cavaleiro mecânico / Clockwork Knight",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_rook",
         label = "Torre mecânica / Clockwork Rook",
         hover = "Lingotes de cobre e ferro. / Copper and iron ingots.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_rook_chance",
         label = "Chance: Torre mecânica / Clockwork Rook",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_bishop",
         label = "Bispo mecânico / Clockwork Bishop",
         hover = "Fragmentos de gemas e lingotes raros. / Gem shards and rare ingots.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_bishop_chance",
         label = "Chance: Bispo mecânico / Clockwork Bishop",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_chessjunk",
         label = "Sucata de xadrez / Chess junk",
         hover = "Poeira de cobre e fragmentos de gemas. / Copper dust and gem shards.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_chessjunk_chance",
         label = "Chance: Sucata de xadrez / Chess junk",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_firehound",
         label = "Cão de fogo / Fire Hound",
         hover = "Fragmentos de rubi; a regra Auto do Uncompromising Mode continua valendo. / Red gem shards; Uncompromising Mode Auto behavior is preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_firehound_chance",
         label = "Chance: Cão de fogo / Fire Hound",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_icehound",
         label = "Cão de gelo / Ice Hound",
         hover = "Fragmentos de safira; a regra Auto do Uncompromising Mode continua valendo. / Blue gem shards; Uncompromising Mode Auto behavior is preserved.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_icehound_chance",
         label = "Chance: Cão de gelo / Ice Hound",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_slurtle",
-        label = "Slurtle",
+        label = "Lesma-de-casco / Slurtle",
         hover = "Poeira de ferro rara, como resíduo mineral do casco. / Rare iron dust from mineral traces in its shell.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_slurtle_chance",
-        label = "Chance: Slurtle",
+        label = "Chance: Lesma-de-casco / Chance: Slurtle",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_snurtle",
-        label = "Snurtle",
+        label = "Caracol-de-casco / Snurtle",
         hover = "Poeira de ferro rara, um pouco mais provável que em Slurtles. / Rare iron dust, slightly more likely than from Slurtles.",
-        options = {{description = "Off", data = 0}, {description = "On", data = 1}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
         default = 1,
     },
     {
         name = "mam_drop_snurtle_chance",
-        label = "Chance: Snurtle",
+        label = "Chance: Caracol-de-casco / Chance: Snurtle",
         hover = "Ajusta somente os drops do Metals and More desta criatura. / Scales only Metals and More drops from this creature.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
 	{
         name = "mam_robot_smelting",
-        label = "Collector robot forge automation",
-        hover = "When an active W.O.B.O.T. or W.I.N.bot is nearby, the smelter can pull only registered smelting ingredients from nearby compatible chests and packs. Disabled by default; it never takes from player inventories.",
+        label = "Automação da forja com robô coletor / Collector robot forge automation",
+        hover = "Com um W.O.B.O.T. ou W.I.N.bot ativo por perto, a forja pode retirar somente ingredientes registrados de baús e containers fixos compatíveis próximos. Mochilas, armazenamento portátil e inventários de jogadores não são vasculhados. Desativado por padrão. / With an active W.O.B.O.T. or W.I.N.bot nearby, the smelter can pull only registered ingredients from compatible fixed chests/containers. Backpacks, portable storage and player inventories are never scanned. Disabled by default.",
         options =
         {
-            {description = "Off", data = 0},
-            {description = "On", data = 1},
+            {description = "Desligado / Off", data = 0},
+            {description = "Ligado / On", data = 1},
         },
         default = 0,
 	},
 
 
     {
+        name = "mam_axe_crafting",
+        label = "Tábuas com machado / Axe woodworking",
+        hover = "Exige machado funcional carregado, equipado ou na mochila. Preserva custo, estação e requisito de habilidade de cada receita, incluindo a receita especial de Lucy do Woodie. Não consome nem desgasta o machado ao fabricar. / Preserves each recipe cost, station and skill requirement, including Woodie's special Lucy recipe. Crafting does not consume or wear the axe.",
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
+        default = 1,
+    },
+    {
+        name = "mam_chisel_crafting",
+        label = "Pedra com cinzel / Chisel stoneworking",
+        hover = "Exige Cinzel de Entalhe em Pedra reutilizável carregado ou na mochila. Mantém custo e estação da pedra trabalhada. Cinzel: 2 gravetos e 2 pedras lascadas, sem estação, sem desgaste. / Requires a reusable Stone-Carving Chisel carried or in a backpack. Keeps cut-stone cost and station. Chisel: 2 twigs and 2 flint, no station or durability. Independent of integrations.",
+        options = {{description = "Desligado / Off", data = 0}, {description = "Ligado / On", data = 1}},
+        default = 1,
+    },
+    {
         name = "mam_third_party_recipe_integration",
         label = "Receitas de outros mods / Other-mod recipes",
         hover = "Ativado: adapta receitas compatíveis preservando ingredientes e metadados. Desativado: deixa receitas de terceiros intactas. Não desativa machado, cinzel ou Mesa de Serragem próprios do MAM. / On adapts supported recipes while preserving ingredients and metadata. Off leaves third-party recipes untouched. Does not disable MAM-owned axe, chisel or Sawing Table mechanics.",
-        options = {{description = "Off - leave other mods' recipes alone", data = 0}, {description = "On - adapt supported recipes safely", data = 1}},
+        options = {{description = "Desligado - não alterar receitas de outros mods / Off - leave other mods' recipes alone", data = 0}, {description = "Ligado - adaptar receitas compatíveis com segurança / On - adapt supported recipes safely", data = 1}},
         default = 1,
     },
     {
         name = "mam_allow_third_party_drop_overrides",
         label = "Substituir drops de outros mods / Replace other-mod loot",
         hover = "Aplica-se somente ao modo Rewrite antigo. Ativado permite substituir tabelas de loot compartilhadas. Desativado força drops aditivos e preserva as tabelas existentes. / Only applies to legacy Rewrite mode. On permits replacing shared loot tables. Off forces additive drops and preserves live tables.",
-        options = {{description = "Off - preserve other mods' loot (recommended)", data = 0}, {description = "On - allow legacy table replacement", data = 1}},
+        options = {{description = "Desligado - preservar drops de outros mods (recomendado) / Off - preserve other mods' loot (recommended)", data = 0}, {description = "Ligado - permitir substituição de tabelas antigas / On - allow legacy table replacement", data = 1}},
         default = 0,
     },
     {
         name = "mam_drop_boulders_chance", label = "Chance de drops em rochas / Boulder drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de rochas de ouro e lunares. / Scales only Metals and More materials from gold and moon boulders.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_stalagmites_chance", label = "Chance em estalagmites / Cave formation drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de estalagmites e estalactites. / Scales only Metals and More materials from cave stalagmites and stalactites.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_chess_chance", label = "Chance em criaturas das ruínas / Ruins creature drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de mecanismos e peças de xadrez. / Scales only Metals and More materials from clockworks and chess junk.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_hounds_chance", label = "Chance de fragmentos em cães elementais / Hound gem-shard chance",
         hover = "Ajusta somente os fragmentos de gemas do Metals and More. A opção Auto/Sempre continua controlando a interação com Uncompromising Mode. / Scales only Metals and More gem-shard rolls. The separate Auto/Always option still controls Uncompromising Mode interaction.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_marbletree_chance", label = "Chance em árvores de mármore / Marble-tree drop chance",
         hover = "Ajusta somente os materiais do Metals and More obtidos de árvores de mármore naturais. / Scales only Metals and More material rolls from naturally generated marble trees.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_shark_chance", label = "Chance de escama de tubarão / Sharkscale drop chance",
         hover = "Ajusta somente as chances de escama de tubarão adicionadas pelo Metals and More. / Scales only the sharkscale rolls added by Metals and More.",
-        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
+        options = {{description = "25%", data = 25}, {description = "50%", data = 50}, {description = "75%", data = 75}, {description = "100% (padrão) / 100% (default)", data = 100}, {description = "125%", data = 125}, {description = "150%", data = 150}},
         default = 100,
     },
     {
         name = "mam_drop_marbleshrub_quantity", label = "Minério dos arbustos de mármore / Marble-shrub iron ore",
         hover = "Controla somente a quantidade de minério de ferro do Metals and More. Os demais drops do arbusto e de outros mods não mudam. / Controls only Metals and More iron ore quantity. Other shrub loot and other mods' drops are unchanged.",
-        options = {{description = "Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
+        options = {{description = "Desligado / Off", data = 0}, {description = "Original", data = 100}, {description = "Double", data = 200}, {description = "Triple", data = 300}},
         default = 100,
     },
 

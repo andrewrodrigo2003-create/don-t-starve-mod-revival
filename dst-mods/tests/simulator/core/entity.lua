@@ -14,6 +14,7 @@ function Entity.new(prefab, id)
         tags = {},
         position = { x = 0, y = 0, z = 0 },
         _subscriptions = {},
+        _tasks = {},
     }, Entity)
 end
 
@@ -39,10 +40,20 @@ function Entity:RemoveEventCallback(event, callback, source)
     local bus = source and source.events or self.events
     return bus:Remove(event, callback)
 end
-function Entity:PushEvent(event, data) return self.events:Push(event, data) end
+function Entity:PushEvent(event, data, ...)
+    return self.events:PushFrom(event, self, data, ...)
+end
 function Entity:DoTaskInTime(delay, callback)
+    assert(self.valid, "cannot schedule a task for a removed entity")
     assert(self.world ~= nil, "entity is not attached to a simulated world")
-    return self.world.scheduler:Schedule(delay, callback)
+    assert(type(callback) == "function", "task callback must be a function")
+    local handle
+    handle = self.world.scheduler:Schedule(delay, function()
+        self._tasks[handle] = nil
+        if self.valid then callback(self) end
+    end)
+    self._tasks[handle] = true
+    return handle
 end
 function Entity:GetPosition() return self.position end
 function Entity:SetPosition(x, y, z)
@@ -51,7 +62,14 @@ end
 function Entity:Remove()
     if not self.valid then return false end
     self.valid = false
-    self.events:Push("onremove", { entity = self })
+
+    -- Cancel entity-owned delayed work before notifying listeners or tearing down components.
+    for handle in pairs(self._tasks) do
+        handle:Cancel()
+    end
+    self._tasks = {}
+
+    self.events:PushFrom("onremove", self, {})
     for _, subscription in ipairs(self._subscriptions) do
         subscription.bus:Remove(subscription.event, subscription.token)
     end

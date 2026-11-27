@@ -25,6 +25,9 @@ package.preload["mam/config"] = function() return MAMConfig end
 local planned
 local smelting = {
     CalculateSmelterPlan = function() return planned end,
+    IsSmelterIngredient = function(prefab)
+        return prefab == "copper_ore"
+    end,
     GetSmelterRecipe = function(_, product)
         return product ~= nil and {} or nil
     end,
@@ -658,7 +661,221 @@ check("oversized history quantities are discarded while valid history survives",
         and malformed_batch.recent_results[1].product == "iron_ingot"
         and malformed_batch.recent_results[1].quantity == 2)
 check("safe batch value is persisted after malformed load",
-    malformed_batch:OnSave().batch == 1)
+
+
+-- Robot auto-harvest must preserve the ready output if either the preflight
+-- template or a later output stack cannot be constructed.
+local robot_config_previous = config.mam_robot_smelting
+config.mam_robot_smelting = 1
+local robot_entity = {
+    prefab = "chester",
+    components = {
+        fueled = { IsEmpty = function() return false end },
+        inventoryitem = { IsHeld = function() return false end },
+    },
+}
+function robot_entity:GetCurrentPlatform() return nil end
+local robot_storage = {
+    prefab = "marble_chest",
+    components = {},
+}
+function robot_storage:GetCurrentPlatform() return nil end
+function robot_storage:GetDistanceSqToInst() return 1 end
+local robot_storage_container = {
+    inst = robot_storage, type = "chest", canbeopened = true, numslots = 25,
+    delivered = {},
+}
+robot_storage.components.container = robot_storage_container
+function robot_storage_container:CanAcceptCount(_, count) return count end
+function robot_storage_container:GiveItem(item)
+    table.insert(self.delivered, item)
+    item.removed = true
+    return true
+end
+local robot_world = {
+    FindEntities = function(_, _, _, _, _, musttags)
+        if musttags[1] == "storagerobot" then return { robot_entity } end
+        if musttags[1] == "_container" then return { robot_storage } end
+        return {}
+    end,
+}
+TheSim = robot_world
+local robot_smelter, robot_inst = new_smelter(make_container({}))
+robot_inst.Transform = { GetWorldPosition = function() return 0, 0, 0 end }
+robot_inst.GetCurrentPlatform = function() return nil end
+robot_inst.components.container.inst = robot_inst
+robot_smelter.canharvest = true
+robot_smelter.product = "copper_ingot"
+robot_smelter.batch = 3
+local template_spawn_calls = 0
+SpawnPrefab = function()
+    template_spawn_calls = template_spawn_calls + 1
+    error("simulated robot output constructor failure")
+end
+check("robot auto-harvest catches template constructor errors",
+    robot_smelter:TryAutoHarvestToStorage() == false)
+check("robot template error preserves full ready entitlement",
+    robot_smelter.canharvest and robot_smelter.product == "copper_ingot"
+        and robot_smelter.batch == 3 and #robot_storage_container.delivered == 0)
+
+local robot_partial, robot_partial_inst = new_smelter(make_container({}))
+robot_partial_inst.Transform = robot_inst.Transform
+robot_partial_inst.GetCurrentPlatform = robot_inst.GetCurrentPlatform
+robot_partial_inst.components.container.inst = robot_partial_inst
+robot_partial.canharvest = true
+robot_partial.product = "copper_ingot"
+robot_partial.batch = 45
+local robot_spawn_calls = 0
+local robot_delivered = 0
+local function robot_output(prefab, stack_count)
+    local item = make_item(prefab, stack_count)
+    item.components.stackable.maxsize = 40
+    item.components.inventoryitem = {
+        OnDropped = function() item.dropped = true end,
+    }
+    item.Transform = { SetPosition = function() end }
+    item.DoTaskInTime = function() end
+    return item
+end
+SpawnPrefab = function(prefab)
+    robot_spawn_calls = robot_spawn_calls + 1
+    if robot_spawn_calls == 3 then
+        error("simulated second robot stack constructor failure")
+    end
+    return robot_output(prefab, 1)
+end
+robot_storage_container.GiveItem = function(self, item)
+    local count = item.components.stackable ~= nil and item.components.stackable.stacksize or 1
+    robot_delivered = robot_delivered + count
+    table.insert(self.delivered, item)
+    item.removed = true
+    return true
+end
+check("robot auto-harvest catches a later stack constructor error",
+    robot_partial:TryAutoHarvestToStorage() == false)
+check("robot partial failure stores only the undelivered remainder",
+    robot_partial.canharvest and robot_partial.batch == 5
+        and robot_partial.product == "copper_ingot" and robot_delivered == 40)
+robot_spawn_calls = 0
+SpawnPrefab = function(prefab) return robot_output(prefab, 1) end
+check("robot auto-harvest retry completes the pending remainder",
+    robot_partial:TryAutoHarvestToStorage() == true)
+check("robot retry delivers exactly the original batch once",
+    robot_delivered == 45 and robot_partial.product == nil
+        and robot_partial.canharvest == nil)
+config.mam_robot_smelting = robot_config_previous
+TheSim = nil
+
+
+-- Robot-fed batches must move only the planner-selected ingredients from a
+-- compatible nearby chest, and a failed transfer must restore the exact source.
+local function robot_test_container(entity, slots, fail_on_give)
+    local container = {
+        inst = entity, type = "chest", canbeopened = true, numslots = 4,
+        slots = slots or {}, give_calls = 0, fail_on_give = fail_on_give,
+    }
+    function container:RemoveItem(item, all)
+        for slot = 1, self.numslots do
+            if self.slots[slot] == item then
+                local stackable = item.components.stackable
+                if not all and stackable ~= nil and stackable:StackSize() > 1 then
+                    stackable:SetStackSize(stackable:StackSize() - 1)
+                    return make_item(item.prefab, 1)
+                end
+                self.slots[slot] = nil
+                return item
+            end
+        end
+        return nil
+    end
+    function container:GiveItem(item)
+        self.give_calls = self.give_calls + 1
+        if self.fail_on_give == self.give_calls then return false end
+        for slot = 1, self.numslots do
+            local current = self.slots[slot]
+            if current ~= nil and current.prefab == item.prefab
+                and current.components.stackable ~= nil and item.components.stackable ~= nil then
+                current.components.stackable:SetStackSize(
+                    current.components.stackable:StackSize() + item.components.stackable:StackSize())
+                item.removed = true
+                return true
+            end
+        end
+        for slot = 1, self.numslots do
+            if self.slots[slot] == nil then
+                self.slots[slot] = item
+                return true
+            end
+        end
+        return false
+    end
+    function container:Close() self.closed = true end
+    function container:DropEverything()
+        self.dropped = true
+        self.slots = {}
+    end
+    return container
+end
+local function robot_test_entity(prefab)
+    local entity = { prefab = prefab, components = {} }
+    function entity:IsValid() return true end
+    function entity:GetCurrentPlatform() return nil end
+    function entity:GetDistanceSqToInst() return 1 end
+    return entity
+end
+local feed_robot = robot_test_entity("chester")
+feed_robot.components.fueled = { IsEmpty = function() return false end }
+feed_robot.components.inventoryitem = { IsHeld = function() return false end }
+local feed_source = robot_test_entity("marble_chest")
+local feed_source_stack = make_item("copper_ore", 3)
+local feed_source_container = robot_test_container(feed_source, { [1] = feed_source_stack })
+feed_source.components.container = feed_source_container
+local function configure_robot_world(source)
+    TheSim = {
+        FindEntities = function(_, _, _, _, _, musttags)
+            if musttags[1] == "storagerobot" then return { feed_robot } end
+            if musttags[1] == "_container" then return { source } end
+            return {}
+        end,
+    }
+end
+config.mam_robot_smelting = 1
+planned = {
+    state = "ready", product = "copper_ingot", count = 1, smelttime = 30,
+    consumed = { { slot = 1, prefab = "copper_ore", count = 3 } },
+}
+local feed_machine_container = robot_test_container(nil, {})
+local feed_smelter, feed_inst = new_smelter(feed_machine_container)
+feed_machine_container.inst = feed_inst
+feed_inst.Transform = { GetWorldPosition = function() return 0, 0, 0 end }
+feed_inst.GetCurrentPlatform = function() return nil end
+configure_robot_world(feed_source)
+check("robot feeder starts a batch from a nearby compatible chest",
+    feed_smelter:TryStartRobotBatch() == true)
+check("robot feeder transfers only the planned ingredients and starts smelting",
+    feed_smelter.issmelting == true and feed_smelter.product == "copper_ingot"
+        and feed_source_container.slots[1] == nil
+        and next(feed_machine_container.slots) == nil)
+
+local rollback_source = robot_test_entity("cold_safe")
+local rollback_source_stack = make_item("copper_ore", 3)
+local rollback_source_container = robot_test_container(rollback_source, { [1] = rollback_source_stack })
+rollback_source.components.container = rollback_source_container
+local rollback_machine_container = robot_test_container(nil, {}, 2)
+local rollback_feed_smelter, rollback_feed_inst = new_smelter(rollback_machine_container)
+rollback_machine_container.inst = rollback_feed_inst
+rollback_feed_inst.Transform = feed_inst.Transform
+rollback_feed_inst.GetCurrentPlatform = feed_inst.GetCurrentPlatform
+configure_robot_world(rollback_source)
+check("robot feeder rejects a failed container transfer",
+    rollback_feed_smelter:TryStartRobotBatch() == false)
+check("failed robot transfer restores exact source stack and empties smelter",
+    rollback_source_container.slots[1] == rollback_source_stack
+        and rollback_source_stack.components.stackable:StackSize() == 3
+        and next(rollback_machine_container.slots) == nil
+        and rollback_feed_smelter.issmelting == nil)
+config.mam_robot_smelting = robot_config_previous
+TheSim = nil
 
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then

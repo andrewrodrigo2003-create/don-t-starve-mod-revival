@@ -5,7 +5,6 @@ actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
 prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
-modinfo = (root / "modinfo.lua").read_text(encoding="utf-8")
 smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
 smelter_prefab = (root / "scripts/prefabs/metal_smelter.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
@@ -18,7 +17,12 @@ assert 'MAMDeconstruction.HasWarWorkbench(entities' in actions
 assert 'entity.prefab == "warworkbench"' in module
 assert "recipe.max_batch" in screen
 assert "Max input batch" in screen
-assert "can_fit_staged_outputs" in actions
+assert 'local placements = plan_output_slots(inventory, staged)' in actions
+assert 'if placements == nil then' in actions
+assert actions.index('local placements = plan_output_slots(inventory, staged)') < actions.index('inventory:RemoveItem(item, false)')
+assert 'destination:CanTakeItemInSlot(output, slot.index)' in actions
+assert 'placement.container:GiveItem(output, placement.slot)' in actions
+assert 'not GLOBAL.TheWorld.ismastersim' in actions
 assert 'BASE_RECOVERY = 0.75' in module
 assert 'wilson = { all = 1 }' in module
 assert 'winona = { nonmagical = 1 }' in module
@@ -27,20 +31,6 @@ assert 'local function character_rate(character, material)' in module
 assert 'return MAMDeconstruction.BASE_RECOVERY' in module
 assert 'simplebook' in prefab and 'components.simplebook.onreadfn' in prefab
 assert 'smelting_products' in screen
-assert 'Requisitos não documentados' in screen
-assert 'Requirements not documented' in screen
-assert 'Carga mista (receita legada)' not in screen
-assert 'Mixed load (legacy recipe)' not in screen
-for source in ('Rocky selvagem', 'Slurtle', 'Snurtle', 'escombros de cavernas', 'estátuas antigas'):
-    assert source in screen, f"mining guide omits declared source: {source}"
-assert 'catálogo exaustivo' in screen
-assert 'toggle mestre de drops extras' in screen
-assert 'Uncompromising Mode' in screen
-assert 'apenas no modo aditivo' in screen
-assert 'additive-mode only' in screen
-for source in ('wild Rocky', 'Slurtles', 'Snurtles', 'mined cave rubble', 'ancient Ruins statues'):
-    assert source in modinfo, f"master extra-drops help omits source: {source}"
-
 assert 'metallurgy_reference_book' in modmain
 assert 'AddRecipe2("metallurgy_reference_book"' in modmain
 assert 'AddComponent("prototyper")' not in prefab
@@ -74,6 +64,21 @@ assert 'if plan == nil then' in actions
 assert 'if plan == nil or #plan == 0 then' not in actions, "zero-return roll must consume the input"
 
 print("PASS: deconstruction action and read-only guide wiring")
+
+assert 'Requisitos não documentados' in screen
+assert 'Requirements not documented' in screen
+assert 'Carga mista (receita legada)' not in screen
+assert 'Mixed load (legacy recipe)' not in screen
+for source in ('Rocky selvagem', 'Slurtle', 'Snurtle', 'escombros de cavernas', 'estátuas antigas'):
+    assert source in screen, f"mining guide omits declared source: {source}"
+assert 'catálogo exaustivo' in screen
+assert 'toggle mestre de drops extras' in screen
+assert 'Uncompromising Mode' in screen
+assert 'apenas no modo aditivo' in screen
+assert 'additive-mode only' in screen
+for source in ('wild Rocky', 'Slurtles', 'Snurtles', 'mined cave rubble', 'ancient Ruins statues'):
+    assert source in modinfo, f"master extra-drops help omits source: {source}"
+
 
 assert 'Asset("ANIM", "anim/cookbook.zip")' in prefab
 assert 'SetBank("cookbook")' in prefab and 'SetBuild("cookbook")' in prefab

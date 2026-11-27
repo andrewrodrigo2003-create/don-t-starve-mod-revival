@@ -190,7 +190,8 @@ local function init()
     MakeHauntableLaunch(inst)
 
     inst:AddComponent("weapon")
-    inst.components.weapon:SetDamage(math.random(12,99))
+    -- Use the vanilla spear baseline; identical copies should not roll different base damage.
+    inst.components.weapon:SetDamage(TUNING.SPEAR_DAMAGE)
 
     inst:AddComponent("inspectable")
     

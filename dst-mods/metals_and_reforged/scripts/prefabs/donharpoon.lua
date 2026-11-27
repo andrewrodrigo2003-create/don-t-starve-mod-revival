@@ -12,8 +12,8 @@ local prefabs =
 	"impact",
 }
 
-local	    HARPOON_DAMAGE = 80
-local	    HARPOON_USES = 150
+local	    HARPOON_DAMAGE = 68 -- Match Dark Sword / Glass Cutter damage; range and movement penalty remain the tradeoffs.
+local	    HARPOON_USES = 100 -- Match Dark Sword uses for a long-range projectile weapon.
 local	    HARPOON_RANGE = 12
 local	    HARPOON_SPEED = 30
 

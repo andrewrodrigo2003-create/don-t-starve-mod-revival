@@ -24,23 +24,31 @@ Os fragmentos e gemas (`redgem_shard`, `bluegem_shard`, `yellowgem_shard`, `gree
 
 | Prefab | Custo atual encontrado | Estação/tech configurada | Ação |
 |---|---|---|---|
-| `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | Science Two / estrutura | manter como estação principal |
-| `metal_storage_chest` | 3 iron_ingot, 2 cutstone, 1 gears | `ALCHEMY_ONE` + `CRAFTING_STATION` | integrado; validar em jogo |
+| `metal_smelter` | 4 iron_ore, 2 cutstone | `SCIENCE_ONE` / Structures | estação de processamento primária; medir custo de entrada |
+| `marbleseed` | 1 iron_ore, 1 marble | `SCIENCE_ONE` / Refine | receita própria; validar utilidade e fonte do item |
+| `warworkbench` | 5 cutstone, 3 iron_ingot, 5 charcoal | `SCIENCE_TWO` / Prototypers | estação de fabricação metalúrgica; validar filtro real |
+| `mam_stone_chisel` | 2 twigs, 2 flint | `TECH.NONE` / Tools + Refine | ferramenta reutilizável, sem durabilidade ou consumo |
+| `metallurgy_reference_book` | 2 papyrus, 2 charcoal, 1 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | livro informativo; não desbloqueia receitas |
+| `marble_chest` | 5 marble, 2 gold_ingot, 3 cutstone | `ALCHEMY_ONE` + Mad Scientist Lab + Containers | 25 slots (5×5), 3 hits; sem burnable/propagator explícitos; validar fogo |
+| `cold_safe` | 1 gears, 3 iron_ingot, 1 bluegem | `ALCHEMY_ONE` + Mad Scientist Lab + Cooking | 25 slots (5×5), tag fridge ativa conservação/resfriamento vanilla 50%; 3 hits |
+| `metal_storage_chest` | sem receita nova | prefab legado apenas | manter para saves existentes; não reintroduzir craftabilidade |
 | `armor_sanity` | 2 adamantium_ingot, 3 papyrus | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
 | `nightsword` | 2 adamantium_ingot, 1 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar exclusividade |
-| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; comparar progressão |
-| `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `halberd` | 2 log, 3 iron_ingot, 1 rope | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` | já metalúrgico; validar balanceamento |
-| `forginghammer` | 1 hammer, 1 lightninggoathorn, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `pithpike` | 2 lightninggoathorn, 3 gold_ingot, 3 houndstooth | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `spiralspear` | 3 marble, 1 pithpike, 2 townportaltalisman | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
-| `blacksmith_edge` | 5 marble, 2 driftwood_log, 3 gold_ingot | `ALCHEMY_ONE` + `CRAFTING_STATION` quando `forge_weapons` ligado | preservar opção e validar |
+| `jagged_armor` | 4 houndstooth, 3 gold_ingot, 1 armormarble, 3 iron_ingot | `MAM_FORGE_ONE` + War Workbench | 1500/85% e +10% velocidade; equipamento premium |
+| `tfwp_luxury_nox_helm_hat` | 1 footballhat, 3 gold_ingot, 1 walrus_tusk | `MAM_FORGE_ONE` + War Workbench | 1250/85% armor; +15% dano e +10% velocidade; capacete ofensivo premium |
+| `halberd` | 2 log, 3 iron_ingot, 1 rope | `MAM_FORGE_ONE` + War Workbench | 51 dano/150 usos, chop 7, -15% velocidade, -15 sanity/min e 2 hunger por chop |
+| `scepter` | 3 gold_ingot, 1 purplegem, 2 livinglog | `MAM_FORGE_ONE` + War Workbench | 32 dano, alcance 1,6, velocidade de cane, luz raio 6 e combustível ossify/nightmare |
+| `forkstick` | 3 gold_ingot, 3 sharkscale, 1 gnarwail_horn | `MAM_FORGE_ONE` + War Workbench | 34 dano fixo, 50 usos; valor principal é travessia aquática/fuel |
+| `shears` | 1 log, 2 flint, 2 iron_ingot | `ALCHEMY_ONE` + Mad Scientist Lab | 17 dano, 500 usos, área raio 4; 1 uso por ação AREAPICK concluída |
+| `donharpoon` | 2 marble, 3 flint, 2 iron_ingot | `MAM_FORGE_ONE` + War Workbench | 68 dano/100 usos, alcance 12–14, projétil, -20% velocidade |
+| `forginghammer` | 1 hammer, 1 lightninggoathorn, 3 gold_ingot | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção; variantes `*old` usam a mesma bancada |
+| `pithpike` | 2 lightninggoathorn, 3 gold_ingot, 3 houndstooth | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção; variantes `*old` usam a mesma bancada |
+| `spiralspear` | 3 marble, 1 pithpike, 2 townportaltalisman | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção e validar |
+| `blacksmith_edge` | 5 marble, 2 driftwood_log, 3 gold_ingot | `MAM_FORGE_ONE` + War Workbench quando opções legadas ligadas | preservar opção e validar |
 
 As variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` também têm receitas próprias quando `forge_weapons` está desligado. Não remover nem duplicar sem uma decisão de migração.
+
+As receitas de equipamentos e estruturas metalúrgicas adicionais permanecem na matriz de custos da auditoria quantitativa; esta tabela resume a estação e o estado de disponibilidade.
 
 ## 3. Receitas vanilla atualmente reescritas com materiais metalúrgicos
 
@@ -55,12 +63,12 @@ As variantes antigas `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` ta
 | `transistor` | 1 cutstone, 1 copper_ingot | override vanilla; confirmar estação atual |
 | `lightning_rod` | 1 gold_ingot, 1 cutstone | override vanilla; confirmar estação atual |
 | `goldenaxe`, `goldenpickaxe`, `goldenshovel`, `golden_farm_hoe` | 4 twigs, 1 gold_ingot cada | ferramentas de ouro; avaliar como família, sem receita em lote |
-| `armormarble` | 12 marble, 4 rope, 1 iron_ingot | override vanilla; confirmar estação atual |
+| `armormarble` | 6 marble, 2 rope, 1 iron_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; custo vanilla preservado + 1 lingote |
 | `portablecookpot_item` | 3 iron_ore, 6 charcoal, 6 twigs | override vanilla; confirmar estação atual |
 | `portableblender_item` | 3 iron_ore, 2 transistor, 4 twigs | override vanilla; confirmar estação atual |
 | `portablespicer_item` | 3 iron_ore, 3 cutstone, 6 twigs | override vanilla; confirmar estação atual |
 | `glasscutter` | 1 boards, 1 moonglass_ingot | conflito conhecido com overrides de outros mods; manter recipe guard |
-| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | item lunar; avaliar progressão antes de mover |
+| `archive_resonator_item` | 1 thulecite, 2 moonglass_ingot | `ALCHEMY_ONE` + Mad Scientist Lab; 4 moonglass + 2 moonrock + thulecite; substitui o tech level `TECH.LOST`; aprendizado/blueprint não é alterado explicitamente |
 | `moondial` | 1 bluemooneye, 1 moonglass_ingot, 5 marble | item lunar; avaliar progressão antes de mover |
 | `moonrockcrater` | 1 moonglass_ingot, 2 moonrocknugget, 1 marble | item lunar; avaliar progressão antes de mover |
 | `moonglassaxe` | 1 moonglass_ingot, 2 twigs, 1 marble | item lunar; avaliar progressão antes de mover |
@@ -106,3 +114,38 @@ A decisão do usuário permite obter materiais de estágio inferior desconstruin
 | `adamantium_ingot` | 3 `nightmarefuel` + 1 `iron_ingot` | Liga composta; proposta derivada das tags/requisito nomeado |
 
 **Importante:** nenhuma receita/custo foi alterado. Os retornos ainda precisam de confirmação, escolha da estação e testes. Materiais externos aceitos por tags podem ser normalizados para os componentes canônicos; não se promete reconstruir exatamente a carga original.
+
+
+---
+
+## 8. Cobertura integral da migração Craftbook — 2026-11-18
+
+A matriz inicial listava apenas exemplos. A implementação atual migra 35 receitas; custos exatos e contratos ficam na seção 4 de `CRAFTING_BALANCE_AUDIT_2.9.7.md`.
+
+`seedpouch`, `icepack`, `piggyback`, `sewing_kit`, `flowerhat`, `purpleamulet`, `amulet`, `blueamulet`, `umbrella`, `molehat`, `minerhat`, `backpack`, `armorslurper`, `icehat`, `beefalohat`, `earmuffshat`, `winterhat`, `beehat`, `trunkvest_summer`, `bushhat`, `catcoonhat`, `sweatervest`, `eyebrellahat`, `watermelonhat`, `featherhat`, `hawaiianshirt`, `beargervest`, `cane`, `tophat`, `strawhat`, `reflectivevest`, `rainhat`, `raincoat`, `trunkvest_winter`, `bernie_inactive`
+
+A migração de estação não deve ser confundida com rebalanceamento: preservar ingredientes e metadados vivos quando a assinatura difere do baseline conhecido, conforme `mam/recipe_guard.lua`.
+
+A lista integral de receitas próprias MAM (incluindo metal_smelter, marbleseed, chisel, War Workbench, livro, estruturas e equipamentos) e seus custos atuais também está na seção 3 da auditoria quantitativa.
+
+
+## 9. Regras de estação efetivas no código — 2026-11-18
+
+- `madscience_lab` (Mad Scientist Lab / Bancada de Alquimia) mantém o custo vanilla (`cutstone×2 + transistor×2`) e o prefab original, mas fica fabricável fora de Hallowed Nights: tecnologia `TECH.NONE`, filtro `STRUCTURES`, remoção de `SPECIAL_EVENT` e limpeza condicional do hint vanilla `NEEDSHALLOWED_NIGHTS`. A migração preserva ingredientes ativos de outros mods. `mam/tech.lua` estende `TUNING.PROTOTYPER_TREES.MADSCIENCE` com `ALCHEMY=1`, preservando `MADSCIENCE=1`; assim a bancada realmente prototipa receitas `ALCHEMY_ONE` mesmo após remover/recriar o prototyper durante experimentos.
+
+- `modded_recipes.lua` migra as receitas listadas em `station_recipes` para `TECH.ALCHEMY_ONE` e o filtro `CRAFTING_STATION`, sem reescrever a tabela de ingredientes durante a migração. A lista inclui birdcage, dragonflychest, compass, razor, lightning_rod, ferramentas douradas, armaduras selecionadas, portable cooking e receitas lunares.
+- `researchlab`, `researchlab2` e `transistor` recebem somente o override de ingredientes quando o baseline vanilla ainda corresponde; não entram na lista de migração para a bancada.
+- `metal_smelter` é Science One; `warworkbench` é Science Two. A bancada de metalurgia e a forja de processamento são estações diferentes.
+- O `craftbook` é outro prototyper; as 35 receitas migradas não devem ser presumidas como receitas da War Workbench.
+- Equipamentos próprios em `ALCHEMY_ONE` usam `CRAFTING_STATION`; itens da progressão MAM de tier superior usam `MAM_FORGE_ONE` quando definido no código.
+- As receitas `forginghammer`, `pithpike`, `spiralspear` e `blacksmith_edge` só são registradas quando `legacy_forge_weapon_abilities` e `forge_weapons` estão ativos; cada `*_DISABLE_RECIPE` agora é respeitado individualmente. Com as opções desligadas, `forginghammerold`, `pithpikeold` e `blacksmith_edgeold` são a rota alternativa; `spiralspear` não tem variante old. Stats base 20/25/30/30; habilidades especiais (30/25/75/helmsplit100) só com legacy abilities. Durabilidade default 0=infinita, configurável via `finiteuses` quando >0. Não alterar sem runtime.
+- A migração só deve ser considerada comprovada após validar o filtro visual e o prototyper dentro do DST; `TECH` isoladamente não comprova exclusividade de estação.
+
+
+### Atualização de balanceamento e progressão — 2026-11-20
+
+- `armormarble`: 6 marble + 2 rope + 1 iron_ingot; continua em Alchemy One, pois é receita vanilla migrada, não equipamento MAM novo de War Workbench.
+- `jagged_armor`: permanece em MAM_FORGE_ONE/War Workbench; 1500 condição, 85% absorção, +10% velocidade; custo 4 houndstooth + 3 gold_ingot + 1 armormarble + 3 iron_ingot. O custo premium é mantido.
+- `forkstick`: dano fixo de lança vanilla (34); `donharpoon`: 68 dano/100 usos, alcance 12–14 e penalidade de movimento preservados.
+- `moonglass_ingot`: saída agora carrega moon=1, alinhada ao moonrocknugget consumido; adamantium mantém 3 nightmarefuel + 1 iron_ingot por barra.
+- `archive_resonator` deconstruction: retorno vanilla foi atualizado para 1 moonglass_ingot + 1 thulecite. Como o martelo retorna 50% com arredondamento para cima, isso devolve 1 lingote (50% do custo de dois) e o thulecite integral; Dismantle preserva o item/usos restantes.

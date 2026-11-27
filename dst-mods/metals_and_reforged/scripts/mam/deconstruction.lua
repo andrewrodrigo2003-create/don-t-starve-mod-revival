@@ -29,6 +29,35 @@ local RETURNS =
     },
 }
 
+-- This inventory is intentionally broader than the reversible allowlist. Every
+-- material prefab used by the MAM progression must have an explicit provenance disposition so new
+-- materials cannot silently disappear from deconstruction review.
+local MATERIAL_AUDIT =
+{
+    copper_ore = { status = "recoverable", reason = "registered copper smelting material" },
+    copper_ingot = { status = "recoverable", reason = "registered copper smelting product" },
+    iron_ore = { status = "recoverable", reason = "registered iron smelting material" },
+    iron_ingot = { status = "recoverable", reason = "registered iron smelting product" },
+    goldnugget = { status = "recoverable", reason = "registered gold smelting material" },
+    gold_ingot = { status = "recoverable", reason = "registered gold smelting product" },
+    bronze_ingot = { status = "recoverable", reason = "registered alloy with explicit copper and iron costs" },
+    moonglass_ingot = { status = "recoverable", reason = "registered lunar smelting product with explicit moon input" },
+    adamantium_ingot = { status = "recoverable", reason = "registered alloy with explicit shadow and iron inputs" },
+
+    copper_dust = { status = "raw_input", reason = "base mineral input; no safe lower MAM conversion" },
+    iron_dust = { status = "raw_input", reason = "base mineral input; no safe lower MAM conversion" },
+    gold_dust = { status = "raw_input", reason = "base mineral input; no safe lower MAM conversion" },
+    junk_dust = { status = "mixed_byproduct", reason = "generic output from mixed metal loads; source cannot be reconstructed" },
+
+    redgem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    bluegem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    yellowgem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    greengem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    orangegem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    purplegem_shard = { status = "raw_gem_material", reason = "loot material; no MAM shard-to-gem recipe" },
+    sharkscale = { status = "raw_creature_material", reason = "harvested material; no MAM processing recipe to reverse" },
+}
+
 -- Explicit survivor profiles make character resolution predictable. Only
 -- documented material specialties receive overrides; all other survivors
 -- use the balanced standard rate until a justified specialty is implemented.
@@ -93,6 +122,21 @@ function MAMDeconstruction.HasWarWorkbench(entities, ismastersim)
         end
     end
     return false
+end
+
+function MAMDeconstruction.GetMaterialAudit(prefab)
+    local entry = MATERIAL_AUDIT[prefab]
+    if entry == nil then return nil end
+    return entry.status, entry.reason
+end
+
+function MAMDeconstruction.GetMaterialAuditPrefabs()
+    local result = {}
+    for prefab in pairs(MATERIAL_AUDIT) do
+        table.insert(result, prefab)
+    end
+    table.sort(result)
+    return result
 end
 
 function MAMDeconstruction.GetReturns(prefab)
