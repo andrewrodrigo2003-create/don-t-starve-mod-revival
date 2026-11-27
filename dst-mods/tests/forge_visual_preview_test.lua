@@ -73,6 +73,7 @@ end
 
 local GLOBAL = {
     require = require,
+    select = select,
     Vector3 = function(x, y, z) return { x = x, y = y, z = z } end,
     GetInventoryItemAtlas = function(image) return "images/inventoryimages.xml" end,
     BODYTEXTFONT = "body",
