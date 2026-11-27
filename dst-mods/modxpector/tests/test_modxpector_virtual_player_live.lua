@@ -832,6 +832,7 @@ assert(invalid_inventory_count_report ~= nil and invalid_inventory_count_report.
 assert(string.find(invalid_inventory_count_report.failure, "integer between 1 and 10000", 1, true))
 
 
+do
 -- A pre-existing item must not falsely verify a pickup that changed nothing.
 local baseline_guard_report
 local baseline_guard = VirtualPlayer.new(player, {
@@ -857,6 +858,9 @@ assert(legacy_pickup_accepted == false,
 
 
 
+end
+
+do
 -- PICKUP uses an isolated before/after inventory delta, not the container-transfer oracle.
 local previous_pickup_state = player.picked_up
 player.picked_up = false
@@ -900,6 +904,8 @@ local event_only_result = event_only_controller:_evaluate_assertion({
 assert(event_only_result.inconclusive == true and event_only_result.passed == false,
     "duplicate client itemget events without an exact inventory transfer must remain inconclusive")
 player.picked_up = previous_pickup_state
+
+end
 
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
 
@@ -1623,6 +1629,7 @@ assert(cleanup_controller.target_listener_cleanup_pending == false
     "recovered target listener cleanup must remove the listener")
 
 
+do
 -- Isolated player onremove cleanup failure: no PICKUP and no step observer.
 local isolated_player_report
 local isolated_player_controller = VirtualPlayer.new(player, {
@@ -1659,6 +1666,9 @@ assert(player:ListenerCount("onremove") == 0
     and isolated_player_controller.player_onremove_cleanup_verified == true,
     "observable listener absence must be verified after recovery")
 
+end
+
+do
 -- A removal call that returns normally but leaves the callback is not cleanup success.
 local unverified_player_report
 local unverified_player_controller = VirtualPlayer.new(player, {
@@ -1683,6 +1693,9 @@ assert(unverified_player_controller:_cleanup_player_listener() == true
     "the no-op removal case must remain recoverable")
 
 
+end
+
+do
 -- A target RemoveEventCallback call that leaves the listener observable is still pending.
 local target_noop_report
 local target_remove_original = pickup_target.RemoveEventCallback
@@ -1709,5 +1722,7 @@ assert(target_noop_controller:_cleanup_target_listeners() == true
     and target_noop_controller.target_listener_cleanup_verified == true
     and pickup_target:ListenerCount("death") == 0,
     "target listener cleanup must recover and verify actual removal")
+
+end
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
