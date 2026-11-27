@@ -1587,6 +1587,7 @@ local original_remove_event_callback = player.RemoveEventCallback
 player.RemoveEventCallback = function()
     error("synthetic listener cleanup failure")
 end
+player.picked_up = false
 local cleanup_controller = VirtualPlayer.new(player, {
     allowed_actions = { "PICKUP" },
     allowed_prefabs = { "cutgrass" },
