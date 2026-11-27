@@ -871,8 +871,12 @@ local legacy_pickup_accepted = pcall(function()
             { kind = "action", action = "PICKUP",
                 target = { prefab = "cutgrass" }, target_required = true },
             { kind = "assert", assertion = {
-                kind = "player_item_count_increased",
+                kind = "player_inventory_item_count_increased",
                 prefab = "cutgrass", target_step = 1, count = 1,
+            }, verifies_step = 1 },
+            { kind = "assert", assertion = {
+                kind = "pickup_target_collected",
+                prefab = "cutgrass", target_step = 1,
             }, verifies_step = 1 },
         },
     })
