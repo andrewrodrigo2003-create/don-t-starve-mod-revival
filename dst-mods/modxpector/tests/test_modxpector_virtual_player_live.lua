@@ -1607,6 +1607,13 @@ local cleanup_plan = {
 assert(cleanup_controller:Start(cleanup_plan))
 assert(cleanup_finished ~= nil and cleanup_finished.outcome == "inconclusive",
     "pending observer cleanup must make the run inconclusive")
+local cleanup_observer_result = cleanup_finished.step_event_observer_results ~= nil
+    and cleanup_finished.step_event_observer_results[1] or nil
+print("CLEANUP_DIAGNOSTIC",
+    tostring(cleanup_finished.step_event_observer_cleanup_pending),
+    tostring(cleanup_finished.player_onremove_cleanup_pending),
+    tostring(cleanup_observer_result ~= nil and cleanup_observer_result.reason or "no_observer_result"),
+    tostring(cleanup_observer_result ~= nil and cleanup_observer_result.cleanup_complete or "no_cleanup_flag"))
 assert(cleanup_finished.step_event_observer_cleanup_pending == true
     and cleanup_finished.player_onremove_cleanup_pending == true,
     "the report must expose pending observer and player listener cleanup")
