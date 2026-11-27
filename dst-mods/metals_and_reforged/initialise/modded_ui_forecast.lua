@@ -25,14 +25,12 @@ local FONT = GLOBAL.BODYTEXTFONT or GLOBAL.UIFONT or GLOBAL.NUMBERFONT
 local QUANTITY_FONT = GLOBAL.NUMBERFONT or "stint-ucr"
 
 local unpack = GLOBAL.unpack or unpack
+-- Mod environments expose a restricted global set; GLOBAL is the engine's
+-- full Lua environment and owns the standard select helper.
+local select = GLOBAL.select
 
--- DST's Lua 5.1 sandbox does not guarantee the global `select` helper.
--- Lua 5.1 supplies the vararg `arg` table locally, including its exact count,
--- so preserve nil/trailing return values without depending on a mutable global.
 local function pack(...)
-    local results = { ... }
-    results.n = arg.n
-    return results
+    return { n = select("#", ...), ... }
 end
 
 local function unpack_results(results)
