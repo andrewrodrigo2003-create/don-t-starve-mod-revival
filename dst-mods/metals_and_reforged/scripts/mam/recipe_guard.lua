@@ -346,9 +346,12 @@ function M.set_station(name, tech, filter)
 
     -- A successful earlier pass is already committed. Do not repeat it during
     -- the world-task fallback; preserving a later mod's change is safer.
-    if previous ~= nil and previous.applied then
+    if previous ~= nil and previous.applied
+        and previous.tech_input == tech and previous.filter == filter then
         result.applied = true
         result.reason = "already-applied"
+        result.tech_input = tech
+        result.filter = filter
         return true, result.reason
     end
 
@@ -463,6 +466,8 @@ function M.set_station(name, tech, filter)
 
     result.applied = true
     result.reason = "applied"
+    result.tech_input = tech
+    result.filter = filter
     MAMLog.Info("receita '%s' movida para tecnologia %s / filtro %s sem reescrever ingredientes",
         name, tostring(tech), tostring(filter))
     return true, result.reason
