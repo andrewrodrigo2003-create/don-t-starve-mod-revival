@@ -146,6 +146,12 @@ player = {
             end
         end
     end,
+    ListenerExists = function(self, event, callback, source)
+        for _, listener in ipairs(player_event_listeners[event] or {}) do
+            if listener.callback == callback and listener.source == source then return true end
+        end
+        return false
+    end,
     ListenerCount = function(self, event)
         return #(player_event_listeners[event] or {})
     end,
@@ -175,6 +181,12 @@ pickup_target.RemoveEventCallback = function(self, event, callback)
     for index = #listeners, 1, -1 do
         if listeners[index] == callback then table.remove(listeners, index) end
     end
+end
+pickup_target.ListenerExists = function(self, event, callback)
+    for _, listener in ipairs(self._event_listeners[event] or {}) do
+        if listener == callback then return true end
+    end
+    return false
 end
 pickup_target.ListenerCount = function(self, event)
     return #(self._event_listeners[event] or {})
@@ -1590,5 +1602,65 @@ assert(cleanup_controller:_cleanup_target_listeners() == true,
 assert(cleanup_controller.target_listener_cleanup_pending == false
     and pickup_target:ListenerCount("death") == 0,
     "recovered target listener cleanup must remove the listener")
+
+
+-- Isolated player onremove cleanup failure: no PICKUP and no step observer.
+local isolated_player_report
+local isolated_player_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) isolated_player_report = report end,
+})
+assert(isolated_player_controller:_bind_events() == true)
+assert(player:ListenerCount("onremove") == 1)
+local isolated_original_remove = player.RemoveEventCallback
+player.RemoveEventCallback = function(self, event, callback, source)
+    if event == "onremove" then error("isolated player listener cleanup failure") end
+    return isolated_original_remove(self, event, callback, source)
+end
+isolated_player_controller.queue = {}
+isolated_player_controller.index = 0
+isolated_player_controller.started_at = GetTime()
+isolated_player_controller:_finish(true, "isolated player listener cleanup")
+assert(isolated_player_report ~= nil and isolated_player_report.outcome == "inconclusive",
+    "an isolated player onremove cleanup failure must make the run inconclusive")
+assert(isolated_player_report.player_onremove_cleanup_pending == true
+    and isolated_player_controller.player_onremove_callback ~= nil
+    and isolated_player_controller.player_onremove_owner == player,
+    "failed player cleanup must retain the callback and original owner")
+local no_pickup_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "wait", seconds = 0 } },
+}
+assert(not pcall(function() isolated_player_controller:Start(no_pickup_plan) end),
+    "a new run must be blocked while the player onremove listener remains pending")
+player.RemoveEventCallback = isolated_original_remove
+assert(isolated_player_controller:_cleanup_player_listener() == true,
+    "player listener cleanup must be recoverable after restoring the removal API")
+assert(player:ListenerCount("onremove") == 0
+    and isolated_player_controller.player_onremove_cleanup_verified == true,
+    "observable listener absence must be verified after recovery")
+
+-- A removal call that returns normally but leaves the callback is not cleanup success.
+local unverified_player_report
+local unverified_player_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) unverified_player_report = report end,
+})
+assert(unverified_player_controller:_bind_events() == true)
+local no_op_remove = player.RemoveEventCallback
+player.RemoveEventCallback = function(self, event, callback, source)
+    if event == "onremove" then return end
+    return no_op_remove(self, event, callback, source)
+end
+unverified_player_controller.queue = {}
+unverified_player_controller.index = 0
+unverified_player_controller.started_at = GetTime()
+unverified_player_controller:_finish(true, "no-op listener removal")
+assert(unverified_player_report ~= nil and unverified_player_report.outcome == "inconclusive"
+    and unverified_player_report.player_onremove_cleanup_pending == true,
+    "a no-error removal call must not be accepted when the listener is still observable")
+player.RemoveEventCallback = no_op_remove
+assert(unverified_player_controller:_cleanup_player_listener() == true
+    and player:ListenerCount("onremove") == 0,
+    "the no-op removal case must remain recoverable")
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
