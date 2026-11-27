@@ -372,7 +372,8 @@ function VirtualPlayer:_finish(ok, message)
         end
     end
     self:_stop_step_event_observer()
-    self:_cleanup_target_listeners()
+    local target_cleanup_complete = self:_cleanup_target_listeners()
+    if not target_cleanup_complete then self.run_inconclusive = true end
     self:_cleanup_player_listener()
     if not ok then
         local current_step = self.queue[self.index]
@@ -415,6 +416,8 @@ function VirtualPlayer:Start(plan)
     assert(type(plan) == "table" and plan.schema == "modxpector/test-plan/v1", "unsupported test plan schema")
     assert(plan.enabled == true, "test plan is disabled")
     assert(type(plan.steps) == "table" and #plan.steps <= self.max_steps, "test plan exceeds step limit")
+    assert(self:_cleanup_target_listeners(),
+        "previous target listener cleanup is still pending")
     self.queue = plan.steps
     self.index = 0
     self.run_id = type(plan.run_id) == "string" and plan.run_id or nil
@@ -479,13 +482,22 @@ function VirtualPlayer:_capture_step_target(index, target)
 end
 
 function VirtualPlayer:_cleanup_target_listeners()
+    local pending = {}
     for index, callback in pairs(self.target_death_callbacks or {}) do
         local target = self.step_targets ~= nil and self.step_targets[index] or nil
+        local removed = false
         if target ~= nil and type(target.RemoveEventCallback) == "function" then
-            pcall(target.RemoveEventCallback, target, "death", callback)
+            local ok = pcall(target.RemoveEventCallback, target, "death", callback)
+            if not ok then
+                ok = pcall(target.RemoveEventCallback, target, "death", callback)
+            end
+            removed = ok
         end
+        if not removed then pending[index] = callback end
     end
-    self.target_death_callbacks = {}
+    self.target_death_callbacks = pending
+    self.target_listener_cleanup_pending = next(pending) ~= nil
+    return not self.target_listener_cleanup_pending
 end
 
 function VirtualPlayer:_start_step_event_observer(step, target)
@@ -1486,6 +1498,7 @@ function VirtualPlayer:GetReport()
         step_event_observer_results = self.step_event_observer_results or {},
         step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
         player_onremove_cleanup_pending = self.player_onremove_callback ~= nil,
+        target_listener_cleanup_pending = self.target_listener_cleanup_pending == true,
     }
 end
 
