@@ -661,7 +661,7 @@ check("oversized history quantities are discarded while valid history survives",
         and malformed_batch.recent_results[1].product == "iron_ingot"
         and malformed_batch.recent_results[1].quantity == 2)
 check("safe batch value is persisted after malformed load",
-
+    malformed_batch:OnSave().batch == 1)
 
 -- Robot auto-harvest must preserve the ready output if either the preflight
 -- template or a later output stack cannot be constructed.
