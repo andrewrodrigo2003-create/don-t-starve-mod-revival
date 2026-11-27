@@ -436,8 +436,8 @@ function VirtualPlayer:_finish(ok, message)
     else
         self.failure = message
     end
-    local final_status = self.run_inconclusive and "inconclusive"
-        or (ok and "completed" or "failed")
+    local final_status = not ok and "failed"
+        or (self.run_inconclusive and "inconclusive" or "completed")
     self:_record({ kind = "run" }, final_status, message)
     if self.on_finished ~= nil then
         local report_ok, report_or_error = pcall(function() return self:GetReport() end)
