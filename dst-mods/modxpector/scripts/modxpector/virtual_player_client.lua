@@ -395,9 +395,10 @@ function VirtualPlayer:_finish(ok, message)
     if self.active_step_event_observer ~= nil then self.run_inconclusive = true end
     local target_cleanup_complete = self:_cleanup_target_listeners()
     if not target_cleanup_complete then self.run_inconclusive = true end
+    local player_listener_was_registered = self.player_onremove_callback ~= nil
     local player_cleanup_complete = self:_cleanup_player_listener()
     if not player_cleanup_complete or self.player_onremove_callback ~= nil
-        or self.player_onremove_cleanup_verified ~= true then
+        or (player_listener_was_registered and self.player_onremove_cleanup_verified ~= true) then
         self.run_inconclusive = true
     end
     if not target_cleanup_complete or self.target_listener_cleanup_verified ~= true then
@@ -462,8 +463,9 @@ function VirtualPlayer:Start(plan)
                 if type(postcondition) == "table" and postcondition.kind == "assert"
                     and type(postcondition.assertion) == "table"
                     and postcondition.assertion.kind == "pickup_target_collected"
-                    and tonumber(postcondition.assertion.target_step) == action_index
-                    and postcondition.assertion.prefab == (candidate.target ~= nil and candidate.target.prefab or nil)
+                    and postcondition.assertion.target_step == action_index
+                    and type(candidate.target) == "table"
+                    and postcondition.assertion.prefab == candidate.target.prefab
                     and postcondition.verifies_step == action_index then
                     matching_identity_assertion = true
                     break
