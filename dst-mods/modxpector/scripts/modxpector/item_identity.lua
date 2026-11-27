@@ -250,6 +250,71 @@ function M.CapturePickupTarget(target, protected_call)
     return snapshot
 end
 
+
+function M.Capture(inventory, player, target, protected_call)
+    local result = {
+        schema = "modxpector/item-identity-capture/v1",
+        complete = false,
+        player = capture_inventory(inventory, protected_call),
+        target = target ~= nil and capture_target(target, player, protected_call) or nil,
+    }
+    result.complete = result.player.complete
+        and (result.target == nil or result.target.complete)
+    return result
+end
+
+function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
+    if type(data) ~= "table" then
+        return "unverified", "event payload is unavailable"
+    end
+
+    if event_name == "itemget" then
+        if data.ignore_stacksize_anim ~= true then
+            return "preview_or_unverified", "itemget lacks the network-sync marker"
+        end
+        local valid = valid_entity(data.item, protected_call)
+        if valid ~= true or type(data.slot) ~= "number"
+            or data.slot < 1 or data.slot ~= math.floor(data.slot) then
+            return "unverified", "network-shaped itemget lacks a valid entity or slot"
+        end
+        return "network_shape_candidate", "itemget carries the client classified sync marker"
+    end
+
+    if event_name == "itemlose" then
+        if data.item ~= nil or data.prev_item ~= nil then
+            return "preview_or_unverified", "itemlose includes a preview item reference"
+        end
+        if type(data.slot) ~= "number" or data.slot < 1
+            or data.slot ~= math.floor(data.slot) then
+            return "unverified", "itemlose slot is invalid"
+        end
+        return "network_shape_candidate", "itemlose has the slot-only client classified shape"
+    end
+
+    if event_name == "stacksizechange" then
+        local item = event_entity or data.item
+        local valid = valid_entity(item, protected_call)
+        if valid ~= true or not finite_number(data.stacksize)
+            or data.stacksize < 1 or data.stacksize ~= math.floor(data.stacksize) then
+            return "unverified", "stacksizechange lacks a valid entity or stack size"
+        end
+        return "network_shape_candidate", "stacksizechange uses the network-synced event channel"
+    end
+
+    if event_name == "stacksizepreview" then
+        return "preview_or_unverified", "stacksizepreview is a client prediction event"
+    end
+
+    return "unverified", "event type is outside the supported replica event set"
+end
+
+local function inconclusive(reason)
+    return {
+        outcome = "inconclusive",
+        reason = reason,
+    }
+end
+
 function M.ComparePickup(before, after, target_before, target_entity, selected_guid, protected_call)
     if type(before) ~= "table" or before.schema ~= "modxpector/item-identity-capture/v1"
         or type(after) ~= "table" or after.schema ~= "modxpector/item-identity-capture/v1" then
@@ -313,70 +378,6 @@ function M.ComparePickup(before, after, target_before, target_entity, selected_g
         evidence = "client_replica_snapshot_only",
         causality = "unproven",
         server_authority = "unverified",
-    }
-end
-
-function M.Capture(inventory, player, target, protected_call)
-    local result = {
-        schema = "modxpector/item-identity-capture/v1",
-        complete = false,
-        player = capture_inventory(inventory, protected_call),
-        target = target ~= nil and capture_target(target, player, protected_call) or nil,
-    }
-    result.complete = result.player.complete
-        and (result.target == nil or result.target.complete)
-    return result
-end
-
-function M.ClassifyReplicaEvent(event_name, data, event_entity, protected_call)
-    if type(data) ~= "table" then
-        return "unverified", "event payload is unavailable"
-    end
-
-    if event_name == "itemget" then
-        if data.ignore_stacksize_anim ~= true then
-            return "preview_or_unverified", "itemget lacks the network-sync marker"
-        end
-        local valid = valid_entity(data.item, protected_call)
-        if valid ~= true or type(data.slot) ~= "number"
-            or data.slot < 1 or data.slot ~= math.floor(data.slot) then
-            return "unverified", "network-shaped itemget lacks a valid entity or slot"
-        end
-        return "network_shape_candidate", "itemget carries the client classified sync marker"
-    end
-
-    if event_name == "itemlose" then
-        if data.item ~= nil or data.prev_item ~= nil then
-            return "preview_or_unverified", "itemlose includes a preview item reference"
-        end
-        if type(data.slot) ~= "number" or data.slot < 1
-            or data.slot ~= math.floor(data.slot) then
-            return "unverified", "itemlose slot is invalid"
-        end
-        return "network_shape_candidate", "itemlose has the slot-only client classified shape"
-    end
-
-    if event_name == "stacksizechange" then
-        local item = event_entity or data.item
-        local valid = valid_entity(item, protected_call)
-        if valid ~= true or not finite_number(data.stacksize)
-            or data.stacksize < 1 or data.stacksize ~= math.floor(data.stacksize) then
-            return "unverified", "stacksizechange lacks a valid entity or stack size"
-        end
-        return "network_shape_candidate", "stacksizechange uses the network-synced event channel"
-    end
-
-    if event_name == "stacksizepreview" then
-        return "preview_or_unverified", "stacksizepreview is a client prediction event"
-    end
-
-    return "unverified", "event type is outside the supported replica event set"
-end
-
-local function inconclusive(reason)
-    return {
-        outcome = "inconclusive",
-        reason = reason,
     }
 end
 
