@@ -159,6 +159,20 @@ pickup_target = {
     HasTag = function() return false end,
     Transform = { GetWorldPosition = function() return 1, 0, 0 end },
 }
+local pickup_target_event_listeners = {}
+pickup_target.ListenForEvent = function(self, event, callback)
+    pickup_target_event_listeners[event] = pickup_target_event_listeners[event] or {}
+    table.insert(pickup_target_event_listeners[event], callback)
+end
+pickup_target.RemoveEventCallback = function(self, event, callback)
+    local listeners = pickup_target_event_listeners[event] or {}
+    for index = #listeners, 1, -1 do
+        if listeners[index] == callback then table.remove(listeners, index) end
+    end
+end
+pickup_target.ListenerCount = function(self, event)
+    return #(pickup_target_event_listeners[event] or {})
+end
 local birdcage_target = {
     prefab = "birdcage",
     IsValid = function() return true end,
@@ -1527,5 +1541,45 @@ assert(player:ListenerCount("itemget") == 0
     and player:ListenerCount("itemlose") == 0
     and player:ListenerCount("onremove") == 0,
     "all recovered listeners must be removed")
+assert(pickup_target:ListenerCount("death") == 0,
+    "the target death listener must also be removed after the run")
+
+-- Target listener cleanup failures must remain visible and recoverable.
+local target_cleanup_finished
+local original_target_remove_event_callback = pickup_target.RemoveEventCallback
+pickup_target.RemoveEventCallback = function()
+    error("synthetic target listener cleanup failure")
+end
+local target_cleanup_controller = VirtualPlayer.new(player, {
+    allowed_actions = { "MOD_ACTION" },
+    allowed_prefabs = { "cutgrass" },
+    on_finished = function(report) target_cleanup_finished = report end,
+})
+local target_cleanup_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    run_id = "live-vp-target-listener-cleanup-failure",
+    steps = {
+        { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
+        { kind = "wait", seconds = 0 },
+    },
+}
+assert(target_cleanup_controller:Start(target_cleanup_plan))
+assert(target_cleanup_finished ~= nil and target_cleanup_finished.outcome == "inconclusive",
+    "target listener cleanup failure must make the run inconclusive")
+assert(target_cleanup_finished.target_listener_cleanup_pending == true,
+    "the final report must expose pending target listener cleanup")
+assert(next(target_cleanup_controller.target_death_callbacks) ~= nil
+    and pickup_target:ListenerCount("death") == 1,
+    "the target callback handle must be retained while cleanup is pending")
+local restart_ok = pcall(function() target_cleanup_controller:Start(target_cleanup_plan) end)
+assert(not restart_ok,
+    "a new run must not discard a previous target listener cleanup handle")
+pickup_target.RemoveEventCallback = original_target_remove_event_callback
+assert(target_cleanup_controller:_cleanup_target_listeners() == true,
+    "target listener cleanup must be recoverable after a transient failure")
+assert(target_cleanup_controller.target_listener_cleanup_pending == false
+    and pickup_target:ListenerCount("death") == 0,
+    "recovered target listener cleanup must remove the listener")
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")
