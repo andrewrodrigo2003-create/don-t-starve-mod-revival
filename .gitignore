@@ -30,3 +30,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local ModXpector credentials
+dst-mods/modxpector/bridge_token.txt

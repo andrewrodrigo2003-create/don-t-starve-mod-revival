@@ -1,0 +1,41 @@
+name: ModXpector package
+
+on:
+  push:
+    branches:
+      - "modxpector/5.0.14-dev"
+      - "security/modxpector-5.0.14-opt-in-2026-11-23"
+    paths:
+      - "dst-mods/modxpector/**"
+      - ".github/workflows/modxpector-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-package:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Lua 5.1 and Python
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1 python3
+      - name: Run ModXpector Lua tests
+        run: |
+          LUA_BIN=lua5.1 bash dst-mods/modxpector/tests/run-lua-tests.sh
+      - name: Build distributable ZIP
+        run: |
+          python3 dst-mods/modxpector/tools/build_package.py
+          unzip -t dist/modxpector/ModXpector-5.0.14-dev-test.zip
+      - name: Upload test package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ModXpector-5.0.14-dev-test
+          path: dist/modxpector/ModXpector-5.0.14-dev-test.zip
+          if-no-files-found: error
+          retention-days: 14
