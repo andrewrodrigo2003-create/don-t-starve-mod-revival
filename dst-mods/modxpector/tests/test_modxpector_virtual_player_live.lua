@@ -1551,20 +1551,18 @@ pickup_target.RemoveEventCallback = function()
     error("synthetic target listener cleanup failure")
 end
 cleanup_controller = VirtualPlayer.new(player, {
-    allowed_actions = { "MOD_ACTION" },
-    allowed_prefabs = { "cutgrass" },
     on_finished = function(report) cleanup_finished = report end,
 })
-cleanup_plan = {
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    run_id = "live-vp-target-listener-cleanup-failure",
-    steps = {
-        { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
-        { kind = "wait", seconds = 0 },
-    },
-}
-assert(cleanup_controller:Start(cleanup_plan))
+cleanup_controller.step_targets = {}
+cleanup_controller.target_death_callbacks = {}
+cleanup_controller.queue = {}
+cleanup_controller.index = 0
+cleanup_controller.run_id = "live-vp-target-listener-cleanup-failure"
+cleanup_controller.started_at = GetTime()
+cleanup_controller:_capture_step_target(1, pickup_target)
+assert(pickup_target:ListenerCount("death") == 1,
+    "the synthetic target must register one death listener")
+cleanup_controller:_finish(true, "synthetic target cleanup")
 assert(cleanup_finished ~= nil and cleanup_finished.outcome == "inconclusive",
     "target listener cleanup failure must make the run inconclusive")
 assert(cleanup_finished.target_listener_cleanup_pending == true,
