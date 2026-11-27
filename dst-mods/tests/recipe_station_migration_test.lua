@@ -65,6 +65,24 @@ assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.goldenaxe ~= nil, "
 assert(#filter_calls == 2 and filter_calls[1].filter == "CRAFTING_STATION")
 assert(filter_calls[2].filter == "removed:TOOLS" and filter_calls[2].name == "goldenaxe")
 
+-- A completed migration must not bypass third-party integration checks if a
+-- later mod changes the recipe ingredients before the retry pass.
+local post_move_ingredients = { { type = "post_move_modded_metal", amount = 3 } }
+AllRecipes.goldenaxe.ingredients = post_move_ingredients
+third_party_recipe_integration = false
+local post_move_skipped, post_move_skip_reason = guard.set_station(
+    "goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+assert(not post_move_skipped and post_move_skip_reason == "third-party-integration-disabled")
+assert(AllRecipes.goldenaxe.ingredients == post_move_ingredients,
+    "retry must preserve ingredients changed by another mod")
+third_party_recipe_integration = true
+local post_move_adapted, post_move_adapted_reason = guard.set_station(
+    "goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION")
+assert(post_move_adapted and post_move_adapted_reason == "applied")
+assert(AllRecipes.goldenaxe.ingredients == post_move_ingredients,
+    "retry with integration enabled must preserve the live third-party ingredients")
+AllRecipes.goldenaxe.ingredients = ingredient_ref
+
 local calls_after_first_pass = #filter_calls
 assert(guard.set_station("goldenaxe", TECH.ALCHEMY_ONE, "CRAFTING_STATION"))
 assert(#filter_calls == calls_after_first_pass, "repeated station migration must not duplicate filter entries")
