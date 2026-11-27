@@ -16,6 +16,22 @@ local stack_size = function(item)
     return 1
 end
 
+-- The public batch-cap setting tops out at 20. Bound save-derived quantities
+-- before they reach output loops or replicated history, even if a save is
+-- malformed or was edited by an external tool.
+local MAX_BATCH_OUTPUT = 20
+
+local function valid_batch(value)
+    local amount = tonumber(value)
+    return amount ~= nil and amount == amount
+        and amount >= 1 and amount <= MAX_BATCH_OUTPUT
+        and amount % 1 == 0
+end
+
+local function normalized_batch(value)
+    return valid_batch(value) and tonumber(value) or 1
+end
+
 local Smelter = Class(function(self, inst)
     self.inst = inst
 
@@ -425,7 +441,7 @@ function Smelter:TryAutoHarvestToStorage()
         return false
     end
 
-    local remaining = math.max(1, tonumber(self.batch) or 1)
+    local remaining = normalized_batch(self.batch)
     local template = SpawnPrefab(self.product)
     if template == nil then
         return false
@@ -534,10 +550,11 @@ function Smelter:RecordSuccessfulResult()
         return false
     end
 
-    local quantity = tonumber(self.batch) or 1
-    if quantity < 1 or quantity % 1 ~= 0 then
+    if not valid_batch(self.batch) then
+        MAMLog.WarnOnce("smelter:invalid-history-batch", "quantidade de lote invalida; historico nao registrado")
         return false
     end
+    local quantity = tonumber(self.batch)
 
     self.recent_results = self.recent_results or {}
     table.insert(self.recent_results, 1, {
@@ -741,10 +758,7 @@ function Smelter:Harvest(harvester)
     end
 
     if self.product ~= nil and harvester ~= nil and harvester.components.inventory ~= nil then
-        local remaining = self.batch or 1
-        if remaining < 1 then
-            remaining = 1
-        end
+        local remaining = normalized_batch(self.batch)
 
         while remaining > 0 do
             -- SpawnPrefab may return nil or throw (for example, when a prefab
@@ -875,7 +889,7 @@ function Smelter:OnSave()
     {
         canharvest = self.canharvest,
         product = self.product,
-        batch = self.batch,
+        batch = normalized_batch(self.batch),
         smelttime = self.smelttime,
         issmelting = self.issmelting,
         active_receipt = self.active_receipt,
@@ -889,7 +903,11 @@ function Smelter:OnLoad(data)
 
     if data ~= nil then
         self.product = data.product or nil
-        self.batch = data.batch or 1
+        self.batch = normalized_batch(data.batch)
+        if data.batch ~= nil and not valid_batch(data.batch) then
+            MAMLog.WarnOnce("smelter:invalid-saved-batch",
+                "quantidade de lote salva invalida; usando fallback seguro de uma unidade")
+        end
         self.active_receipt = nil
         self.refund_pending = data.refund_pending == true
         self.recent_results = {}
@@ -897,7 +915,8 @@ function Smelter:OnLoad(data)
             for _, entry in ipairs(data.recent_results) do
                 if type(entry) == "table" and type(entry.product) == "string"
                     and entry.product ~= "" and type(entry.quantity) == "number"
-                    and entry.quantity >= 1 and entry.quantity % 1 == 0 then
+                    and entry.quantity >= 1 and entry.quantity <= MAX_BATCH_OUTPUT
+                    and entry.quantity % 1 == 0 then
                     table.insert(self.recent_results, {
                         product = entry.product,
                         quantity = entry.quantity,
