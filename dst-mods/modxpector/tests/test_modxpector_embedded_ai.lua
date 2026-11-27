@@ -414,7 +414,7 @@ assert(mam_plan.steps[1].kind == "spawn_entity"
     and mam_plan.steps[1].prefab == "donharpoon" and mam_plan.steps[1].count == 1,
     "the built-in fixture must spawn exactly one allowlisted Don Harpoon on the server")
 assert(mam_plan.steps[2].action == "PICKUP"
-    and mam_plan.steps[3].assertion.kind == "player_inventory_item_count_increased"
+    and mam_plan.steps[3].assertion.kind == "pickup_target_collected"
     and mam_plan.steps[3].assertion.target_step == 2
     and mam_plan.steps[3].verifies_step == 2,
     "the suite must verify the inventory delta from the PICKUP action")
