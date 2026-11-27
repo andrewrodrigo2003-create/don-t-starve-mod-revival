@@ -26,6 +26,16 @@ assert 'local function character_rate(character, material)' in module
 assert 'return MAMDeconstruction.BASE_RECOVERY' in module
 assert 'simplebook' in prefab and 'components.simplebook.onreadfn' in prefab
 assert 'smelting_products' in screen
+assert 'Requisitos não documentados' in screen
+assert 'Requirements not documented' in screen
+assert 'Carga mista (receita legada)' not in screen
+assert 'Mixed load (legacy recipe)' not in screen
+for source in ('Rocky selvagem', 'Slurtle', 'Snurtle', 'escombros de cavernas', 'estátuas antigas'):
+    assert source in screen, f"mining guide omits declared source: {source}"
+assert 'catálogo exaustivo' in screen
+assert 'toggle mestre de drops extras' in screen
+assert 'Uncompromising Mode' in screen
+
 assert 'metallurgy_reference_book' in modmain
 assert 'AddRecipe2("metallurgy_reference_book"' in modmain
 assert 'AddComponent("prototyper")' not in prefab
