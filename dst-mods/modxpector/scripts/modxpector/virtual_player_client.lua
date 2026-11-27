@@ -31,6 +31,21 @@ local function is_finite_number(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function remove_event_listener(owner, event_name, callback, source)
+    if owner == nil or type(owner.RemoveEventCallback) ~= "function" then
+        return false, false
+    end
+    local removed = pcall(owner.RemoveEventCallback, owner, event_name, callback, source)
+    if not removed then return false, false end
+    if type(owner.ListenerExists) == "function" then
+        local verify_ok, exists = pcall(owner.ListenerExists, owner, event_name, callback, source)
+        if not verify_ok or exists == true then return false, false end
+        if exists == false then return true, true end
+    end
+    -- The runtime accepted the removal call, but does not expose independent listener inspection.
+    return true, nil
+end
+
 local function safe_get_time()
     if type(GetTime) ~= "function" then return nil end
     local ok, value = pcall(GetTime)
@@ -87,9 +102,11 @@ function VirtualPlayer:_bind_events()
     local callback = function()
         self:Stop("player entity removed")
     end
-    local ok = pcall(self.player.ListenForEvent, self.player, "onremove", callback)
+    local owner = self.player
+    local ok = pcall(owner.ListenForEvent, owner, "onremove", callback)
     if ok then
         self.player_onremove_callback = callback
+        self.player_onremove_owner = owner
         return true
     end
     return false
@@ -98,14 +115,15 @@ end
 function VirtualPlayer:_cleanup_player_listener()
     local callback = self.player_onremove_callback
     if callback == nil then return true end
-    local player = self.player
-    if player == nil or type(player.RemoveEventCallback) ~= "function" then
+    local owner = self.player_onremove_owner or self.player
+    local removed, verified = remove_event_listener(owner, "onremove", callback)
+    self.player_onremove_cleanup_verified = verified
+    if removed then
         self.player_onremove_callback = nil
-        return false
+        self.player_onremove_owner = nil
+        return true
     end
-    local ok = pcall(player.RemoveEventCallback, player, "onremove", callback)
-    if ok then self.player_onremove_callback = nil end
-    return ok
+    return false
 end
 
 function VirtualPlayer:ResolveTarget(selector)
@@ -372,9 +390,13 @@ function VirtualPlayer:_finish(ok, message)
         end
     end
     self:_stop_step_event_observer()
+    if self.active_step_event_observer ~= nil then self.run_inconclusive = true end
     local target_cleanup_complete = self:_cleanup_target_listeners()
     if not target_cleanup_complete then self.run_inconclusive = true end
-    self:_cleanup_player_listener()
+    local player_cleanup_complete = self:_cleanup_player_listener()
+    if not player_cleanup_complete or self.player_onremove_callback ~= nil then
+        self.run_inconclusive = true
+    end
     if not ok then
         local current_step = self.queue[self.index]
         if current_step ~= nil then
@@ -399,7 +421,9 @@ function VirtualPlayer:_finish(ok, message)
     else
         self.failure = message
     end
-    self:_record({ kind = "run" }, ok and "completed" or "failed", message)
+    local final_status = self.run_inconclusive and "inconclusive"
+        or (ok and "completed" or "failed")
+    self:_record({ kind = "run" }, final_status, message)
     if self.on_finished ~= nil then
         local report_ok, report_or_error = pcall(function() return self:GetReport() end)
         if report_ok then
@@ -435,6 +459,8 @@ function VirtualPlayer:Start(plan)
                 "PICKUP requires an exact pickup_target_collected postcondition")
         end
     end
+    assert(self:_cleanup_player_listener(),
+        "previous player onremove listener cleanup is still pending")
     assert(self:_cleanup_target_listeners(),
         "previous target listener cleanup is still pending")
     self.queue = plan.steps
@@ -503,20 +529,25 @@ end
 
 function VirtualPlayer:_cleanup_target_listeners()
     local pending = {}
+    local all_verified = true
+    local verification_available = true
     for index, callback in pairs(self.target_death_callbacks or {}) do
         local target = self.step_targets ~= nil and self.step_targets[index] or nil
-        local removed = false
-        if target ~= nil and type(target.RemoveEventCallback) == "function" then
-            local ok = pcall(target.RemoveEventCallback, target, "death", callback)
-            if not ok then
-                ok = pcall(target.RemoveEventCallback, target, "death", callback)
-            end
-            removed = ok
+        local removed, verified = remove_event_listener(target, "death", callback)
+        if not removed then
+            removed, verified = remove_event_listener(target, "death", callback)
         end
-        if not removed then pending[index] = callback end
+        if verified == nil then verification_available = false end
+        if not removed then
+            pending[index] = callback
+            all_verified = false
+        elseif verified ~= true then
+            all_verified = false
+        end
     end
     self.target_death_callbacks = pending
     self.target_listener_cleanup_pending = next(pending) ~= nil
+    self.target_listener_cleanup_verified = all_verified and verification_available
     return not self.target_listener_cleanup_pending
 end
 
@@ -577,11 +608,12 @@ function VirtualPlayer:_stop_step_event_observer(index)
     local active = self.active_step_event_observer
     if active == nil or (index ~= nil and active.index ~= index) then return nil end
     if StepEventObserver == nil then
-        self.active_step_event_observer = nil
         self.step_event_observer_results[active.index] = {
             complete = false,
+            cleanup_complete = false,
             reason = "step_event_observer_unavailable_during_cleanup",
         }
+        self.run_inconclusive = true
         return self.step_event_observer_results[active.index]
     end
 
@@ -1612,7 +1644,9 @@ function VirtualPlayer:GetReport()
         step_event_observer_results = self.step_event_observer_results or {},
         step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
         player_onremove_cleanup_pending = self.player_onremove_callback ~= nil,
+        player_onremove_cleanup_verified = self.player_onremove_cleanup_verified,
         target_listener_cleanup_pending = self.target_listener_cleanup_pending == true,
+        target_listener_cleanup_verified = self.target_listener_cleanup_verified,
     }
 end
 
