@@ -640,6 +640,26 @@ check("forge history survives save/load",
         and history_loaded.recent_results[1].product == "bronze_ingot")
 check("loaded forge history is republished", history_loaded_inst.mam_recent_results.value == "3")
 
+-- Save-derived output counts are bounded by the public maximum batch cap.
+local malformed_batch, malformed_batch_inst = new_smelter(make_container({}))
+malformed_batch:OnLoad({
+    canharvest = true,
+    product = "copper_ingot",
+    batch = 999999,
+    recent_results = {
+        { product = "copper_ingot", quantity = 999999 },
+        { product = "iron_ingot", quantity = 2 },
+    },
+})
+check("malformed saved batch is reduced to safe single output",
+    malformed_batch.batch == 1)
+check("oversized history quantities are discarded while valid history survives",
+    #malformed_batch.recent_results == 1
+        and malformed_batch.recent_results[1].product == "iron_ingot"
+        and malformed_batch.recent_results[1].quantity == 2)
+check("safe batch value is persisted after malformed load",
+    malformed_batch:OnSave().batch == 1)
+
 io.write("\n", passed, " passed; ", failed, " failed\n")
 if failed > 0 then
     os.exit(1)
