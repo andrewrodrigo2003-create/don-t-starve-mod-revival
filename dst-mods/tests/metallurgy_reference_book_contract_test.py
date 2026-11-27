@@ -9,6 +9,7 @@ smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
 smelter_prefab = (root / "scripts/prefabs/metal_smelter.lua").read_text(encoding="utf-8")
 screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
 modmain = (root / "modmain.lua").read_text(encoding="utf-8")
+modinfo = (root / "modinfo.lua").read_text(encoding="utf-8")
 recipes = (root / "initialise/modded_recipes.lua").read_text(encoding="utf-8")
 actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
 
