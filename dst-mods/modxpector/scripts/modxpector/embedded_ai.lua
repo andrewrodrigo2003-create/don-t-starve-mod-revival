@@ -1009,6 +1009,7 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
         if not finite_in_range(assertion.value, 0, 100000) then return nil end
         result.value = assertion.value
     elseif kind == "pickup_target_collected" then
+        if assertion.expected ~= nil and assertion.expected ~= true then return nil end
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
             or target_step ~= math.floor(target_step)
