@@ -193,20 +193,20 @@ def mask_lua_noncode(source: str) -> str:
 
     def mask(start: int, end: int) -> None:
         for pos in range(start, end):
-            if out[pos] not in "\\r\\n":
+            if out[pos] not in "\r\n":
                 out[pos] = " "
 
     while i < n:
         # Comments are recognized only when outside quoted/long-bracket strings.
         if source.startswith("--", i):
-            long_comment = re.match(r"--\\[(=*)\\[", source[i:])
+            long_comment = re.match(r"--\[(=*)\[", source[i:])
             if long_comment:
                 close = "]" + long_comment.group(1) + "]"
                 body_start = i + long_comment.end()
                 close_at = source.find(close, body_start)
                 end = n if close_at < 0 else close_at + len(close)
             else:
-                end = source.find("\\n", i)
+                end = source.find("\n", i)
                 if end < 0:
                     end = n
             mask(i, end)
@@ -219,7 +219,7 @@ def mask_lua_noncode(source: str) -> str:
             quote = ch
             i += 1
             while i < n:
-                if source[i] == "\\\\":
+                if source[i] == "\\":
                     i += 2
                     continue
                 if source[i] == quote:
@@ -227,14 +227,14 @@ def mask_lua_noncode(source: str) -> str:
                     break
                 # A raw newline terminates an invalid short string for recovery;
                 # preserve the newline and continue scanning subsequent Lua code.
-                if source[i] in "\\r\\n":
+                if source[i] in "\r\n":
                     break
                 i += 1
             mask(start, i)
             continue
 
         if ch == "[":
-            long_string = re.match(r"\\[(=*)\\[", source[i:])
+            long_string = re.match(r"\[(=*)\[", source[i:])
             if long_string:
                 close = "]" + long_string.group(1) + "]"
                 body_start = i + long_string.end()
