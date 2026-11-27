@@ -24,7 +24,7 @@ The 2.9.6 package remains a separate test candidate. This work is developed on a
 
 Deconstruction applies to **all basic and intermediate materials owned by MAM**, never crafted equipment, weapons, armor, tools, or structures.
 
-Required coverage includes every MAM material prefab, not only the current copper/iron/gold/bronze/moonglass/adamantium subset: dusts, ores, ingots/alloys, gem shards, by-products, and other registered raw/refined material items (including sharkscale where applicable). The final registry must be generated/audited against the actual prefab and recipe lists so no MAM material is silently omitted.
+Required coverage is an explicit disposition for every MAM material prefab, not a promise that every item is dismantlable. Inventory dusts, ores, ingots/alloys, gem shards, by-products and other registered raw/refined items (including sharkscale where applicable) against actual prefab/recipe lists. Each must be marked as: supported with a safe lower-stage return rule; terminal/base input; by-product with no safe reverse provenance; or deferred pending a balance decision. The current 2.9.6 implementation supports only the explicit return table and intentionally rejects base inputs/by-products such as metal dusts, `junk_dust`, gem shards and `sharkscale`. Do not invent salvage returns to satisfy nominal coverage.
 
 - Use reverse provenance from the live smelting/material recipe registry where available; preserve source material identity and prevent upward conversion or profitable loops.
 - Handle tagged/alternative ingredients through the authoritative smelting planner, not a guessed fixed recipe.
