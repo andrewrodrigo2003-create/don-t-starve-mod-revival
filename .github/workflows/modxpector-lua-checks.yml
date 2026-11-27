@@ -32,8 +32,9 @@ jobs:
 
       - name: Install Lua 5.1
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends lua5.1
+          APT_UBUNTU_ONLY=(-o Dir::Etc::sourcelist="sources.list.d/ubuntu.sources" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0")
+          sudo apt-get "${APT_UBUNTU_ONLY[@]}" update
+          sudo apt-get "${APT_UBUNTU_ONLY[@]}" install --yes --no-install-recommends lua5.1
 
       - name: Run read-only Lua scanner regression tests
         run: |
