@@ -461,6 +461,13 @@ function VirtualPlayer:Start(plan)
             local matching_identity_assertion = false
             for _, postcondition in ipairs(plan.steps) do
                 if type(postcondition) == "table" and postcondition.kind == "assert"
+                    and postcondition.verifies_step == action_index
+                    and type(postcondition.assertion) == "table"
+                    and (postcondition.assertion.kind == "player_inventory_item_count_increased"
+                        or postcondition.assertion.kind == "player_item_count_increased") then
+                    error("aggregate prefab-count assertions cannot verify PICKUP identity")
+                end
+                if type(postcondition) == "table" and postcondition.kind == "assert"
                     and type(postcondition.assertion) == "table"
                     and postcondition.assertion.kind == "pickup_target_collected"
                     and postcondition.assertion.target_step == action_index
