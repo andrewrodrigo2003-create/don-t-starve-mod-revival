@@ -510,6 +510,10 @@ function VirtualPlayer:Start(plan)
     self.step_inventory_baselines = {}
     self.step_transfer_baselines = {}
     self.step_pickup_baselines = {}
+    self.player_onremove_cleanup_verified = nil
+    self.player_onremove_cleanup_verification = nil
+    self.target_listener_cleanup_verified = nil
+    self.target_listener_cleanup_verification = nil
     self.target_death_events = {}
     self.target_death_callbacks = {}
     self.run_inconclusive = false
