@@ -414,7 +414,7 @@ assert(mam_plan.steps[1].kind == "spawn_entity"
     and mam_plan.steps[1].prefab == "donharpoon" and mam_plan.steps[1].count == 1,
     "the built-in fixture must spawn exactly one allowlisted Don Harpoon on the server")
 assert(mam_plan.steps[2].action == "PICKUP"
-    and mam_plan.steps[3].assertion.kind == "player_inventory_item_count_increased"
+    and mam_plan.steps[3].assertion.kind == "pickup_target_collected"
     and mam_plan.steps[3].assertion.target_step == 2
     and mam_plan.steps[3].verifies_step == 2,
     "the suite must verify the inventory delta from the PICKUP action")
@@ -448,8 +448,8 @@ local external_fixture_suite = {
                 { kind = "action", action = "PICKUP",
                     target = { prefab = "donharpoon", radius = 12 }, target_required = true },
                 { kind = "assert", assertion = {
-                    kind = "player_inventory_item_count_increased",
-                    target_step = 2, prefab = "donharpoon", count = 1,
+                    kind = "pickup_target_collected",
+                    target_step = 2, prefab = "donharpoon",
                 }, verifies_step = 2 },
             },
         },
@@ -554,8 +554,8 @@ local pickup_suite = {
                 { kind = "action", action = "PICKUP",
                     target = { prefab = "my_test_item", radius = 12 }, target_required = true },
                 { kind = "assert", assertion = {
-                    kind = "player_inventory_item_count_increased",
-                    target_step = 1, prefab = "my_test_item", count = 1,
+                    kind = "pickup_target_collected",
+                    target_step = 1, prefab = "my_test_item",
                 }, verifies_step = 1 },
             },
         },
@@ -563,16 +563,15 @@ local pickup_suite = {
 }
 local pickup_suite_ok, normalized_pickup_suite = AI.ValidateSuite(pickup_suite)
 assert(pickup_suite_ok == true and normalized_pickup_suite.scenarios[1].steps[1].action == "PICKUP",
-    "bounded PICKUP suites with inventory-delta postconditions should be accepted")
+    "bounded PICKUP suites with exact identity postconditions should be accepted")
 local pickup_plan, pickup_plan_error = AI.BuildVirtualPlayerPlan(
     normalized_pickup_suite, "pickup_my_test_item", "pickup_suite_run_1")
 assert(pickup_plan ~= nil and pickup_plan_error == nil)
 assert(pickup_plan.allowed_actions[1] == "PICKUP")
-assert(pickup_plan.steps[2].assertion.kind == "player_inventory_item_count_increased"
+assert(pickup_plan.steps[2].assertion.kind == "pickup_target_collected"
     and pickup_plan.steps[2].assertion.target_step == 1
-    and pickup_plan.steps[2].assertion.prefab == "my_test_item"
-    and pickup_plan.steps[2].assertion.count == 1,
-    "pickup plan must preserve its exact inventory delta postcondition")
+    and pickup_plan.steps[2].assertion.prefab == "my_test_item",
+    "pickup plan must preserve its exact identity postcondition")
 
 local pickup_without_postcondition = {
     schema = "modxpector/test-suite/v1",
@@ -612,7 +611,8 @@ local pickup_bad_count = {
     },
 }
 local bad_pickup_count_ok = AI.ValidateSuite(pickup_bad_count)
-assert(bad_pickup_count_ok == false, "PICKUP inventory delta must be a positive bounded integer")
+assert(bad_pickup_count_ok == false,
+    "legacy aggregate prefab-count assertions must no longer be accepted for PICKUP")
 
 local pickup_wrong_action_reference = {
     schema = "modxpector/test-suite/v1",
@@ -627,8 +627,8 @@ local pickup_wrong_action_reference = {
             { kind = "action", action = "WALKTO",
                 target = { prefab = "my_test_item" }, target_required = true },
             { kind = "assert", assertion = {
-                kind = "player_inventory_item_count_increased",
-                target_step = 1, prefab = "my_test_item", count = 1,
+                kind = "pickup_target_collected",
+                target_step = 1, prefab = "my_test_item",
             }, verifies_step = 1 },
         } },
     },
@@ -636,5 +636,50 @@ local pickup_wrong_action_reference = {
 local wrong_pickup_reference_ok = AI.ValidateSuite(pickup_wrong_action_reference)
 assert(wrong_pickup_reference_ok == false,
     "inventory-delta pickup assertions must reference a PICKUP action, not WALKTO")
+
+
+local pickup_wrong_prefab = {
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_wrong_prefab",
+    owner_mod_id = "workshop-100",
+    title = "Wrong pickup prefab",
+    allowed_prefabs = { "my_test_item", "other_item" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        { id = "wrong_prefab", title = "Wrong pickup prefab", steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "my_test_item" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "pickup_target_collected",
+                target_step = 1, prefab = "other_item",
+            }, verifies_step = 1 },
+        } },
+    },
+}
+assert(AI.ValidateSuite(pickup_wrong_prefab) == false,
+    "pickup identity assertion must name the exact selected target prefab")
+
+local pickup_expected_false = {
+    schema = "modxpector/test-suite/v1",
+    id = "pickup_expected_false",
+    owner_mod_id = "workshop-100",
+    title = "Negative pickup assertion",
+    allowed_prefabs = { "my_test_item" },
+    allowed_recipes = {},
+    allowed_actions = { "PICKUP" },
+    scenarios = {
+        { id = "expected_false", title = "Negative pickup assertion", steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "my_test_item" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "pickup_target_collected",
+                target_step = 1, prefab = "my_test_item", expected = false,
+            }, verifies_step = 1 },
+        } },
+    },
+}
+assert(AI.ValidateSuite(pickup_expected_false) == false,
+    "pickup identity assertion must only represent a positive collection expectation")
 
 print("ModXpector embedded AI tests passed")

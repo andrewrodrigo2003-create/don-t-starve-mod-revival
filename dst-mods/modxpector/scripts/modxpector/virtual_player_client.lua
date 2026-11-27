@@ -31,6 +31,21 @@ local function is_finite_number(value)
     return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function remove_event_listener(owner, event_name, callback, source)
+    if owner == nil or type(owner.RemoveEventCallback) ~= "function" then
+        return false, false
+    end
+    local removed = pcall(owner.RemoveEventCallback, owner, event_name, callback, source)
+    if not removed then return false, false end
+    if type(owner.ListenerExists) == "function" then
+        local verify_ok, exists = pcall(owner.ListenerExists, owner, event_name, callback, source)
+        if not verify_ok or exists == true then return false, false end
+        if exists == false then return true, true end
+    end
+    -- The runtime accepted the removal call, but does not expose independent listener inspection.
+    return true, nil
+end
+
 local function safe_get_time()
     if type(GetTime) ~= "function" then return nil end
     local ok, value = pcall(GetTime)
@@ -87,9 +102,11 @@ function VirtualPlayer:_bind_events()
     local callback = function()
         self:Stop("player entity removed")
     end
-    local ok = pcall(self.player.ListenForEvent, self.player, "onremove", callback)
+    local owner = self.player
+    local ok = pcall(owner.ListenForEvent, owner, "onremove", callback)
     if ok then
         self.player_onremove_callback = callback
+        self.player_onremove_owner = owner
         return true
     end
     return false
@@ -98,14 +115,17 @@ end
 function VirtualPlayer:_cleanup_player_listener()
     local callback = self.player_onremove_callback
     if callback == nil then return true end
-    local player = self.player
-    if player == nil or type(player.RemoveEventCallback) ~= "function" then
+    local owner = self.player_onremove_owner or self.player
+    local removed, verified = remove_event_listener(owner, "onremove", callback)
+    self.player_onremove_cleanup_verified = verified
+    self.player_onremove_cleanup_verification = removed
+        and (verified == true and "verified" or "unverified") or "pending"
+    if removed then
         self.player_onremove_callback = nil
-        return false
+        self.player_onremove_owner = nil
+        return true
     end
-    local ok = pcall(player.RemoveEventCallback, player, "onremove", callback)
-    if ok then self.player_onremove_callback = nil end
-    return ok
+    return false
 end
 
 function VirtualPlayer:ResolveTarget(selector)
@@ -372,9 +392,24 @@ function VirtualPlayer:_finish(ok, message)
         end
     end
     self:_stop_step_event_observer()
+    if self.active_step_event_observer ~= nil then self.run_inconclusive = true end
     local target_cleanup_complete = self:_cleanup_target_listeners()
     if not target_cleanup_complete then self.run_inconclusive = true end
-    self:_cleanup_player_listener()
+    local player_listener_was_registered = self.player_onremove_callback ~= nil
+    local player_cleanup_complete = self:_cleanup_player_listener()
+    if not player_cleanup_complete or self.player_onremove_callback ~= nil
+        or (player_listener_was_registered and self.player_onremove_cleanup_verified ~= true) then
+        self.run_inconclusive = true
+    end
+    if not target_cleanup_complete or self.target_listener_cleanup_verified ~= true then
+        self.run_inconclusive = true
+    end
+    for _, observer_result in pairs(self.step_event_observer_results or {}) do
+        if type(observer_result) == "table" and observer_result.cleanup_complete == true
+            and observer_result.cleanup_verification ~= "verified" then
+            self.run_inconclusive = true
+        end
+    end
     if not ok then
         local current_step = self.queue[self.index]
         if current_step ~= nil then
@@ -394,12 +429,16 @@ function VirtualPlayer:_finish(ok, message)
     self.finished_at = safe_get_time()
     self.step_started_at = nil
     self.run_failed = not ok
-    if ok then
+    if self.run_inconclusive then
+        self.failure = message or "required listener cleanup or verification remains inconclusive"
+    elseif ok then
         self.failure = nil
     else
         self.failure = message
     end
-    self:_record({ kind = "run" }, ok and "completed" or "failed", message)
+    local final_status = not ok and "failed"
+        or (self.run_inconclusive and "inconclusive" or "completed")
+    self:_record({ kind = "run" }, final_status, message)
     if self.on_finished ~= nil then
         local report_ok, report_or_error = pcall(function() return self:GetReport() end)
         if report_ok then
@@ -416,8 +455,42 @@ function VirtualPlayer:Start(plan)
     assert(type(plan) == "table" and plan.schema == "modxpector/test-plan/v1", "unsupported test plan schema")
     assert(plan.enabled == true, "test plan is disabled")
     assert(type(plan.steps) == "table" and #plan.steps <= self.max_steps, "test plan exceeds step limit")
-    assert(self:_cleanup_target_listeners(),
+    for action_index, candidate in ipairs(plan.steps) do
+        if type(candidate) == "table" and candidate.kind == "action"
+            and candidate.action == "PICKUP" then
+            local matching_identity_assertion = false
+            for _, postcondition in ipairs(plan.steps) do
+                if type(postcondition) == "table" and postcondition.kind == "assert"
+                    and postcondition.verifies_step == action_index
+                    and type(postcondition.assertion) == "table"
+                    and (postcondition.assertion.kind == "player_inventory_item_count_increased"
+                        or postcondition.assertion.kind == "player_item_count_increased") then
+                    error("aggregate prefab-count assertions cannot verify PICKUP identity")
+                end
+                if type(postcondition) == "table" and postcondition.kind == "assert"
+                    and type(postcondition.assertion) == "table"
+                    and postcondition.assertion.kind == "pickup_target_collected"
+                    and postcondition.assertion.target_step == action_index
+                    and type(candidate.target) == "table"
+                    and postcondition.assertion.prefab == candidate.target.prefab
+                    and postcondition.verifies_step == action_index then
+                    matching_identity_assertion = true
+                    break
+                end
+            end
+            assert(candidate.target_required == true and matching_identity_assertion,
+                "PICKUP requires an exact pickup_target_collected postcondition")
+        end
+    end
+    local previous_player_cleanup_ok = self:_cleanup_player_listener()
+    local previous_target_cleanup_ok = self:_cleanup_target_listeners()
+    self:_stop_step_event_observer()
+    assert(previous_player_cleanup_ok,
+        "previous player onremove listener cleanup is still pending")
+    assert(previous_target_cleanup_ok,
         "previous target listener cleanup is still pending")
+    assert(self.active_step_event_observer == nil,
+        "previous step observer still has pending listener cleanup")
     self.queue = plan.steps
     self.index = 0
     self.run_id = type(plan.run_id) == "string" and plan.run_id or nil
@@ -432,11 +505,8 @@ function VirtualPlayer:Start(plan)
     self.verification_assertions_passed = 0
     self.verification_requirements = {}
     self.verification_assertions = {}
-    self:_stop_step_event_observer()
-    assert(self.active_step_event_observer == nil,
-        "previous step observer still has pending listener cleanup")
     self.step_event_observer_results = {}
-    self:_bind_events()
+    assert(self:_bind_events(), "required player event listeners could not be registered")
     for _, candidate in ipairs(plan.steps) do
         if type(candidate) == "table" and candidate.kind == "assert" then
             if candidate.verifies_step ~= nil then
@@ -460,6 +530,11 @@ function VirtualPlayer:Start(plan)
     self.step_targets = {}
     self.step_inventory_baselines = {}
     self.step_transfer_baselines = {}
+    self.step_pickup_baselines = {}
+    self.player_onremove_cleanup_verified = nil
+    self.player_onremove_cleanup_verification = nil
+    self.target_listener_cleanup_verified = nil
+    self.target_listener_cleanup_verification = nil
     self.target_death_events = {}
     self.target_death_callbacks = {}
     self.run_inconclusive = false
@@ -483,20 +558,27 @@ end
 
 function VirtualPlayer:_cleanup_target_listeners()
     local pending = {}
+    local all_verified = true
+    local verification_available = true
     for index, callback in pairs(self.target_death_callbacks or {}) do
         local target = self.step_targets ~= nil and self.step_targets[index] or nil
-        local removed = false
-        if target ~= nil and type(target.RemoveEventCallback) == "function" then
-            local ok = pcall(target.RemoveEventCallback, target, "death", callback)
-            if not ok then
-                ok = pcall(target.RemoveEventCallback, target, "death", callback)
-            end
-            removed = ok
+        local removed, verified = remove_event_listener(target, "death", callback)
+        if not removed then
+            removed, verified = remove_event_listener(target, "death", callback)
         end
-        if not removed then pending[index] = callback end
+        if verified == nil then verification_available = false end
+        if not removed then
+            pending[index] = callback
+            all_verified = false
+        elseif verified ~= true then
+            all_verified = false
+        end
     end
     self.target_death_callbacks = pending
     self.target_listener_cleanup_pending = next(pending) ~= nil
+    self.target_listener_cleanup_verified = all_verified and verification_available
+    self.target_listener_cleanup_verification = self.target_listener_cleanup_pending
+        and "pending" or (self.target_listener_cleanup_verified and "verified" or "unverified")
     return not self.target_listener_cleanup_pending
 end
 
@@ -557,11 +639,12 @@ function VirtualPlayer:_stop_step_event_observer(index)
     local active = self.active_step_event_observer
     if active == nil or (index ~= nil and active.index ~= index) then return nil end
     if StepEventObserver == nil then
-        self.active_step_event_observer = nil
         self.step_event_observer_results[active.index] = {
             complete = false,
+            cleanup_complete = false,
             reason = "step_event_observer_unavailable_during_cleanup",
         }
+        self.run_inconclusive = true
         return self.step_event_observer_results[active.index]
     end
 
@@ -771,6 +854,39 @@ function VirtualPlayer:_capture_step_inventory_baseline(step_index)
     end
 end
 
+
+function VirtualPlayer:_capture_step_pickup_baseline(step_index, target)
+    local inventory = self.player ~= nil and self.player.replica ~= nil
+        and self.player.replica.inventory or nil
+    if inventory == nil or type(ItemIdentity.Capture) ~= "function"
+        or type(ItemIdentity.CapturePickupTarget) ~= "function" then
+        return false, "pickup identity snapshot APIs are unavailable"
+    end
+    local before = ItemIdentity.Capture(inventory, self.player, nil, pcall)
+    local target_before = ItemIdentity.CapturePickupTarget(target, pcall)
+    if type(before) ~= "table" or before.complete ~= true
+        or type(target_before) ~= "table" or target_before.complete ~= true then
+        return false, "pickup baseline snapshots are incomplete"
+    end
+    local guid = target ~= nil and target.GUID or nil
+    if not is_finite_number(guid) or guid < 1 or guid ~= math.floor(guid)
+        or target_before.by_guid == nil or target_before.by_guid[guid] == nil then
+        return false, "selected pickup target has no stable GUID identity"
+    end
+    if before.player.by_guid[guid] ~= nil then
+        return false, "selected pickup target already appears in the player inventory baseline"
+    end
+    self.step_pickup_baselines = self.step_pickup_baselines or {}
+    self.step_pickup_baselines[step_index] = {
+        before = before,
+        target_before = target_before,
+        target = target,
+        target_guid = guid,
+        prefab = target_before.by_guid[guid].prefab,
+    }
+    return true
+end
+
 function VirtualPlayer:_evaluate_assertion(assertion)
     assert(type(assertion) == "table", "assertion must be an object")
     local kind = assertion.kind
@@ -817,6 +933,56 @@ function VirtualPlayer:_evaluate_assertion(assertion)
             "item-count increase must be an integer between 1 and 10000")
         actual = self:_count_player_prefab(inventory, prefab, true) - baseline >= count
         expected = true
+
+    elseif kind == "pickup_target_collected" then
+        local step_index = tonumber(assertion.target_step)
+        assert(is_finite_number(step_index) and step_index == math.floor(step_index)
+            and step_index >= 1 and step_index < self.index,
+            "pickup identity assertion must reference a previous action step")
+        local prefab = assert(assertion.prefab, "pickup assertion prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "pickup assertion prefab is not in the test plan allowlist")
+        local baseline = self.step_pickup_baselines ~= nil
+            and self.step_pickup_baselines[step_index] or nil
+        if type(baseline) ~= "table" or baseline.prefab ~= prefab
+            or baseline.target == nil or baseline.target_guid == nil then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "exact pickup baseline is unavailable",
+            }
+        end
+        local inventory = self.player ~= nil and self.player.replica ~= nil
+            and self.player.replica.inventory or nil
+        if inventory == nil then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "player inventory replica is unavailable after pickup",
+            }
+        end
+        local after = ItemIdentity.Capture(inventory, self.player, nil, pcall)
+        local result = ItemIdentity.ComparePickup(
+            baseline.before, after, baseline.target_before,
+            baseline.target, baseline.target_guid, pcall)
+        if type(result) ~= "table" or result.outcome ~= "observed_pickup_candidate" then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true,
+                reason = type(result) == "table" and result.reason or "pickup identity comparison failed",
+            }
+        end
+        if result.prefab ~= prefab then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "collected item prefab does not match the asserted target",
+            }
+        end
+        return {
+            kind = kind, actual = true, expected = true, passed = true,
+            inconclusive = false, evidence = result.evidence,
+            causality = result.causality,
+            server_authority = result.server_authority,
+            guid = result.guid,
+        }
     elseif kind == "player_inventory_item_count_increased"
         or kind == "player_inventory_item_count_decreased"
         or kind == "container_item_count_increased" then
@@ -1098,6 +1264,16 @@ function VirtualPlayer:_next_impl()
         if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
         local target_entity = action_or_error.target
         if target_entity ~= nil then self:_capture_step_target(self.index, target_entity) end
+        if step.action == "PICKUP" then
+            local pickup_baseline_ok, pickup_baseline_error = self:_capture_step_pickup_baseline(
+                self.index, target_entity)
+            if not pickup_baseline_ok then
+                self.run_inconclusive = true
+                self:_record(step, "inconclusive", tostring(pickup_baseline_error))
+                self:_finish(false, "PICKUP identity baseline unavailable: " .. tostring(pickup_baseline_error))
+                return
+            end
+        end
         local baseline_ok, baseline_error = pcall(function()
             self:_capture_step_transfer_baseline(self.index, target_entity)
         end)
@@ -1205,8 +1381,9 @@ function VirtualPlayer:_next_impl()
             self:_next()
         elseif ok and result.inconclusive then
             self.run_inconclusive = true
-            self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind))
-            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind))
+            local reason = type(result.reason) == "string" and result.reason or "insufficient evidence"
+            self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind) .. ": " .. reason)
+            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind) .. ": " .. reason)
             return
         else
             self:_record(step, "failed", ok and ("assertion failed: " .. tostring(result.kind)) or tostring(result))
@@ -1498,7 +1675,11 @@ function VirtualPlayer:GetReport()
         step_event_observer_results = self.step_event_observer_results or {},
         step_event_observer_cleanup_pending = self.active_step_event_observer ~= nil,
         player_onremove_cleanup_pending = self.player_onremove_callback ~= nil,
+        player_onremove_cleanup_verified = self.player_onremove_cleanup_verified,
+        player_onremove_cleanup_verification = self.player_onremove_cleanup_verification,
         target_listener_cleanup_pending = self.target_listener_cleanup_pending == true,
+        target_listener_cleanup_verified = self.target_listener_cleanup_verified,
+        target_listener_cleanup_verification = self.target_listener_cleanup_verification,
     }
 end
 

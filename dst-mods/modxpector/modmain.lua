@@ -458,12 +458,14 @@ end
 local ASSERTION_ALLOWLIST = {
     player_health_gte = true, player_hunger_gte = true, player_sanity_gte = true,
     player_has_item = true, player_has_item_count_gte = true, player_inventory_has_item = true, container_has_item = true, player_equipped = true,
+    pickup_target_collected = true,
     player_inventory_item_count_increased = true, player_inventory_item_count_decreased = true,
     container_item_count_increased = true,
     player_near_target = true, player_knows_recipe = true,
     target_exists = true, target_health_lte = true, target_dead = true, target_has_tag = true,
 }
 local TARGET_ASSERTION_ALLOWLIST = {
+    pickup_target_collected = true,
     player_near_target = true, target_exists = true, target_health_lte = true,
     target_dead = true, target_has_tag = true, container_has_item = true,
     player_inventory_item_count_increased = true, player_inventory_item_count_decreased = true,
@@ -577,6 +579,7 @@ local function validate_plan_assertion(plan, index, step)
     elseif assertion.kind == "player_has_item" or assertion.kind == "player_has_item_count_gte"
         or assertion.kind == "player_inventory_has_item" or assertion.kind == "container_has_item"
         or assertion.kind == "player_equipped"
+        or assertion.kind == "pickup_target_collected"
         or assertion.kind == "player_inventory_item_count_increased"
         or assertion.kind == "player_inventory_item_count_decreased"
         or assertion.kind == "container_item_count_increased" then
@@ -611,6 +614,24 @@ local function validate_plan_assertion(plan, index, step)
         end
     elseif assertion.kind == "target_has_tag" then
         if not safe_tag(assertion.tag) then return false, "invalid target tag" end
+    end
+
+    if assertion.kind == "pickup_target_collected" then
+        if assertion.expected ~= nil and assertion.expected ~= true then
+            return false, "pickup identity assertion requires expected=true"
+        end
+        local target_step = assertion.target_step
+        if not integer_in_range(target_step, 1, index - 1) then
+            return false, "pickup identity assertion requires a prior target_step"
+        end
+        local pickup_action = plan.steps[target_step]
+        if type(pickup_action) ~= "table" or pickup_action.kind ~= "action"
+            or pickup_action.action ~= "PICKUP"
+            or type(pickup_action.target) ~= "table"
+            or pickup_action.target.prefab ~= assertion.prefab
+            or step.verifies_step ~= target_step then
+            return false, "pickup identity assertion must match the exact verified PICKUP target"
+        end
     end
 
     if TARGET_ASSERTION_ALLOWLIST[assertion.kind] then
@@ -764,7 +785,12 @@ local function validate_transfer_action_postconditions(plan)
                     if assertion_verifies_action(candidate, action_index) then
                         local assertion = candidate.assertion
                         if type(assertion) == "table"
-                            and assertion.kind == "player_inventory_item_count_increased"
+                            and (assertion.kind == "player_inventory_item_count_increased"
+                                or assertion.kind == "player_item_count_increased") then
+                            return false, "aggregate prefab-count assertions cannot verify PICKUP identity"
+                        end
+                        if type(assertion) == "table"
+                            and assertion.kind == "pickup_target_collected"
                             and assertion.target_step == action_index then
                             inventory_delta = assertion
                         end
@@ -772,7 +798,7 @@ local function validate_transfer_action_postconditions(plan)
                 end
                 if action.target_required ~= true or type(action.target) ~= "table"
                     or inventory_delta == nil or inventory_delta.prefab ~= action.target.prefab then
-                    return false, "PICKUP requires a matching player inventory increase postcondition for its target prefab"
+                    return false, "PICKUP requires an exact pickup_target_collected postcondition for its target prefab"
                 end
             end
         end

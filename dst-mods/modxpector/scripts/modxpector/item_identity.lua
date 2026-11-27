@@ -243,6 +243,14 @@ local function capture_target(target, player, protected_call)
     return snapshot
 end
 
+
+function M.CapturePickupTarget(target, protected_call)
+    local snapshot = new_snapshot("pickup_target")
+    append_item(snapshot, target, "ground_target", nil, protected_call)
+    return snapshot
+end
+
+
 function M.Capture(inventory, player, target, protected_call)
     local result = {
         schema = "modxpector/item-identity-capture/v1",
@@ -304,6 +312,75 @@ local function inconclusive(reason)
     return {
         outcome = "inconclusive",
         reason = reason,
+    }
+end
+
+function M.ComparePickup(before, after, target_before, target_entity, selected_guid, protected_call)
+    if type(before) ~= "table" or before.schema ~= "modxpector/item-identity-capture/v1"
+        or type(after) ~= "table" or after.schema ~= "modxpector/item-identity-capture/v1" then
+        return inconclusive("pickup inventory snapshot schema is unavailable or unsupported")
+    end
+    if before.complete ~= true or after.complete ~= true
+        or type(before.player) ~= "table" or before.player.complete ~= true
+        or type(after.player) ~= "table" or after.player.complete ~= true
+        or type(before.player.by_guid) ~= "table"
+        or type(after.player.by_guid) ~= "table" then
+        return inconclusive("pickup inventory snapshot is incomplete or malformed")
+    end
+    if type(target_before) ~= "table"
+        or target_before.schema ~= "modxpector/item-identity-snapshot/v1"
+        or target_before.kind ~= "pickup_target" or target_before.complete ~= true
+        or target_before.item_count ~= 1
+        or type(target_before.by_guid) ~= "table" then
+        return inconclusive("selected ground-item identity snapshot is incomplete")
+    end
+    if not finite_number(selected_guid) or selected_guid < 1
+        or selected_guid ~= math.floor(selected_guid) then
+        return inconclusive("selected pickup GUID is invalid")
+    end
+
+    local selected_before = target_before.by_guid[selected_guid]
+    if selected_before == nil or selected_before.source ~= "ground_target"
+        or selected_before.entity ~= target_entity then
+        return inconclusive("selected target identity does not match the captured entity reference")
+    end
+    if before.player.by_guid[selected_guid] ~= nil then
+        return inconclusive("selected item was already present in the player inventory baseline")
+    end
+
+    local collected = after.player.by_guid[selected_guid]
+    if collected == nil then
+        return inconclusive("the exact selected GUID was not observed in the player inventory")
+    end
+    if collected.entity ~= target_entity or collected.entity ~= selected_before.entity then
+        return inconclusive("selected GUID resolved to a different entity reference")
+    end
+    if collected.prefab ~= selected_before.prefab then
+        return inconclusive("selected item prefab changed during pickup")
+    end
+    if collected.stack_size ~= selected_before.stack_size
+        or collected.stack_size_source ~= selected_before.stack_size_source then
+        return inconclusive("selected item stack changed or its quantity evidence is not comparable")
+    end
+    if collected.source ~= "inventory_slot" and collected.source ~= "overflow_slot"
+        and collected.source ~= "active_item" then
+        return inconclusive("selected item was not observed in a player inventory location")
+    end
+    local valid, reason = valid_entity(collected.entity, protected_call)
+    if not valid then
+        return inconclusive("collected item entity is not valid: " .. tostring(reason))
+    end
+
+    return {
+        outcome = "observed_pickup_candidate",
+        reason = "the same GUID and entity reference moved from the selected ground target into the player inventory with unchanged stack evidence",
+        guid = selected_guid,
+        prefab = selected_before.prefab,
+        stack_size = selected_before.stack_size,
+        inventory_source = collected.source,
+        evidence = "client_replica_snapshot_only",
+        causality = "unproven",
+        server_authority = "unverified",
     }
 end
 

@@ -67,6 +67,12 @@ player = {
     end } },
     replica = {
         inventory = {
+            GetItems = function()
+                return player ~= nil and player.picked_up == true and pickup_target ~= nil
+                    and { [1] = pickup_target } or {}
+            end,
+            GetEquips = function() return {} end,
+            GetActiveItem = function() return nil end,
             FindItem = function(_, fn)
                 local items = { { prefab = "cutgrass" } }
                 if player ~= nil and player.crafted_recipe == "axe" then
@@ -140,6 +146,12 @@ player = {
             end
         end
     end,
+    ListenerExists = function(self, event, callback, source)
+        for _, listener in ipairs(player_event_listeners[event] or {}) do
+            if listener.callback == callback and listener.source == source then return true end
+        end
+        return false
+    end,
     ListenerCount = function(self, event)
         return #(player_event_listeners[event] or {})
     end,
@@ -170,6 +182,12 @@ pickup_target.RemoveEventCallback = function(self, event, callback)
         if listeners[index] == callback then table.remove(listeners, index) end
     end
 end
+pickup_target.ListenerExists = function(self, event, callback)
+    for _, listener in ipairs(self._event_listeners[event] or {}) do
+        if listener == callback then return true end
+    end
+    return false
+end
 pickup_target.ListenerCount = function(self, event)
     return #(self._event_listeners[event] or {})
 end
@@ -185,6 +203,30 @@ TheSim.FindEntities = function()
     return found
 end
 local VirtualPlayer = require("modxpector/virtual_player_client")
+
+local function attach_test_event_api(entity)
+    entity._test_event_listeners = {}
+    entity.ListenForEvent = function(self, event_name, callback)
+        local listeners = self._test_event_listeners[event_name] or {}
+        listeners[#listeners + 1] = callback
+        self._test_event_listeners[event_name] = listeners
+    end
+    entity.RemoveEventCallback = function(self, event_name, callback)
+        local listeners = self._test_event_listeners[event_name] or {}
+        local remaining = {}
+        for _, existing in ipairs(listeners) do
+            if existing ~= callback then remaining[#remaining + 1] = existing end
+        end
+        self._test_event_listeners[event_name] = remaining
+    end
+    entity.ListenerExists = function(self, event_name, callback)
+        for _, existing in ipairs(self._test_event_listeners[event_name] or {}) do
+            if existing == callback then return true end
+        end
+        return false
+    end
+    return entity
+end
 local finished
 local controller
 controller = VirtualPlayer.new(player, {
@@ -265,7 +307,7 @@ local plan = {
         { kind = "assert", assertion = { kind = "target_dead", target = { prefab = "tree" }, expected = false } },
         { kind = "assert", assertion = { kind = "target_has_tag", target = { prefab = "tree" }, tag = "workable" } },
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
-        { kind = "assert", assertion = { kind = "player_item_count_increased", prefab = "cutgrass", target_step = 24, count = 1 }, verifies_step = 24 },
+        { kind = "assert", assertion = { kind = "pickup_target_collected", prefab = "cutgrass", target_step = 24 }, verifies_step = 24 },
     },
 }
 assert(controller:Start(plan))
@@ -814,28 +856,39 @@ assert(invalid_inventory_count_report ~= nil and invalid_inventory_count_report.
 assert(string.find(invalid_inventory_count_report.failure, "integer between 1 and 10000", 1, true))
 
 
+do
 -- A pre-existing item must not falsely verify a pickup that changed nothing.
 local baseline_guard_report
 local baseline_guard = VirtualPlayer.new(player, {
     allowed_prefabs = { "cutgrass" },
     on_finished = function(report) baseline_guard_report = report end,
 })
-assert(baseline_guard:Start({
-    schema = "modxpector/test-plan/v1",
-    enabled = true,
-    steps = {
-        { kind = "action", action = "PICKUP" },
-        { kind = "assert", assertion = {
-            kind = "player_item_count_increased", prefab = "cutgrass", target_step = 1, count = 1,
-        }, verifies_step = 1 },
-    },
-}))
-assert(baseline_guard_report ~= nil and baseline_guard_report.outcome == "failed",
-    "an unchanged pre-existing inventory count must not verify a pickup")
-assert(string.find(baseline_guard_report.failure, "assertion failed", 1, true))
+local legacy_pickup_accepted = pcall(function()
+    baseline_guard:Start({
+        schema = "modxpector/test-plan/v1",
+        enabled = true,
+        steps = {
+            { kind = "action", action = "PICKUP",
+                target = { prefab = "cutgrass" }, target_required = true },
+            { kind = "assert", assertion = {
+                kind = "player_inventory_item_count_increased",
+                prefab = "cutgrass", target_step = 1, count = 1,
+            }, verifies_step = 1 },
+            { kind = "assert", assertion = {
+                kind = "pickup_target_collected",
+                prefab = "cutgrass", target_step = 1,
+            }, verifies_step = 1 },
+        },
+    })
+end)
+assert(legacy_pickup_accepted == false,
+    "aggregate prefab count must not be accepted as a PICKUP identity postcondition")
 
 
 
+end
+
+do
 -- PICKUP uses an isolated before/after inventory delta, not the container-transfer oracle.
 local previous_pickup_state = player.picked_up
 player.picked_up = false
@@ -843,21 +896,44 @@ local pickup_controller = VirtualPlayer.new(player, { allowed_prefabs = { "cutgr
 pickup_controller.queue = {
     { kind = "action", action = "PICKUP", target_required = true },
     { kind = "assert", assertion = {
-        kind = "player_inventory_item_count_increased",
-        prefab = "cutgrass", target_step = 1, count = 1,
+        kind = "pickup_target_collected",
+        prefab = "cutgrass", target_step = 1,
     }, verifies_step = 1 },
 }
 pickup_controller.index = 1
-pickup_controller:_capture_step_transfer_baseline(1, target)
+local pickup_baseline_ok, pickup_baseline_error =
+    pickup_controller:_capture_step_pickup_baseline(1, pickup_target)
+assert(pickup_baseline_ok == true, tostring(pickup_baseline_error))
 player.picked_up = true
 pickup_controller.index = 2
 local pickup_delta = pickup_controller:_evaluate_assertion({
-    kind = "player_inventory_item_count_increased",
-    prefab = "cutgrass", target_step = 1, count = 1,
+    kind = "pickup_target_collected",
+    prefab = "cutgrass", target_step = 1,
 })
 assert(pickup_delta.passed == true,
-    "PICKUP should pass only after the carried item count increases from its captured baseline")
+    "PICKUP should pass only after the exact target GUID and entity reference appear in inventory")
+player.picked_up = false
+local event_only_controller = VirtualPlayer.new(player, { allowed_prefabs = { "cutgrass" } })
+event_only_controller.queue = {
+    { kind = "action", action = "PICKUP", target_required = true },
+    { kind = "assert", assertion = {
+        kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+    }, verifies_step = 1 },
+}
+event_only_controller.index = 1
+local event_baseline_ok = event_only_controller:_capture_step_pickup_baseline(1, pickup_target)
+assert(event_baseline_ok == true)
+player:PushEvent("itemget", { item = pickup_target, slot = 1 })
+player:PushEvent("itemget", { item = pickup_target, slot = 1 })
+event_only_controller.index = 2
+local event_only_result = event_only_controller:_evaluate_assertion({
+    kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+})
+assert(event_only_result.inconclusive == true and event_only_result.passed == false,
+    "duplicate client itemget events without an exact inventory transfer must remain inconclusive")
 player.picked_up = previous_pickup_state
+
+end
 
 print("MODXPECTOR_VIRTUAL_PLAYER_BUFFER_REPLACEMENT_CONTRACT_OK")
 
@@ -963,6 +1039,7 @@ equipment_player = {
         },
     },
 }
+attach_test_event_api(equipment_player)
 local equipment_report
 local equipment_controller = VirtualPlayer.new(equipment_player, {
     allowed_prefabs = { "axe" },
@@ -1019,6 +1096,7 @@ local walk_player = {
 }
 local original_find_entities = TheSim.FindEntities
 TheSim.FindEntities = function() return { walk_target } end
+attach_test_event_api(walk_player)
 local walk_report
 local walk_controller = VirtualPlayer.new(walk_player, {
     allowed_actions = { "WALKTO" },
@@ -1063,6 +1141,7 @@ local cancel_player = {
     DoTaskInTime = function() end, -- retain the scheduled tick; this test stops before it runs
 }
 local cancel_report
+attach_test_event_api(cancel_player)
 local cancel_controller = VirtualPlayer.new(cancel_player, {
     on_finished = function(report) cancel_report = report end,
 })
@@ -1095,6 +1174,7 @@ local noop_player = {
     GetBufferedAction = function() return noop_locomotor.bufferedaction end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(noop_player)
 local noop_controller = VirtualPlayer.new(noop_player, {})
 assert(noop_controller:Start({
     schema = "modxpector/test-plan/v1", enabled = true, run_id = "cancel-noop-clear",
@@ -1129,6 +1209,7 @@ local entity_player = {
     end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(entity_player)
 local entity_controller = VirtualPlayer.new(entity_player, {})
 assert(entity_controller:Start({
     schema = "modxpector/test-plan/v1",
@@ -1164,6 +1245,7 @@ local unrelated_player = {
     end,
     DoTaskInTime = function() end,
 }
+attach_test_event_api(unrelated_player)
 local unrelated_controller = VirtualPlayer.new(unrelated_player, {})
 assert(unrelated_controller:Start({
     schema = "modxpector/test-plan/v1",
@@ -1224,6 +1306,7 @@ local path_player = {
     end,
 }
 local path_finished
+attach_test_event_api(path_player)
 local path_controller = VirtualPlayer.new(path_player, {
     allowed_actions = { "WALKTO" },
     allowed_prefabs = { "tree" },
@@ -1286,6 +1369,7 @@ local transfer_player = {
         GetEquippedItem = function() return nil end,
     } },
 }
+attach_test_event_api(transfer_player)
 local transfer_controller = VirtualPlayer.new(transfer_player, {
     allowed_prefabs = { "cutgrass" },
 })
@@ -1377,6 +1461,7 @@ local holder_player = {
         GetEquippedItem = function() return nil end,
     } },
 }
+attach_test_event_api(holder_player)
 local take_controller = VirtualPlayer.new(holder_player, { allowed_prefabs = { "cutgrass" } })
 take_controller.queue = {
     { kind = "action", action = "TAKEITEM", target_required = true },
@@ -1449,6 +1534,7 @@ for _, blocked_action in ipairs({ "TAKEITEM", "TAKESINGLEITEM" }) do
             },
         },
     }
+attach_test_event_api(blocked_player)
     local blocked_controller = VirtualPlayer.new(blocked_player, {
         on_finished = function(report) blocked_report = report end,
     })
@@ -1481,6 +1567,7 @@ local store_player = {
         },
     },
 }
+attach_test_event_api(store_player)
 local store_controller = VirtualPlayer.new(store_player, {
     on_finished = function(report) store_report = report end,
 })
@@ -1504,8 +1591,9 @@ local original_remove_event_callback = player.RemoveEventCallback
 player.RemoveEventCallback = function()
     error("synthetic listener cleanup failure")
 end
+player.picked_up = false
 local cleanup_controller = VirtualPlayer.new(player, {
-    allowed_actions = { "MOD_ACTION" },
+    allowed_actions = { "PICKUP" },
     allowed_prefabs = { "cutgrass" },
     on_finished = function(report) cleanup_finished = report end,
 })
@@ -1515,6 +1603,9 @@ local cleanup_plan = {
     run_id = "live-vp-observer-cleanup-failure",
     steps = {
         { kind = "action", action = "PICKUP", target = { prefab = "cutgrass" }, target_required = true },
+        { kind = "assert", assertion = {
+            kind = "pickup_target_collected", prefab = "cutgrass", target_step = 1,
+        }, verifies_step = 1 },
         { kind = "wait", seconds = 0 },
     },
 }
@@ -1579,5 +1670,102 @@ assert(cleanup_controller:_cleanup_target_listeners() == true,
 assert(cleanup_controller.target_listener_cleanup_pending == false
     and pickup_target:ListenerCount("death") == 0,
     "recovered target listener cleanup must remove the listener")
+
+
+do
+-- Isolated player onremove cleanup failure: no PICKUP and no step observer.
+local isolated_player_report
+local isolated_player_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) isolated_player_report = report end,
+})
+assert(isolated_player_controller:_bind_events() == true)
+assert(player:ListenerCount("onremove") == 1)
+local isolated_original_remove = player.RemoveEventCallback
+player.RemoveEventCallback = function(self, event, callback, source)
+    if event == "onremove" then error("isolated player listener cleanup failure") end
+    return isolated_original_remove(self, event, callback, source)
+end
+isolated_player_controller.queue = {}
+isolated_player_controller.index = 0
+isolated_player_controller.started_at = GetTime()
+isolated_player_controller:_finish(true, "isolated player listener cleanup")
+assert(isolated_player_report ~= nil and isolated_player_report.outcome == "inconclusive",
+    "an isolated player onremove cleanup failure must make the run inconclusive")
+assert(isolated_player_report.player_onremove_cleanup_pending == true
+    and isolated_player_controller.player_onremove_callback ~= nil
+    and isolated_player_controller.player_onremove_owner == player,
+    "failed player cleanup must retain the callback and original owner")
+local no_pickup_plan = {
+    schema = "modxpector/test-plan/v1",
+    enabled = true,
+    steps = { { kind = "wait", seconds = 0 } },
+}
+assert(not pcall(function() isolated_player_controller:Start(no_pickup_plan) end),
+    "a new run must be blocked while the player onremove listener remains pending")
+player.RemoveEventCallback = isolated_original_remove
+assert(isolated_player_controller:_cleanup_player_listener() == true,
+    "player listener cleanup must be recoverable after restoring the removal API")
+assert(player:ListenerCount("onremove") == 0
+    and isolated_player_controller.player_onremove_cleanup_verified == true,
+    "observable listener absence must be verified after recovery")
+
+end
+
+do
+-- A removal call that returns normally but leaves the callback is not cleanup success.
+local unverified_player_report
+local unverified_player_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) unverified_player_report = report end,
+})
+assert(unverified_player_controller:_bind_events() == true)
+local no_op_remove = player.RemoveEventCallback
+player.RemoveEventCallback = function(self, event, callback, source)
+    if event == "onremove" then return end
+    return no_op_remove(self, event, callback, source)
+end
+unverified_player_controller.queue = {}
+unverified_player_controller.index = 0
+unverified_player_controller.started_at = GetTime()
+unverified_player_controller:_finish(true, "no-op listener removal")
+assert(unverified_player_report ~= nil and unverified_player_report.outcome == "inconclusive"
+    and unverified_player_report.player_onremove_cleanup_pending == true,
+    "a no-error removal call must not be accepted when the listener is still observable")
+player.RemoveEventCallback = no_op_remove
+assert(unverified_player_controller:_cleanup_player_listener() == true
+    and player:ListenerCount("onremove") == 0,
+    "the no-op removal case must remain recoverable")
+
+
+end
+
+do
+-- A target RemoveEventCallback call that leaves the listener observable is still pending.
+local target_noop_report
+local target_remove_original = pickup_target.RemoveEventCallback
+local target_noop_controller = VirtualPlayer.new(player, {
+    on_finished = function(report) target_noop_report = report end,
+})
+target_noop_controller.step_targets = {}
+target_noop_controller.target_death_events = {}
+target_noop_controller.target_death_callbacks = {}
+target_noop_controller.queue = {}
+target_noop_controller.index = 0
+target_noop_controller.run_id = "live-vp-target-listener-noop-removal"
+target_noop_controller.started_at = GetTime()
+target_noop_controller:_capture_step_target(1, pickup_target)
+pickup_target.RemoveEventCallback = function() return end
+target_noop_controller:_finish(true, "target no-op listener removal")
+assert(target_noop_report ~= nil and target_noop_report.outcome == "inconclusive"
+    and target_noop_report.target_listener_cleanup_pending == true,
+    "a no-error target removal call must not pass while the listener remains observable")
+assert(next(target_noop_controller.target_death_callbacks) ~= nil,
+    "the target listener callback must be retained after an unverified no-op removal")
+pickup_target.RemoveEventCallback = target_remove_original
+assert(target_noop_controller:_cleanup_target_listeners() == true
+    and target_noop_controller.target_listener_cleanup_verified == true
+    and pickup_target:ListenerCount("death") == 0,
+    "target listener cleanup must recover and verify actual removal")
+
+end
 
 print("MODXPECTOR_VIRTUAL_PLAYER_STORE_FAIL_CLOSED_CONTRACT_OK")

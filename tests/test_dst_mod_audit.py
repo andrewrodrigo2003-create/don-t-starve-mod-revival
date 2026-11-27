@@ -184,5 +184,112 @@ class DstModAuditTests(unittest.TestCase):
         self.assertEqual([item["target"] for item in found], ["real"])
 
 
+    def test_lua_signal_scan_ignores_comments_and_short_strings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "modmain.lua").write_text(
+                "-- debug.getregistry() is documentation\n"
+                "local note = 'debug.getregistry() is only text'\n"
+                'local other = "DoPeriodicTask(1, fn)"\n'
+                "debug.getregistry() -- comment: debug.getregistry()\n",
+                encoding="utf-8",
+            )
+            report = MODULE.audit(root)
+            matches = [
+                item for item in report["signals"]
+                if item["category"] == "dynamic_code_or_debug"
+            ]
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0]["line"], 4)
+            self.assertEqual(
+                matches[0]["snippet"],
+                "debug.getregistry() -- comment: debug.getregistry()",
+            )
+            self.assertEqual(matches[0]["evidence"], matches[0]["snippet"])
+            self.assertEqual(matches[0]["confidence"], "low")
+            self.assertEqual(matches[0]["estimated_severity"], "context_dependent")
+            self.assertEqual(matches[0]["evidence_type"], "textual_indicator")
+            self.assertIn("category", matches[0])
+
+    def test_lua_signal_scan_ignores_long_strings_and_comments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "modmain.lua").write_text(
+                "--[==[ debug.getregistry()\n"
+                "DoPeriodicTask(1, fn)\n"
+                "open_list = {}\n"
+                "]==]\n"
+                "local docs = [=[\n"
+                "debug.getregistry()\n"
+                "AddPrefabPostInit('fake', fn)\n"
+                "]=]\n"
+                "debug.getregistry()\n",
+                encoding="utf-8",
+            )
+            report = MODULE.audit(root)
+            matches = [
+                item for item in report["signals"]
+                if item["category"] == "dynamic_code_or_debug"
+            ]
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0]["line"], 9)
+
+    def test_lua_mask_preserves_offsets_lines_and_code_after_literals(self):
+        source = (
+            "-- fake debug.getregistry()\n"
+            "local short = 'escaped \\' quote and fake debug.getregistry()'\n"
+            "local long = [==[ DoPeriodicTask(1, fn) ]==]\n"
+            "debug.getregistry()\n"
+        )
+        masked = MODULE.mask_lua_noncode(source)
+        self.assertEqual(len(masked), len(source))
+        self.assertEqual(masked.count("\n"), source.count("\n"))
+        self.assertNotIn("debug.getregistry()", masked.splitlines()[0])
+        self.assertNotIn("debug.getregistry()", masked.splitlines()[1])
+        self.assertNotIn("DoPeriodicTask", masked.splitlines()[2])
+        self.assertIn("debug.getregistry()", masked.splitlines()[3])
+
+    def test_lua_long_comment_and_string_delimiters_do_not_leak(self):
+        source = (
+            "--[=[ text ]==] debug.getregistry()\n"
+            "still comment DoPeriodicTask(1, fn) ]=]\n"
+            "local text = [==[ -- not a comment ]=] debug.getregistry() ]==]\n"
+            "debug.getregistry()\n"
+        )
+        masked = MODULE.mask_lua_noncode(source)
+        self.assertNotIn("debug.getregistry()", "\n".join(masked.splitlines()[:3]))
+        self.assertIn("debug.getregistry()", masked.splitlines()[3])
+
+    def test_non_lua_text_keeps_existing_scanning_behavior(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "readme.md").write_text(
+                "debug.getregistry()\n", encoding="utf-8"
+            )
+            report = MODULE.audit(root)
+            self.assertTrue(any(
+                item["category"] == "dynamic_code_or_debug"
+                for item in report["signals"]
+            ))
+
+
+    def test_registration_candidates_include_conservative_evidence_metadata(self):
+        candidates = MODULE.extract_registration_candidates(
+            "modmain.lua",
+            "AddPrefabPostInit('lucy', function(inst)\\n    return inst\\nend)\\n",
+        )
+        self.assertTrue(candidates)
+        finding = candidates[0]
+        for key in (
+            "path", "line", "kind", "rule", "evidence", "confidence",
+            "estimated_severity", "explanation", "suggested_fix", "limitations",
+        ):
+            self.assertIn(key, finding)
+        self.assertEqual(finding["path"], "modmain.lua")
+        self.assertEqual(finding["line"], 1)
+        self.assertEqual(finding["confidence"], "low")
+        self.assertEqual(finding["evidence_type"], "textual_indicator")
+
+
 if __name__ == "__main__":
     unittest.main()

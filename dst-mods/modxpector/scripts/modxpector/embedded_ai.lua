@@ -923,7 +923,7 @@ local BUILTIN_COMMUNITY_SUITES = {
                     {
                         kind = "assert",
                         assertion = {
-                            kind = "player_inventory_item_count_increased",
+                            kind = "pickup_target_collected",
                             target_step = 2,
                             prefab = "donharpoon",
                             count = 1,
@@ -951,7 +951,7 @@ end
 
 local SUITE_ACTION_ALLOWLIST = { WALKTO = true, PICKUP = true }
 local SUITE_ASSERTION_ALLOWLIST = {
-    player_inventory_item_count_increased = true,
+    pickup_target_collected = true,
     player_health_gte = true,
     player_hunger_gte = true,
     player_sanity_gte = true,
@@ -1008,7 +1008,8 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
         or kind == "target_health_lte" then
         if not finite_in_range(assertion.value, 0, 100000) then return nil end
         result.value = assertion.value
-    elseif kind == "player_inventory_item_count_increased" then
+    elseif kind == "pickup_target_collected" then
+        if assertion.expected ~= nil and assertion.expected ~= true then return nil end
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
             or target_step ~= math.floor(target_step)
@@ -1016,11 +1017,8 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
             or not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true then
             return nil
         end
-        local count = assertion.count == nil and 1 or assertion.count
-        if not finite_in_range(count, 1, 10000) or count ~= math.floor(count) then return nil end
         result.target_step = target_step
         result.prefab = assertion.prefab
-        result.count = count
     elseif kind == "player_near_target" or kind == "target_exists" or kind == "target_has_tag" then
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
@@ -1136,6 +1134,15 @@ function M.ValidateSuite(suite, options)
                 end
                 if assertion.target_step ~= nil and assertion.target_step ~= verifies_step then
                     return false, "assertion_target_must_match_verified_action:" .. tostring(index)
+                end
+                if assertion.kind == "pickup_target_collected" then
+                    local pickup_action = steps[verifies_step]
+                    if type(pickup_action) ~= "table" or pickup_action.kind ~= "action"
+                        or pickup_action.action ~= "PICKUP"
+                        or type(pickup_action.target) ~= "table"
+                        or pickup_action.target.prefab ~= assertion.prefab then
+                        return false, "pickup_identity_assertion_must_match_exact_pickup_target:" .. tostring(index)
+                    end
                 end
                 verified[verifies_step] = true
                 steps[#steps + 1] = {

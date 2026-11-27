@@ -36,6 +36,13 @@ local function entity(guid, prefab)
             for index, callback in ipairs(callbacks) do dispatch[index] = callback end
             for _, callback in ipairs(dispatch) do callback(self, data) end
         end,
+        ListenerExists = function(self, event_name, callback, source)
+            source = source or self
+            for _, existing in ipairs(source.listeners[event_name] or {}) do
+                if existing == callback then return true end
+            end
+            return false
+        end,
         ListenerCount = function(self, event_name)
             return #(self.listeners[event_name] or {})
         end,
@@ -333,5 +340,29 @@ local stale_source_session, stale_source_reason = Observer.Start({
     { owner = source_player, entity = stale_event_source, label = "stale", events = { "itemget" } },
 }, pcall)
 assert(stale_source_session == nil and stale_source_reason == "invalid_event_source")
+
+
+local noop_owner = entity(1401, "wilson")
+local noop_source = entity(1402, "donharpoon")
+local noop_sources = {
+    { owner = noop_owner, entity = noop_source, label = "noop_target", events = { "itemget" } },
+}
+local noop_session = assert(Observer.Start(noop_sources, pcall))
+local original_noop_remove = noop_owner.RemoveEventCallback
+noop_owner.RemoveEventCallback = function(self, event_name, callback, source)
+    self.removed = self.removed + 1
+    return
+end
+local noop_snapshot = assert(Observer.Stop(noop_session))
+assert(noop_snapshot.cleanup_complete == false
+    and noop_snapshot.pending_cleanup_count == 1
+    and noop_snapshot.cleanup_verification == "pending",
+    "a no-error no-op removal must remain pending when the listener is observable")
+noop_owner.RemoveEventCallback = original_noop_remove
+local recovered_noop_snapshot = assert(Observer.Stop(noop_session))
+assert(recovered_noop_snapshot.cleanup_complete == true
+    and recovered_noop_snapshot.pending_cleanup_count == 0
+    and recovered_noop_snapshot.cleanup_verification == "verified",
+    "observer cleanup must recover and independently verify listener absence")
 
 print("ModXpector step event observer tests passed")

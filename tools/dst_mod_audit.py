@@ -185,6 +185,93 @@ def strip_lua_comments(source: str) -> str:
     return "".join(out)
 
 
+
+def mask_lua_noncode(source: str) -> str:
+    """Mask Lua comments and all string literals, preserving offsets and newlines."""
+    out = list(source)
+    i, n = 0, len(source)
+
+    def mask(start: int, end: int) -> None:
+        for pos in range(start, end):
+            if out[pos] not in "\r\n":
+                out[pos] = " "
+
+    while i < n:
+        # Comments are recognized only when outside quoted/long-bracket strings.
+        if source.startswith("--", i):
+            long_comment = re.match(r"--\[(=*)\[", source[i:])
+            if long_comment:
+                close = "]" + long_comment.group(1) + "]"
+                body_start = i + long_comment.end()
+                close_at = source.find(close, body_start)
+                end = n if close_at < 0 else close_at + len(close)
+            else:
+                end = source.find("\n", i)
+                if end < 0:
+                    end = n
+            mask(i, end)
+            i = end
+            continue
+
+        ch = source[i]
+        if ch in ("'", '"'):
+            start = i
+            quote = ch
+            i += 1
+            while i < n:
+                if source[i] == "\\":
+                    i += 2
+                    continue
+                if source[i] == quote:
+                    i += 1
+                    break
+                # A raw newline terminates an invalid short string for recovery;
+                # preserve the newline and continue scanning subsequent Lua code.
+                if source[i] in "\r\n":
+                    break
+                i += 1
+            mask(start, i)
+            continue
+
+        if ch == "[":
+            long_string = re.match(r"\[(=*)\[", source[i:])
+            if long_string:
+                close = "]" + long_string.group(1) + "]"
+                body_start = i + long_string.end()
+                close_at = source.find(close, body_start)
+                end = n if close_at < 0 else close_at + len(close)
+                mask(i, end)
+                i = end
+                continue
+        i += 1
+
+    return "".join(out)
+
+
+def static_finding_metadata(rule: str, evidence: str) -> dict:
+    """Conservative metadata: a text match is a review lead, never a defect verdict."""
+    return {
+        "rule": rule,
+        "evidence": evidence.strip()[:240],
+        "evidence_type": "textual_indicator",
+        "confidence": "low",
+        "estimated_severity": "context_dependent",
+        "explanation": (
+            "A static pattern matched executable source. This is a review lead, "
+            "not proof of a defect, exploitability, or runtime behavior."
+        ),
+        "suggested_fix": (
+            "Inspect surrounding control flow, API contracts, ownership and lifecycle. "
+            "Do not apply an automatic change based only on this match."
+        ),
+        "limitations": [
+            "Pattern matching is not full Lua control-flow or data-flow analysis.",
+            "Scanned mod code was not executed.",
+            "Runtime impact and DST server authority are not established.",
+        ],
+    }
+
+
 def extract_registration_candidates(path: str, content: str) -> list[dict]:
     """Extract high-value DST registration/override signals; not a full Lua parser."""
     code = strip_lua_comments(content)
@@ -201,19 +288,23 @@ def extract_registration_candidates(path: str, content: str) -> list[dict]:
         ("container_widget_override", r"\bcontainers\.widgetsetup\s*=", "replacement", "high"),
     ]
     found = []
+    original_lines = content.splitlines()
     for kind, pattern, operation, severity in patterns:
         for match in re.finditer(pattern, code):
             line = code.count("\n", 0, match.start()) + 1
             groups = [value for value in match.groups() if value is not None]
             target = "::".join(groups) if groups else kind
-            found.append({
+            evidence = original_lines[line - 1] if line <= len(original_lines) else ""
+            finding = {
                 "path": path,
                 "line": line,
                 "kind": kind,
                 "target": target,
                 "operation": operation,
                 "severity_if_competing": severity,
-            })
+            }
+            finding.update(static_finding_metadata(kind, evidence))
+            found.append(finding)
     return found
 
 
@@ -317,15 +408,22 @@ def audit(target: Path, run_luac: bool = False) -> dict:
         content = decode_text(data)
         if content is None:
             continue
-        for line_no, line in enumerate(content.splitlines(), 1):
+        # Lua signal detection must ignore comments and string literals. Keep
+        # the original source separately for evidence while preserving offsets.
+        original_lines = content.splitlines()
+        analysis_content = mask_lua_noncode(content) if name.lower().endswith(".lua") else content
+        for line_no, line in enumerate(analysis_content.splitlines(), 1):
             for category, pattern in PATTERNS.items():
                 if pattern.search(line):
-                    signals.append({
+                    evidence = original_lines[line_no - 1] if line_no <= len(original_lines) else ""
+                    finding = {
                         "path": name,
                         "line": line_no,
                         "category": category,
-                        "snippet": line.strip()[:240],
-                    })
+                        "snippet": evidence.strip()[:240],
+                    }
+                    finding.update(static_finding_metadata(category, evidence))
+                    signals.append(finding)
 
     lua_check = {"requested": run_luac, "available": False, "checked": 0, "failures": []}
     if run_luac:

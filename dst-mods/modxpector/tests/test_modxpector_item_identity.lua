@@ -365,4 +365,104 @@ local busy_target_result = ItemIdentity.Capture(inventory, player, busy_target, 
 assert(busy_target_result.complete == false and busy_target_result.target.complete == false,
     "busy target container must be rejected before reading predicted items")
 
+
+
+local function pickup_inventory(items)
+    return {
+        classified = { IsBusy = function() return false end },
+        GetItems = function() return items end,
+        GetEquips = function() return {} end,
+        GetActiveItem = function() return nil end,
+        GetOverflowContainer = function() return nil end,
+    }
+end
+
+local pickup_player = {}
+local pickup_item = entity(601, "donharpoon", 1)
+local pickup_before = ItemIdentity.Capture(
+    pickup_inventory({}), pickup_player, nil, pcall)
+local pickup_target_before = ItemIdentity.CapturePickupTarget(pickup_item, pcall)
+local pickup_after = ItemIdentity.Capture(
+    pickup_inventory({ [1] = pickup_item }), pickup_player, nil, pcall)
+local pickup_result = ItemIdentity.ComparePickup(
+    pickup_before, pickup_after, pickup_target_before, pickup_item, 601, pcall)
+assert(pickup_result.outcome == "observed_pickup_candidate",
+    "same GUID and entity reference should produce an exact pickup candidate")
+assert(pickup_result.evidence == "client_replica_snapshot_only"
+    and pickup_result.causality == "unproven"
+    and pickup_result.server_authority == "unverified",
+    "pickup evidence must not claim causality or server authority")
+
+local similar_item = entity(602, "donharpoon", 1)
+local similar_after = ItemIdentity.Capture(
+    pickup_inventory({ [1] = similar_item }), pickup_player, nil, pcall)
+local similar_result = ItemIdentity.ComparePickup(
+    pickup_before, similar_after, pickup_target_before, pickup_item, 601, pcall)
+assert(similar_result.outcome == "inconclusive",
+    "another item with the same prefab must not confirm the selected pickup")
+
+local fused_item = entity(603, "donharpoon", 2)
+local fused_target_before = ItemIdentity.CapturePickupTarget(fused_item, pcall)
+fused_item.replica.stackable.StackSize = function() return 3 end
+local fused_after = ItemIdentity.Capture(
+    pickup_inventory({ [1] = fused_item }), pickup_player, nil, pcall)
+local fused_result = ItemIdentity.ComparePickup(
+    ItemIdentity.Capture(pickup_inventory({}), pickup_player, nil, pcall),
+    fused_after, fused_target_before, fused_item, 603, pcall)
+assert(fused_result.outcome == "inconclusive",
+    "a stack merge or quantity change must not confirm pickup")
+
+local replaced_original = entity(604, "donharpoon", 1)
+local replaced_target_before = ItemIdentity.CapturePickupTarget(replaced_original, pcall)
+local replaced_entity = entity(604, "donharpoon", 1)
+local replaced_after = ItemIdentity.Capture(
+    pickup_inventory({ [1] = replaced_entity }), pickup_player, nil, pcall)
+local replaced_result = ItemIdentity.ComparePickup(
+    ItemIdentity.Capture(pickup_inventory({}), pickup_player, nil, pcall),
+    replaced_after, replaced_target_before, replaced_original, 604, pcall)
+assert(replaced_result.outcome == "inconclusive",
+    "a replacement entity with a matching GUID must not confirm pickup")
+
+local changed_guid_item = entity(605, "donharpoon", 1)
+local changed_guid_before = ItemIdentity.CapturePickupTarget(changed_guid_item, pcall)
+changed_guid_item.GUID = 606
+local changed_guid_after = ItemIdentity.Capture(
+    pickup_inventory({ [1] = changed_guid_item }), pickup_player, nil, pcall)
+local changed_guid_result = ItemIdentity.ComparePickup(
+    ItemIdentity.Capture(pickup_inventory({}), pickup_player, nil, pcall),
+    changed_guid_after, changed_guid_before, changed_guid_item, 605, pcall)
+assert(changed_guid_result.outcome == "inconclusive",
+    "a GUID change must not silently fall back to prefab counts")
+
+local missing_after = ItemIdentity.Capture(pickup_inventory({}), pickup_player, nil, pcall)
+local missing_result = ItemIdentity.ComparePickup(
+    pickup_before, missing_after, pickup_target_before, pickup_item, 601, pcall)
+assert(missing_result.outcome == "inconclusive",
+    "a target that disappears without appearing in inventory must be inconclusive")
+
+local incomplete_inventory = pickup_inventory({})
+incomplete_inventory.GetOverflowContainer = nil
+local incomplete_after = ItemIdentity.Capture(incomplete_inventory, pickup_player, nil, pcall)
+local incomplete_result = ItemIdentity.ComparePickup(
+    pickup_before, incomplete_after, pickup_target_before, pickup_item, 601, pcall)
+assert(incomplete_result.outcome == "inconclusive",
+    "incomplete post-pickup snapshots must be inconclusive")
+
+local incomplete_before_inventory = pickup_inventory({})
+incomplete_before_inventory.GetOverflowContainer = nil
+local incomplete_before = ItemIdentity.Capture(
+    incomplete_before_inventory, pickup_player, nil, pcall)
+local incomplete_before_result = ItemIdentity.ComparePickup(
+    incomplete_before, pickup_after, pickup_target_before, pickup_item, 601, pcall)
+assert(incomplete_before_result.outcome == "inconclusive",
+    "incomplete pre-pickup snapshots must be inconclusive")
+
+local invalid_target = entity(607, "donharpoon", 1)
+invalid_target.IsValid = function() return false end
+local invalid_target_snapshot = ItemIdentity.CapturePickupTarget(invalid_target, pcall)
+local invalid_target_result = ItemIdentity.ComparePickup(
+    pickup_before, pickup_after, invalid_target_snapshot, invalid_target, 607, pcall)
+assert(invalid_target_result.outcome == "inconclusive",
+    "an incomplete selected-target snapshot must be inconclusive")
+
 print("ModXpector item identity snapshot tests passed")
