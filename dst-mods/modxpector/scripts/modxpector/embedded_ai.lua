@@ -952,7 +952,6 @@ end
 local SUITE_ACTION_ALLOWLIST = { WALKTO = true, PICKUP = true }
 local SUITE_ASSERTION_ALLOWLIST = {
     pickup_target_collected = true,
-    player_inventory_item_count_increased = true,
     player_health_gte = true,
     player_hunger_gte = true,
     player_sanity_gte = true,
@@ -1019,19 +1018,6 @@ local function copy_assertion(assertion, index, previous_actions, prefab_set, re
         end
         result.target_step = target_step
         result.prefab = assertion.prefab
-    elseif kind == "player_inventory_item_count_increased" then
-        local target_step = assertion.target_step
-        if not finite_in_range(target_step, 1, index - 1)
-            or target_step ~= math.floor(target_step)
-            or previous_actions[target_step] ~= "PICKUP"
-            or not safe_identifier(assertion.prefab) or prefab_set[assertion.prefab] ~= true then
-            return nil
-        end
-        local count = assertion.count == nil and 1 or assertion.count
-        if not finite_in_range(count, 1, 10000) or count ~= math.floor(count) then return nil end
-        result.target_step = target_step
-        result.prefab = assertion.prefab
-        result.count = count
     elseif kind == "player_near_target" or kind == "target_exists" or kind == "target_has_tag" then
         local target_step = assertion.target_step
         if not finite_in_range(target_step, 1, index - 1)
