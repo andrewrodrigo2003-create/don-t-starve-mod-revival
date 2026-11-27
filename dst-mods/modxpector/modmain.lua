@@ -863,10 +863,6 @@ local function handle_unlock_recipe(player, request_id, step_index, run_id, reci
         send_result(player, request_id, false, "player builder component unavailable")
         return
     end
-    if plan == nil or plan._server_owner_userid ~= player.userid then
-        send_result(player, request_id, false, "no active Master-approved test plan for this player")
-        return
-    end
     local authorized, authorization_reason = consume_declared_server_operation(
         plan, step_index, run_id, "unlock_recipe", recipe_name, nil, player)
     if not authorized then
@@ -886,6 +882,10 @@ local function handle_spawn(player, request_id, step_index, run_id, prefab, coun
         return
     end
     if not is_admin_player(player) then send_result(player, request_id, false, "administrator permission required"); return end
+    if plan == nil or plan._server_owner_userid ~= player.userid then
+        send_result(player, request_id, false, "no active Master-approved test plan for this player")
+        return
+    end
     if not allow_spawn_request(player) then send_result(player, request_id, false, "test spawn rate limit exceeded"); return end
     count = tonumber(count)
     if not prefab_is_allowed(prefab, plan) or type(count) ~= "number" or count ~= math.floor(count)
