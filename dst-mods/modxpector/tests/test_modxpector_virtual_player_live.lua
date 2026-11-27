@@ -203,6 +203,30 @@ TheSim.FindEntities = function()
     return found
 end
 local VirtualPlayer = require("modxpector/virtual_player_client")
+
+local function attach_test_event_api(entity)
+    entity._test_event_listeners = {}
+    entity.ListenForEvent = function(self, event_name, callback)
+        local listeners = self._test_event_listeners[event_name] or {}
+        listeners[#listeners + 1] = callback
+        self._test_event_listeners[event_name] = listeners
+    end
+    entity.RemoveEventCallback = function(self, event_name, callback)
+        local listeners = self._test_event_listeners[event_name] or {}
+        local remaining = {}
+        for _, existing in ipairs(listeners) do
+            if existing ~= callback then remaining[#remaining + 1] = existing end
+        end
+        self._test_event_listeners[event_name] = remaining
+    end
+    entity.ListenerExists = function(self, event_name, callback)
+        for _, existing in ipairs(self._test_event_listeners[event_name] or {}) do
+            if existing == callback then return true end
+        end
+        return false
+    end
+    return entity
+end
 local finished
 local controller
 controller = VirtualPlayer.new(player, {
