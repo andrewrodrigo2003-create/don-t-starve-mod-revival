@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "dst-mods/modxpector/**"
+      - "tools/dst_mod_audit.py"
+      - "tests/test_dst_mod_audit.py"
       - ".github/workflows/modxpector-lua-checks.yml"
 
 permissions:
@@ -26,6 +28,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends lua5.1
+
+      - name: Run read-only Lua scanner regression tests
+        run: python3 -m unittest discover -s tests -p 'test_dst_mod_audit.py' -v
 
       - name: Parse all ModXpector Lua files
         run: |
