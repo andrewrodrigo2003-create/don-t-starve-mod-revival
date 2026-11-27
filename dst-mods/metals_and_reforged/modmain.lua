@@ -179,6 +179,20 @@ for _, v in pairs(newtechtoadd) do
     TechTree.AVAILABLE_TECH_LEVEL_CLASSIFIED[v] = thelower .. "level"
 end
 
+-- Register custom requirements in the same TECH namespace used by AddRecipe2
+-- and the recipe migration guard. Registering only the prototyper trees leaves
+-- TECH.ALCHEMY_ONE / TECH.CRAFTSBOOK_ONE nil, so station migration fails closed.
+TECH.NONE.ALCHEMY = 0
+TECH.NONE.CRAFTSBOOK = 0
+TECH.ALCHEMY_ONE = { ALCHEMY = 1 }
+TECH.CRAFTSBOOK_ONE = { CRAFTSBOOK = 1 }
+
+-- Every existing prototyper explicitly has level zero for both custom trees.
+for _, tree in pairs(TUNING.PROTOTYPER_TREES) do
+    tree.ALCHEMY = tree.ALCHEMY or 0
+    tree.CRAFTSBOOK = tree.CRAFTSBOOK or 0
+end
+
 TUNING.PROTOTYPER_TREES.ALCHEMY_ONE = TechTree.Create({
     ALCHEMY = 1
 })
