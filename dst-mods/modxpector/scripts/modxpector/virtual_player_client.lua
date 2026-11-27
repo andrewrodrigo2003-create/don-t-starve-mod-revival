@@ -416,6 +416,25 @@ function VirtualPlayer:Start(plan)
     assert(type(plan) == "table" and plan.schema == "modxpector/test-plan/v1", "unsupported test plan schema")
     assert(plan.enabled == true, "test plan is disabled")
     assert(type(plan.steps) == "table" and #plan.steps <= self.max_steps, "test plan exceeds step limit")
+    for action_index, candidate in ipairs(plan.steps) do
+        if type(candidate) == "table" and candidate.kind == "action"
+            and candidate.action == "PICKUP" then
+            local matching_identity_assertion = false
+            for _, postcondition in ipairs(plan.steps) do
+                if type(postcondition) == "table" and postcondition.kind == "assert"
+                    and type(postcondition.assertion) == "table"
+                    and postcondition.assertion.kind == "pickup_target_collected"
+                    and tonumber(postcondition.assertion.target_step) == action_index
+                    and postcondition.assertion.prefab == (candidate.target ~= nil and candidate.target.prefab or nil)
+                    and postcondition.verifies_step == action_index then
+                    matching_identity_assertion = true
+                    break
+                end
+            end
+            assert(candidate.target_required == true and matching_identity_assertion,
+                "PICKUP requires an exact pickup_target_collected postcondition")
+        end
+    end
     assert(self:_cleanup_target_listeners(),
         "previous target listener cleanup is still pending")
     self.queue = plan.steps
@@ -460,6 +479,7 @@ function VirtualPlayer:Start(plan)
     self.step_targets = {}
     self.step_inventory_baselines = {}
     self.step_transfer_baselines = {}
+    self.step_pickup_baselines = {}
     self.target_death_events = {}
     self.target_death_callbacks = {}
     self.run_inconclusive = false
@@ -771,6 +791,39 @@ function VirtualPlayer:_capture_step_inventory_baseline(step_index)
     end
 end
 
+
+function VirtualPlayer:_capture_step_pickup_baseline(step_index, target)
+    local inventory = self.player ~= nil and self.player.replica ~= nil
+        and self.player.replica.inventory or nil
+    if inventory == nil or type(ItemIdentity.Capture) ~= "function"
+        or type(ItemIdentity.CapturePickupTarget) ~= "function" then
+        return false, "pickup identity snapshot APIs are unavailable"
+    end
+    local before = ItemIdentity.Capture(inventory, self.player, nil, pcall)
+    local target_before = ItemIdentity.CapturePickupTarget(target, pcall)
+    if type(before) ~= "table" or before.complete ~= true
+        or type(target_before) ~= "table" or target_before.complete ~= true then
+        return false, "pickup baseline snapshots are incomplete"
+    end
+    local guid = target ~= nil and target.GUID or nil
+    if not is_finite_number(guid) or guid < 1 or guid ~= math.floor(guid)
+        or target_before.by_guid == nil or target_before.by_guid[guid] == nil then
+        return false, "selected pickup target has no stable GUID identity"
+    end
+    if before.player.by_guid[guid] ~= nil then
+        return false, "selected pickup target already appears in the player inventory baseline"
+    end
+    self.step_pickup_baselines = self.step_pickup_baselines or {}
+    self.step_pickup_baselines[step_index] = {
+        before = before,
+        target_before = target_before,
+        target = target,
+        target_guid = guid,
+        prefab = target_before.by_guid[guid].prefab,
+    }
+    return true
+end
+
 function VirtualPlayer:_evaluate_assertion(assertion)
     assert(type(assertion) == "table", "assertion must be an object")
     local kind = assertion.kind
@@ -817,6 +870,56 @@ function VirtualPlayer:_evaluate_assertion(assertion)
             "item-count increase must be an integer between 1 and 10000")
         actual = self:_count_player_prefab(inventory, prefab, true) - baseline >= count
         expected = true
+
+    elseif kind == "pickup_target_collected" then
+        local step_index = tonumber(assertion.target_step)
+        assert(is_finite_number(step_index) and step_index == math.floor(step_index)
+            and step_index >= 1 and step_index < self.index,
+            "pickup identity assertion must reference a previous action step")
+        local prefab = assert(assertion.prefab, "pickup assertion prefab required")
+        assert(type(prefab) == "string" and self.allowed_prefabs[prefab],
+            "pickup assertion prefab is not in the test plan allowlist")
+        local baseline = self.step_pickup_baselines ~= nil
+            and self.step_pickup_baselines[step_index] or nil
+        if type(baseline) ~= "table" or baseline.prefab ~= prefab
+            or baseline.target == nil or baseline.target_guid == nil then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "exact pickup baseline is unavailable",
+            }
+        end
+        local inventory = self.player ~= nil and self.player.replica ~= nil
+            and self.player.replica.inventory or nil
+        if inventory == nil then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "player inventory replica is unavailable after pickup",
+            }
+        end
+        local after = ItemIdentity.Capture(inventory, self.player, nil, pcall)
+        local result = ItemIdentity.ComparePickup(
+            baseline.before, after, baseline.target_before,
+            baseline.target, baseline.target_guid, pcall)
+        if type(result) ~= "table" or result.outcome ~= "observed_pickup_candidate" then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true,
+                reason = type(result) == "table" and result.reason or "pickup identity comparison failed",
+            }
+        end
+        if result.prefab ~= prefab then
+            return {
+                kind = kind, actual = false, expected = true, passed = false,
+                inconclusive = true, reason = "collected item prefab does not match the asserted target",
+            }
+        end
+        return {
+            kind = kind, actual = true, expected = true, passed = true,
+            inconclusive = false, evidence = result.evidence,
+            causality = result.causality,
+            server_authority = result.server_authority,
+            guid = result.guid,
+        }
     elseif kind == "player_inventory_item_count_increased"
         or kind == "player_inventory_item_count_decreased"
         or kind == "container_item_count_increased" then
@@ -1098,6 +1201,16 @@ function VirtualPlayer:_next_impl()
         if not ok then self:_record(step, "failed", tostring(action_or_error)); self:_finish(false, tostring(action_or_error)); return end
         local target_entity = action_or_error.target
         if target_entity ~= nil then self:_capture_step_target(self.index, target_entity) end
+        if step.action == "PICKUP" then
+            local pickup_baseline_ok, pickup_baseline_error = self:_capture_step_pickup_baseline(
+                self.index, target_entity)
+            if not pickup_baseline_ok then
+                self.run_inconclusive = true
+                self:_record(step, "inconclusive", tostring(pickup_baseline_error))
+                self:_finish(false, "PICKUP identity baseline unavailable: " .. tostring(pickup_baseline_error))
+                return
+            end
+        end
         local baseline_ok, baseline_error = pcall(function()
             self:_capture_step_transfer_baseline(self.index, target_entity)
         end)
@@ -1205,8 +1318,9 @@ function VirtualPlayer:_next_impl()
             self:_next()
         elseif ok and result.inconclusive then
             self.run_inconclusive = true
-            self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind))
-            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind))
+            local reason = type(result.reason) == "string" and result.reason or "insufficient evidence"
+            self:_record(step, "inconclusive", "assertion could not be evaluated: " .. tostring(result.kind) .. ": " .. reason)
+            self:_finish(false, "assertion inconclusive: " .. tostring(result.kind) .. ": " .. reason)
             return
         else
             self:_record(step, "failed", ok and ("assertion failed: " .. tostring(result.kind)) or tostring(result))
