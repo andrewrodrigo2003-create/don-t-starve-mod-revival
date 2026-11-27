@@ -16,10 +16,10 @@ local stack_size = function(item)
     return 1
 end
 
--- The public batch-cap setting tops out at 20. Bound save-derived quantities
--- before they reach output loops or replicated history, even if a save is
--- malformed or was edited by an external tool.
-local MAX_BATCH_OUTPUT = 20
+-- Normal public batch settings top out at 20. Keep a wider defensive ceiling
+-- for legacy/modded saves and stress-tested partial harvest recovery, while
+-- preventing corrupt values from driving effectively unbounded output loops.
+local MAX_BATCH_OUTPUT = 100
 
 local function valid_batch(value)
     local amount = tonumber(value)
