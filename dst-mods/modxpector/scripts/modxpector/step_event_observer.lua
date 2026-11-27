@@ -70,8 +70,8 @@ local function cleanup(session)
     session.listeners = remaining
     session.cleaned = #remaining == 0
     session.cleanup_complete = session.cleaned
-    session.cleanup_verification = session.cleaned and verification_available and all_verified
-        and "verified" or "unverified"
+    session.cleanup_verification = not session.cleaned and "pending"
+        or (verification_available and all_verified and "verified" or "unverified")
     return session.cleaned
 end
 
