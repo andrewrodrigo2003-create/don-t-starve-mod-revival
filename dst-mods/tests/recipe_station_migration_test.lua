@@ -282,6 +282,8 @@ local minerhat = {
     tech_ingredients = {},
     level = { SCIENCE = 2 },
     filter = "ORIGINAL_FILTER",
+    name = "minerhat",
+    tab = "ORIGINAL_TAB",
     product = "minerhat",
     nameoverride = "Original Miner Hat",
     description = "Original recipe description",
@@ -296,7 +298,9 @@ local minerhat = {
     overridecandeployrecipeatpointfn = callback_marker,
     canbuild = callback_marker,
     nounlock = false,
+    unlocks_from_skin = "SKINUNLOCKS.CRAFTINGSTATION",
     numtogive = 3,
+    override_numtogive_fn = callback_marker,
     builder_tag = "original_builder_tag",
     builder_skill = "original_builder_skill",
     no_builder_tag = "original_no_builder_tag",
@@ -319,6 +323,7 @@ local minerhat = {
     limitedamount = true,
     getlimitedrecipecount = callback_marker,
     source_recipename = "original_source",
+    is_deconstruction_recipe = false,
     sortkey = 17,
     rpc_id = 19,
 }
@@ -329,13 +334,13 @@ local minerhat_character_ingredients = minerhat.character_ingredients
 local minerhat_tech_ingredients = minerhat.tech_ingredients
 local minerhat_level = minerhat.level
 local minerhat_metadata = {
-    "product", "nameoverride", "description", "layeredimagefn", "imagefn", "image", "atlas",
+    "name", "tab", "product", "nameoverride", "description", "layeredimagefn", "imagefn", "image", "atlas",
     "fxover", "placer", "min_spacing", "testfn", "overridecandeployrecipeatpointfn", "canbuild",
-    "numtogive", "builder_tag", "builder_skill", "no_builder_tag", "no_builder_skill",
+    "unlocks_from_skin", "numtogive", "override_numtogive_fn", "builder_tag", "builder_skill", "no_builder_tag", "no_builder_skill",
     "forward_ingredients", "sg_state", "build_mode", "build_distance", "no_deconstruction",
     "decon_ignores_finiteuses", "require_special_event", "always_allow_buffered_placer",
     "dropitem", "actionstr", "recipedisplaynamefn", "hint_msg", "force_hint", "manufactured",
-    "station_tag", "limitedamount", "getlimitedrecipecount", "source_recipename", "sortkey", "rpc_id",
+    "station_tag", "limitedamount", "getlimitedrecipecount", "source_recipename", "is_deconstruction_recipe", "sortkey", "rpc_id",
 }
 local minerhat_values = {}
 for _, key in ipairs(minerhat_metadata) do
