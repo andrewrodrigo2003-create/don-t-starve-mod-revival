@@ -86,4 +86,4 @@ assert_true(world_data.base_world_saved == true, "world original OnSave can stil
 world.OnLoad(world, {})
 assert_true(world_load_calls == 1, "world original OnLoad runs when regrowth data is absent")
 
-print("Regrowth save reference preservation: 10 passed / 0 failed")
+print("Regrowth save reference preservation: 11 passed / 0 failed")
