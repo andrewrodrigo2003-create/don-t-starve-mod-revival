@@ -105,17 +105,15 @@ M.BASELINE = BASELINE
 -- Historico do que aconteceu nesta sessao, para o relatorio de diagnostico.
 M.results = {}
 
--- AddRecipe2 existe apenas no ambiente do modmain, nao como global do jogo
--- (modutil.lua:732 define env.AddRecipe2). Um arquivo require() nao ve esse
--- ambiente, entao quem roda no modmain precisa injetar a funcao aqui.
-local add_recipe_2 = nil
+-- AddRecipeToFilter/RemoveRecipeFromFilter existem apenas no ambiente modmain.
+-- O primeiro argumento legado de Init e' mantido por compatibilidade de chamada,
+-- mas e' intencionalmente ignorado: migrar uma receita existente nunca usa AddRecipe2.
 local add_recipe_to_filter = nil
 local remove_recipe_from_filter = nil
-function M.Init(addrecipe2, addrecipetofilter, removerecipefromfilter)
+function M.Init(_, addrecipetofilter, removerecipefromfilter)
     -- Treat each initialization as a complete API snapshot. Retaining a previous
     -- optional callback when the new environment omits it masks unavailable APIs
     -- and can make station migration tests (or reloads) use stale capabilities.
-    add_recipe_2 = addrecipe2
     add_recipe_to_filter = addrecipetofilter
     remove_recipe_from_filter = removerecipefromfilter
 end
