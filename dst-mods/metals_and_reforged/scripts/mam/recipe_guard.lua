@@ -312,49 +312,74 @@ function M.regate(name, our_ingredients, tech, more_data, filters)
         return false, result.reason
     end
 
-    if add_recipe_2 == nil then
-        result.reason = "not-initialised"
-        MAMLog.Error("recipe_guard.regate('%s') chamado sem MAMRecipeGuard.Init(AddRecipe2)", tostring(name))
-        return false, result.reason
-    end
-
     local m = mode()
     if m == 0 then
         result.reason = "disabled"
         return false, result.reason
     end
 
-    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
-        and not MAMConfig.on("mam_third_party_recipe_integration") then
+    if BASELINE[name] == nil then
+        result.reason = "no-baseline"
+        MAMLog.WarnOnce("regate.nobaseline." .. name,
+            "Receita '%s' nao tem assinatura vanilla; migracao para o craftbook recusada.", name)
+        return false, result.reason
+    end
+
+    local changed_by_others = not same_signature(BASELINE[name], describe(recipe))
+    if changed_by_others and not MAMConfig.on("mam_third_party_recipe_integration") then
         result.reason = "third-party-integration-disabled"
         MAMLog.Info("receita '%s' de terceiro preservada: integracao desativada", name)
         return false, result.reason
     end
 
-    local ingredients = our_ingredients
-    local kept_theirs = false
-
-    if m == 1 and BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe)) then
-        ingredients = M.live_ingredients(recipe)
-        kept_theirs = true
-        MAMLog.WarnOnce("regate.keep." .. name,
-            "Receita '%s' foi reequilibrada por outro mod -- movemos para o craftbook mas "
-            .. "preservamos os ingredientes daquele mod.", name)
+    -- No modo seguro, uma receita cujo balanceamento vivo diverge da baseline
+    -- conserva os ingredientes e todas as demais propriedades do Recipe original.
+    local kept_theirs = m == 1 and changed_by_others
+    local station_options = {
+        nounlock = type(more_data) == "table" and more_data.nounlock == true,
+        -- AddRecipe2(nounlock=true) coloca a receita em CRAFTING_STATION, mas nao
+        -- define recipe.filter. Preserve esse campo original.
+        set_recipe_filter = false,
+    }
+    if not kept_theirs then
+        station_options.ingredients = our_ingredients
     end
 
-    add_recipe_2(name, ingredients, tech, more_data, filters)
+    -- Migra o objeto Recipe existente. Nao chamar AddRecipe2 aqui: Recipe2
+    -- substitui AllRecipes[name] e recria metadados/callbacks com defaults.
+    local applied, reason = M.set_station(name, tech, "CRAFTING_STATION", station_options)
+    if not applied then
+        result.reason = reason
+        return false, result.reason
+    end
 
     result.applied = true
     result.reason = kept_theirs and "kept-others-ingredients" or "applied"
+    result.ingredients = copy_ingredient_list(M.live_ingredients(recipe))
     return true, result.reason
 end
-
 --- Move uma receita existente para o filtro/tecnologia da War Bench sem
 --- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
 function M.set_station(name, tech, filter, options)
     local key = "station:" .. name
     local previous = M.results[key]
     options = type(options) == "table" and options or {}
+    local set_recipe_filter = options.set_recipe_filter ~= false
+    if options.nounlock ~= nil and type(options.nounlock) ~= "boolean" then
+        return false, "invalid-options"
+    end
+    if options.ingredients ~= nil then
+        if type(options.ingredients) ~= "table" then
+            return false, "invalid-ingredients"
+        end
+        for _, ingredient in ipairs(options.ingredients) do
+            if type(ingredient) ~= "table" or ingredient.type == nil or ingredient.amount == nil then
+                return false, "invalid-ingredients"
+            end
+        end
+    end
+    local requested_ingredients_signature = options.ingredients ~= nil
+        and copy_ingredient_list(options.ingredients) or nil
     local result = { name = name, applied = false, reason = "unknown" }
     M.results[key] = result
 
@@ -375,8 +400,15 @@ function M.set_station(name, tech, filter, options)
         and destination.default_sort_values[name] ~= nil)
 
     local previous_options = previous ~= nil and previous.options or {}
+    local requested_ingredients_match = options.ingredients == nil
+        and previous_options.ingredients_signature == nil
+        or options.ingredients ~= nil
+        and same_ingredient_list(previous_options.ingredients_signature, options.ingredients)
     local options_match = previous_options.remove_special_event == (options.remove_special_event == true)
         and previous_options.clear_hint_msg_if == options.clear_hint_msg_if
+        and previous_options.nounlock == options.nounlock
+        and (previous_options.set_recipe_filter ~= false) == set_recipe_filter
+        and requested_ingredients_match
     local special_event = filters ~= nil and filters.SPECIAL_EVENT or nil
     local special_event_removed = options.remove_special_event ~= true
         or special_event == nil or type(special_event.default_sort_values) ~= "table"
@@ -390,8 +422,9 @@ function M.set_station(name, tech, filter, options)
         and same_signature(previous.ingredients_signature, describe(recipe))
         and previous.level_signature ~= nil
         and same_tech_level(recipe.level, previous.level_signature)
-        and recipe.filter == filter and destination_contains
-        and special_event_removed and hint_cleared then
+        and (not set_recipe_filter or recipe.filter == filter)
+        and (options.nounlock == nil or recipe.nounlock == options.nounlock)
+        and destination_contains and special_event_removed and hint_cleared then
         result.applied = true
         result.reason = "already-applied"
         result.tech_input = tech
@@ -399,6 +432,9 @@ function M.set_station(name, tech, filter, options)
         result.options = {
             remove_special_event = options.remove_special_event == true,
             clear_hint_msg_if = options.clear_hint_msg_if,
+            nounlock = options.nounlock,
+            set_recipe_filter = set_recipe_filter,
+            ingredients_signature = requested_ingredients_signature,
         }
         result.ingredients_signature = previous.ingredients_signature
         result.level_signature = previous.level_signature
@@ -511,8 +547,14 @@ function M.set_station(name, tech, filter, options)
 
     -- Commit the Recipe fields only after filter migration succeeds.
     recipe.level = new_level
-    if filter ~= nil then
+    if filter ~= nil and set_recipe_filter then
         recipe.filter = filter
+    end
+    if options.ingredients ~= nil then
+        recipe.ingredients = options.ingredients
+    end
+    if options.nounlock ~= nil then
+        recipe.nounlock = options.nounlock
     end
     if options.clear_hint_msg_if ~= nil and recipe.hint_msg == options.clear_hint_msg_if then
         recipe.hint_msg = nil
@@ -525,6 +567,9 @@ function M.set_station(name, tech, filter, options)
     result.options = {
         remove_special_event = options.remove_special_event == true,
         clear_hint_msg_if = options.clear_hint_msg_if,
+        nounlock = options.nounlock,
+        set_recipe_filter = set_recipe_filter,
+        ingredients_signature = requested_ingredients_signature,
     }
     result.ingredients_signature = describe(recipe)
     result.level_signature = copy_tech_level(recipe.level)
