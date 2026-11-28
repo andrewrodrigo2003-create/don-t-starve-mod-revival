@@ -243,4 +243,215 @@ assert(CRAFTING_FILTERS.SPECIAL_EVENT.default_sort_values.seasonal_hint == nil)
 assert(AllRecipes.seasonal_hint.hint_msg == "OTHER_EVENT_HINT",
     "hint cleanup must be conditional on the exact vanilla hint value")
 
+
+-- Craftbook migration must mutate the existing Recipe, never recreate it via AddRecipe2.
+TECH.CRAFTSBOOK_ONE = { CRAFTSBOOK = 1 }
+CRAFTING_FILTERS.MODS.default_sort_values.minerhat = 1
+CRAFTING_FILTERS.MODS.default_sort_values.seedpouch = 2
+CRAFTING_FILTERS.MODS.default_sort_values.purpleamulet = 3
+
+local add_recipe_calls = 0
+guard.Init(function()
+    add_recipe_calls = add_recipe_calls + 1
+    error("Craftbook migration must not recreate an existing Recipe with AddRecipe2")
+end, function(name, filter)
+    table.insert(filter_calls, { name = name, filter = filter })
+    CRAFTING_FILTERS[filter].default_sort_values[name] = #filter_calls
+end, function(name, filter)
+    table.insert(filter_calls, { name = name, filter = "removed:" .. filter })
+    CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+end)
+
+local function callback_marker() end
+local forward_ingredients = { "woodie_boards" }
+local minerhat = {
+    ingredients = {
+        { type = "strawhat", amount = 1 },
+        { type = "goldnugget", amount = 1 },
+        { type = "fireflies", amount = 1 },
+    },
+    character_ingredients = { { type = "health", amount = 5 } },
+    tech_ingredients = { { type = "SCIENCE", amount = 1 } },
+    level = { SCIENCE = 2 },
+    filter = "ORIGINAL_FILTER",
+    product = "minerhat",
+    nameoverride = "Original Miner Hat",
+    description = "Original recipe description",
+    layeredimagefn = callback_marker,
+    imagefn = callback_marker,
+    image = "original_minerhat.tex",
+    atlas = "images/original.xml",
+    fxover = "original_fx",
+    placer = "original_placer",
+    min_spacing = 2.5,
+    testfn = callback_marker,
+    overridecandeployrecipeatpointfn = callback_marker,
+    canbuild = callback_marker,
+    nounlock = false,
+    numtogive = 3,
+    builder_tag = "original_builder_tag",
+    builder_skill = "original_builder_skill",
+    no_builder_tag = "original_no_builder_tag",
+    no_builder_skill = "original_no_builder_skill",
+    forward_ingredients = forward_ingredients,
+    sg_state = "original_build_state",
+    build_mode = "WATER",
+    build_distance = 2,
+    no_deconstruction = true,
+    decon_ignores_finiteuses = true,
+    require_special_event = "hallowed",
+    always_allow_buffered_placer = true,
+    dropitem = "original_drop",
+    actionstr = "ORIGINAL_ACTION",
+    recipedisplaynamefn = callback_marker,
+    hint_msg = "ORIGINAL_HINT",
+    force_hint = true,
+    manufactured = true,
+    station_tag = "original_station_tag",
+    limitedamount = true,
+    getlimitedrecipecount = callback_marker,
+    source_recipename = "original_source",
+    sortkey = 17,
+    rpc_id = 19,
+}
+AllRecipes.minerhat = minerhat
+AllBuilderTaggedRecipes = { minerhat = "original_builder_tag" }
+local minerhat_original_ingredients = minerhat.ingredients
+local minerhat_character_ingredients = minerhat.character_ingredients
+local minerhat_tech_ingredients = minerhat.tech_ingredients
+local minerhat_level = minerhat.level
+local minerhat_metadata = {
+    "product", "nameoverride", "description", "layeredimagefn", "imagefn", "image", "atlas",
+    "fxover", "placer", "min_spacing", "testfn", "overridecandeployrecipeatpointfn", "canbuild",
+    "numtogive", "builder_tag", "builder_skill", "no_builder_tag", "no_builder_skill",
+    "forward_ingredients", "sg_state", "build_mode", "build_distance", "no_deconstruction",
+    "decon_ignores_finiteuses", "require_special_event", "always_allow_buffered_placer",
+    "dropitem", "actionstr", "recipedisplaynamefn", "hint_msg", "force_hint", "manufactured",
+    "station_tag", "limitedamount", "getlimitedrecipecount", "source_recipename", "sortkey", "rpc_id",
+}
+local minerhat_values = {}
+for _, key in ipairs(minerhat_metadata) do
+    minerhat_values[key] = minerhat[key]
+end
+local mam_minerhat_ingredients = {
+    { type = "strawhat", amount = 1 },
+    { type = "bronze_ingot", amount = 1 },
+    { type = "fireflies", amount = 1 },
+}
+local regate_ok, regate_reason = guard.regate(
+    "minerhat", mam_minerhat_ingredients, TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(regate_ok and regate_reason == "applied", "vanilla Craftbook recipe should migrate")
+assert(AllRecipes.minerhat == minerhat, "Craftbook migration must preserve the original Recipe object")
+assert(minerhat.ingredients == mam_minerhat_ingredients, "MAM-owned vanilla cost override should be applied in place")
+assert(minerhat.character_ingredients == minerhat_character_ingredients,
+    "character ingredients must remain attached to the original Recipe")
+assert(minerhat.tech_ingredients == minerhat_tech_ingredients,
+    "tech ingredients must remain attached to the original Recipe")
+assert(minerhat.level.CRAFTSBOOK == 1 and minerhat.level.SCIENCE == nil,
+    "Craftbook tech level should replace only the intended technology tree")
+assert(minerhat.nounlock == true, "Craftbook's explicit nounlock behavior should be applied")
+assert(minerhat.filter == "ORIGINAL_FILTER", "AddRecipe2-compatible migration must not rewrite recipe.filter")
+assert(CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.minerhat ~= nil,
+    "Craftbook recipe must be added to the crafting-station filter")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.minerhat == nil,
+    "Craftbook migration should remove the old recipe category")
+assert(AllBuilderTaggedRecipes.minerhat == "original_builder_tag",
+    "existing builder-tag registry entry must remain intact")
+for _, key in ipairs(minerhat_metadata) do
+    assert(minerhat[key] == minerhat_values[key], "Recipe metadata was changed: " .. key)
+end
+assert(add_recipe_calls == 0, "Craftbook migration must never call AddRecipe2")
+
+-- UM Beta 6.0.3.9 changes seedpouch ingredients. With integration enabled,
+-- retain the live ingredient tables and all metadata while moving the same object.
+local seedpouch = {
+    ingredients = {
+        { type = "slurtle_shellpieces", amount = 2 },
+        { type = "waxpaper", amount = 1 },
+        { type = "seeds", amount = 2 },
+    },
+    character_ingredients = { { type = "health", amount = 5 } },
+    tech_ingredients = { { type = "SCIENCE", amount = 1 } },
+    level = { SCIENCE = 1 },
+    filter = "ORIGINAL_SEED_FILTER",
+    builder_tag = "um_builder_tag",
+    builder_skill = "um_builder_skill",
+    no_builder_tag = "um_no_builder_tag",
+    no_builder_skill = "um_no_builder_skill",
+    product = "seedpouch",
+    numtogive = 2,
+    canbuild = callback_marker,
+    sg_state = "um_build_state",
+    station_tag = "um_station",
+    require_special_event = "um_event",
+    nounlock = false,
+}
+AllRecipes.seedpouch = seedpouch
+local seedpouch_original_ingredients = seedpouch.ingredients
+local seedpouch_character_ingredients = seedpouch.character_ingredients
+local seedpouch_tech_ingredients = seedpouch.tech_ingredients
+local seedpouch_level = seedpouch.level
+third_party_recipe_integration = false
+local seed_disabled, seed_disabled_reason = guard.regate(
+    "seedpouch", { { type = "cutgrass", amount = 99 } }, TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(not seed_disabled and seed_disabled_reason == "third-party-integration-disabled",
+    "disabled third-party integration must reject a changed recipe")
+assert(AllRecipes.seedpouch == seedpouch and seedpouch.ingredients == seedpouch_original_ingredients,
+    "disabled integration must leave the live Recipe and ingredients untouched")
+assert(seedpouch.level == seedpouch_level and seedpouch.filter == "ORIGINAL_SEED_FILTER"
+    and seedpouch.nounlock == false, "disabled integration must leave recipe state untouched")
+third_party_recipe_integration = true
+local seed_enabled, seed_enabled_reason = guard.regate(
+    "seedpouch", { { type = "cutgrass", amount = 99 } }, TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(seed_enabled and seed_enabled_reason == "kept-others-ingredients",
+    "safe integration must retain UM Beta ingredient changes")
+assert(AllRecipes.seedpouch == seedpouch, "third-party recipe object must not be replaced")
+assert(seedpouch.ingredients == seedpouch_original_ingredients
+    and seedpouch.character_ingredients == seedpouch_character_ingredients
+    and seedpouch.tech_ingredients == seedpouch_tech_ingredients,
+    "all live ingredient groups must remain intact")
+assert(seedpouch.level.CRAFTSBOOK == 1 and seedpouch.nounlock == true,
+    "only the intended Craftbook tech/nounlock fields should change")
+assert(seedpouch.filter == "ORIGINAL_SEED_FILTER", "third-party recipe filter metadata must remain intact")
+assert(seedpouch.builder_tag == "um_builder_tag" and seedpouch.builder_skill == "um_builder_skill"
+    and seedpouch.no_builder_tag == "um_no_builder_tag" and seedpouch.no_builder_skill == "um_no_builder_skill"
+    and seedpouch.product == "seedpouch" and seedpouch.numtogive == 2
+    and seedpouch.canbuild == callback_marker and seedpouch.sg_state == "um_build_state"
+    and seedpouch.station_tag == "um_station" and seedpouch.require_special_event == "um_event",
+    "UM recipe metadata and callbacks must survive Craftbook migration")
+assert(add_recipe_calls == 0, "third-party migration must never call AddRecipe2")
+
+-- A metadata-only third-party change is not an ingredient override. Preserve
+-- its metadata even while applying the MAM-owned ingredient list.
+AllRecipes.purpleamulet = {
+    ingredients = {
+        { type = "goldnugget", amount = 6 },
+        { type = "nightmarefuel", amount = 4 },
+        { type = "purplegem", amount = 2 },
+    },
+    level = { MAGIC = 2 },
+    filter = "ORIGINAL_PURPLE_FILTER",
+    builder_tag = "metadata_only_builder",
+    builder_skill = "metadata_only_skill",
+    canbuild = callback_marker,
+    numtogive = 4,
+    station_tag = "metadata_only_station",
+    require_special_event = "metadata_only_event",
+    nounlock = false,
+}
+local purpleamulet = AllRecipes.purpleamulet
+local purple_builder_tag = purpleamulet.builder_tag
+local purple_canbuild = purpleamulet.canbuild
+local purple_ingredients = { { type = "purplegem", amount = 4 } }
+local purple_ok = guard.regate("purpleamulet", purple_ingredients, TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(purple_ok and AllRecipes.purpleamulet == purpleamulet,
+    "metadata-only third-party recipe must retain its original Recipe object")
+assert(purpleamulet.ingredients == purple_ingredients, "MAM cost should apply only to the ingredient field")
+assert(purpleamulet.builder_tag == purple_builder_tag and purpleamulet.canbuild == purple_canbuild
+    and purpleamulet.numtogive == 4 and purpleamulet.station_tag == "metadata_only_station"
+    and purpleamulet.require_special_event == "metadata_only_event",
+    "metadata-only third-party properties must survive the ingredient override")
+
+assert(add_recipe_calls == 0, "no Craftbook path may recreate a Recipe with AddRecipe2")
+
 print("PASS: War Bench migration preserves metadata and honors the independent third-party recipe switch")
