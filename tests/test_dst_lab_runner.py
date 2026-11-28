@@ -41,8 +41,8 @@ class LabRunnerTests(unittest.TestCase):
         self.assertIsNotNone(lua_step)
         ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\.lua)", lua_step.group("body")))
         config_step = re.search(
-            r"(?ms)^      - name: Run MAM configuration Lua harness\\n"
-            r"        run: \\|\\n(?P<body>.*?)(?=^      - name: )", workflow,
+            r"(?ms)^      - name: Run MAM configuration Lua harness\n"
+            r"        run: \|\n(?P<body>.*?)(?=^      - name: )", workflow,
         )
         self.assertIsNotNone(config_step)
         self.assertIn("cd dst-mods/metals_and_reforged", config_step.group("body"))
