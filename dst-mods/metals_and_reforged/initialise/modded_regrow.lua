@@ -69,7 +69,7 @@ simpleregrowth = {
 					data.simpleregrowth.ismodded = ent.simpleregrowth.ismodded
 				end
 				if onsave then
-					onsave(inst, data)
+					return onsave(inst, data)
 				end
 			end
 
@@ -260,7 +260,7 @@ end
 					data.lastsegused = lastsegused
 				end
 				if onsave then
-					onsave(inst, data)
+					return onsave(inst, data)
 				end
 			end
 
