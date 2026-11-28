@@ -16,7 +16,7 @@ SPEC.loader.exec_module(lab)
 
 class LabRunnerTests(unittest.TestCase):
     def test_registry_includes_current_suites_and_correct_config_directory(self):
-        self.assertEqual(len(lab.LUA_TESTS), 31)
+        self.assertEqual(len(lab.LUA_TESTS), 32)
         self.assertEqual(len(lab.PYTHON_TESTS), 9)
         self.assertEqual(len(lab.LUA_TESTS), len(set(lab.LUA_TESTS)))
         for name in ("tool_gated_crafting_test.lua", "station_storage_localization_test.lua"):
