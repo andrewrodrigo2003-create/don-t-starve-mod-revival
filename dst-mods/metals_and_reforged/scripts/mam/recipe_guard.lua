@@ -560,7 +560,6 @@ function M.set_station(name, tech, filter, options)
     result.options = {
         remove_special_event = options.remove_special_event == true,
         clear_hint_msg_if = options.clear_hint_msg_if,
-        nounlock = options.nounlock,
         set_recipe_filter = set_recipe_filter,
         ingredients_signature = requested_ingredients_signature,
     }
