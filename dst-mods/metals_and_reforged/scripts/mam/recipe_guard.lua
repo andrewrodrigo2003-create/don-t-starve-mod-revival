@@ -358,8 +358,8 @@ function M.regate(name, our_ingredients, tech, more_data, filters)
     result.ingredients = copy_ingredient_list(M.live_ingredients(recipe))
     return true, result.reason
 end
---- Move uma receita existente para o filtro/tecnologia da War Bench sem
---- recriar o objeto Recipe e sem tocar nos ingredientes de outros mods.
+--- Move uma receita existente para outro filtro/tecnologia sem recriar o objeto Recipe.
+--- Opcoes internas podem alterar apenas os campos explicitamente solicitados.
 function M.set_station(name, tech, filter, options)
     local key = "station:" .. name
     local previous = M.results[key]
@@ -573,7 +573,7 @@ function M.set_station(name, tech, filter, options)
     }
     result.ingredients_signature = describe(recipe)
     result.level_signature = copy_tech_level(recipe.level)
-    MAMLog.Info("receita '%s' movida para tecnologia %s / filtro %s sem reescrever ingredientes",
+    MAMLog.Info("receita '%s' migrada para tecnologia %s / filtro %s preservando o objeto Recipe",
         name, tostring(tech), tostring(filter))
     return true, result.reason
 end
