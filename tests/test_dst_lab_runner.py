@@ -40,11 +40,15 @@ class LabRunnerTests(unittest.TestCase):
         )
         self.assertIsNotNone(lua_step)
         ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\.lua)", lua_step.group("body")))
-        registered_lua = {
-            path.removeprefix("dst-mods/tests/")
-            for path in lab.LUA_TESTS if path.startswith("dst-mods/tests/")
-        }
-        self.assertEqual(ci_lua, registered_lua)
+        config_step = re.search(
+            r"(?ms)^      - name: Run MAM configuration Lua harness\\n"
+            r"        run: \\|\\n(?P<body>.*?)(?=^      - name: )", workflow,
+        )
+        self.assertIsNotNone(config_step)
+        self.assertIn("cd dst-mods/metals_and_reforged", config_step.group("body"))
+        self.assertIn("lua5.1 tests/mam_config_test.lua", config_step.group("body"))
+        ci_lua.add("dst-mods/metals_and_reforged/tests/mam_config_test.lua")
+        self.assertEqual(ci_lua, set(lab.LUA_TESTS))
 
         python_steps = workflow.split("      - name: Package installable mod", 1)[0]
         ci_python = set(re.findall(r"^        run: python3 ([^\s]+\.py)$", python_steps, re.MULTILINE))
