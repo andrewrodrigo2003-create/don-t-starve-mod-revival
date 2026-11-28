@@ -2,6 +2,7 @@ from pathlib import Path
 import importlib.util
 import io
 import json
+import re
 import subprocess
 import tempfile
 import unittest
@@ -15,7 +16,8 @@ SPEC.loader.exec_module(lab)
 
 class LabRunnerTests(unittest.TestCase):
     def test_registry_includes_current_suites_and_correct_config_directory(self):
-        self.assertEqual(len(lab.LUA_TESTS), 28)
+        self.assertEqual(len(lab.LUA_TESTS), 31)
+        self.assertEqual(len(lab.PYTHON_TESTS), 9)
         self.assertEqual(len(lab.LUA_TESTS), len(set(lab.LUA_TESTS)))
         for name in ("tool_gated_crafting_test.lua", "station_storage_localization_test.lua"):
             self.assertIn("dst-mods/tests/" + name, lab.LUA_TESTS)
@@ -27,6 +29,27 @@ class LabRunnerTests(unittest.TestCase):
         self.assertNotIn("dst-mods/tests/better_lucy_test.lua", lab.LUA_TESTS)
         self.assertIn("dst-mods/tests/mod_asset_reference_test.py", lab.PYTHON_TESTS)
         self.assertIn("tests/test_dst_lab_runner.py", lab.PYTHON_TESTS)
+        self.assertIn("tests/test_mam_crafting_balance_contract.py", lab.PYTHON_TESTS)
+        self.assertIn("dst-mods/tests/warworkbench_tech_contract_test.py", lab.PYTHON_TESTS)
+
+    def test_registry_stays_in_sync_with_ci_workflow(self):
+        workflow = (ROOT / ".github/workflows/metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
+        lua_step = re.search(
+            r"(?ms)^      - name: Run all Metals and More regression harnesses\\n"
+            r"        run: \\|\\n(?P<body>.*?)(?=^      - name: )", workflow,
+        )
+        self.assertIsNotNone(lua_step)
+        ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\\.lua)", lua_step.group("body")))
+        registered_lua = {
+            path.removeprefix("dst-mods/tests/")
+            for path in lab.LUA_TESTS if path.startswith("dst-mods/tests/")
+        }
+        self.assertEqual(ci_lua, registered_lua)
+
+        python_steps = workflow.split("      - name: Package installable mod", 1)[0]
+        ci_python = set(re.findall(r"^        run: python3 ([^\\s]+\\.py)$", python_steps, re.MULTILINE))
+        registered_python = set(lab.PYTHON_TESTS)
+        self.assertEqual(ci_python, registered_python - {"tests/test_minimap_update_optimization.py"})
 
     def test_missing_script_is_blocked_instead_of_silently_skipped(self):
         with tempfile.TemporaryDirectory() as directory:
