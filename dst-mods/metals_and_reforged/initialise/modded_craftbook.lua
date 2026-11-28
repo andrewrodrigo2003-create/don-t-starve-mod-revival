@@ -15,9 +15,10 @@
 --     balanceamento (scripts/recipes.lua, scripts/characters.lua).
 --
 -- Agora a migracao roda em `AddSimPostInit` -- depois de todos os modmain -- e o
--- recipe_guard decide, por receita, se usamos a nossa lista (receita ainda vanilla)
--- ou a lista viva de quem ja a rebalanceou, mantendo em ambos os casos o nivel de
--- tecnologia do craftbook. Ver scripts/mam/recipe_guard.lua.
+-- recipe_guard decide, por receita, se aplica nossa lista (baseline vanilla) ou
+-- preserva as listas vivas de outro mod. A migracao altera o Recipe existente em
+-- lugar: tecnologia, filtro de bancada e nounlock; nao chama AddRecipe2 novamente,
+-- evitando descartar metadados/callbacks registrados por outros mods.
 --
 -- As listas de ingredientes abaixo sao as do v2.9.3, transcritas sem alteracao.
 -- ===========================================================================
