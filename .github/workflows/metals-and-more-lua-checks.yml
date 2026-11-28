@@ -130,6 +130,12 @@ jobs:
             lua5.1 "$test"
           done
 
+      - name: Run MAM configuration Lua harness
+        run: |
+          set -euo pipefail
+          cd dst-mods/metals_and_reforged
+          lua5.1 tests/mam_config_test.lua
+
       - name: Verify legacy Forge weapon compatibility gate
         run: python3 dst-mods/tests/legacy_forge_weapon_gate_test.py
 
