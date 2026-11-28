@@ -2,7 +2,7 @@
 
 ## Local laboratory runner
 
-The local MAM laboratory combines Lua syntax checks, 28 registered Lua harnesses, seven Python test scripts and three optional harnesses using supplied DST sources. It includes tool-gated crafting, material-only deconstruction, station/storage localization and the shared simulator. It does not execute the Better Lucy harness or change other mods.
+The local MAM laboratory combines Lua syntax checks, 31 registered Lua harnesses, nine Python test scripts and three optional harnesses using supplied DST sources. It includes tool-gated crafting, material-only deconstruction, station/storage localization and the shared simulator. It does not execute the Better Lucy harness or change other mods.
 
 Requirements: Python 3, Lua 5.1 and its `luac` compiler. The Python runner uses only the standard library. Git is optional for execution; unavailable repository metadata is reported explicitly. Nothing is downloaded or installed.
 
