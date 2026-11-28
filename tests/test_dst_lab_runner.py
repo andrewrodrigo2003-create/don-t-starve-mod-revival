@@ -39,7 +39,7 @@ class LabRunnerTests(unittest.TestCase):
             r"        run: \|\n(?P<body>.*?)(?=^      - name: )", workflow,
         )
         self.assertIsNotNone(lua_step)
-        ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\.lua)", lua_step.group("body")))
+        ci_lua = {f"dst-mods/tests/{name}" for name in re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\.lua)", lua_step.group("body"))}
         config_step = re.search(
             r"(?ms)^      - name: Run MAM configuration Lua harness\n"
             r"        run: \|\n(?P<body>.*?)(?=^      - name: )", workflow,
