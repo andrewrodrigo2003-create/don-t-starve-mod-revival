@@ -18,7 +18,15 @@ _G.CRAFTING_FILTERS = {
 }
 
 package.preload["techtree"] = function()
-    return { Create = function(tree) return { ALCHEMY = tree.ALCHEMY } end }
+    return {
+        Create = function(tree)
+            local result = {}
+            for key, value in pairs(tree or {}) do
+                result[key] = value
+            end
+            return result
+        end,
+    }
 end
 local third_party_recipe_integration = true
 package.preload["mam/config"] = function()
@@ -270,8 +278,8 @@ local minerhat = {
         { type = "goldnugget", amount = 1 },
         { type = "fireflies", amount = 1 },
     },
-    character_ingredients = { { type = "health", amount = 5 } },
-    tech_ingredients = { { type = "SCIENCE", amount = 1 } },
+    character_ingredients = {},
+    tech_ingredients = {},
     level = { SCIENCE = 2 },
     filter = "ORIGINAL_FILTER",
     product = "minerhat",
