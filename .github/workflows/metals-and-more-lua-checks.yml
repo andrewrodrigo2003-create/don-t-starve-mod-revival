@@ -124,7 +124,8 @@ jobs:
             dst-mods/tests/smelter_simulator_integration_test.lua \
             dst-mods/tests/simulator_bootstrap_test.lua \
             dst-mods/tests/simulator_container_test.lua \
-            dst-mods/tests/simulator_network_test.lua
+            dst-mods/tests/simulator_network_test.lua \
+            dst-mods/tests/modded_regrow_save_reference_test.lua
           do
             test -f "$test"
             echo "Running $test"
