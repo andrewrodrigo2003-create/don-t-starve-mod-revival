@@ -462,4 +462,51 @@ assert(purpleamulet.builder_tag == purple_builder_tag and purpleamulet.canbuild 
 
 assert(add_recipe_calls == 0, "no Craftbook path may recreate a Recipe with AddRecipe2")
 
-print("PASS: War Bench migration preserves metadata and honors the independent third-party recipe switch")
+local calls_before_minerhat_retry = #filter_calls
+local minerhat_retry_ok = guard.regate(
+    "minerhat", mam_minerhat_ingredients, TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(minerhat_retry_ok, "repeated Craftbook migration should remain successful")
+assert(#filter_calls == calls_before_minerhat_retry,
+    "repeated Craftbook migration must not duplicate filter operations")
+
+-- A filter API failure must happen before the optional ingredient/nounlock commit.
+local backpack = {
+    ingredients = {
+        { type = "cutgrass", amount = 4 },
+        { type = "twigs", amount = 4 },
+    },
+    level = { SCIENCE = 1 },
+    filter = "ORIGINAL_BACKPACK_FILTER",
+    nounlock = false,
+    builder_tag = "backpack_builder",
+}
+AllRecipes.backpack = backpack
+CRAFTING_FILTERS.MODS.default_sort_values.backpack = 4
+local backpack_ingredients = backpack.ingredients
+local backpack_level = backpack.level
+guard.Init(function()
+    add_recipe_calls = add_recipe_calls + 1
+    error("AddRecipe2 must remain unused")
+end, function()
+    error("simulated Craftbook filter-add failure")
+end, function(name, filter)
+    if CRAFTING_FILTERS[filter] ~= nil then
+        CRAFTING_FILTERS[filter].default_sort_values[name] = nil
+    end
+end)
+local backpack_ok, backpack_reason = guard.regate(
+    "backpack", { { type = "mam_test_material", amount = 1 } },
+    TECH.CRAFTSBOOK_ONE, { nounlock = true })
+assert(not backpack_ok and backpack_reason == "filter-add-failed",
+    "failed Craftbook filter insertion must abort migration")
+assert(AllRecipes.backpack == backpack and backpack.ingredients == backpack_ingredients,
+    "failed Craftbook migration must not replace the Recipe or its ingredients")
+assert(backpack.level == backpack_level and backpack.nounlock == false
+    and backpack.filter == "ORIGINAL_BACKPACK_FILTER",
+    "failed Craftbook migration must not commit technology, nounlock or filter metadata")
+assert(CRAFTING_FILTERS.MODS.default_sort_values.backpack ~= nil
+    and CRAFTING_FILTERS.CRAFTING_STATION.default_sort_values.backpack == nil,
+    "failed Craftbook migration must preserve the old filter and roll back the target")
+assert(add_recipe_calls == 0, "failed Craftbook migration must not call AddRecipe2")
+
+print("PASS: War Bench and Craftbook migration preserve metadata and honor third-party recipe integration")
