@@ -11,6 +11,7 @@ on:
       - 'dst-mods/metals_and_reforged/**'
       - 'dst-mods/tests/**'
       - 'tests/test_mam_crafting_balance_contract.py'
+      - 'tests/test_dst_lab_runner.py'
       - 'docs/design/**'
       - 'docs/METALS_AND_MORE_REFORGED_MASTER_PLAN.md'
       - 'dst-mods/metals_and_reforged/CHANGELOG.txt'
