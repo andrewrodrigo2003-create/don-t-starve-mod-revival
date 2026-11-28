@@ -35,11 +35,11 @@ class LabRunnerTests(unittest.TestCase):
     def test_registry_stays_in_sync_with_ci_workflow(self):
         workflow = (ROOT / ".github/workflows/metals-and-more-lua-checks.yml").read_text(encoding="utf-8")
         lua_step = re.search(
-            r"(?ms)^      - name: Run all Metals and More regression harnesses\\n"
-            r"        run: \\|\\n(?P<body>.*?)(?=^      - name: )", workflow,
+            r"(?ms)^      - name: Run all Metals and More regression harnesses\n"
+            r"        run: \|\n(?P<body>.*?)(?=^      - name: )", workflow,
         )
         self.assertIsNotNone(lua_step)
-        ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\\.lua)", lua_step.group("body")))
+        ci_lua = set(re.findall(r"dst-mods/tests/([A-Za-z0-9_]+\.lua)", lua_step.group("body")))
         registered_lua = {
             path.removeprefix("dst-mods/tests/")
             for path in lab.LUA_TESTS if path.startswith("dst-mods/tests/")
@@ -47,7 +47,7 @@ class LabRunnerTests(unittest.TestCase):
         self.assertEqual(ci_lua, registered_lua)
 
         python_steps = workflow.split("      - name: Package installable mod", 1)[0]
-        ci_python = set(re.findall(r"^        run: python3 ([^\\s]+\\.py)$", python_steps, re.MULTILINE))
+        ci_python = set(re.findall(r"^        run: python3 ([^\s]+\.py)$", python_steps, re.MULTILINE))
         registered_python = set(lab.PYTHON_TESTS)
         self.assertEqual(ci_python, registered_python - {"tests/test_minimap_update_optimization.py"})
 
