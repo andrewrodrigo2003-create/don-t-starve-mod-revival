@@ -31,6 +31,7 @@ LUA_TESTS = tuple("dst-mods/tests/" + name + ".lua" for name in (
     "stategraph_compatibility_test", "container_widget_compatibility_test",
     "character_ability_compatibility_test", "smelter_simulator_integration_test",
     "simulator_bootstrap_test", "simulator_container_test", "simulator_network_test",
+    "modded_regrow_save_reference_test",
 )) + (MOD + "/tests/mam_config_test.lua",)
 PYTHON_TESTS = (
     "dst-mods/tests/legacy_forge_weapon_gate_test.py",
