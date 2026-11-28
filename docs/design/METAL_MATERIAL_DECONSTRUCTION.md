@@ -1,6 +1,6 @@
 # Desconstrução reversível de materiais metalúrgicos
 
-**Status:** especificação preliminar baseada nas receitas atuais; ainda não implementada.  
+**Status:** implementação parcial na branch 2.9.7; não certificada in-game.  
 **Data:** 2026-11-08.  
 **Escopo:** Metals and More Reforged.
 
@@ -37,7 +37,7 @@ Observações:
 
 ## 3. Retornos candidatos para desconstrução
 
-A tabela abaixo traduz os custos atuais para componentes canônicos de um estágio inferior. São candidatos derivados dos dados do código, não valores já implementados nem autorização para mudar receitas.
+A tabela abaixo traduz os custos atuais para componentes canônicos de um estágio inferior. Os nove retornos listados estão implementados em `scripts/mam/deconstruction.lua`; a recuperação padrão é 75% esperada por unidade e os perfis de Wilson, Winona e Maxwell aplicam somente as especialidades já registradas. Isso ainda exige validação in-game.
 
 | Material desconstruído | Retorno candidato | Justificativa |
 |---|---|---|
@@ -66,24 +66,64 @@ A equivalência de tags não garante recuperar exatamente os mesmos prefabs que 
 9. Testar conversão repetida, pilhas, inventário cheio, baú metálico, interrupção, save/load e multiplayer.
 10. Preservar compatibilidade com receitas e ingredientes externos: não alterar tags nem código de outros mods.
 
-## 5. Estação recomendada e decisão pendente
+## 5. Estação implementada
 
-Recomendação inicial: usar a `warworkbench` (Armory / `ALCHEMY_ONE`) como estação de desconstrução, mantendo a forja metalúrgica como única rota de avanço. Isso aproveita a estação existente e separa claramente fabricar/desmontar de fundir/processar.
+A desconstrução utiliza a `warworkbench` existente (Armory / `ALCHEMY_ONE`). A ação exige proximidade da bancada e validação autoritativa do componente `prototyper` no servidor. Não foi criada uma nova estação. A forja metalúrgica permanece como rota de avanço e processamento.
 
-Antes da implementação, confirmar se o usuário prefere:
-- desconstrução na bancada de guerra já existente; ou
-- desconstrução na própria forja metalúrgica, com um modo/receita separado.
+## 6. Materiais ainda sem regra segura
 
-Não criar uma nova estação apenas para esta função sem necessidade demonstrada.
+- Poeiras (`copper_dust`, `iron_dust`, `gold_dust`) são estágios-base e não têm estágio anterior para recuperar.
+- `junk_dust` é um subproduto genérico da presença de tag `metal`; não há proveniência suficiente para escolher um retorno específico sem inventar composição.
+- Fragmentos de gemas são entradas de receitas de gemas/nitre, não produtos com uma receita reversível de menor estágio. Convertê-los em gemas seria avanço, não desmontagem.
+- `sharkscale` é um drop bruto usado por receitas; não há cadeia de processamento MAM que justifique um retorno reverso.
+- Esses itens permanecem deliberadamente fora da allowlist. Não devem aparecer como desmontáveis até que uma origem/retorno seguro seja demonstrado.
 
-## 6. Fora do escopo nesta etapa
+## 7. Fora do escopo nesta etapa
 
-- Não converter equipamentos metálicos em lingotes automaticamente: isso exigiria regras próprias de durabilidade, componentes, valor e perda.
-- Não desconstruir ligas, gemas ou sucata fora dos casos explicitamente mapeados.
+- Não converter equipamentos metálicos em lingotes: armas, armaduras, ferramentas, equipamentos e estruturas são explicitamente rejeitados.
+- Não criar retornos genéricos por tag, nem permitir conversão para estágio superior.
 - Não alterar custos atuais de fundição para acomodar a desconstrução.
 - Não mudar receitas de outros mods nem editar Uncompromising Mode.
-- Não declarar a funcionalidade pronta antes de implementação e testes.
+- Não declarar a funcionalidade pronta antes da validação no motor DST.
 
-## 7. Próxima etapa técnica
+## 8. Fechamento da implementação
 
-Após a escolha da estação, criar uma tabela de retorno final, implementar um pequeno conjunto vertical de receitas (cobre/ferro/ouro), adicionar testes de inventário e transação e só então expandir para bronze, vidro lunar e adamantium. A expansão deve preservar a composição de cada liga e validar o comportamento real do DST.
+Não há expansão adicional de allowlist ou conversão reversa a implementar para esta build: as classes de materiais abaixo possuem disposição explícita e os testes rejeitam entradas sem proveniência reversa segura. Os contratos automatizados cobrem a allowlist, os perfis, o limite material-only e a identificação da War Bench. O comportamento real de inventário, estação, save/load e multiplayer permanece sujeito ao teste dentro do DST.
+
+
+## 9. Estado de implementação na branch 2.9.7 — 2026-11-13
+
+Allowlist atual: copper_ore, copper_ingot, iron_ore, iron_ingot, goldnugget, gold_ingot, bronze_ingot, moonglass_ingot e adamantium_ingot. O retorno é canônico e explicitamente mapeado; os materiais não registrados, inclusive equipamentos, são rejeitados.
+
+A tela do Guia de Metalurgia foi corrigida para respeitar a configuração pt-BR/English e agora descreve somente a desmontagem de materiais registrada, sem prometer salvage de equipamentos. A ação e a mensagem de inventário cheio também respeitam o idioma selecionado.
+
+Validação disponível nesta etapa: testes Lua 5.1 do planejador de retorno e contratos Python de localização/cópia. Isso não valida o motor DST, o comportamento real de inventário, multiplayer, save/load nem a integração com UM Beta.
+
+## 10. Inventário final de materiais MAM — disposição explícita
+
+Inventário derivado dos prefabs de `scripts/prefabs/metal_dusts.lua`, `metals.lua`, `gem_shards.lua`, `sharkscale.lua`, `goldore.lua` e das receitas em `scripts/smelting_products.lua`. A distinção entre prefabs próprios e ingredientes/resultados vanilla é intencional.
+
+| Prefab/material | Disposição | Regra |
+|---|---|---|
+| `copper_ore` | Recuperável | 2 `copper_dust` |
+| `copper_ingot` | Recuperável | 3 `copper_ore` |
+| `iron_ore` | Recuperável | 2 `iron_dust` |
+| `iron_ingot` | Recuperável | 3 `iron_ore` |
+| `goldnugget` | Recuperável | 2 `gold_dust` |
+| `gold_ingot` | Recuperável | 3 `goldnugget` |
+| `bronze_ingot` | Recuperável | 3 `copper_ore` + 1 `iron_ore` |
+| `moonglass_ingot` | Recuperável | 2 `moonglass` + 1 `moonrocknugget` |
+| `adamantium_ingot` | Recuperável | 3 `nightmarefuel` + 1 `iron_ingot` |
+| `copper_dust`, `iron_dust`, `gold_dust` | Entrada-base terminal | Não existe estágio MAM inferior |
+| `junk_dust` | Subproduto sem proveniência reversa | Receita genérica baseada em tag metal; não identifica composição de origem |
+| `redgem_shard`, `yellowgem_shard`, `bluegem_shard`, `purplegem_shard`, `greengem_shard`, `orangegem_shard` | Ingredientes-base/subprodutos sem retorno reverso | São entradas de receitas de gemas; convertê-los em gemas seria avanço, não desmontagem |
+| `sharkscale` | Drop bruto terminal | Não existe cadeia de processamento MAM que justifique retorno reverso |
+| `gold_ore` | Prefab legado de migração | Converte saves antigos para `goldnugget`; não é material atual da cadeia |
+| `spikyrock`, `ironrock` e estruturas de mineração | Estruturas/fontes, não materiais desmontáveis | Fora do escopo material-only |
+| Armas, armaduras, ferramentas, baús e estações | Equipamentos/estruturas excluídos | Rejeitados pela allowlist; nenhum salvage genérico |
+
+Ingredientes e produtos vanilla usados pelas receitas — como `nitre`, `moonglass`, `moonrocknugget`, `nightmarefuel` e gemas completas — não são reclassificados como prefabs de material MAM apenas por participarem da fundição.
+
+**Resultado da matriz:** nove materiais têm retorno explícito; os demais materiais MAM estão classificados como base terminal, subproduto/entrada sem proveniência reversa ou prefab legado/estrutura excluída. Não existe item de material MAM conhecido deixado como “pendente de decisão” nesta matriz. Isso fecha a auditoria estática de escopo, mas não certifica a ação no motor DST.
+
+**Evidência:** L2 por inspeção dos prefabs e receitas; L3 pelos contratos `metal_deconstruction_test.lua` e `metallurgy_reference_book_contract_test.py`, executados no CI do commit `54832a20a8216ec8d47b546db8ba93994eb2364b`. A nova atualização documental deverá receber CI próprio se alterar o HEAD da PR.

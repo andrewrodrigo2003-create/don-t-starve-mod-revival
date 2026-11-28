@@ -1,0 +1,109 @@
+from pathlib import Path
+
+root = Path("dst-mods/metals_and_reforged")
+actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
+module = (root / "scripts/mam/deconstruction.lua").read_text(encoding="utf-8")
+prefab = (root / "scripts/prefabs/metallurgy_reference_book.lua").read_text(encoding="utf-8")
+screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
+smelter = (root / "scripts/components/smelter.lua").read_text(encoding="utf-8")
+smelter_prefab = (root / "scripts/prefabs/metal_smelter.lua").read_text(encoding="utf-8")
+screen = (root / "scripts/screens/metallurgybookscreen.lua").read_text(encoding="utf-8")
+modmain = (root / "modmain.lua").read_text(encoding="utf-8")
+modinfo = (root / "modinfo.lua").read_text(encoding="utf-8")
+recipes = (root / "initialise/modded_recipes.lua").read_text(encoding="utf-8")
+actions = (root / "initialise/modded_actions.lua").read_text(encoding="utf-8")
+
+assert 'AddAction("MAM_DECONSTRUCT_METAL"' in actions
+assert 'MAMDeconstruction.HasWarWorkbench(entities' in actions
+assert 'entity.prefab == "warworkbench"' in module
+assert "recipe.max_batch" in screen
+assert "Max input batch" in screen
+assert 'local placements = plan_output_slots(inventory, staged)' in actions
+assert 'if placements == nil then' in actions
+assert actions.index('local placements = plan_output_slots(inventory, staged)') < actions.index('inventory:RemoveItem(item, false)')
+assert 'destination:CanTakeItemInSlot(output, slot.index)' in actions
+assert 'placement.container:GiveItem(output, placement.slot)' in actions
+assert 'not GLOBAL.TheWorld.ismastersim' in actions
+assert 'BASE_RECOVERY = 0.75' in module
+assert 'wilson = { all = 1 }' in module
+assert 'winona = { nonmagical = 1 }' in module
+assert 'waxwell = { shadow = 1 }' in module
+assert 'local function character_rate(character, material)' in module
+assert 'return MAMDeconstruction.BASE_RECOVERY' in module
+assert 'simplebook' in prefab and 'components.simplebook.onreadfn' in prefab
+assert 'smelting_products' in screen
+assert 'metallurgy_reference_book' in modmain
+assert 'AddRecipe2("metallurgy_reference_book"' in modmain
+assert 'AddComponent("prototyper")' not in prefab
+assert 'AddComponent("finiteuses")' not in prefab
+
+assert 'MAMRecipeGuard.set_station(name, TECH.ALCHEMY_ONE, "CRAFTING_STATION")' in recipes
+for name in (
+    "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
+    "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
+    "armormarble", "armordragonfly", "ruinshat", "armorruins",
+    "multitool_axe_pickaxe", "winterometer", "rainometer", "nightlight",
+    "portablecookpot_item", "portableblender_item", "portablespicer_item",
+    "glasscutter", "archive_resonator_item", "moondial", "moonrockcrater",
+    "moonglassaxe",
+):
+    assert f'"{name}"' in recipes, f"metal recipe not migrated to War Bench: {name}"
+# These are crafted products, equipment, tools or structures, not raw MAM
+# materials. Their recipes may be migrated to the War Bench, but they must
+# never become eligible for the material-only deconstruction action.
+for name in (
+    "birdcage", "dragonflychest", "compass", "razor", "lightning_rod",
+    "goldenaxe", "goldenpickaxe", "goldenshovel", "golden_farm_hoe",
+    "armormarble", "armordragonfly", "ruinshat", "armorruins",
+    "multitool_axe_pickaxe", "winterometer", "rainometer", "nightlight",
+    "portablecookpot_item", "portableblender_item", "portablespicer_item",
+    "glasscutter", "archive_resonator_item", "moondial", "moonrockcrater",
+    "moonglassaxe",
+):
+    assert f"    {name} = {{" not in module, f"non-material must remain unsupported: {name}"
+assert 'if plan == nil then' in actions
+assert 'if plan == nil or #plan == 0 then' not in actions, "zero-return roll must consume the input"
+
+print("PASS: deconstruction action and read-only guide wiring")
+
+assert 'Requisitos não documentados' in screen
+assert 'Requirements not documented' in screen
+assert 'Carga mista (receita legada)' not in screen
+assert 'Mixed load (legacy recipe)' not in screen
+for source in ('Rocky selvagem', 'Slurtle', 'Snurtle', 'escombros de cavernas', 'estátuas antigas'):
+    assert source in screen, f"mining guide omits declared source: {source}"
+assert 'catálogo exaustivo' in screen
+assert 'toggle mestre de drops extras' in screen
+assert 'Uncompromising Mode' in screen
+assert 'apenas no modo aditivo' in screen
+assert 'additive-mode only' in screen
+for source in ('wild Rocky', 'Slurtles', 'Snurtles', 'mined cave rubble', 'ancient Ruins statues'):
+    assert source in modinfo, f"master extra-drops help omits source: {source}"
+
+
+assert 'Asset("ANIM", "anim/cookbook.zip")' in prefab
+assert 'SetBank("cookbook")' in prefab and 'SetBuild("cookbook")' in prefab
+assert 'bookcabinet_item' in prefab
+assert 'imagename = "cookbook"' in prefab
+assert "book_maxwell" not in prefab and "waxwelljournal" not in prefab
+assert 'image = "cookbook.tex"' in modmain
+
+assert 'mam_recent_results' in prefab or 'mam_recent_results' in smelter
+assert 'function Smelter:RecordSuccessfulResult()' in smelter
+assert 'recent_results = self.recent_results' in smelter
+assert 'while #self.recent_results > 3 do' in smelter
+assert 'build_recent_results_page(owner)' in screen
+assert 'Últimos resultados' in screen
+assert 'FindEntities(x, y, z, 25, { "mam_smelter" })' in screen
+
+assert 'say_to_nearest_player' in smelter_prefab
+assert 'A fundição terminou!' in smelter_prefab
+assert 'components.talker:Say' in smelter_prefab
+assert 'say_smelter_failure' in actions
+assert 'Essa combinação não pode ser fundida.' in actions
+assert 'The load could not be processed; check the materials.' in actions
+
+assert "baús e contêineres compatíveis" in screen
+assert "compatible chests and containers" in screen
+assert "baús e mochilas compatíveis" not in screen
+assert "compatible chests and packs" not in screen

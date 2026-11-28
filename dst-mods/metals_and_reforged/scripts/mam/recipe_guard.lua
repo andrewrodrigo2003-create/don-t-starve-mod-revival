@@ -9,11 +9,11 @@
 --   1. Se o recipe sumiu (outro mod o removeu), o index devolve nil e o mod crasha na
 --      carga -- nem chega ao jogo.
 --   2. Se outro mod reequilibrou o mesmo recipe, o ultimo mod carregado vence em
---      silencio e o trabalho do outro desaparece. Confirmado contra Uncompromising Mode
---      Beta 6.0.3.8: `init/init_recipes/recipe_changes.lua:80-93` escreve
---      `AllRecipes["glasscutter"].ingredients` exatamente quando a opcao
---      `celestialitems_revert` esta ligada -- o mesmo campo que tocamos em
---      `initialise/modded_recipes.lua`.
+--      silencio e o trabalho do outro desaparece. Confirmado novamente contra
+--      Uncompromising Mode Public Beta 6.0.3.9 (branch `utw-beta`):
+--      `init/init_recipes/recipe_changes.lua` escreve diretamente
+--      `AllRecipes["glasscutter"].ingredients` quando `celestialitems_revert`
+--      esta ligada -- o mesmo campo que tocamos em `initialise/modded_recipes.lua`.
 --
 -- O guarda resolve 1 sempre e 2 por deteccao: guardamos a assinatura vanilla de cada
 -- recipe que tocamos (transcrita de `.reference/vanilla/scripts/recipes.lua`, com
@@ -28,6 +28,7 @@
 local GLOBAL = rawget(_G, "GLOBAL") or _G
 local MAMConfig = require("mam/config")
 local MAMLog = require("mam/log")
+local TechTree = GLOBAL.require("techtree")
 
 local AllRecipes = GLOBAL.AllRecipes
 
@@ -104,12 +105,17 @@ M.BASELINE = BASELINE
 -- Historico do que aconteceu nesta sessao, para o relatorio de diagnostico.
 M.results = {}
 
--- AddRecipe2 existe apenas no ambiente do modmain, nao como global do jogo
--- (modutil.lua:732 define env.AddRecipe2). Um arquivo require() nao ve esse
--- ambiente, entao quem roda no modmain precisa injetar a funcao aqui.
-local add_recipe_2 = nil
-function M.Init(addrecipe2)
-    add_recipe_2 = addrecipe2
+-- AddRecipeToFilter/RemoveRecipeFromFilter existem apenas no ambiente modmain.
+-- O primeiro argumento legado de Init e' mantido por compatibilidade de chamada,
+-- mas e' intencionalmente ignorado: migrar uma receita existente nunca usa AddRecipe2.
+local add_recipe_to_filter = nil
+local remove_recipe_from_filter = nil
+function M.Init(_, addrecipetofilter, removerecipefromfilter)
+    -- Treat each initialization as a complete API snapshot. Retaining a previous
+    -- optional callback when the new environment omits it masks unavailable APIs
+    -- and can make station migration tests (or reloads) use stale capabilities.
+    add_recipe_to_filter = addrecipetofilter
+    remove_recipe_from_filter = removerecipefromfilter
 end
 
 local function describe(recipe)
@@ -148,6 +154,44 @@ local function same_signature(a, b)
     return true
 end
 
+-- Compare the live ingredient array with the exact override from our previous
+-- pass. This makes retries idempotent without mistaking a later third-party
+-- rewrite for one of our own changes.
+local function same_ingredient_list(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" or #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i] == nil or b[i] == nil
+            or a[i].type ~= b[i].type
+            or a[i].amount ~= b[i].amount then
+            return false
+        end
+    end
+    return true
+end
+
+local function copy_ingredient_list(ingredients)
+    local copy = {}
+    for i, ingredient in ipairs(ingredients or {}) do
+        copy[i] = { type = ingredient.type, amount = ingredient.amount }
+    end
+    return copy
+end
+
+local function copy_tech_level(level)
+    local copy = {}
+    for key, value in pairs(level or {}) do copy[key] = value end
+    return copy
+end
+
+local function same_tech_level(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+    for key, value in pairs(a) do if b[key] ~= value then return false end end
+    for key, value in pairs(b) do if a[key] ~= value then return false end end
+    return true
+end
+
 --- O recipe ainda esta exatamente como o vanilla?
 function M.is_untouched(name)
     local recipe = AllRecipes[name]
@@ -180,6 +224,7 @@ end
 --- Aplica (ou nao) uma reescrita de ingredientes, com registro do motivo.
 -- @return applied (boolean), reason (string)
 function M.apply(name, ingredients)
+    local previous = M.results[name]
     local result = { name = name, applied = false, reason = "unknown" }
     M.results[name] = result
 
@@ -189,6 +234,14 @@ function M.apply(name, ingredients)
         MAMLog.WarnOnce("recipe_guard.missing." .. name,
             "Receita '%s' nao existe mais -- outro mod a removeu. Override de metalurgia ignorado.", name)
         return false, result.reason
+    end
+
+    if previous ~= nil and previous.applied
+        and same_ingredient_list(recipe.ingredients, previous.ingredients) then
+        result.applied = true
+        result.reason = "already-applied"
+        result.ingredients = previous.ingredients
+        return true, result.reason
     end
 
     local m = mode()
@@ -209,6 +262,12 @@ function M.apply(name, ingredients)
         end
     end
 
+    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
+        and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        return false, result.reason
+    end
+
     if m == 1 and not same_signature(BASELINE[name], describe(recipe)) then
         result.reason = "changed-by-others"
         MAMLog.WarnOnce("recipe_guard.clobber." .. name,
@@ -220,6 +279,7 @@ function M.apply(name, ingredients)
     recipe.ingredients = ingredients
     result.applied = true
     result.reason = "applied"
+    result.ingredients = copy_ingredient_list(ingredients)
     return true, result.reason
 end
 
@@ -250,33 +310,263 @@ function M.regate(name, our_ingredients, tech, more_data, filters)
         return false, result.reason
     end
 
-    if add_recipe_2 == nil then
-        result.reason = "not-initialised"
-        MAMLog.Error("recipe_guard.regate('%s') chamado sem MAMRecipeGuard.Init(AddRecipe2)", tostring(name))
-        return false, result.reason
-    end
-
     local m = mode()
     if m == 0 then
         result.reason = "disabled"
         return false, result.reason
     end
 
-    local ingredients = our_ingredients
-    local kept_theirs = false
-
-    if m == 1 and BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe)) then
-        ingredients = M.live_ingredients(recipe)
-        kept_theirs = true
-        MAMLog.WarnOnce("regate.keep." .. name,
-            "Receita '%s' foi reequilibrada por outro mod -- movemos para o craftbook mas "
-            .. "preservamos os ingredientes daquele mod.", name)
+    if BASELINE[name] == nil then
+        result.reason = "no-baseline"
+        MAMLog.WarnOnce("regate.nobaseline." .. name,
+            "Receita '%s' nao tem assinatura vanilla; migracao para o craftbook recusada.", name)
+        return false, result.reason
     end
 
-    add_recipe_2(name, ingredients, tech, more_data, filters)
+    local changed_by_others = not same_signature(BASELINE[name], describe(recipe))
+    if changed_by_others and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        MAMLog.Info("receita '%s' de terceiro preservada: integracao desativada", name)
+        return false, result.reason
+    end
 
+    -- No modo seguro, uma receita cujo balanceamento vivo diverge da baseline
+    -- conserva os ingredientes e todas as demais propriedades do Recipe original.
+    local kept_theirs = m == 1 and changed_by_others
+    local station_options = {
+        -- AddRecipe2(nounlock=true) coloca a receita em CRAFTING_STATION, mas nao
+        -- define recipe.filter. Preserve esse campo original.
+        set_recipe_filter = false,
+    }
+    if not kept_theirs then
+        station_options.ingredients = our_ingredients
+    end
+
+    -- Migra o objeto Recipe existente. Nao chamar AddRecipe2 aqui: Recipe2
+    -- substitui AllRecipes[name] e recria metadados/callbacks com defaults.
+    local applied, reason = M.set_station(name, tech, "CRAFTING_STATION", station_options)
+    if not applied then
+        result.reason = reason
+        return false, result.reason
+    end
+
+    -- nounlock e' uma decisao especifica do Craftbook, nao parte da migracao
+    -- generica de estacao. Aplicar somente depois que filtros/tecnologia tiveram
+    -- sucesso, mantendo M.set_station neutra quanto a blueprint/unlock.
+    recipe.nounlock = type(more_data) == "table" and more_data.nounlock == true
     result.applied = true
     result.reason = kept_theirs and "kept-others-ingredients" or "applied"
+    result.nounlock = recipe.nounlock
+    result.ingredients = copy_ingredient_list(M.live_ingredients(recipe))
+    return true, result.reason
+end
+--- Move uma receita existente para outro filtro/tecnologia sem recriar o objeto Recipe.
+--- Opcoes internas podem alterar apenas os campos explicitamente solicitados.
+function M.set_station(name, tech, filter, options)
+    local key = "station:" .. name
+    local previous = M.results[key]
+    options = type(options) == "table" and options or {}
+    local set_recipe_filter = options.set_recipe_filter ~= false
+    if options.ingredients ~= nil then
+        if type(options.ingredients) ~= "table" then
+            return false, "invalid-ingredients"
+        end
+        for _, ingredient in ipairs(options.ingredients) do
+            if type(ingredient) ~= "table" or ingredient.type == nil or ingredient.amount == nil then
+                return false, "invalid-ingredients"
+            end
+        end
+    end
+    local requested_ingredients_signature = options.ingredients ~= nil
+        and copy_ingredient_list(options.ingredients) or nil
+    local result = { name = name, applied = false, reason = "unknown" }
+    M.results[key] = result
+
+    local recipe = AllRecipes[name]
+    if recipe == nil then
+        result.reason = "missing"
+        MAMLog.WarnOnce("recipe_station.missing." .. name,
+            "Receita '%s' ausente; migracao para a War Bench ignorada.", name)
+        return false, result.reason
+    end
+
+    -- A successful earlier pass is already committed. Do not repeat it during
+    -- the world-task fallback; preserving a later mod's change is safer.
+    local filters = GLOBAL.CRAFTING_FILTERS
+    local destination = filter ~= nil and filters ~= nil and filters[filter] or nil
+    local destination_contains = filter == nil or (destination ~= nil
+        and type(destination.default_sort_values) == "table"
+        and destination.default_sort_values[name] ~= nil)
+
+    local previous_options = previous ~= nil and previous.options or {}
+    local requested_ingredients_match = options.ingredients == nil
+        and previous_options.ingredients_signature == nil
+        or options.ingredients ~= nil
+        and same_ingredient_list(previous_options.ingredients_signature, options.ingredients)
+    local options_match = previous_options.remove_special_event == (options.remove_special_event == true)
+        and previous_options.clear_hint_msg_if == options.clear_hint_msg_if
+        and (previous_options.set_recipe_filter ~= false) == set_recipe_filter
+        and requested_ingredients_match
+    local special_event = filters ~= nil and filters.SPECIAL_EVENT or nil
+    local special_event_removed = options.remove_special_event ~= true
+        or special_event == nil or type(special_event.default_sort_values) ~= "table"
+        or special_event.default_sort_values[name] == nil
+    local hint_cleared = options.clear_hint_msg_if == nil
+        or recipe.hint_msg ~= options.clear_hint_msg_if
+
+    if previous ~= nil and previous.applied
+        and previous.tech_input == tech and previous.filter == filter and options_match
+        and previous.ingredients_signature ~= nil
+        and same_signature(previous.ingredients_signature, describe(recipe))
+        and previous.level_signature ~= nil
+        and same_tech_level(recipe.level, previous.level_signature)
+        and (not set_recipe_filter or recipe.filter == filter)
+        and destination_contains and special_event_removed and hint_cleared then
+        result.applied = true
+        result.reason = "already-applied"
+        result.tech_input = tech
+        result.filter = filter
+        result.options = {
+            remove_special_event = options.remove_special_event == true,
+            clear_hint_msg_if = options.clear_hint_msg_if,
+            set_recipe_filter = set_recipe_filter,
+            ingredients_signature = requested_ingredients_signature,
+        }
+        result.ingredients_signature = previous.ingredients_signature
+        result.level_signature = previous.level_signature
+        return true, result.reason
+    end
+
+    if type(tech) ~= "table" then
+        result.reason = "invalid-tech"
+        MAMLog.WarnOnce("recipe_station.tech." .. name,
+            "Tecnologia invalida para '%s'; bancada nao foi alterada.", name)
+        return false, result.reason
+    end
+
+    if BASELINE[name] ~= nil and not same_signature(BASELINE[name], describe(recipe))
+        and not MAMConfig.on("mam_third_party_recipe_integration") then
+        result.reason = "third-party-integration-disabled"
+        MAMLog.Info("receita '%s' de terceiro nao foi movida: integracao desativada", name)
+        return false, result.reason
+    end
+
+    -- Prepare every fallible input before mutating the live Recipe or its filters.
+    local ok_level, new_level = pcall(TechTree.Create, tech)
+    if not ok_level then
+        result.reason = "invalid-tech"
+        MAMLog.WarnOnce("recipe_station.create_tech." .. name,
+            "Nao foi possivel preparar a tecnologia de '%s'; bancada nao foi alterada.", name)
+        return false, result.reason
+    end
+
+    local target_filter
+    local old_filters = {}
+    local target_needs_add = false
+    if filter ~= nil then
+        if type(add_recipe_to_filter) ~= "function" then
+            result.reason = "filter-api-unavailable"
+            MAMLog.WarnOnce("recipe_station.filter." .. name,
+                "AddRecipeToFilter indisponivel para '%s'; receita nao foi alterada.", name)
+            return false, result.reason
+        end
+
+        local filters = GLOBAL.CRAFTING_FILTERS
+        target_filter = filters ~= nil and filters[filter] or nil
+        if target_filter == nil or type(target_filter.default_sort_values) ~= "table" then
+            result.reason = "invalid-filter"
+            MAMLog.WarnOnce("recipe_station.invalid_filter." .. name,
+                "Filtro de destino '%s' invalido para '%s'; receita nao foi alterada.",
+                tostring(filter), name)
+            return false, result.reason
+        end
+
+        target_needs_add = target_filter.default_sort_values[name] == nil
+        for filter_name, filter_def in pairs(filters) do
+            if filter_name ~= filter and filter_name ~= "FAVORITES"
+                and filter_name ~= "CHARACTER"
+                and (filter_name ~= "SPECIAL_EVENT" or options.remove_special_event == true)
+                and type(filter_def.default_sort_values) == "table"
+                and filter_def.default_sort_values[name] ~= nil then
+                old_filters[#old_filters + 1] = filter_name
+            end
+        end
+
+        -- If old filters exist, we must be able to remove them. Do not silently
+        -- report success while leaving the recipe visible in multiple categories.
+        if #old_filters > 0 and type(remove_recipe_from_filter) ~= "function" then
+            result.reason = "filter-api-unavailable"
+            MAMLog.WarnOnce("recipe_station.remove_api." .. name,
+                "RemoveRecipeFromFilter indisponivel para '%s'; receita nao foi alterada.", name)
+            return false, result.reason
+        end
+
+        -- Add the destination first. If the API errors, the original recipe and
+        -- all former filters remain untouched. Roll back a partial target insert.
+        if target_needs_add then
+            local added, add_error = pcall(add_recipe_to_filter, name, filter)
+            if not added then
+                if type(remove_recipe_from_filter) == "function" then
+                    pcall(remove_recipe_from_filter, name, filter)
+                end
+                result.reason = "filter-add-failed"
+                MAMLog.WarnOnce("recipe_station.add_failed." .. name,
+                    "Nao foi possivel adicionar '%s' ao filtro '%s': %s",
+                    name, tostring(filter), tostring(add_error))
+                return false, result.reason
+            end
+        end
+
+        -- Remove former filters only after the destination is known to exist.
+        -- On failure, restore those already removed and undo the new destination.
+        local removed = {}
+        if type(remove_recipe_from_filter) == "function" then
+            for _, old_filter in ipairs(old_filters) do
+                local removed_ok, remove_error = pcall(remove_recipe_from_filter, name, old_filter)
+                if not removed_ok then
+                    for _, restore_filter in ipairs(removed) do
+                        pcall(add_recipe_to_filter, name, restore_filter)
+                    end
+                    if target_needs_add then
+                        pcall(remove_recipe_from_filter, name, filter)
+                    end
+                    result.reason = "filter-remove-failed"
+                    MAMLog.WarnOnce("recipe_station.remove_failed." .. name,
+                        "Nao foi possivel migrar '%s' do filtro '%s': %s",
+                        name, tostring(old_filter), tostring(remove_error))
+                    return false, result.reason
+                end
+                removed[#removed + 1] = old_filter
+            end
+        end
+    end
+
+    -- Commit the Recipe fields only after filter migration succeeds.
+    recipe.level = new_level
+    if filter ~= nil and set_recipe_filter then
+        recipe.filter = filter
+    end
+    if options.ingredients ~= nil then
+        recipe.ingredients = options.ingredients
+    end
+    if options.clear_hint_msg_if ~= nil and recipe.hint_msg == options.clear_hint_msg_if then
+        recipe.hint_msg = nil
+    end
+
+    result.applied = true
+    result.reason = "applied"
+    result.tech_input = tech
+    result.filter = filter
+    result.options = {
+        remove_special_event = options.remove_special_event == true,
+        clear_hint_msg_if = options.clear_hint_msg_if,
+        set_recipe_filter = set_recipe_filter,
+        ingredients_signature = requested_ingredients_signature,
+    }
+    result.ingredients_signature = describe(recipe)
+    result.level_signature = copy_tech_level(recipe.level)
+    MAMLog.Info("receita '%s' migrada para tecnologia %s / filtro %s preservando o objeto Recipe",
+        name, tostring(tech), tostring(filter))
     return true, result.reason
 end
 

@@ -67,3 +67,10 @@ Other metal-related equipment currently registered with `TECH.ALCHEMY_ONE` inclu
 2. Produce a recipe-to-station matrix with original ingredients, tech tier, current station, intended station, and compatibility notes.
 3. Build the metallurgy book UI as a read-only client presentation backed by the existing recipe data.
 4. Only then adjust recipe filters/tech requirements for the warworkbench, with no duplicate recipe registration.
+
+
+## Histórico recente do livro — requisito de implementação
+
+O livro mantém uma página com os três últimos resultados **concluídos** da forja mais próxima. O histórico pertence à própria forja, é salvo junto ao componente, limitado a três registros e replicado por net string para clientes. O livro é somente leitura; não inicia lotes nem concede receitas. Se nenhuma forja estiver próxima, a página orienta o jogador a se aproximar de uma.
+
+A conclusão de um lote deve registrar o resultado uma única vez. Repetições de callback, carregamento de save ou tentativas de retirada não podem duplicar o registro. Saves antigos sem histórico continuam carregando com uma lista vazia.

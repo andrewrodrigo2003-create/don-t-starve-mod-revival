@@ -54,6 +54,7 @@ local function E(e)
     e.components.rechargeable:Discharge(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.COOLDOWN)
 end
 local function F()
+    local legacy_abilities = TUNING.THE_FORGE_ITEM_PACK.LEGACY_WEAPON_ABILITIES
     local e = CreateEntity()
     e.entity:AddTransform()
     e.entity:AddAnimState()
@@ -63,60 +64,68 @@ local function F()
     e.AnimState:SetBank("spear_gungnir")
     e.AnimState:SetBuild("spear_gungnir")
     e.AnimState:PlayAnimation("idle")
-    e:AddTag("aoeweapon_lunge")
     e:AddTag("sharp")
     e:AddTag("pointy")
-    e:AddComponent("aoetargeting")
-    e.components.aoetargeting.reticule.reticuleprefab = "reticuleline"
-    e.components.aoetargeting.reticule.pingprefab = "reticulelineping"
-    e.components.aoetargeting.reticule.targetfn = h
-    e.components.aoetargeting.reticule.mousetargetfn = i
-    e.components.aoetargeting.reticule.updatepositionfn = q
-    e.components.aoetargeting.reticule.validcolour = {1, .75, 0, 1}
-    e.components.aoetargeting.reticule.invalidcolour = {.5, 0, 0, 1}
-    e.components.aoetargeting.reticule.ease = true
-    e.components.aoetargeting.reticule.mouseenabled = true
+    if legacy_abilities then
+        e:AddTag("aoeweapon_lunge")
+        e:AddComponent("aoetargeting")
+        e.components.aoetargeting.reticule.reticuleprefab = "reticuleline"
+        e.components.aoetargeting.reticule.pingprefab = "reticulelineping"
+        e.components.aoetargeting.reticule.targetfn = h
+        e.components.aoetargeting.reticule.mousetargetfn = i
+        e.components.aoetargeting.reticule.updatepositionfn = q
+        e.components.aoetargeting.reticule.validcolour = {1, .75, 0, 1}
+        e.components.aoetargeting.reticule.invalidcolour = {.5, 0, 0, 1}
+        e.components.aoetargeting.reticule.ease = true
+        e.components.aoetargeting.reticule.mouseenabled = true
+    end
     e.entity:SetPristine()
     if not TheWorld.ismastersim then
         return e
     end
-    e.AllowWorkable = function(self, G, H)
-        return G == ACTIONS.MINE
+    if legacy_abilities then
+        e.AllowWorkable = function(self, G, H)
+            return G == ACTIONS.MINE
+        end
+        e:AddComponent("aoespell")
+        e.components.aoespell:SetAOESpell(z)
+        e:AddComponent("aoeweapon_lunge")
+        e.components.aoeweapon_lunge:SetWidth(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_WIDTH)
+        e.components.aoeweapon_lunge:SetStimuli("explosive")
+        e.components.aoeweapon_lunge:SetOnLungeFn(E)
     end
-    e:AddComponent("aoespell")
-    e.components.aoespell:SetAOESpell(z)
-    e:AddComponent("aoeweapon_lunge")
-    e.components.aoeweapon_lunge:SetWidth(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_WIDTH)
-    e.components.aoeweapon_lunge:SetStimuli("explosive")
-    e.components.aoeweapon_lunge:SetOnLungeFn(E)
     e:AddComponent("equippable")
     e.components.equippable:SetOnEquip(d)
     e.components.equippable:SetOnUnequip(g)
     e:AddComponent("inspectable")
     e:AddComponent("inventoryitem")
     e.components.inventoryitem.imagename = "spear_gungnir"
-    e:AddComponent("rechargeable")
-    e.components.rechargeable:SetChargeTime(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.COOLDOWN)
-    e.components.rechargeable:SetOnDischargedFn(
-        function(e)
-            e.components.aoetargeting:SetEnabled(false)
-        end
-    )
-    e.components.rechargeable:SetOnChargedFn(
-        function(e)
-            e.components.aoetargeting:SetEnabled(true)
-        end
-    )
+    if legacy_abilities then
+        e:AddComponent("rechargeable")
+        e.components.rechargeable:SetChargeTime(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.COOLDOWN)
+        e.components.rechargeable:SetOnDischargedFn(
+            function(e)
+                e.components.aoetargeting:SetEnabled(false)
+            end
+        )
+        e.components.rechargeable:SetOnChargedFn(
+            function(e)
+                e.components.aoetargeting:SetEnabled(true)
+            end
+        )
+    end
     e:AddComponent("weapon")
     e.components.weapon:SetDamage(TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.DAMAGE)
     e.components.weapon:SetOnAttack(B)
-    e.components.weapon:SetDamageType(DAMAGETYPES.PHYSICAL)
-    e.components.weapon:SetAltAttack(
-        TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_DAMAGE,
-        TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_DIST + TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_WIDTH,
-        nil,
-        DAMAGETYPES.PHYSICAL
-    )
+    if legacy_abilities then
+        e.components.weapon:SetDamageType(DAMAGETYPES.PHYSICAL)
+        e.components.weapon:SetAltAttack(
+            TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_DAMAGE,
+            TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_DIST + TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.ALT_WIDTH,
+            nil,
+            DAMAGETYPES.PHYSICAL
+        )
+    end
     return e
 end
 return CustomPrefab(

@@ -6,6 +6,7 @@ env.FUELTYPE = _G.FUELTYPE
 require("mod_prefab")
 
 _G.TUNING.THE_FORGE_ITEM_PACK = {
+    LEGACY_WEAPON_ABILITIES = GetModConfigData("legacy_forge_weapon_abilities") == true,
     PREVENT_COMPAGNION_ATTACK = false,
 
     FORGINGHAMMER = {
@@ -91,6 +92,9 @@ _G.TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.HELMSPLIT_DAMAGE =
     GetModConfigData("BLACKSMITH_EDGE_HELMSPLIT_DAMAGE", 100)
 
 local function d(b)
+    if not _G.TheWorld.ismastersim then
+        return
+    end
     local c = b.prefab:upper()
     if
         _G.TUNING.THE_FORGE_ITEM_PACK[c] and _G.TUNING.THE_FORGE_ITEM_PACK[c].DURABILITY and
@@ -135,11 +139,15 @@ for i, j in ipairs(f) do
     AddPrefabPostInit(j, d)
 end
 
-modimport("scripts/mod_main.lua")
-_G.ACTIONS.CASTAOE.strfn = function(k)
-    return k.invobject ~= nil and
-        string.upper(k.invobject.nameoverride ~= nil and k.invobject.nameoverride or k.invobject.prefab) or
-        nil
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("scripts/mod_main.lua")
+end
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    _G.ACTIONS.CASTAOE.strfn = function(k)
+        return k.invobject ~= nil and
+            string.upper(k.invobject.nameoverride ~= nil and k.invobject.nameoverride or k.invobject.prefab) or
+            nil
+    end
 end
 
 STRINGS.NAMES.FORGINGHAMMER = STRINGS.NAMES.HAMMER_MJOLNIR

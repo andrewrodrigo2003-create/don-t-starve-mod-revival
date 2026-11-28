@@ -70,6 +70,21 @@ Assets = {
 	Asset("IMAGE", "images/tabimages/theforge_tab.tex"),
 }
 
+-- Make every custom metal ingredient discoverable by vanilla GetInventoryItemAtlas.
+-- This is used by crafting ingredient widgets, inventory previews and other UI.
+if RegisterInventoryItemAtlas ~= nil then
+    for _, item in ipairs({
+        "copper_ore", "iron_ore",
+        "copper_dust", "iron_dust", "gold_dust",
+        "copper_ingot", "iron_ingot", "bronze_ingot",
+        "gold_ingot", "moonglass_ingot", "adamantium_ingot", "junk_dust",
+        "redgem_shard", "yellowgem_shard", "bluegem_shard",
+        "purplegem_shard", "greengem_shard", "orangegem_shard",
+    }) do
+        RegisterInventoryItemAtlas("images/inventoryimages/" .. item .. ".xml", item .. ".tex")
+    end
+end
+
 PrefabFiles = {
 	"warworkbench",
 
@@ -95,6 +110,8 @@ PrefabFiles = {
 	"forkstick",
 	"shears",
 	"craftbook",
+	"metallurgy_reference_book",
+	"mam_stone_chisel",
 	--"cursed_phantom",
 	"cursed_piggy",
 	"cursed_piggy_mask",
@@ -121,16 +138,37 @@ MAMConfig.Init(GetModConfigData)
 modimport("initialise/modded_actions.lua")
 modimport("initialise/modded_cookers.lua")
 modimport("initialise/modded_ui_forecast.lua")
-modimport("initialise/modded_strings.lua")
 modimport("initialise/modded_recipes.lua")
+
+local ToolCrafting = require("mam/tool_crafting")
+AddComponentPostInit("builder", function(builder) ToolCrafting.WrapBuilder(builder, true) end)
+AddClassPostConstruct("components/builder_replica", function(builder) ToolCrafting.WrapBuilder(builder, false) end)
+if not GLOBAL.TheNet:IsDedicated() then
+    AddClassPostConstruct("widgets/redux/craftingmenu_hud", ToolCrafting.WrapCraftingHUD)
+end
+AddRecipePostInit("boards", ToolCrafting.ApplyBoardRecipe)
+AddRecipePostInit("cutstone", ToolCrafting.ApplyStoneRecipe)
+AddSimPostInit(function()
+    if AllRecipes.boards ~= nil then ToolCrafting.ApplyBoardRecipe(AllRecipes.boards) end
+    if AllRecipes.cutstone ~= nil then ToolCrafting.ApplyStoneRecipe(AllRecipes.cutstone) end
+end)
+if MAMConfig.on("mam_chisel_crafting") then
+    AddRecipe2("mam_stone_chisel", { Ingredient("twigs", 2), Ingredient("flint", 2) },
+        TECH.NONE, { image = "pumpkincarver1.tex" }, { "TOOLS", "REFINE" })
+end
+
 modimport("initialise/modded_regrow.lua")
 modimport("initialise/modded_marbletrees.lua")
 -- Depois de modded_marbletrees: o postinit de "marbletree" la' garante o
 -- lootdropper, e os rolls de minerio precisam encontrar o componente criado.
 modimport("initialise/modded_drops.lua")
-modimport("initialise/modded_pithpikemove.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_pithpikemove.lua")
+end
 modimport("initialise/modded_shearsharvest.lua")
-modimport("initialise/modded_mace.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_mace.lua")
+end
 modimport("initialise/modded_playerpost.lua")
 
 if GetModConfigData("disablemapchanges") then
@@ -138,7 +176,9 @@ modimport("initialise/modded_map.lua")
 end
 
 modimport("post_initialise/post_inits.lua")
-modimport("initialise/modded_stronger_bernie.lua")
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    modimport("initialise/modded_stronger_bernie.lua")
+end
 modimport("initialise/modded_forgepack.lua")
 
 AddMinimapAtlas("images/inventoryimages/metal_smelter.xml")
@@ -147,23 +187,8 @@ AddMinimapAtlas("images/mapicons/ironrock.xml")
 AddMinimapAtlas("images/inventoryimages/willowdoll.xml")
 
 	
-local newtechtoadd = {"ALCHEMY", "CRAFTSBOOK"}
-for _, v in pairs(newtechtoadd) do
-    local thelower = v:lower()
-    TechTree.AVAILABLE_TECH_BONUS[v] = thelower .. "_bonus"
-    TechTree.AVAILABLE_TECH_TEMPBONUS[v] = thelower .. "_tempbonus"
-    TechTree.AVAILABLE_TECH_BONUS_CLASSIFIED[v] = thelower .. "bonus"
-    TechTree.AVAILABLE_TECH_TEMPBONUS_CLASSIFIED[v] = thelower .. "tempbonus"
-    TechTree.AVAILABLE_TECH_LEVEL_CLASSIFIED[v] = thelower .. "level"
-end
-
-TUNING.PROTOTYPER_TREES.ALCHEMY_ONE = TechTree.Create({
-    ALCHEMY = 1
-})
-
-TUNING.PROTOTYPER_TREES.CRAFTSBOOK_ONE = TechTree.Create({
-    CRAFTSBOOK = 1
-})
+-- Register MAM's private tech trees before recipes and prefabs are loaded.
+require("mam/tech").Register()
 
 local function stamp_mam_tech(recipe)
     if recipe == nil or recipe.level == nil then
@@ -175,10 +200,13 @@ local function stamp_mam_tech(recipe)
     if recipe.level.CRAFTSBOOK == nil then
         recipe.level.CRAFTSBOOK = 0
     end
+    if recipe.level.MAM_FORGE == nil then
+        recipe.level.MAM_FORGE = 0
+    end
 end
 
--- ALCHEMY e CRAFTSBOOK sao chaves de tecnologia novas criadas por este mod. Toda
--- receita precisa de uma entrada correspondente nelas (0 = nao desbloqueia nesta
+-- ALCHEMY, CRAFTSBOOK e MAM_FORGE sao chaves de tecnologia registradas por mam/tech.lua.
+-- Toda receita precisa de uma entrada correspondente nelas (0 = nao desbloqueia nesta
 -- bancada), senao a arvore de tecnologia fica com buraco.
 --
 -- O original fazia um unico `for pairs(AllRecipes)` aqui, em tempo de carga: receitas
@@ -193,23 +221,15 @@ AddRecipePostInitAny(stamp_mam_tech)
 -- Custom Prototyper and Recipe filters --
 require("recipes_filter")
 
-AddPrototyperDef("warworkbench", {
-    icon_atlas = "images/tabimages/theforge_tab.xml",
-    icon_image = "theforge_tab.tex",
-    is_crafting_station = true,
-    action_str = "WARWORKBENCH",
-    filter_text = "War bench"
-})
 
-AddPrototyperDef("craftbook", {
-    icon_atlas = "images/hud/wretchtab.xml",
-    icon_image = "wretchtab.tex",
-    is_crafting_station = true,
-    action_str = "CRAFTBOOK",
-    filter_text = "Craft book"
-})
 
 AddRecipe2("warworkbench", {Ingredient("cutstone", 5), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("charcoal", 5)}, TECH.SCIENCE_TWO, { placer = "warworkbench_placer", min_spacing = 1, atlas = "images/inventoryimages/obsidian_workbench.xml", image = "obsidian_workbench.tex", }, {"PROTOTYPERS"})
+
+-- Informational reference only: no prototyper, unlock, or remote crafting.
+AddRecipe2("metallurgy_reference_book", {
+    Ingredient("papyrus", 2), Ingredient("charcoal", 2),
+    Ingredient("iron_ingot", 1, "images/inventoryimages/iron_ingot.xml"),
+}, TECH.ALCHEMY_ONE, { image = "cookbook.tex" }, { "CRAFTING_STATION" })
 
 AddRecipe2("armor_sanity", {Ingredient("adamantium_ingot", 2, "images/inventoryimages/adamantium_ingot.xml"),Ingredient("papyrus", 3)}, TECH.ALCHEMY_ONE, {"CRAFTING_STATION"})
 
@@ -219,28 +239,22 @@ AddRecipe2("marble_chest", {Ingredient("marble", 5), Ingredient("gold_ingot", 2,
 
 AddRecipe2("cold_safe", {Ingredient("gears", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("bluegem", 1)}, TECH.ALCHEMY_ONE, {placer = "cold_safe_placer", min_spacing=0.5, image="icebox_victorian.tex"}, {"CRAFTING_STATION", "COOKING"})
 
--- Armazenamento dedicado aos ingredientes aceitos pela metalurgia.
-if MAMConfig.on("mam_metalschest") then
-    AddRecipe2("metal_storage_chest", {
-        Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"),
-        Ingredient("cutstone", 2),
-        Ingredient("gears", 1),
-    }, TECH.ALCHEMY_ONE, { placer = "metal_storage_chest_placer", min_spacing = 0.5, image = "icebox_victorian.tex" }, { "CRAFTING_STATION", "CONTAINERS" })
-end
+-- metal_storage_chest permanece registrado apenas para compatibilidade com saves antigos;
+-- não há receita para construí-lo em mundos novos.
 
-AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("jagged_armor", {Ingredient("houndstooth", 4), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("armormarble", 1), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image = "lavaarena_armor_hpdamager.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("tfwp_luxury_nox_helm_hat", {Ingredient("footballhat", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("walrus_tusk", 1)}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages.xml", image="lavaarena_crowndamagerhat.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("tfwp_luxury_nox_helm_hat", {Ingredient("footballhat", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("walrus_tusk", 1)}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas = "images/inventoryimages.xml", image="lavaarena_crowndamagerhat.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("halberd", {Ingredient("log", 2), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("rope", 1) }, TECH.ALCHEMY_ONE, {nounlock = true, atlas="images/inventoryimages/halberd.xml", image="halberd.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("halberd", {Ingredient("log", 2), Ingredient("iron_ingot", 3, "images/inventoryimages/iron_ingot.xml"), Ingredient("rope", 1) }, TECH.MAM_FORGE_ONE, {nounlock = true, atlas="images/inventoryimages/halberd.xml", image="halberd.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("scepter", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("purplegem", 1), Ingredient("livinglog", 2)}, TECH.ALCHEMY_ONE, {nounlock = true, atlas="images/inventoryimages/pig_scepter_images.xml", image="pig_scepter_images.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("scepter", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("purplegem", 1), Ingredient("livinglog", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas="images/inventoryimages/pig_scepter_images.xml", image="pig_scepter_images.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("forkstick", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("sharkscale", 3, "images/inventoryimages/sharkscale.xml"), Ingredient("gnarwail_horn", 1)}, TECH.ALCHEMY_ONE,{nounlock = true, atlas="images/inventoryimages/forkstick.xml", image="forkstick.tex"}, {"CRAFTING_STATION"}) 
+AddRecipe2("forkstick", {Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("sharkscale", 3, "images/inventoryimages/sharkscale.xml"), Ingredient("gnarwail_horn", 1)}, TECH.MAM_FORGE_ONE,{nounlock = true, atlas="images/inventoryimages/forkstick.xml", image="forkstick.tex"}, {"CRAFTING_STATION"}) 
 
 AddRecipe2("shears", {Ingredient("log",1), Ingredient("flint",2), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages/shears.xml", image="shears.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("donharpoon", {Ingredient("marble",2), Ingredient("flint",3), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, atlas = "images/inventoryimages/donharpoon.xml", image="donharpoon.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("donharpoon", {Ingredient("marble",2), Ingredient("flint",3), Ingredient("iron_ingot", 2, "images/inventoryimages/iron_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, atlas = "images/inventoryimages/donharpoon.xml", image="donharpoon.tex"}, {"CRAFTING_STATION"})
 
 AddRecipe2("dst_willowdoll", 
 {Ingredient("beefalowool", 4), Ingredient("sewing_kit", 1), Ingredient("charcoal", 10)}, TECH.CRAFTSBOOK_ONE, {nounlock = true, atlas="images/inventoryimages/willowdoll.xml", image="willowdoll.tex"}, {"CRAFTING_STATION"})
@@ -281,37 +295,28 @@ STRINGS.RECIPE_DESC.JAGGED_ARMOR = "Hope it lasts"
 STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = "Shine in power!"
 --STRINGS.CHARACTERS.GENERIC.DESCRIBE.JAGGED_ARMOR = STRINGS.CHARACTERS.GENERIC.DESCRIBE.LAVAARENA_ARMOR_HPDAMAGER
 
-STRINGS.NAMES.WARWORKBENCH = "Armory"
-STRINGS.RECIPE_DESC.WARWORKBENCH = "Someone worked on this, still hot..."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.WARWORKBENCH = "I feel inspired."
-
-STRINGS.RECIPE_DESC.MARBLE_CHEST = "Fire-proof protection for your hot goods."
-STRINGS.NAMES.MARBLE_CHEST = "Marble Chest"
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.MARBLE_CHEST = "It's quite roomy in there."
-
-STRINGS.RECIPE_DESC.COLD_SAFE = "Safe and secure sustenance."
-STRINGS.NAMES.COLD_SAFE = "Cold Storage"
-STRINGS.NAMES.METAL_STORAGE_CHEST = "Metal Storage Chest"
-STRINGS.RECIPE_DESC.METAL_STORAGE_CHEST = "A reinforced chest for ores, dusts, ingots and smelting materials."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.COLD_SAFE = "Nothing as safe as a safe."
-
-STRINGS.NAMES.CRAFTBOOK = "Craftbook"
-STRINGS.RECIPE_DESC.CRAFTBOOK = "Years of experience, in book form."
-STRINGS.CHARACTERS.GENERIC.DESCRIBE.CRAFTBOOK = "A scientific notebook!"
 
 
 
 
 
-if GetModConfigData("forge_weapons") then
+if GetModConfigData("legacy_forge_weapon_abilities") and GetModConfigData("forge_weapons") then
 
-AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.FORGINGHAMMER.DISABLE_RECIPE then
+    AddRecipe2("forginghammer", {Ingredient("hammer", 1), Ingredient("lightninggoathorn", 1), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.PITHPIKE.DISABLE_RECIPE then
+    AddRecipe2("pithpike", {Ingredient("lightninggoathorn", 2), Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.SPIRALSPEAR.DISABLE_RECIPE then
+    AddRecipe2("spiralspear", {Ingredient("marble", 3),Ingredient("pithpike", 1, "images/inventoryimages/pithpike.xml"),  Ingredient("townportaltalisman", 2)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_lance.tex"}, {"CRAFTING_STATION"})
+end
 
-AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+if not TUNING.THE_FORGE_ITEM_PACK.BLACKSMITH_EDGE.DISABLE_RECIPE then
+    AddRecipe2("blacksmith_edge", {Ingredient("marble", 5),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 3, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+end
 
 --[[
 local function MarbleWeapon(inst)
@@ -324,22 +329,28 @@ AddPrefabPostInit("blacksmith_edge", MarbleWeapon)
 
 else
 
-AddRecipe2("forginghammerold", {Ingredient("twigs", 4), Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("forginghammerold", {Ingredient("twigs", 4), Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="hammer_mjolnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("pithpikeold", {Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.ALCHEMY_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("pithpikeold", {Ingredient("marble", 2), Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml"), Ingredient("houndstooth", 3)}, TECH.MAM_FORGE_ONE, {nounlock = true, image="spear_gungnir.tex"}, {"CRAFTING_STATION"})
 
-AddRecipe2("blacksmith_edgeold", {Ingredient("marble", 4),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.ALCHEMY_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
+AddRecipe2("blacksmith_edgeold", {Ingredient("marble", 4),Ingredient("driftwood_log", 2),  Ingredient("gold_ingot", 1, "images/inventoryimages/gold_ingot.xml")}, TECH.MAM_FORGE_ONE, {nounlock = true, image="lavaarena_heavyblade.tex"}, {"CRAFTING_STATION"})
 
-AddStategraphPostInit("wilson", function(self)
-    local onenter = self.states.hit.onenter
-    self.states.hit.onenter = function(inst, ...)
-        if inst:HasTag("parrying") then 
-	    return inst.sg:GoToState("parry_pre") 
-        else 
-	    return onenter(inst, ...) 
+if GetModConfigData("legacy_forge_weapon_abilities") then
+    AddStategraphPostInit("wilson", function(self)
+        local hit_state = self.states ~= nil and self.states.hit or nil
+        local onenter = hit_state ~= nil and hit_state.onenter or nil
+        if type(onenter) ~= "function" then
+            return
         end
-    end 
-end)
+
+        hit_state.onenter = function(inst, ...)
+            if inst:HasTag("parrying") then
+                return inst.sg:GoToState("parry_pre")
+            end
+            return onenter(inst, ...)
+        end
+    end)
+end
 
 end
 
@@ -645,4 +656,24 @@ STRINGS.CURSED_PIGGY_TALK_FIGHT = {
 env._G = GLOBAL
 _G.fns = require("fns")
 
+-- Apply the selected locale after all legacy MAM-owned string assignments.
+modimport("initialise/modded_strings.lua")
+
+AddPrototyperDef("warworkbench", {
+    icon_atlas = "images/tabimages/theforge_tab.xml",
+    icon_image = "theforge_tab.tex",
+    is_crafting_station = true,
+    action_str = "WARWORKBENCH",
+    filter_text = STRINGS.NAMES.WARWORKBENCH
+})
+
+AddPrototyperDef("craftbook", {
+    icon_atlas = "images/hud/wretchtab.xml",
+    icon_image = "wretchtab.tex",
+    is_crafting_station = true,
+    action_str = "CRAFTBOOK",
+    filter_text = STRINGS.NAMES.CRAFTBOOK
+})
+
 modimport("scripts/tot_ui.lua")
+

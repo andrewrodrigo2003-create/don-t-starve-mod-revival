@@ -1,0 +1,117 @@
+Metals and More Reforged — Changelog
+=====================================
+
+Version 2.9.7 — development candidate for real DST validation (2026-11-27)
+----------------------------------------------------------------------------
+This is a complete installable development candidate, not a certified release. Certification requires the real in-game validation.
+
+Included in this candidate:
+- Register the ALCHEMY, CRAFTSBOOK and MAM_FORGE tech trees and stamp custom tech keys safely across recipes.
+- Make the Mad Scientist Lab a year-round, all-survivor MAM alchemy station; give advanced metal equipment its own War Workbench progression.
+- Gate axe/chisel crafting, balance equipment recipes, and honor per-weapon optional Forge recipe settings.
+- Complete material provenance classifications and safe deconstruction contracts without inventing reverse recipes.
+- Harden smelter batch persistence, partial recovery and robot output delivery; document all extra mining/drop sources.
+- Keep the metallurgy book read-only, bilingual and consistent with executable recipes and source toggles.
+
+Universal Alchemy and equipment balance — 2026-11-20 (included in 2.9.7 candidate)
+--------------------------------------------------------------------
+- Extend the vanilla Mad Scientist Lab prototyper tree with MAM ALCHEMY while preserving MADSCIENCE, so migrated ALCHEMY_ONE recipes have a real station and vanilla experiments continue to work.
+- Align the Moonglass Ingot output moon tag with its consumed Moon Rock Nugget (moon=1), preventing downstream tag-value inflation.
+- Align the Astral Detector hammer deconstruction recipe to return one Moonglass Ingot plus Thulecite (50% ingot refund) instead of stale vanilla Moon Rock; preserve third-party deconstruction overrides.
+- Honor the per-weapon DISABLE_RECIPE configuration for the optional Forge pack weapons; leave both Forge weapon feature gates disabled by default.
+- Restore Marble Suit's vanilla material baseline (6 marble + 2 rope) and add one Iron Ingot as the metalworking cost.
+- Replace Forkstick's random 12–99 base damage with the vanilla spear baseline (34); balance Don Harpoon to 68 damage / 100 uses while preserving its projectile/range and movement penalty.
+- Audit Jagged Armor against Thulecite Suit and keep its premium 1500/85%/+10% profile and War Workbench cost; document Adamantium and lunar conversion economics.
+- Record Nox Helm, Halberd, Scepter and Shears stats/consumption for balance follow-up; no attribute changes until runtime measurements.
+Universal Alchemy Station — 2026-11-18 (included in 2.9.7 candidate)
+---------------------------------------------------
+- Make the vanilla Mad Scientist Lab craftable year-round without requiring Hallowed Nights, preserving its vanilla prefab and live ingredient list.
+- Move its recipe out of the seasonal filter, remove only the vanilla Hallowed Nights hint, and retain compatibility with third-party ingredient changes.
+- Establish the Mad Scientist Lab as the universal MAM station for future deterministic mineral transmutation; all survivors can use it, with no Wilson skill-tree requirement.
+- The deterministic mineral-transmutation conversion/cost matrix is intentionally not included in 2.9.7 because no concrete safe matrix has been defined; no conversion recipes are invented.
+
+Material deconstruction audit — 2026-11-18 (included in 2.9.7 candidate)
+------------------------------------------------------
+- Inventory every material prefab used by MAM progression, including vanilla goldnugget, and record an explicit provenance disposition.
+- Keep the existing nine reversible smelting/material entries eligible for recovery.
+- Explicitly classify copper/iron/gold dust as raw inputs, junk dust as an ambiguous mixed-load by-product, gem shards as loot materials, and sharkscale as a harvested raw material; these remain non-deconstructible until a safe reverse path exists.
+- Add regression coverage that fails when a new MAM material is missing from the audit or when the reversible allowlist disagrees with its provenance status.
+
+Compatibility correction — 2026-11-18 (included in 2.9.7 candidate)
+--------------------------------------------------
+- Register the legacy Wilson parry StateGraph hook only when Legacy Forge weapon abilities are explicitly enabled.
+- Skip the hook safely if the Wilson hit state or its onenter callback is unavailable; preserve the original callback and arguments when present.
+
+Local compatibility work — included in 2.9.7 candidate (2026-11-17)
+-------------------------------------------------
+- Harden robot auto-harvest against nil/throwing output prefab constructors; preserve the ready batch and retry only the undelivered remainder, with regression coverage for template and partial-stack failures.
+- Keep MAM independent within Beyond the Forge; retain the current book history, localization, War Bench guards and default-off legacy Forge abilities.
+- Preserve the four existing Forge weapon prefabs as melee weapons when legacy abilities are off, without calling inactive combat APIs or advertising unavailable special attacks.
+- Keep configured damage, durability, attack wear, appearance and equip behavior; initialize authoritative durability only on the server.
+- Retain opt-in special attacks and cooldowns when legacy abilities are enabled.
+- Preserve dynamic weapon damage evaluation, special damage, temporary ranges and chained equip/unequip arguments and return values.
+- Recompute cooldown buffs on the owner's equipment events, remove old subscriptions on transfer, and leave vanilla recharge scheduling intact.
+- Reserve deconstruction output slots before consuming material, respecting inventory/backpack filters, read-only containers, stack limits, pocket-only items and compatible overflow priority.
+- Deliver exact quantities to reserved slots, splitting stacks for non-stacking containers; reject insufficient capacity without consuming the input. Keep the material allowlist, recovery rates and one-unit consumption unchanged.
+- Require the authoritative server for deconstruction execution while retaining client action discovery from the replicated War Bench tag; do not extend access to nearby or unrelated storage.
+- Require a working owned chopping tool for boards, Woodie's native boards recipe and native board batches. Tools can be carried, equipped, on the cursor or in the equipped writable backpack; open, nearby and nested storage do not supply them.
+- Preserve the vanilla four-log common boards recipe and Woodie's separate three-log/Lucy skill recipe. Add only the axe requirement; keep `cancarveboards`, `forward_ingredients`, the skill unlock, stations, third-party costs and native batch quantities/callbacks unchanged.
+- Add the reusable Stone-Carving Chisel for cutstone and native cutstone batches: two twigs and two flint, TECH.NONE, native carving-tool art, no finite uses or stack consumption. Keep character transmutations separate.
+- Add independent default-on axe/chisel settings, Portuguese/English feedback and a guide page. Crafting does not consume or wear the required tool; normal axe chopping is unchanged.
+- Revalidate tools in the authoritative builder before crafting, including buffered requests; retain buffer state on rejection. Client availability uses the same inventory scope, and the HUD checks tool-state changes every 0.25 seconds to refresh after break/repair. Freebuild waives both requirements.
+- Centralize Portuguese/English names, recipe text and inspection text for the War Bench, legacy Craftbook, Marble Chest, Cold Storage and save-only Metal Storage Chest; stop late English overrides and localize station filters/actions without changing recipes, capacities or prefab behavior.
+- Keep the legacy Craftbook distinct from the read-only Metallurgy Guide and retain the retired chest only for existing saves. Nine station/storage localization scenarios passed with stubs and installed DST action sources, covering language defaults, disabled features, native/third-party string preservation and unchanged structure costs; this is not a full mod bootstrap or UI test.
+- Local validation on base 073299f: 28 Lua harnesses passed, including 48 weapon prefab configurations, 26 combat scenarios and 34 deconstruction scenarios; 136 Lua files passed Lua 5.1 syntax checks.
+- Tool crafting passed 63 stub scenarios and 64 scenarios with installed DST Lua methods/declarations, covering Builder/Replica, InventoryReplica, Tool, finite uses and crafting HUD metadata, plus registration, configuration, prefab and localization fixtures. Native chisel animation and inventory atlas references exist in the installation; rendering and network behavior still require the game.
+- The 34 deconstruction scenarios also passed using Inventory/Container methods from the locally installed DST scripts.zip with stub entities; this executes game Lua methods outside the game engine, not an in-game test.
+- Legacy-gate, book, robot and seven localization Python checks passed. Asset checks were re-run and remain 2/3; the icon check cannot complete until the CI-generated PNG is available.
+- Evidence is limited to local source, stub-based execution and the behavioral simulator. No in-game, multiplayer or full mod-list certification; no release, merge or game installation.
+
+Version 2.9.6 — integrated test build (2026-11-12)
+--------------------------------------------------
+
+Forge and smelting
+- Preserve transactional ingredient receipts, pending-refund recovery, ready output and save/load state.
+- Keep the forge preview client-side while the server validates the final plan.
+- Preserve product name over its image and predicted quantity in the lower-right of the preview.
+- Add opt-in collector robot automation: an active fueled W.O.B.O.T. or deployed W.I.N.bot can trigger nearby smelters to pull registered ingredients from compatible chests/packs and deposit completed products into compatible nearby storage.
+- Automation is Off by default and never scans player inventories or portable storage.
+
+Crafting progression
+- Move metal equipment, tools and selected metal structures to the War Bench crafting filter using ALCHEMY_ONE.
+- Preserve live ingredient lists and recipe metadata from other mods; only the station technology and filter are changed.
+- Keep the Science Machine / Alchemy Engine progression components and transistor on the science path to avoid a crafting dependency loop.
+- Existing MAM forge weapons and equipment remain individually craftable at their existing War Bench recipes.
+
+Metallurgy reference book
+- Add a craftable read-only guide at the War Bench.
+- The in-game pages cover the live smelting recipe table, materials, sources, War Bench progression, salvage rules, robot automation and compatibility settings.
+- The guide does not unlock recipes or craft items remotely.
+
+Deconstruction and salvage
+- Add right-click deconstruction near the War Bench for supported metal materials and metal equipment.
+- Material ingots return their canonical lower-stage components; crafted equipment uses its live AllRecipes ingredient list.
+- Standard recovery is 75% expected return per ingredient unit; item durability scales equipment salvage.
+- Wilson recovers 100% of listed ingredients; Winona recovers non-magical metal components at 100%; Maxwell recovers shadow materials at 100%.
+- WX-78 and Wickerbottom remain at the standard rate pending a user-approved specialty.
+- An unsuccessful recovery roll still consumes the dismantled item, preventing reroll exploits.
+- Wilson's separate cross-material transmutation table is not included because no exact conversion matrix has been defined.
+
+Storage
+- The dedicated metal chest recipe and configuration option are removed as requested.
+- Its old prefab/widget remain registered only to preserve existing saves; no new chest can be crafted.
+
+Icon and packaging
+- Keep the SVG icon source; rasterize a 256px PNG during CI.
+- Build the open-source KTools `ktech` converter in CI and generate the final `modicon.tex` during package creation.
+- Update the atlas to the full square texture coordinates.
+
+Compatibility
+- Recipe guards yield when another mod changes a protected vanilla ingredient list.
+- UM Public Beta 6.0.3.9 source audit covers recipe overrides, hound drops, shark loot and container integration.
+- Hydrated/Dehydrated, Better Lucy and Uncompromising Mode source files are not modified.
+- No smelting costs, output quantities or weapon damage values were changed by this build; station requirements and salvage are the new behavior.
+
+Verification scope
+- CI checks Lua 5.1 syntax, recipe/station guards, deconstruction calculations, robot automation contracts, book wiring, asset references, package contents and KTEX conversion.
+- This is not an in-game certification. Multiplayer, save migration, full Uncompromising Mode Beta behavior and the user's complete mod list still require one consolidated local test.

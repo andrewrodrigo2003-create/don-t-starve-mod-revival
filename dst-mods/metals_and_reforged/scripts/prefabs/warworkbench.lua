@@ -3,7 +3,7 @@ require "prefabutil"
 local assets =
 {
 	Asset("ANIM", "anim/workbench_obsidian.zip"),
-	Asset("MINIMAP_IMAGE", "workbench_obsidian"),
+	Asset("MINIMAP_IMAGE", "obsidian_workbench"),
 }
 
 local function onhammered(inst, worker)
@@ -67,7 +67,7 @@ local function InitFn(Sim)
 	inst:AddComponent("inspectable")
 	
 	inst:AddComponent("prototyper")
-	inst.components.prototyper.trees = TUNING.PROTOTYPER_TREES.ALCHEMY_ONE
+	inst.components.prototyper.trees = TUNING.PROTOTYPER_TREES.MAM_FORGE_ONE
 		inst.components.prototyper.onturnon = OnTurnOn
 	inst.components.prototyper.onturnoff = OnTurnOff
 	inst.components.prototyper.onactivate = function()

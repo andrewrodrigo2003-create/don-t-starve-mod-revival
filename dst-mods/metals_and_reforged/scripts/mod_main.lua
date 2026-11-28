@@ -1,3 +1,5 @@
+local MAMCombatWrapperHelpers = _G.require("mam/combat_wrapper_helpers")
+local MAMStategraphWrappers = require("mam/stategraph_wrappers")
 local a = _G.json
 local b = _G.FRAMES
 local c = _G.EQUIPSLOTS
@@ -44,15 +46,15 @@ AddPlayerPostInit(
         end
     end
 )
+local old_get_display_name = _G.EntityScript.GetDisplayName
 function _G.EntityScript:GetDisplayName()
-    local m = self:GetAdjectivedName()
-    if self.prefab ~= nil then
-        local n = d.NAME_DETAIL_EXTENTION[string.upper(self.nameoverride ~= nil and self.nameoverride or self.prefab)]
-        if n ~= nil then
-            return m .. "\n" .. n
+    if self.nameoverride ~= nil and d.NAME_DETAIL_EXTENTION ~= nil then
+        local detail = d.NAME_DETAIL_EXTENTION[string.upper(self.nameoverride)]
+        if detail ~= nil then
+            return self:GetAdjectivedName() .. "\n" .. detail
         end
     end
-    return m
+    return old_get_display_name(self)
 end
 _G.DAMAGETYPES = {PHYSICAL = 1, MAGIC = 2}
 _G.DAMAGETYPE_IDS = {}
@@ -144,29 +146,39 @@ AddComponentPostInit(
         local old_get_attack_range = self.GetAttackRange
         function self:GetAttackRange()
             local z = self:GetWeapon()
-            if z and z.components.weapon:CanAltAttack() then
-                return z.components.weapon.altattackrange
-            else
-                return old_get_attack_range(self)
+            local weapon = z ~= nil and z.components.weapon or nil
+            if weapon ~= nil and weapon:CanAltAttack() and weapon.altattackrange ~= nil then
+                return weapon.altattackrange
             end
+            return old_get_attack_range(self)
         end
         local old_get_hit_range = self.GetHitRange
         function self:GetHitRange()
-            local z = self:GetWeapon()
-            if z and z.components.weapon:CanAltAttack() then
-                return self.attackrange + z.components.weapon.althitrange
-            else
-                return old_get_hit_range(self)
+            if self.temprange ~= nil then
+                return self.temprange
             end
+            local z = self:GetWeapon()
+            local weapon = z ~= nil and z.components.weapon or nil
+            if weapon ~= nil and weapon:CanAltAttack() and weapon.althitrange ~= nil then
+                return self.attackrange + weapon.althitrange
+            end
+            return old_get_hit_range(self)
         end
         local old_calc_damage = self.CalcDamage
         function self:CalcDamage(A, z, B)
             if A:HasTag("alwaysblock") then
                 return 0
             end
-            local C = old_calc_damage(self, A, z, B)
             local D = z ~= nil and z.components.weapon.damage or self.defaultdamage
-            if z and z.components.weapon:CanAltAttack() or not z and self.damage_override then
+            local original_damage = D
+            local is_alt = z ~= nil and z.components.weapon:CanAltAttack()
+            local C, spdamage
+            if is_alt and type(D) == "function" then
+                C, spdamage, D = MAMCombatWrapperHelpers.CalcDamageWithBase(self, A, z, B, old_calc_damage)
+            else
+                C, spdamage = old_calc_damage(self, A, z, B)
+            end
+            if type(D) ~= "function" and (is_alt or not z and self.damage_override) then
                 local E = 0
                 if z then
                     E =
@@ -177,10 +189,12 @@ AddComponentPostInit(
                         type(self.damage_override) == "function" and self.damage_override(self.inst, A) or
                         self.damage_override
                 end
-                C = (C - (self.damagebonus or 0)) / D
-                C = C * E + (self.damagebonus or 0)
+                if E == original_damage then
+                    E = D
+                end
+                C = MAMCombatWrapperHelpers.ApplyAltDamage(C, D, self.damagebonus, E)
             end
-            return C
+            return C, spdamage
         end
         local function F(r, G, H, z, x)
             local I = 1
@@ -240,39 +254,66 @@ AddComponentPostInit(
             return F(r, G, H, z, x)
         end
         local old_do_attack = self.DoAttack
-        function self:DoAttack(T, z, U, x, V)
+        function self:DoAttack(T, z, U, x, V, ...)
             local I, J = F(false, self.inst, T or self.target, z, x)
             local W = (V or 1) * J * I
-            old_do_attack(self, T, z, U, x, W)
+            return old_do_attack(self, T, z, U, x, W, ...)
         end
         local old_get_attacked = self.GetAttacked
-        function self:GetAttacked(G, X, z, x)
+        function self:GetAttacked(G, X, z, x, spdamage, ...)
             local I, J = F(true, G, self.inst, z, x)
             X = X * J * I
-            return old_get_attacked(self, G, X, z, x)
+            return old_get_attacked(self, G, X, z, x, spdamage, ...)
         end
-        function self:DoAreaAttack(A, Y, z, Z, x, _)
-            local a0 = 0
+        local old_do_area_attack = self.DoAreaAttack
+        function self:DoAreaAttack(A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            if select("#", ...) > 0 then
+                return old_do_area_attack(self, A, Y, z, Z, x, excludetags, onlyontarget, ...)
+            end
+            local hitcount = 0
+
+            if onlyontarget then
+                local target = A
+                if target ~= nil and self:IsValidTarget(target) and
+                    (Z == nil or Z(target, self.inst)) and target.components.combat ~= nil then
+                    self.inst:PushEvent("onareaattackother", {target = target, weapon = z, stimuli = x})
+                    local I, J = F(false, self.inst, target, z, x)
+                    local multiplier = MAMCombatWrapperHelpers.AreaDamageMultiplier(
+                        self.areahitdamagepercent, I, J)
+                    local damage, spdamage = self:CalcDamage(target, z, multiplier)
+                    target.components.combat:GetAttacked(self.inst, damage, z, x, spdamage)
+                    return 1
+                end
+                return 0
+            end
+
+            if A == nil or A.Transform == nil then
+                return 0
+            end
+
             local a1, a2, a3 = A.Transform:GetWorldPosition()
-            local a4 = _G.TheSim:FindEntities(a1, a2, a3, Y, {"_combat"}, _)
-            for P, y in ipairs(a4) do
-                if y ~= A and y ~= self.inst and self:IsValidTarget(y) and (Z == nil or Z(y, self.inst)) then
-                    self.inst:PushEvent("onareaattackother", {target = y, weapon = z, stimuli = x})
-                    local J = (self.areahitdamagepercent or 1) + F(false, self.inst, y, z, x)
-                    y.components.combat:GetAttacked(self.inst, self:CalcDamage(y, z, J), z, x)
-                    a0 = a0 + 1
+            local a4 = _G.TheSim:FindEntities(a1, a2, a3, Y, {"_combat"}, excludetags)
+            for _, target in ipairs(a4) do
+                if target ~= A and target ~= self.inst and self:IsValidTarget(target) and
+                    (Z == nil or Z(target, self.inst)) and target.components.combat ~= nil then
+                    self.inst:PushEvent("onareaattackother", {target = target, weapon = z, stimuli = x})
+                    local I, J = F(false, self.inst, target, z, x)
+                    local multiplier = MAMCombatWrapperHelpers.AreaDamageMultiplier(
+                        self.areahitdamagepercent, I, J)
+                    local damage, spdamage = self:CalcDamage(target, z, multiplier)
+                    target.components.combat:GetAttacked(self.inst, damage, z, x, spdamage)
+                    hitcount = hitcount + 1
                 end
             end
-            return a0
+            return hitcount
         end
         function self:DoSpecialAttack(C, T, x, V, a5)
-            self.damage_override = C
-            if a5 then
-                self:DoAreaAttack(a5.target, a5.range, nil, a5.validfn, x, a5.excludetags)
-            else
-                self:DoAttack(T, nil, nil, x, V)
-            end
-            self.damage_override = nil
+            return MAMCombatWrapperHelpers.WithDamageOverride(self, C, function(combat)
+                if a5 then
+                    return combat:DoAreaAttack(a5.target, a5.range, nil, a5.validfn, x, a5.excludetags)
+                end
+                return combat:DoAttack(T, nil, nil, x, V)
+            end)
         end
     end
 )
@@ -540,7 +581,7 @@ AddComponentPostInit(
             end
         end
         local af = self.Equip
-        function self:Equip(ad)
+        function self:Equip(ad, ...)
             if ad.components.combat then
                 for P, ae in pairs(self.damagebuffs) do
                     for o, K in pairs(ae) do
@@ -561,10 +602,10 @@ AddComponentPostInit(
                 end
             end
             self:AddBuffsTo(ad)
-            af(self, ad)
+            return af(self, ad, ...)
         end
         local ai = self.Unequip
-        function self:Unequip(ad)
+        function self:Unequip(ad, ...)
             if ad.components.combat then
                 for P, ae in pairs(self.damagebuffs) do
                     for o, K in pairs(ae) do
@@ -581,7 +622,7 @@ AddComponentPostInit(
                 end
             end
             self:RemoveBuffsFrom(ad)
-            ai(self, ad)
+            return ai(self, ad, ...)
         end
     end
 )
@@ -589,37 +630,28 @@ AddComponentPostInit(
     "rechargeable",
     function(self)
         self.owner = nil
-        self.onequip = function(l, ae)
-            if self.owner ~= nil then
-                self:SetChargeTimeMod(self.inst, l.prefab, self.owner.components.buffable:GetBuffData("cooldown_mult"))
+        local function refresh_cooldown_buff()
+            local buffable = self.owner ~= nil and self.owner.components.buffable or nil
+            if buffable ~= nil then
+                self:SetChargeTimeMod(self.inst, self.inst.prefab, buffable:GetBuffData("cooldown_mult"))
+            else
+                self:RemoveChargeTimeMod(self.inst, self.inst.prefab)
             end
-        end
-        self.onunequip = function(l, ae)
-            self:RemoveChargeTimeMod(self.inst, l.prefab)
         end
         self.inst:ListenForEvent(
             "equipped",
             function(l, ae)
                 self.owner = ae.owner
-                self.pickup = false
-                self:SetChargeTimeMod(self.inst, l.prefab, self.owner.components.buffable:GetBuffData("cooldown_mult"))
-                if not self.updating then
-                    self.updating = true
-                    self.inst:StartUpdatingComponent(self)
-                end
-                self.inst:ListenForEvent("equip", self.onequip, l)
-                self.inst:ListenForEvent("unequip", self.onunequip, l)
+                refresh_cooldown_buff()
+                self.inst:ListenForEvent("equip", refresh_cooldown_buff, self.owner)
+                self.inst:ListenForEvent("unequip", refresh_cooldown_buff, self.owner)
             end
         )
         self.inst:ListenForEvent(
             "unequipped",
             function(l, ae)
-                self.inst:RemoveEventCallback("equip", self.onequip, l)
-                self.inst:RemoveEventCallback("unequip", self.onunequip, l)
-                if self.pickup and self.updating then
-                    self.updating = false
-                    self.inst:StopUpdatingComponent(self)
-                end
+                self.inst:RemoveEventCallback("equip", refresh_cooldown_buff, self.owner)
+                self.inst:RemoveEventCallback("unequip", refresh_cooldown_buff, self.owner)
                 self:RemoveChargeTimeMod(self.inst, l.prefab)
                 self.owner = nil
             end
@@ -658,8 +690,11 @@ AddClassPostConstruct(
         end
         function self:CanAltAttack()
             if self.classified ~= nil and self.classified.isaltattacking:value() then
-                return self.inst.components.weapon and self.components.weapon:CanAltAttack() or
-                    self.can_altattack_fn(self.inst)
+                local weapon = self.inst.components.weapon
+                if weapon ~= nil then
+                    return weapon:CanAltAttack()
+                end
+                return self.can_altattack_fn(self.inst)
             end
         end
         local old_attack_range = self.AttackRange
@@ -673,7 +708,9 @@ AddClassPostConstruct(
     function(self)
         local ak = self.CanBeAttacked
         function self:CanBeAttacked(G)
-            if TUNING.PREVENT_COMPAGNION_ATTACK and (self.inst:HasTag("companion") and G and G:HasTag("player")) then
+            local config = TUNING.THE_FORGE_ITEM_PACK
+            if config ~= nil and config.PREVENT_COMPAGNION_ATTACK
+                and self.inst:HasTag("companion") and G ~= nil and G:HasTag("player") then
                 return false
             end
             return ak(self, G)
@@ -774,6 +811,105 @@ for au, av in pairs(at) do
             self.states[au].onupdate = function(l, az)
                 l.sg.statemem.tm = l.sg.statemem.tm + az
                 ay(l)
+            end
+        end
+    )
+end
+AddStategraphPostInit(
+    "wilson",
+    function(self)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.components ~= nil and inst.components.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
+            end
+        end
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and type(invobject.HasTag) == "function" and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
+            end
+        end
+    end
+)
+AddStategraphPostInit(
+    "wilson_client",
+    function(self)
+        local attack_state = self.states ~= nil and self.states.attack or nil
+        if attack_state ~= nil then
+            local old_onenter = attack_state.onenter
+            attack_state.onenter = function(inst, ...)
+                local inventory = inst.replica ~= nil and inst.replica.inventory or nil
+                local equipped = inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                if equipped ~= nil then
+                    al(inst, equipped)
+                end
+                if old_onenter ~= nil then
+                    return old_onenter(inst, ...)
+                end
+            end
+        end
+
+        local cast_handler = self.actionhandlers ~= nil and self.actionhandlers[g.CASTAOE] or nil
+        if cast_handler ~= nil and type(cast_handler.deststate) == "function" then
+            local old_deststate = cast_handler.deststate
+            cast_handler.deststate = function(inst, action, ...)
+                local invobject = action ~= nil and action.invobject or nil
+                if invobject ~= nil and invobject.HasTag ~= nil and invobject:HasTag("parry") then
+                    return "parry_pre"
+                end
+                return old_deststate(inst, action, ...)
+            end
+        end
+    end
+)
+AddComponentPostInit(
+    "debuffable",
+    function(self)
+        local ar = self.AddDebuff
+        local as = self.RemoveDebuff
+        function self:AddDebuff(m, ...)
+            if self.debuffs[m] == nil and self.inst.player_classified then
+                self.inst.player_classified.net_buffs:set(a.encode({name = m, removed = false}))
+            end
+            ar(self, m, ...)
+        end
+        function self:RemoveDebuff(m, ...)
+            if self.debuffs[m] ~= nil and self.inst.player_classified then
+                self.inst.player_classified.net_buffs:set(a.encode({name = m, removed = true}))
+            end
+            as(self, m, ...)
+        end
+    end
+)
+
+local cast_state_times = { book = 25 * b, castspell = 53 * b }
+for state_name, target_time in pairs(cast_state_times) do
+    -- Lua 5.1 closures capture loop variables; copy both values per callback.
+    local wrapped_state_name, wrapped_target_time = state_name, target_time
+    AddStategraphPostInit(
+        "wilson",
+        function(self)
+            local state = self.states ~= nil and self.states[wrapped_state_name] or nil
+            if state ~= nil then
+                MAMStategraphWrappers.WrapCastState(state, wrapped_target_time, function(inst)
+                    local inventory = inst.components ~= nil and inst.components.inventory or nil
+                    return inventory ~= nil and inventory:GetEquippedItem(c.HANDS) or nil
+                end)
             end
         end
     )

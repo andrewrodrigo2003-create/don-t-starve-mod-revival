@@ -8,16 +8,18 @@
 -- reequilibrado para aquela receita. A auditoria confirmou colisao real nas duas
 -- mods que o usuario joga:
 --
---   * Uncompromising Mode Beta 6.0.3.8 reescreve ingredientes de `seedpouch`
---     (init/init_recipes/recipe_changes.lua:135), `catcoonhat` (:141) e
---     `purpleamulet` (:312);
---   * "My Moar Metals" v422 registra 39 dos mesmos nomes vanilla com o proprio
---     balanceamento (scripts/recipes.lua, scripts/characters.lua).
+--   * Uncompromising Mode Beta 6.0.3.9 (commit fc09a5924fbb096a4dcb3582e22907b9c94a73ca)
+--     altera `seedpouch` e `catcoonhat`; `purpleamulet` muda quando
+--     `telestaff_rework` esta ativado (init/init_recipes/recipe_changes.lua:135-312);
+--   * uma auditoria anterior registrou possivel sobreposicao com "My Moar Metals" v422,
+--     mas o codigo/commit dessa versao nao esta disponivel nesta revisao; tratar como
+--     risco nao confirmado, nao como compatibilidade comprovada.
 --
 -- Agora a migracao roda em `AddSimPostInit` -- depois de todos os modmain -- e o
--- recipe_guard decide, por receita, se usamos a nossa lista (receita ainda vanilla)
--- ou a lista viva de quem ja a rebalanceou, mantendo em ambos os casos o nivel de
--- tecnologia do craftbook. Ver scripts/mam/recipe_guard.lua.
+-- recipe_guard decide, por receita, se aplica nossa lista (baseline vanilla) ou
+-- preserva as listas vivas de outro mod. A migracao altera o Recipe existente em
+-- lugar: tecnologia, filtro de bancada e nounlock; nao chama AddRecipe2 novamente,
+-- evitando descartar metadados/callbacks registrados por outros mods.
 --
 -- As listas de ingredientes abaixo sao as do v2.9.3, transcritas sem alteracao.
 -- ===========================================================================
@@ -29,7 +31,7 @@ local TECH = GLOBAL.TECH
 local MAMLog = require("mam/log")
 local MAMRecipeGuard = require("mam/recipe_guard")
 
-MAMRecipeGuard.Init(AddRecipe2)
+MAMRecipeGuard.Init(nil, AddRecipeToFilter, RemoveRecipeFromFilter)
 
 local BRONZE_INGOT_ATLAS = "images/inventoryimages/bronze_ingot.xml"
 local GOLD_INGOT_ATLAS = "images/inventoryimages/gold_ingot.xml"
@@ -90,7 +92,6 @@ local function apply_craftbook(where)
     if has_been_applied then
         return
     end
-    has_been_applied = true
 
     local moved, kept = 0, 0
     for _, entry in ipairs(CRAFTBOOK_RECIPES) do
@@ -103,6 +104,10 @@ local function apply_craftbook(where)
             end
         end
     end
+
+    -- Only mark the pass complete after every entry has been processed.
+    -- MAMLog.Try catches failures; leaving this false lets the world-task fallback retry.
+    has_been_applied = true
 
     MAMLog.Info("craftbook (%s): %d/%d receitas migradas, %d preservando balanceamento de outro mod",
         where, moved, #CRAFTBOOK_RECIPES, kept)

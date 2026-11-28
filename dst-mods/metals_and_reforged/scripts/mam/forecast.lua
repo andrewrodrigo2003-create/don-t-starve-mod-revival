@@ -16,6 +16,10 @@ local smelting = require("smelting")
 local MAMConfig = require("mam/config")
 local MAMLog = require("mam/log")
 
+local function L(ptbr, english)
+    return MAMConfig.get("mam_language", "ptbr") == "en" and english or ptbr
+end
+
 local MAMForecast = {}
 
 local function product_name(prefab)
@@ -193,41 +197,41 @@ end
 --- Texto curto e fixo para o botao da fornalha.
 function MAMForecast.button_text(inst)
     if not MAMConfig.on("mam_forecast") then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     end
 
     local plan = MAMForecast.plan(inst)
     if plan == nil then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     end
 
     if plan.phase == "smelting" then
-        return "Smelting"
+        return L("Fundindo", "Smelting")
     elseif plan.phase == "harvest" then
         if (plan.count or 1) > 1 then
-            return "Harvest " .. tostring(plan.count)
+            return L("Coletar ", "Harvest ") .. tostring(plan.count)
         end
-        return "Harvest"
+        return L("Coletar", "Harvest")
     elseif plan.phase == "empty" then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     elseif plan.state == "invalid" or plan.phase == "invalid" then
-        return "No match"
+        return L("Sem receita", "No match")
     elseif plan.phase == "ambiguous" then
-        return "Mixed load"
+        return L("Carga mista", "Mixed load")
     end
 
     if plan.ambiguous and plan.possibilities ~= nil and #plan.possibilities > 1 then
-        return "Makes " .. join(plan.possibilities, " / ")
+        return L("Produz: ", "Makes ") .. join(plan.possibilities, " / ")
     end
 
     local name = product_name(plan.product)
     if name == nil then
-        return "Smelt"
+        return L("Fundir", "Smelt")
     end
     if (plan.count or 1) > 1 then
-        return "Makes " .. tostring(plan.count) .. " " .. name
+        return L("Produz ", "Makes ") .. tostring(plan.count) .. " " .. name
     end
-    return "Makes " .. name
+    return L("Produz ", "Makes ") .. name
 end
 
 --- Linha longa de detalhe, para o tooltip do botao e para o inspectable.
@@ -238,20 +242,20 @@ function MAMForecast.detail_text(inst)
     end
 
     if plan.phase == "empty" then
-        return "Add ore, dust, shards or scrap to see what it becomes."
+        return L("Adicione minério, pó, fragmentos ou sucata para ver o resultado.", "Add ore, dust, shards or scrap to see what it becomes.")
     elseif plan.phase == "invalid" then
-        return "This mixture has no smelting result."
+        return L("Esta mistura não possui resultado de fundição.", "This mixture has no smelting result.")
     elseif plan.phase == "ambiguous" then
-        return "This mixture could yield more than one result. Sort the load to predict it."
+        return L("Esta mistura pode gerar mais de um resultado. Separe a carga para prever o resultado.", "This mixture could yield more than one result. Sort the load to predict it.")
     end
 
     local lines = {}
     if plan.source == "server" then
-        table.insert(lines, (plan.phase == "harvest" and "Ready: " or "Smelting: ")
+        table.insert(lines, (plan.phase == "harvest" and L("Pronto: ", "Ready: ") or L("Fundindo: ", "Smelting: "))
             .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
     else
         if plan.ambiguous and plan.outcomes ~= nil and #plan.outcomes > 1 then
-            table.insert(lines, "Possible results (the server chooses one):")
+            table.insert(lines, L("Resultados possíveis (o servidor escolhe um):", "Possible results (the server chooses one):"))
             for _, outcome in ipairs(plan.outcomes) do
                 local line = tostring(outcome.count or 1) .. " "
                     .. (product_name(outcome.product) or "?")
@@ -261,9 +265,9 @@ function MAMForecast.detail_text(inst)
                 table.insert(lines, line)
             end
         else
-            table.insert(lines, "Will produce: " .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
+            table.insert(lines, L("Produzirá: ", "Will produce: ") .. tostring(plan.count or 1) .. " " .. (product_name(plan.product) or "?"))
             if plan.smelttime ~= nil then
-                table.insert(lines, "Time: " .. tostring(math.ceil(plan.smelttime)) .. "s")
+                table.insert(lines, L("Tempo: ", "Time: ") .. tostring(math.ceil(plan.smelttime)) .. "s")
             end
         end
     end
